@@ -6,6 +6,10 @@ import { recordLiveLap, getPersonalBest } from "@/lib/liveLaps.functions";
 import { dispatchLiveCoach } from "@/lib/llm";
 import { speakText } from "@/lib/tts.functions";
 import { decideTone, type RuleSummary, type Tone } from "@/lib/live/coachRules";
+import { waitForStraight } from "@/lib/live/isInCorner";
+
+const COACH_DEBOUNCE_MS = 45_000;
+const MIN_CONFIDENCE = 55;
 
 interface RadioCall {
   tone: Tone;
@@ -40,11 +44,15 @@ export function LiveCoach({ t }: { t: Telemetry }) {
   const [sectorBests, setSectorBests] = useState<{ s1: number | null; s2: number | null; s3: number | null } | null>(null);
   const [pbCount, setPbCount] = useState(0);
   const [validLapsThisSession, setValidLapsThisSession] = useState(0);
+  const [lastConfidence, setLastConfidence] = useState<number | null>(null);
 
   // Streak of consecutive PBs in this session
   const pbStreakRef = useRef(0);
   // Recent deltas vs PB (per lap) for trend detection
   const recentDeltasRef = useRef<number[]>([]);
+  const lastCalloutRef = useRef<{ reasonCode: string; at: number; deltaToPb: number | null } | null>(null);
+  const telemetryRef = useRef(t);
+  telemetryRef.current = t;
 
   // Load PB whenever track/car changes (and user is signed in)
   useEffect(() => {
@@ -148,27 +156,62 @@ export function LiveCoach({ t }: { t: Telemetry }) {
         setPb({ lapTimeS: lap.lapTimeS, s1S: lap.s1S, s2S: lap.s2S, s3S: lap.s3S });
       }
 
-      // Call the AI to phrase it
+      const now = Date.now();
+      const last = lastCalloutRef.current;
+      const deltaWorsened =
+        summary.deltaToPbS != null &&
+        last?.deltaToPb != null &&
+        summary.deltaToPbS > last.deltaToPb + 0.1;
+      if (
+        last &&
+        last.reasonCode === summary.reasonCode &&
+        now - last.at < COACH_DEBOUNCE_MS &&
+        !deltaWorsened
+      ) {
+        return;
+      }
+
+      const ruleCall: RadioCall = {
+        tone: summary.tone,
+        headline: summary.beats[0] ?? "Lap complete",
+        detail: summary.beats.slice(1).join(" ") || "Keep building rhythm.",
+      };
+
+      const useAi = summary.confidence >= MIN_CONFIDENCE;
+
       setLoading(true);
       setError(null);
       try {
-        const resp = (await dispatchLiveCoach({
-          summary,
-          context: {
-            track: t.track,
-            car: t.car,
-            lapTimeS: lap.lapTimeS,
-            pbS: prevPbS,
-            pbStreak: newStreak,
-          },
-        })) as { call?: RadioCall; error?: string; fallback?: string };
-        if (resp.error) {
-          setError(resp.error);
-        } else if (resp.call) {
-          setCall(resp.call);
-          if (autoSpeak || resp.call.tone === "warn") {
-            speakCall(resp.call);
+        let finalCall = ruleCall;
+        if (useAi) {
+          const resp = (await dispatchLiveCoach({
+            summary,
+            context: {
+              track: t.track,
+              car: t.car,
+              lapTimeS: lap.lapTimeS,
+              pbS: prevPbS,
+              pbStreak: newStreak,
+            },
+          })) as { call?: RadioCall; error?: string };
+          if (resp.error) {
+            setError(resp.error);
+          } else if (resp.call) {
+            finalCall = resp.call;
           }
+        }
+
+        setCall(finalCall);
+        setLastConfidence(summary.confidence);
+        lastCalloutRef.current = {
+          reasonCode: summary.reasonCode,
+          at: now,
+          deltaToPb: summary.deltaToPbS,
+        };
+
+        if (autoSpeak || finalCall.tone === "warn") {
+          await waitForStraight(() => telemetryRef.current);
+          speakCall(finalCall);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Coach unavailable");
@@ -264,6 +307,11 @@ export function LiveCoach({ t }: { t: Telemetry }) {
               <ToneIcon className="h-3 w-3" />
               {style.label}
             </span>
+            {lastConfidence != null && (
+              <span className="font-mono text-[9px] text-zinc-500" title="Rules-engine confidence">
+                {lastConfidence}%
+              </span>
+            )}
             {pb && (
               <span className="font-mono text-[10px] text-zinc-400">
                 Δ {t.deltaSec >= 0 ? "+" : ""}

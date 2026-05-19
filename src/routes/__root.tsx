@@ -19,6 +19,7 @@ import { useTelemetry } from "@/lib/useTelemetry";
 import { LiveBridgeSync } from "@/components/LiveBridgeSync";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { HelpSystem } from "@/components/HelpSystem";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 
 function NotFoundComponent() {
   return (
@@ -176,6 +177,7 @@ function RootComponent() {
           <LiveBridgeSync t={t} />
           <DesktopLapSync />
           <HelpSystem />
+          <KeyboardShortcuts />
           <Outlet />
           <Toaster />
         </ThemeProvider>

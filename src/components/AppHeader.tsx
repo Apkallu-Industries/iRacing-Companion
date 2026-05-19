@@ -5,6 +5,7 @@ import { ThemeEditor } from "@/components/ThemeEditor";
 import { LLMSettings } from "@/components/LLMSettings";
 import { LocalDbSettings } from "@/components/LocalDbSettings";
 import { BackButton } from "@/components/BackButton";
+import { HeaderBreadcrumbs } from "@/components/HeaderBreadcrumbs";
 
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -19,6 +20,8 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         <span className="font-mono text-xs tracking-wider">APEXTRACE</span>
       </Link>
       <div className="mx-4 h-4 w-px bg-border" />
+      <HeaderBreadcrumbs />
+      <div className="mx-3 h-4 w-px bg-border hidden sm:block" />
       <div className="flex flex-1 items-center gap-3 text-xs text-muted-foreground">{children}</div>
       <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
         {user ? (

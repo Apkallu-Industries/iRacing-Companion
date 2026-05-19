@@ -18,7 +18,11 @@ import { OptimalLap } from "@/components/workbench/OptimalLap";
 import { Counterfactuals } from "@/components/workbench/Counterfactuals";
 import { BrakeBias } from "@/components/workbench/BrakeBias";
 import { SlipAngle } from "@/components/workbench/SlipAngle";
-import { AICoach } from "@/components/workbench/AICoach";
+import { lazy, Suspense } from "react";
+
+const LazyAICoach = lazy(() =>
+  import("@/components/workbench/AICoach").then((m) => ({ default: m.AICoach })),
+);
 import { ReplayThree } from "@/components/workbench/ReplayThree";
 import { PianoRoll } from "@/components/workbench/PianoRoll";
 import { SectorSpider } from "@/components/workbench/SectorSpider";
@@ -349,7 +353,15 @@ function WorkbenchPage() {
                   thisLapS={sess?.best_lap_s != null ? Number(sess.best_lap_s) : null}
                 />
               </div>
-              <AICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
+              <Suspense
+                fallback={
+                  <div className="hairline-t bg-bg p-3 font-mono text-[10px] uppercase text-muted-foreground">
+                    Loading AI coach…
+                  </div>
+                }
+              >
+                <LazyAICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
+              </Suspense>
             </div>
           </div>
         </>
