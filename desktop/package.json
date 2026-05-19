@@ -1,0 +1,13 @@
+{
+  "name": "pit-wall-desktop",
+  "version": "1.0.0",
+  "description": "Pit Wall Desktop — iRacing telemetry workbench with bundled local bridge.",
+  "main": "main.cjs",
+  "private": true,
+  "author": "Pit Wall",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "electron": "^31.7.7"
+  }
+}

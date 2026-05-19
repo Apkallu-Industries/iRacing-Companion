@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0a0f"/>
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#1f2230" stroke-width="20"/>
+  <path d="M256 96 a160 160 0 0 1 138 80 L256 256 Z" fill="#ff3b3b"/>
+  <circle cx="256" cy="256" r="28" fill="#e7ebf3"/>
+  <text x="256" y="430" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-weight="800" font-size="64" fill="#e7ebf3" letter-spacing="6">PW</text>
+</svg>
