@@ -14,7 +14,7 @@ type Sess = Tables<"telemetry_sessions">;
 export const Route = createFileRoute("/sessions/")({
   head: () => ({
     meta: [
-      { title: "Sessions — ApexTrace" },
+      { title: "Sessions — Pit Wall" },
       { name: "description", content: "Your uploaded iRacing telemetry sessions." },
     ],
   }),

@@ -17,7 +17,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground">
           <Activity className="h-3.5 w-3.5" />
         </div>
-        <span className="font-mono text-xs tracking-wider">APEXTRACE</span>
+        <span className="font-mono text-xs tracking-wider">PIT WALL</span>
       </Link>
       <div className="mx-4 h-4 w-px bg-border" />
       <HeaderBreadcrumbs />
