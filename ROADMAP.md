@@ -2,6 +2,50 @@
 
 Where this project goes next. Grouped by horizon and ordered by impact ÷ effort. Honest about what's hard and what's speculative.
 
+**Current snapshot:** see [CurrentState.MD](CurrentState.MD) for a full audit of what is shipped vs in-flight (last updated 2026-05-19).
+
+---
+
+## Audit backlog (May 2026)
+
+Items from the [CurrentState.MD](CurrentState.MD) audit, ordered by priority. Ship P0 before treating `.pwlap` export as released.
+
+### P0 — Ship `.pwlap` MVP
+
+- [ ] Apply migration [`supabase/migrations/20260519_pwlap_tables.sql`](supabase/migrations/20260519_pwlap_tables.sql) (`user_signing_keys`, `pwlap_imports`, `pwlap_exports`).
+- [ ] Create Supabase Storage bucket `pwlap_exports` with RLS (authenticated signed URLs only).
+- [ ] Wire [`ExportPwlapDialog.tsx`](src/components/workbench/ExportPwlapDialog.tsx) into [`sessions.$id.tsx`](src/routes/sessions.$id.tsx) (workbench header, beside `ShareButton`).
+- [ ] Wire [`ImportPwlapButton.tsx`](src/components/ImportPwlapButton.tsx) into [`sessions.index.tsx`](src/routes/sessions.index.tsx).
+- [ ] Add `pako` to `package.json` (compression); optionally `tweetnacl` (Ed25519 fallback). Fail loudly in `serialize.ts` if compression is requested but unavailable.
+- [ ] E2E validation: bridge capture (`MONGODB_URI`) → export (metadata + full) → import on second account → workbench shows data.
+- [ ] **Security:** stop storing `private_key` server-side in `user_signing_keys`; keep public keys in DB, signing client-side only.
+- [ ] Unify MongoDB database naming (`iracing` in `db.local.ts` vs `iracing_companion` in bridge/server) or document the split explicitly.
+
+*Maps to deployment steps in [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) and [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md).*
+
+### P1 — Quality and consistency
+
+- [ ] Unify product name in page titles, OG tags, and [`LocalDbSettings.tsx`](src/components/LocalDbSettings.tsx) (Pit Wall vs ApexTrace).
+- [ ] Add `live_coach_events` migration (supports roadmap item **#2** below).
+- [ ] IBT parser golden-file test harness (see **Cross-cutting** table).
+- [ ] CI: run `lint` and `tsc --noEmit` (or equivalent) in [`.github/workflows/build.yml`](.github/workflows/build.yml).
+- [ ] Align [`src/routes/roadmap.tsx`](src/routes/roadmap.tsx) `.pwlap` item with reality: browser live recording vs MongoDB export MVP.
+
+### P2 — Overlap with horizons below
+
+| Audit item | Existing roadmap item |
+| --- | --- |
+| Workbench perf (lazy panes, Float32) | **#3** Workbench performance budget |
+| Bridge onboarding checklist | **#4** Onboarding for the bridge |
+| Live coach confidence / debounce | **#2** Live coach signal quality |
+| Stripe / usage limits | Phase 4 in `/roadmap` UI (`billing`, `usage-limits`) |
+| MoTeC / CSV / webhooks export | **#13** Native data export pipeline |
+
+### P3 — Documentation hygiene
+
+- [ ] Single source for PWLAP deploy: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md); trim duplicate steps from [GETTING_STARTED.md](GETTING_STARTED.md) and [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md).
+- [ ] Refresh [CurrentState.MD](CurrentState.MD) after P0 ships.
+
 ---
 
 ## Now (next 1–2 iterations)
@@ -28,7 +72,7 @@ High‑leverage polish on what already exists. Low risk, immediate user value.
 ### 4. Onboarding for the bridge
 
 - `BridgeInstall` is a wall of text. Replace with a 3‑step animated checklist that auto‑detects bridge connectivity and turns each step green as it completes.
-- First‑run telemetry: if no bridge detected after 60s on `/live`, surface a friendly diagnostic ("port 8182 not reachable — firewall?").
+- First‑run telemetry: if no bridge detected after 60s on `/live`, surface a friendly diagnostic ("port 3001 not reachable — firewall?").
 
 ---
 
