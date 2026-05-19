@@ -8,6 +8,16 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { serializePwlap, deserializePwlap } from "@/lib/pwlap/serialize";
+import {
+  getTelemetrySamplesCollection,
+  getChannelsManifestCollection,
+  getLapsCollection,
+  getSessionsCollection,
+  type TelemetrySample,
+  type LapRecord,
+  type ChannelsManifest,
+  type SessionRecord,
+} from "@/lib/mongodb.server";
 import type { PwlapContent, PwlapExportOptions, PwlapGranularity } from "@/lib/pwlap/types";
 
 /**
@@ -58,17 +68,17 @@ export const exportSessionAsPwlap = createServerFn({ method: "POST" })
       compress: true, // Always compress for export
     };
 
-    // TODO: Get user's private key from DB if signing is requested
-    // if (data.sign) {
-    //   const { data: keyRow } = await supabase
-    //     .from("user_signing_keys")
-    //     .select("private_key")
-    //     .eq("user_id", userId)
-    //     .single();
-    //   if (keyRow?.private_key) {
-    //     options.privateKey = new Uint8Array(Buffer.from(keyRow.private_key, "base64"));
-    //   }
-    // }
+    // Get user's private key from DB if signing is requested
+    if (data.sign) {
+      const { data: keyRow } = await supabase
+        .from("user_signing_keys")
+        .select("private_key")
+        .eq("user_id", userId)
+        .single();
+      if (keyRow?.private_key) {
+        options.privateKey = new Uint8Array(Buffer.from(keyRow.private_key, "base64"));
+      }
+    }
 
     try {
       const pwlapBuffer = await serializePwlap(content, options);
@@ -151,7 +161,54 @@ export const importPwlapSession = createServerFn({ method: "POST" })
 
       if (createErr || !newSession) throw new Error("Failed to create session");
 
-      // TODO: Store telemetry samples in MongoDB if granularity=full
+      // Store telemetry samples in MongoDB if granularity=full
+      if (pwlapFile.content.samples && pwlapFile.content.samples.length > 0) {
+        try {
+          const samplesCollection = await getTelemetrySamplesCollection();
+          const sampleDocs = pwlapFile.content.samples.map((sample: any) => ({
+            session_id: newSession.id,
+            timestamp: sample.timestamp,
+            lap_number: sample.lap_number || 0,
+            channels: sample.channels,
+          }));
+
+          if (sampleDocs.length > 0) {
+            await samplesCollection.insertMany(sampleDocs, { ordered: false });
+          }
+        } catch (e) {
+          console.warn("Failed to store telemetry samples in MongoDB:", e);
+        }
+      }
+
+      // Store laps in MongoDB if available
+      if (pwlapFile.content.laps && pwlapFile.content.laps.length > 0) {
+        try {
+          const lapsCollection = await getLapsCollection();
+          const lapDocs = pwlapFile.content.laps.map((lap: any) => ({
+            session_id: newSession.id,
+            ...lap,
+          }));
+
+          if (lapDocs.length > 0) {
+            await lapsCollection.insertMany(lapDocs, { ordered: false });
+          }
+        } catch (e) {
+          console.warn("Failed to store laps in MongoDB:", e);
+        }
+      }
+
+      // Store channels manifest if available
+      if (pwlapFile.content.channels_manifest && pwlapFile.content.channels_manifest.length > 0) {
+        try {
+          const manifestCollection = await getChannelsManifestCollection();
+          await manifestCollection.insertOne({
+            session_id: newSession.id,
+            channels: pwlapFile.content.channels_manifest,
+          });
+        } catch (e) {
+          console.warn("Failed to store channels manifest in MongoDB:", e);
+        }
+      }
 
       // Create audit trail entry
       await supabase.from("pwlap_imports").insert({
@@ -226,34 +283,82 @@ async function buildPwlapContent(
   granularity: PwlapGranularity,
   supabase: any
 ): Promise<PwlapContent> {
+  let channelsManifest: any[] = [];
+  let laps: any[] = [];
+  let samples: any[] = [];
+
+  // Fetch channels manifest from MongoDB
+  try {
+    const manifestCollection = await getChannelsManifestCollection();
+    const manifest = await manifestCollection.findOne({ session_id: sessionId });
+    if (manifest) {
+      channelsManifest = manifest.channels || [];
+    }
+  } catch (e) {
+    console.warn("Failed to fetch channels manifest:", e);
+  }
+
+  // Fetch laps and calculate total duration if granularity >= "setup"
+  if (granularity === "setup" || granularity === "full") {
+    try {
+      const lapsCollection = await getLapsCollection();
+      const lapRecords = await lapsCollection
+        .find({ session_id: sessionId })
+        .sort({ lap_number: 1 })
+        .toArray();
+
+      laps = lapRecords.map((lap: LapRecord) => ({
+        lap_number: lap.lap_number,
+        duration_s: lap.duration_s,
+        fuel_remaining_l: lap.fuel_remaining_l,
+        track_temp_c: lap.track_temp_c,
+        air_temp_c: lap.air_temp_c,
+        consumed_fuel_l: lap.consumed_fuel_l,
+      }));
+    } catch (e) {
+      console.warn("Failed to fetch laps:", e);
+    }
+  }
+
+  // Fetch telemetry samples if granularity = "full"
+  if (granularity === "full") {
+    try {
+      const samplesCollection = await getTelemetrySamplesCollection();
+      const sampleRecords = await samplesCollection
+        .find({ session_id: sessionId })
+        .sort({ timestamp: 1 })
+        .limit(100000) // Cap at 100k samples (~30min @ 30Hz)
+        .toArray();
+
+      samples = sampleRecords.map((sample: TelemetrySample) => ({
+        timestamp: sample.timestamp,
+        lap_number: sample.lap_number,
+        channels: sample.channels,
+      }));
+    } catch (e) {
+      console.warn("Failed to fetch telemetry samples:", e);
+    }
+  }
+
+  // Calculate total duration from laps
+  const totalDurationS = laps.reduce((sum, lap) => sum + lap.duration_s, 0);
+
   const content: PwlapContent = {
     version: 1,
     metadata: {
       track: sessionRow.track || "unknown",
       car: sessionRow.car || "unknown",
       recorded_at: sessionRow.recorded_at || new Date().toISOString(),
-      duration_s: 0, // TODO: Calculate from laps
-      lap_count: sessionRow.lap_count || 0,
+      duration_s: totalDurationS,
+      lap_count: laps.length || sessionRow.lap_count || 0,
       best_lap_s: sessionRow.best_lap_s,
     },
-    channels_manifest: [], // TODO: Query from MongoDB channels_manifest
+    channels_manifest: channelsManifest,
     granularity,
+    laps: granularity !== "metadata" ? laps : undefined,
+    samples: granularity === "full" ? samples : undefined,
+    setup: granularity !== "metadata" ? {} : undefined,
   };
-
-  // Fetch lap metadata if granularity >= "setup"
-  if (granularity === "setup" || granularity === "full") {
-    // TODO: Fetch laps from MongoDB
-    content.laps = [];
-
-    // TODO: Fetch setup from .ibt file or session data
-    content.setup = {};
-  }
-
-  // Fetch telemetry samples if granularity = "full"
-  if (granularity === "full") {
-    // TODO: Query MongoDB telemetry_samples collection
-    content.samples = [];
-  }
 
   return content;
 }
