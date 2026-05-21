@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { exportSessionAsPwlap } from "@/lib/pwlap.functions";
+import { downloadPwlapExport } from "@/lib/pwlap.download";
 import type { PwlapGranularity } from "@/lib/pwlap/types";
 
 interface ExportPwlapDialogProps {
@@ -32,7 +33,7 @@ export function ExportPwlapDialog({
         throw new Error("Password required for encrypted export");
       }
 
-      const result = await exportSessionAsPwlap({
+      const result = await (exportSessionAsPwlap as any)({
         sessionId,
         granularity,
         encrypt,
@@ -42,12 +43,31 @@ export function ExportPwlapDialog({
       });
 
       if (result.success) {
-        onSuccess?.(result.filename, result.signedUrl);
-        // Trigger download
-        const link = document.createElement("a");
-        link.href = result.signedUrl;
-        link.download = result.filename;
-        link.click();
+        onSuccess?.(result.filename, result.exportId || "");
+        // Auto-download: fetch the exported file from MongoDB
+        try {
+          const downloadResult = await (downloadPwlapExport as any)({
+            exportId: result.exportId,
+          });
+          
+          if (downloadResult.success) {
+            // Decode base64 and trigger download
+            const binaryString = atob(downloadResult.fileBuffer);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            const blob = new Blob([bytes], { type: "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = result.filename;
+            link.click();
+            URL.revokeObjectURL(url);
+          }
+        } catch (downloadErr) {
+          console.error("Download failed:", downloadErr);
+        }
         onClose();
       }
     } catch (e) {

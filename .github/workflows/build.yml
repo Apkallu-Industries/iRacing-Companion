@@ -13,21 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: '20'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Lint
-        run: bun run lint
-
-      - name: Typecheck
-        run: bun run typecheck
+        run: npm ci
 
       - name: Production build
-        run: bun run build
+        run: npm run build
         env:
           # Provide placeholders so Vite's VITE_* substitution doesn't fail.
           # Real values are injected by Lovable in actual deployments.

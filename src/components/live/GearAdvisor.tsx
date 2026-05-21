@@ -195,7 +195,7 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
 
   const loadRows = useCallback(async (): Promise<CommunityRow[]> => {
     const out = await listCloud({ data: { car: carKey } });
-    return (out.rows || []).map((r: any) => ({
+    return (out.rows || []).map((r) => ({
       id: r.id,
       user_id: r.user_id,
       votes: r.votes,

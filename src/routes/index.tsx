@@ -53,7 +53,6 @@ function LandingPage() {
           <Link to="/lab/lapfile" className="hover:text-primary">Lab</Link>
           <Link to="/sessions" className="hover:text-primary">Sessions</Link>
           <Link to="/how-it-works" className="hover:text-primary">How it works</Link>
-          <Link to="/roadmap" className="hover:text-primary">Roadmap</Link>
           <Link
             to="/auth"
             className="rounded-sm bg-primary px-3 py-1 text-primary-foreground hover:opacity-90"
@@ -203,7 +202,7 @@ function LandingPage() {
               (Shift + Right-click → "Open PowerShell window here") and run:
             </p>
             <pre className="overflow-x-auto rounded-md border border-border bg-background p-3 font-mono text-xs leading-relaxed">
-              {`cd C:\\PitWall\\bridge
+{`cd C:\\PitWall\\bridge
 npm install
 npm start`}
             </pre>
@@ -242,7 +241,7 @@ npm start`}
               <strong className="text-foreground">Phone can't connect:</strong> Windows Firewall is
               blocking port 3001. Run this once in an Administrator PowerShell:
               <pre className="mt-1 overflow-x-auto rounded-md border border-border bg-background p-2 font-mono text-xs">
-                {`New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow`}
+{`New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow`}
               </pre>
             </li>
             <li>

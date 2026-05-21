@@ -79,7 +79,7 @@ export const getFingerprintForPair = createServerFn({ method: "POST" })
       .ilike("track", `%${data.track}%`)
       .limit(20);
     const match = (rows ?? []).find(
-      (r: any) =>
+      (r) =>
         (r.track as string).toLowerCase().includes(t) &&
         (r.car as string).toLowerCase().includes(c),
     );

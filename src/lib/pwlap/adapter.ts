@@ -1,4 +1,4 @@
-import type { IbtParsed, IbtChannel, IbtLap } from "@/lib/ibt/types";
+import type { IbtParsed, IbtChannel } from "@/lib/ibt/types";
 import type { RecordingDoc, RecordingDocV1, RecordingDocV2 } from "@/lib/liveRecorder";
 
 /**
@@ -35,27 +35,12 @@ function channelFromArray(
   return { name, unit, desc, type: 4, data, min, max, avg, group };
 }
 
-function inferGroup(name: string): string {
-  const n = name.toLowerCase();
-  if (/(throttle|brake|clutch|steer|handbrake|driver)/.test(n)) return "Driver Inputs";
-  if (/(speed|velocity|accel|yaw|pitch|roll|gear|rpm|enginerpm|track)/.test(n)) return "Vehicle";
-  if (/(fuel|engine|oil|water|coolant|mgu|battery|kers|drs|boost|manifold)/.test(n)) return "Engine";
-  if (/(tire|tyre|temp|press|carcass|tread|wear|cf|cm|cl|lf|rf|lr|rr)/.test(n) && /(temp|press|wear|tread|cold|carcass)/.test(n)) return "Tires";
-  if (/(shock|spring|ride|damper|susp|arb|height|defl)/.test(n)) return "Suspension";
-  if (/(session|lap|race|incident|flag|pit|track|surface|sector)/.test(n)) return "Session";
-  if (/(weather|wind|air|track(temp|surface|wetness|usage)|humidity|skies|fog|precip)/.test(n)) return "Environment";
-  if (/(cpu|fps|frame|gpu|mem|latency|ping)/.test(n)) return "System";
-  return "Other";
-}
-
 function parsedFromV2(doc: RecordingDocV2): IbtParsed {
   const numTicks = doc.t.length;
   const channels: Record<string, IbtChannel> = {};
 
   for (const [name, col] of Object.entries(doc.channels)) {
-    // Standardize group names to match IBT groups
-    const grp = inferGroup(name) || col.group;
-    channels[name] = channelFromArray(name, col.unit, grp, name, col.data);
+    channels[name] = channelFromArray(name, col.unit, col.group, name, col.data);
   }
 
   // Synthetic timing channels the workbench leans on.
@@ -74,66 +59,9 @@ function parsedFromV2(doc: RecordingDocV2): IbtParsed {
     };
   }
 
-  // Reconstruct trackXY if velocity and yaw are present
-  let trackXY: IbtParsed["trackXY"] | undefined;
-  const vxCh = channels["VelocityX"];
-  const vyCh = channels["VelocityY"];
-  const yawCh = channels["Yaw"] || channels["YawNorth"];
-  
-  if (vxCh && vyCh && yawCh && numTicks > 1) {
-    const x = new Float32Array(numTicks);
-    const y = new Float32Array(numTicks);
-    let px = 0, py = 0;
-    const tickRate = doc.sampleRate || 60;
-    const dt = 1 / Math.max(1, tickRate);
-    let minX = 0, maxX = 0, minY = 0, maxY = 0;
-    for (let t = 0; t < numTicks; t++) {
-      const yaw = yawCh.data[t];
-      const vx = vxCh.data[t];
-      const vy = vyCh.data[t];
-      const cs = Math.cos(yaw), sn = Math.sin(yaw);
-      const wx = vx * cs - vy * sn;
-      const wy = vx * sn + vy * cs;
-      px += wx * dt;
-      py += wy * dt;
-      x[t] = px;
-      y[t] = py;
-      if (px < minX) minX = px; else if (px > maxX) maxX = px;
-      if (py < minY) minY = py; else if (py > maxY) maxY = py;
-    }
-    trackXY = { x, y, minX, maxX, minY, maxY };
-  }
-
-  // Parse laps from the Lap channel if present, otherwise fallback to single stint lap
-  let laps: IbtLap[] = [];
-  const lapCh = channels["Lap"];
-  if (lapCh && numTicks > 0) {
-    let curLap = lapCh.data[0];
-    let curStart = 0;
-    for (let t = 1; t < numTicks; t++) {
-      const v = lapCh.data[t];
-      if (v !== curLap) {
-        laps.push({
-          lap: curLap,
-          startTick: curStart,
-          endTick: t - 1,
-          timeS: sessionTime[t - 1] - sessionTime[curStart],
-        });
-        curLap = v;
-        curStart = t;
-      }
-    }
-    laps.push({
-      lap: curLap,
-      startTick: curStart,
-      endTick: numTicks - 1,
-      timeS: sessionTime[numTicks - 1] - sessionTime[curStart],
-    });
-  } else {
-    laps = numTicks > 0
-      ? [{ lap: 1, startTick: 0, endTick: numTicks - 1, timeS: doc.bestLapS ?? doc.durationS }]
-      : [];
-  }
+  const laps = numTicks > 0
+    ? [{ lap: 1, startTick: 0, endTick: numTicks - 1, timeS: doc.bestLapS ?? doc.durationS }]
+    : [];
 
   return {
     meta: {
@@ -154,7 +82,7 @@ function parsedFromV2(doc: RecordingDocV2): IbtParsed {
     channels,
     channelNames: Object.keys(channels),
     laps,
-    trackXY,
+    trackXY: undefined,
   };
 }
 
@@ -186,6 +114,11 @@ function parsedFromV1(doc: RecordingDocV1): IbtParsed {
       FuelLevel:          { unit: "L",     group: "Fuel",     data: doc.samples.map(s => s.fuel) },
       LapDelta:           { unit: "s",     group: "Timing",   data: doc.samples.map(s => s.delta) },
     },
+    channelOrder: [
+      "Speed","SpeedKph","RPM","Gear","Throttle","Brake","Clutch",
+      "SteeringWheelAngle","LatAccel","LongAccel","FuelLevel","LapDelta",
+    ],
+    schema: {},
   };
   return parsedFromV2(v2);
 }

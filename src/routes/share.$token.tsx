@@ -16,9 +16,9 @@ export const Route = createFileRoute("/share/$token")({
     const og = `/api/public/og/share/${params.token}`;
     return {
       meta: [
-        { title: "Shared Lap — Pit Wall" },
+        { title: "Shared Lap — ApexTrace" },
         { name: "description", content: "Public read-only telemetry lap card." },
-        { property: "og:title", content: "Shared Lap — Pit Wall" },
+        { property: "og:title", content: "Shared Lap — ApexTrace" },
         { property: "og:description", content: "Public read-only telemetry lap card." },
         { property: "og:image", content: og },
         { property: "og:image:width", content: "1200" },

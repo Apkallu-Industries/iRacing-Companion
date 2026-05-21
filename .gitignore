@@ -34,6 +34,26 @@ desktop/node_modules
 desktop/out
 desktop/bridge/node_modules
 
+# Electron build output - never commit
+desktop/electron-release/
+desktop/dist/
+desktop/release/
+**/pit-wall-desktop-*/
+
 # Large desktop bundles - host externally (GitHub Releases, R2, etc.)
 public/downloads/*.zip
+public/downloads/*.exe
+public/downloads/*.dmg
+public/downloads/*.AppImage
+public/downloads/*.tar.gz
+public/downloads/*.7z
+
+# Generic large binaries (>100MB GitHub limit)
+*.zip
+*.7z
+*.iso
+*.dmg
+*.AppImage
+
+# Always keep downloads folder placeholder
 !public/downloads/.gitkeep

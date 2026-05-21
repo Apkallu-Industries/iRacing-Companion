@@ -1,13 +1,11 @@
 /**
- * iRacing → WebSocket bridge + local PWA dashboard.
+ * iRacing → WebSocket bridge + local PWA dashboard (standalone, no lap cache).
  *
- * Run on the same Windows PC as iRacing:
- *   npm install
- *   npm start
- *
- * Then open http://localhost:3001 on ANY device on your network
- * (phone, tablet, second monitor). One command, no mixed content,
- * installable as a PWA from the browser menu ("Install app").
+ * Tunable limits (env vars):
+ *   PITWALL_ARRAY_DEPTH   entries per exploded array channel (default 64).
+ *   PITWALL_EXTRAS_MAX_KB cap on extras payload sent over WS, KB (default 512).
+ *   PITWALL_WS_HZ         WebSocket broadcast rate (default 30).
+ *   PITWALL_SAMPLE_HZ     iRacing SDK polling rate (default 30).
  */
 
 const http = require("http");
@@ -24,8 +22,17 @@ try {
 }
 
 const PORT = 3001;
-const TICK_HZ = 30;
+const TICK_HZ = Number(process.env.PITWALL_SAMPLE_HZ) || 30;
+const WS_HZ = Number(process.env.PITWALL_WS_HZ) || 30;
+const ARRAY_DEPTH = Math.max(1, Number(process.env.PITWALL_ARRAY_DEPTH) || 64);
+const EXTRAS_MAX_BYTES = Math.max(16, Number(process.env.PITWALL_EXTRAS_MAX_KB) || 512) * 1024;
 const PUBLIC_DIR = path.join(__dirname, "public");
+
+console.log(
+  `[bridge] limits: arrayDepth=${ARRAY_DEPTH} extrasMaxKB=${Math.round(
+    EXTRAS_MAX_BYTES / 1024,
+  )} wsHz=${WS_HZ} tickHz=${TICK_HZ}`,
+);
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -38,29 +45,51 @@ const MIME = {
   ".webmanifest": "application/manifest+json",
 };
 
-/* ───────────────────────────────────────── HTTP server (static PWA) */
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
 const server = http.createServer((req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
-  let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
 
-  // Prevent path traversal
-  if (!filePath.startsWith(PUBLIC_DIR)) {
-    res.writeHead(403); res.end("forbidden"); return;
+  if (urlPath === "/api/config") {
+    res.writeHead(200, { "Content-Type": "application/json", ...CORS, "Cache-Control": "no-store" });
+    res.end(JSON.stringify({
+      tickHz: TICK_HZ, wsHz: WS_HZ, arrayDepth: ARRAY_DEPTH,
+      extrasMaxBytes: EXTRAS_MAX_BYTES, connected: !!latest, packets: packetCount,
+    }));
+    return;
   }
 
-  fs.stat(filePath, (err, stat) => {
-    if (err || !stat.isFile()) {
-      // SPA fallback
-      filePath = path.join(PUBLIC_DIR, "index.html");
+  if (urlPath === "/api/schema") {
+    const download = new URL(req.url, "http://x").searchParams.get("download") === "1";
+    if (!latestSchema) {
+      res.writeHead(503, { "Content-Type": "application/json", ...CORS });
+      res.end(JSON.stringify({ error: "Schema not built yet — start iRacing and load into a session." }));
+      return;
     }
+    const filename = `pitwall-schema-${(latest?.track || "session").replace(/[^\w]+/g, "_")}-${Date.now()}.json`;
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8", ...CORS, "Cache-Control": "no-store",
+      ...(download ? { "Content-Disposition": `attachment; filename="${filename}"` } : {}),
+    });
+    res.end(JSON.stringify(latestSchema, null, 2));
+    return;
+  }
+
+  if (req.method === "OPTIONS") { res.writeHead(204, CORS); res.end(); return; }
+
+  let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
+  if (!filePath.startsWith(PUBLIC_DIR)) { res.writeHead(403); res.end("forbidden"); return; }
+
+  fs.stat(filePath, (err, stat) => {
+    if (err || !stat.isFile()) filePath = path.join(PUBLIC_DIR, "index.html");
     fs.readFile(filePath, (e, data) => {
       if (e) { res.writeHead(404); res.end("not found"); return; }
       const ext = path.extname(filePath).toLowerCase();
-      res.writeHead(200, {
-        "Content-Type": MIME[ext] || "application/octet-stream",
-        "Cache-Control": "no-cache",
-      });
+      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-cache" });
       res.end(data);
     });
   });
@@ -70,10 +99,12 @@ const wss = new WebSocketServer({ server });
 server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
   console.log(`[bridge] websocket:  ws://localhost:${PORT}`);
+  console.log(`[bridge] schema:     http://localhost:${PORT}/api/schema`);
   printNetworkUrls(PORT);
 });
 
 let latest = null;
+let latestSchema = null;
 let packetCount = 0;
 
 if (IRacingSDK) {
@@ -84,32 +115,42 @@ if (IRacingSDK) {
     const connected = iracing.sessionStatusOK || iracing.startSDK();
     if (connected !== wasConnected) {
       console.log(connected ? "[bridge] iRacing connected" : "[bridge] iRacing disconnected");
+      if (!connected) latestSchema = null;
       wasConnected = connected;
     }
     if (!connected || !iracing.waitForData(1000 / TICK_HZ)) return;
     const raw = iracing.getTelemetry();
+    if (!latestSchema) {
+      latestSchema = buildSchema(raw);
+      console.log(`[bridge] schema built — ${latestSchema.channelCount} channels (${latestSchema.expandedChannelCount} expanded)`);
+    }
     const flat = flattenTelemetry(raw);
-    const wide = expandTelemetry(raw);
+    const wide = expandTelemetry(raw, ARRAY_DEPTH);
     latest = mapTelemetry(flat, iracing.getSessionData());
     latest.all = flat;
-    latest.extras = numericOnly(wide);
+    latest.extras = capPayload(numericOnly(wide), EXTRAS_MAX_BYTES);
+    latest.schemaSummary = {
+      channelCount: latestSchema.channelCount,
+      expandedChannelCount: latestSchema.expandedChannelCount,
+      arrayDepth: ARRAY_DEPTH,
+      generatedAt: latestSchema.generatedAt,
+    };
     packetCount += 1;
     if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
       console.log(
         `[bridge] live packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
           latest.rpm,
-        )} gear=${latest.gear} clients=${wss.clients.size}`,
+        )} gear=${latest.gear} extras=${Object.keys(latest.extras).length} clients=${wss.clients.size}`,
       );
     }
   }, 1000 / TICK_HZ);
 }
 
-// Broadcast loop
 setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
   const msg = JSON.stringify(latest);
   for (const client of wss.clients) if (client.readyState === 1) client.send(msg);
-}, 1000 / TICK_HZ);
+}, 1000 / WS_HZ);
 
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
@@ -130,8 +171,6 @@ function printNetworkUrls(port) {
   } catch {}
 }
 
-/* ───────────────────────────────────────── Telemetry mapping */
-
 function flattenTelemetry(raw) {
   const values = {};
   for (const [key, variable] of Object.entries(raw ?? {})) {
@@ -141,13 +180,12 @@ function flattenTelemetry(raw) {
   return values;
 }
 
-/** Wide-form view: explode array channels into Name_0..Name_N. Matches .ibt layout. */
-function expandTelemetry(raw) {
+function expandTelemetry(raw, depth) {
   const out = {};
   for (const [key, variable] of Object.entries(raw ?? {})) {
     const value = variable && typeof variable === "object" && "value" in variable ? variable.value : variable;
     if (Array.isArray(value)) {
-      const n = Math.min(value.length, 64);
+      const n = Math.min(value.length, depth);
       for (let i = 0; i < n; i++) out[`${key}_${i}`] = value[i];
     } else {
       out[key] = value;
@@ -156,7 +194,6 @@ function expandTelemetry(raw) {
   return out;
 }
 
-/** Keep only finite numeric / boolean entries (booleans become 0/1). */
 function numericOnly(obj) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {
@@ -164,6 +201,46 @@ function numericOnly(obj) {
     else if (typeof v === "boolean") out[k] = v ? 1 : 0;
   }
   return out;
+}
+
+function buildSchema(raw) {
+  const channels = [];
+  let expanded = 0;
+  for (const [name, variable] of Object.entries(raw ?? {})) {
+    const v = variable && typeof variable === "object" ? variable : { value: variable };
+    const value = "value" in v ? v.value : variable;
+    const count = Array.isArray(value) ? value.length : 1;
+    expanded += Math.min(count, ARRAY_DEPTH);
+    channels.push({
+      name, type: v.type ?? null, count,
+      capturedCount: Math.min(count, ARRAY_DEPTH),
+      unit: v.unit ?? "", desc: v.desc ?? "",
+    });
+  }
+  channels.sort((a, b) => a.name.localeCompare(b.name));
+  return {
+    version: 1, format: "pitwall-bridge-schema",
+    generatedAt: new Date().toISOString(),
+    arrayDepth: ARRAY_DEPTH,
+    channelCount: channels.length,
+    expandedChannelCount: expanded,
+    channels,
+  };
+}
+
+function capPayload(obj, maxBytes) {
+  let size = Buffer.byteLength(JSON.stringify(obj));
+  if (size <= maxBytes) return obj;
+  const exploded = Object.keys(obj)
+    .map((k) => { const m = /^(.+?)_(\d+)$/.exec(k); return m ? { k, i: Number(m[2]) } : null; })
+    .filter(Boolean)
+    .sort((a, b) => b.i - a.i);
+  for (const { k } of exploded) {
+    delete obj[k];
+    size = Buffer.byteLength(JSON.stringify(obj));
+    if (size <= maxBytes) return obj;
+  }
+  return obj;
 }
 
 function mapTelemetry(v, session) {
@@ -176,45 +253,31 @@ function mapTelemetry(v, session) {
   const speedMs = v.Speed ?? 0;
 
   return {
-    connected: true,
-    source: "live",
+    connected: true, source: "live",
     session: `${weekend?.EventType ?? "SESSION"} — ${weekend?.TrackDisplayName ?? "TRACK"}`.toUpperCase(),
     track: weekend?.TrackDisplayName ?? "—",
     car: me.CarScreenName ?? "—",
     carNumber: me.CarNumber ?? "0",
-    sdkVersion: "irsdk v1.0",
-    latencyMs: 0,
+    sdkVersion: "irsdk v1.0", latencyMs: 0,
     safetyRating: parseFloat(me.LicSafetyRating ?? "0"),
-
-    gear: v.Gear ?? 0,
-    speedKph: Math.max(0, speedMs * 3.6),
-    rpm,
+    gear: v.Gear ?? 0, speedKph: Math.max(0, speedMs * 3.6), rpm,
     rpmMax: driverInfo?.DriverCarSLLastRPM ?? 11000,
     rpmShiftWarn: driverInfo?.DriverCarSLShiftRPM ?? 8800,
     rpmShiftRedline: driverInfo?.DriverCarSLBlinkRPM ?? 9800,
-
     throttle: clamp01(v.Throttle ?? 0),
     brake: clamp01(v.Brake ?? 0),
     clutch: clamp01(1 - (v.Clutch ?? 1)),
     steeringDeg: ((v.SteeringWheelAngle ?? 0) * 180) / Math.PI,
-
     lastLap: formatLap(v.LapLastLapTime),
     bestLap: formatLap(v.LapBestLapTime),
     deltaSec: v.LapDeltaToBestLap ?? 0,
     sectors: { s1: null, s2: null, s3: null, bestSector: null },
-
-    fuelRemainingL: v.FuelLevel ?? 0,
-    lapsEstimated: estimateLaps(v),
-
+    fuelRemainingL: v.FuelLevel ?? 0, lapsEstimated: estimateLaps(v),
     tires: {
-      fl: tireCorner(v, "LF"),
-      fr: tireCorner(v, "RF"),
-      rl: tireCorner(v, "LR"),
-      rr: tireCorner(v, "RR"),
+      fl: tireCorner(v, "LF"), fr: tireCorner(v, "RF"),
+      rl: tireCorner(v, "LR"), rr: tireCorner(v, "RR"),
     },
-
-    gLat: v.LatAccel ?? 0,
-    gLon: v.LongAccel ?? 0,
+    gLat: v.LatAccel ?? 0, gLon: v.LongAccel ?? 0,
     drsAvailable: !!v.DRS_Status,
     brakeBias: v.dcBrakeBias ?? 0,
     diffMap: v.dcDiffEntry ?? 0,
@@ -234,12 +297,8 @@ function tireCorner(v, c) {
   const wearR = v[`${c}wearR`] ?? 1;
   const wearPct = Math.round(((wearL + wearM + wearR) / 3) * 100);
   const pressureKPa = v[`${c}coldPressure`] ?? 0;
-  return {
-    tempC,
-    pressureBar: pressureKPa / 100,
-    wearPct,
-    state: tempC > 92 ? "hot" : tempC < 70 ? "cold" : "ok",
-  };
+  return { tempC, pressureBar: pressureKPa / 100, wearPct,
+    state: tempC > 92 ? "hot" : tempC < 70 ? "cold" : "ok" };
 }
 
 function clamp01(x) { return Math.max(0, Math.min(1, x)); }
@@ -254,7 +313,6 @@ function formatLap(sec) {
 function estimateLaps(v) {
   const fuel = v.FuelLevel ?? 0;
   const perLap = v.FuelUsePerHour && v.LapLastLapTime
-    ? (v.FuelUsePerHour * v.LapLastLapTime) / 3600
-    : 2.5;
+    ? (v.FuelUsePerHour * v.LapLastLapTime) / 3600 : 2.5;
   return perLap > 0 ? fuel / perLap : 0;
 }

@@ -15,11 +15,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/themeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useTelemetry } from "@/lib/useTelemetry";
-import { LiveBridgeSync } from "@/components/LiveBridgeSync";
-import { DesktopLapSync } from "@/components/live/DesktopLapSync";
-import { HelpSystem } from "@/components/HelpSystem";
-import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { BackButton } from "@/components/BackButton";
 
 function NotFoundComponent() {
   return (
@@ -83,8 +79,8 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
-  // Supabase + local bridge WebSocket & API for /live
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:*",
+  // Supabase + local bridge WebSocket for /live
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* ws://127.0.0.1:*",
   "worker-src 'self' blob:",
   "frame-ancestors 'self'",
   "base-uri 'self'",
@@ -125,6 +121,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Pit Wall" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "description", content: "- RaceDash Live streams sim racing telemetry to a web UI, integrating multiple specialized apps for enhanced analysis and customization." },
+      { property: "og:description", content: "- RaceDash Live streams sim racing telemetry to a web UI, integrating multiple specialized apps for enhanced analysis and customization." },
+      { name: "twitter:description", content: "- RaceDash Live streams sim racing telemetry to a web UI, integrating multiple specialized apps for enhanced analysis and customization." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/85825c68-32b0-4129-8f2d-465393244aa0/id-preview-0568334a--1a04b9c0-7f59-490a-9be8-13c849227142.lovable.app-1779125690570.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/85825c68-32b0-4129-8f2d-465393244aa0/id-preview-0568334a--1a04b9c0-7f59-490a-9be8-13c849227142.lovable.app-1779125690570.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -160,7 +161,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-  const t = useTelemetry();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
@@ -174,10 +174,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <LiveBridgeSync t={t} />
-          <DesktopLapSync />
-          <HelpSystem />
-          <KeyboardShortcuts />
+          <BackButton />
           <Outlet />
           <Toaster />
         </ThemeProvider>

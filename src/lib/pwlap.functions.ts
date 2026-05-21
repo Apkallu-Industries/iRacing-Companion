@@ -13,6 +13,7 @@ import {
   getChannelsManifestCollection,
   getLapsCollection,
   getSessionsCollection,
+  getDb,
   type TelemetrySample,
   type LapRecord,
   type ChannelsManifest,
@@ -20,15 +21,20 @@ import {
 } from "@/lib/mongodb.server";
 import type { PwlapContent, PwlapExportOptions, PwlapGranularity } from "@/lib/pwlap/types";
 
-/**
- * Export a session as a .pwlap file.
- *
- * This is a server function that:
- * 1. Fetches session metadata from Supabase
- * 2. Queries MongoDB for full telemetry samples (if granularity=full)
- * 3. Serializes to .pwlap format (optionally encrypted/signed)
- * 4. Returns a download blob
- */
+export interface PwlapExportRecord {
+  _id?: string;
+  user_id: string;
+  session_id: string;
+  filename: string;
+  granularity: PwlapGranularity;
+  encrypted: boolean;
+  signed: boolean;
+  file_buffer: Uint8Array;
+  file_size_bytes: number;
+  created_at: Date;
+  expires_at?: Date;
+  download_count: number;
+}
 export const exportSessionAsPwlap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -83,28 +89,32 @@ export const exportSessionAsPwlap = createServerFn({ method: "POST" })
     try {
       const pwlapBuffer = await serializePwlap(content, options);
 
-      // Create a temporary file in Supabase Storage
+      // Store export in MongoDB instead of Supabase Storage
       const filename = `${session.name || "export"}_${Date.now()}.pwlap`;
-      const { data: uploaded, error: uploadErr } = await supabaseAdmin.storage
-        .from("pwlap_exports")
-        .upload(`${userId}/${filename}`, pwlapBuffer, {
-          contentType: "application/octet-stream",
-          upsert: true,
-        });
-
-      if (uploadErr || !uploaded) throw new Error("Failed to upload .pwlap file");
-
-      // Create a signed URL (7-day expiry)
-      const { data: signed, error: signErr } = await supabaseAdmin.storage
-        .from("pwlap_exports")
-        .createSignedUrl(`${userId}/${filename}`, 7 * 24 * 60 * 60);
-
-      if (signErr || !signed) throw new Error("Failed to create signed URL");
+      const db = await getDb();
+      const exportsCollection = db.collection("pwlap_exports");
+      
+      const exportRecord: PwlapExportRecord = {
+        user_id: userId,
+        session_id: data.sessionId,
+        filename,
+        granularity: data.granularity,
+        encrypted: data.encrypt,
+        signed: data.sign,
+        file_buffer: new Uint8Array(pwlapBuffer),
+        file_size_bytes: pwlapBuffer.byteLength,
+        created_at: new Date(),
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        download_count: 0,
+      };
+      
+      const result = await exportsCollection.insertOne(exportRecord as any);
+      if (!result.insertedId) throw new Error("Failed to store .pwlap file");
 
       return {
         success: true,
         filename,
-        signedUrl: signed.signedUrl,
+        exportId: result.insertedId.toString(),
         size: pwlapBuffer.byteLength,
       };
     } catch (e) {
@@ -201,9 +211,16 @@ export const importPwlapSession = createServerFn({ method: "POST" })
       if (pwlapFile.content.channels_manifest && pwlapFile.content.channels_manifest.length > 0) {
         try {
           const manifestCollection = await getChannelsManifestCollection();
+          // Map pwlap channel types (IBT_TYPE) to the ChannelsManifest expected types
+          const mappedChannels = (pwlapFile.content.channels_manifest || []).map((c: any) => ({
+            name: c.name,
+            unit: c.unit,
+            type: c.type === 1 ? "boolean" : "numeric",
+            group: c.group,
+          }));
           await manifestCollection.insertOne({
             session_id: newSession.id,
-            channels: pwlapFile.content.channels_manifest,
+            channels: mappedChannels as any,
           });
         } catch (e) {
           console.warn("Failed to store channels manifest in MongoDB:", e);

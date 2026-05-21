@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench } from "@/lib/store";
+import { analyzeTelemetry } from "@/lib/coach.functions";
 import { fetchTrackCarHistory } from "@/lib/history.functions";
-import { dispatchAnalyzeTelemetry } from "@/lib/llm";
 import { speakText } from "@/lib/tts.functions";
 import { buildSessionSummary, buildCoachPayload, type CoachMode } from "@/lib/coach/summarize";
 import { buildPhysicsSummary } from "@/lib/coach/physics";
@@ -123,7 +123,7 @@ export function AICoach({
         physics,
         history as never,
       );
-      const resp = await dispatchAnalyzeTelemetry({ payload, detailed });
+      const resp = await analyzeTelemetry({ data: { payload, detailed } });
       const r = resp as { error?: string; result?: unknown; detailed?: boolean; fallback?: string };
       if (r.error) {
         setError(r.error);
@@ -186,10 +186,11 @@ export function AICoach({
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`px-2 py-1 ${mode === m
+                  className={`px-2 py-1 ${
+                    mode === m
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                    }`}
+                  }`}
                 >
                   {m === "single" ? "Single Lap" : m === "compare" ? "Compare" : "Session"}
                 </button>

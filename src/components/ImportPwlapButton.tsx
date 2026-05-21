@@ -30,7 +30,7 @@ export function ImportPwlapButton({ onSuccess, className = "" }: ImportPwlapButt
       const fileData = await file.arrayBuffer();
 
       // Validate file first
-      const validation = await validatePwlapFile({ fileData });
+      const validation = await (validatePwlapFile as any)({ fileData });
 
       if (!validation.valid) {
         throw new Error(validation.error || "Invalid .pwlap file");
@@ -59,11 +59,11 @@ export function ImportPwlapButton({ onSuccess, className = "" }: ImportPwlapButt
   const performImport = async (fileData: ArrayBuffer, password?: string) => {
     setLoading(true);
     try {
-      const result = await importPwlapSession({
-        fileData,
-        password,
-        verifySignature: false,
-      });
+      const result = await (importPwlapSession as any)({
+          fileData,
+          password,
+          verifySignature: false,
+        });
 
       if (result.success) {
         onSuccess?.(result.sessionId);

@@ -72,7 +72,7 @@ export function CarClassCommunityButton({ car }: { car: string }) {
 
   const loader = async (): Promise<CommunityRow[]> => {
     const out = await list({ data: { car } });
-    return (out.rows || []).map((r: any) => ({
+    return (out.rows || []).map((r) => ({
       id: r.id,
       user_id: r.user_id,
       votes: r.votes,

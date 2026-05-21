@@ -93,7 +93,7 @@ USER_ID=your-name-or-id
 
 **Getting a MongoDB Connection String:**
 
-**Option A: MongoDB Atlas (Recommended - Free Tier)**
+***Option A: MongoDB Atlas (Recommended - Free Tier)***
 
 1. Go to <https://www.mongodb.com/cloud/atlas>
 2. Sign up for free account
@@ -101,11 +101,11 @@ USER_ID=your-name-or-id
 4. Get connection string: `mongodb+srv://user:pass@cluster.mongodb.net/iracing_companion`
 5. Replace `user` and `pass` with your credentials
 
-**Option B: Local MongoDB**
+***Option B: Local MongoDB***
 
-```
-MONGODB_URI=mongodb://localhost:27017/iracing_companion
-```
+1. Install MongoDB Community Edition from <https://www.mongodb.com/try/download/community>
+2. Start MongoDB server
+3. Use connection string: `MONGODB_URI=mongodb://localhost:27017/iracing_companion`
 
 Requires local MongoDB installation.
 
@@ -117,26 +117,30 @@ npm start
 
 Expected output:
 
-```
-[bridge] dashboard:  http://localhost:3001
+[bridge] dashboard:  <http://localhost:3001>
 [bridge] websocket:  ws://localhost:3001
-[bridge] network:    http://192.168.1.XXX:3001
+[bridge] network:    <http://192.168.1.XXX:3001>
 [bridge] irsdk-node unavailable — running in no-op mode.
-```
+
+```text
 
 **Waiting for iRacing:**
 
 ```
+
 [bridge] iRacing disconnected
-```
+
+```text
 
 When you start iRacing:
 
 ```
+
 [bridge] iRacing connected
 [recorder] Connected to MongoDB
 [recorder] Started session: 507f1f77bcf764cba04d0057
-```
+
+```text
 
 ### Step 6: Verify Bridge is Running
 
@@ -203,7 +207,7 @@ npm run dev
 
 2. Open in browser on phone/tablet/other PC:
 
-   ```
+   ```url
    http://192.168.1.XXX:3001
    ```
 
@@ -290,6 +294,7 @@ taskkill /PID <PID> /F
 
 | Feature | Status | Config |
 |---------|--------|--------|
+
 | Live telemetry (30Hz) | ✅ Always | Auto |
 | MongoDB capture | ✅ Always | `MONGODB_URI` |
 | Offline lap cache | ✅ Always | Auto (`~/.pitwall/laps.jsonl`) |
@@ -300,6 +305,7 @@ taskkill /PID <PID> /F
 
 | Feature | Requires Bridge | Requires Account |
 |---------|-----------------|------------------|
+
 | Live telemetry | ✅ Yes | ✅ Yes (cloud) |
 | Session history | ✅ Yes | ✅ Yes |
 | Lap analysis (.ibt) | ❌ No | ✅ Yes |

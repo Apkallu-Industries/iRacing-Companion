@@ -1,24 +1,56 @@
 import { useEffect, useRef, useState } from "react";
 import { Lightbulb, Loader2, Wrench, Gauge, AlertTriangle, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
-import type {
-  AdvisorMode,
-  TrackType,
-  CornerBias,
-  Symptom,
+import {
+  advisorCall,
+  type AdvisorMode,
+  type LapAggregateInput,
+  type TrackType,
+  type CornerBias,
+  type Symptom,
 } from "@/lib/advisor.functions";
-import { dispatchAdvisorCall } from "@/lib/llm";
 
 const MIN_LAPS = 3;
 
-import { useLapAggregate, type LapResult } from "@/lib/live/useLapAggregate";
-
-interface LapAgg extends LapResult {
+interface LapAgg extends LapAggregateInput {
   tires: Telemetry["tires"];
   brakeBias: number;
   diffMap: number;
   airTempC: number;
   trackTempC: number;
+}
+
+interface RollingAgg {
+  startedAt: number;
+  maxBrakePct: number;
+  maxThrottlePct: number;
+  peakLatG: number;
+  peakLonG: number;
+  tireSum: number;
+  tireSamples: number;
+  fuelAtStartL: number;
+}
+
+function freshRolling(now: number, fuelL: number): RollingAgg {
+  return {
+    startedAt: now,
+    maxBrakePct: 0,
+    maxThrottlePct: 0,
+    peakLatG: 0,
+    peakLonG: 0,
+    tireSum: 0,
+    tireSamples: 0,
+    fuelAtStartL: fuelL,
+  };
+}
+
+function parseLapStr(s: string | null | undefined): number | null {
+  if (!s || s === "--.---" || s === "--:--.---") return null;
+  const m = /^(?:(\d+):)?(\d+(?:\.\d+)?)$/.exec(s.trim());
+  if (!m) return null;
+  const mins = m[1] ? parseInt(m[1], 10) : 0;
+  const secs = parseFloat(m[2]);
+  return isFinite(secs) ? mins * 60 + secs : null;
 }
 
 interface AdvisorResp {
@@ -49,26 +81,56 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
   const [loading, setLoading] = useState<AdvisorMode | null>(null);
   const [result, setResult] = useState<AdvisorResp | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fallback, setFallback] = useState<"no-key" | "local" | "local-llm" | null>(null);
+  const [fallback, setFallback] = useState<"no-key" | "local" | null>(null);
 
   const [trackType, setTrackType] = useState<TrackType>("road");
   const [cornerBias, setCornerBias] = useState<CornerBias>("mixed");
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [wizardOpen, setWizardOpen] = useState(false);
 
-  const handleLapComplete = (lap: LapResult) => {
-    const lapAgg: LapAgg = {
-      ...lap,
+  const rollingRef = useRef<RollingAgg>(freshRolling(performance.now(), t.fuelRemainingL));
+  const lastLapStrRef = useRef<string>(t.lastLap);
+
+  useEffect(() => {
+    const r = rollingRef.current;
+    r.maxBrakePct = Math.max(r.maxBrakePct, t.brake * 100);
+    r.maxThrottlePct = Math.max(r.maxThrottlePct, t.throttle * 100);
+    r.peakLatG = Math.max(r.peakLatG, Math.abs(t.gLat));
+    r.peakLonG = Math.max(r.peakLonG, Math.abs(t.gLon));
+    const avg = (t.tires.fl.tempC + t.tires.fr.tempC + t.tires.rl.tempC + t.tires.rr.tempC) / 4;
+    r.tireSum += avg;
+    r.tireSamples += 1;
+  }, [t.brake, t.throttle, t.gLat, t.gLon, t.tires]);
+
+  useEffect(() => {
+    if (t.lastLap === lastLapStrRef.current) return;
+    const prev = lastLapStrRef.current;
+    lastLapStrRef.current = t.lastLap;
+    if (prev === t.lastLap) return;
+    const lapTimeS = parseLapStr(t.lastLap);
+    if (lapTimeS == null) return;
+    const r = rollingRef.current;
+    const tireAvgC = r.tireSamples > 0 ? r.tireSum / r.tireSamples : 0;
+    const fuelUsedL = Math.max(0, r.fuelAtStartL - t.fuelRemainingL);
+    const isValid = lapTimeS > 20 && lapTimeS < 600;
+    const lap: LapAgg = {
+      lapTimeS,
+      maxBrakePct: r.maxBrakePct,
+      maxThrottlePct: r.maxThrottlePct,
+      peakLatG: r.peakLatG,
+      peakLonG: r.peakLonG,
+      tireAvgC,
+      fuelUsedL,
+      isValid,
       tires: t.tires,
       brakeBias: t.brakeBias,
       diffMap: t.diffMap,
       airTempC: t.airTempC,
       trackTempC: t.trackTempC,
     };
-    setLaps((prevLaps) => [...prevLaps, lapAgg].slice(-10));
-  };
-
-  useLapAggregate(t, handleLapComplete);
+    setLaps((prevLaps) => [...prevLaps, lap].slice(-10));
+    rollingRef.current = freshRolling(performance.now(), t.fuelRemainingL);
+  }, [t.lastLap, t.tires, t.brakeBias, t.diffMap, t.airTempC, t.trackTempC, t.fuelRemainingL]);
 
   const validLaps = laps.filter((l) => l.isValid);
   const canAsk = validLaps.length >= MIN_LAPS;
@@ -85,26 +147,28 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
     try {
       const latest = validLaps[validLaps.length - 1];
       const pbS = validLaps.reduce<number | null>((m, l) => (m == null || l.lapTimeS < m ? l.lapTimeS : m), null);
-      const resp = (await dispatchAdvisorCall({
-        mode,
-        track: t.track,
-        car: t.car,
-        trackType,
-        cornerBias,
-        symptoms: mode === "setup" && symptoms.length ? symptoms : undefined,
-        laps: validLaps
-          .slice(-5)
-          .map(({ tires: _tires, brakeBias: _bb, diffMap: _dm, airTempC: _a, trackTempC: _tt, ...rest }) => rest),
-        pbS,
-        conditions: { airTempC: latest.airTempC, trackTempC: latest.trackTempC },
-        setup: { brakeBias: latest.brakeBias, diffMap: latest.diffMap },
-        tires: {
-          fl: { tempC: latest.tires.fl.tempC, pressureBar: latest.tires.fl.pressureBar },
-          fr: { tempC: latest.tires.fr.tempC, pressureBar: latest.tires.fr.pressureBar },
-          rl: { tempC: latest.tires.rl.tempC, pressureBar: latest.tires.rl.pressureBar },
-          rr: { tempC: latest.tires.rr.tempC, pressureBar: latest.tires.rr.pressureBar },
+      const resp = (await advisorCall({
+        data: {
+          mode,
+          track: t.track,
+          car: t.car,
+          trackType,
+          cornerBias,
+          symptoms: mode === "setup" && symptoms.length ? symptoms : undefined,
+          laps: validLaps
+            .slice(-5)
+            .map(({ tires: _tires, brakeBias: _bb, diffMap: _dm, airTempC: _a, trackTempC: _tt, ...rest }) => rest),
+          pbS,
+          conditions: { airTempC: latest.airTempC, trackTempC: latest.trackTempC },
+          setup: { brakeBias: latest.brakeBias, diffMap: latest.diffMap },
+          tires: {
+            fl: { tempC: latest.tires.fl.tempC, pressureBar: latest.tires.fl.pressureBar },
+            fr: { tempC: latest.tires.fr.tempC, pressureBar: latest.tires.fr.pressureBar },
+            rl: { tempC: latest.tires.rl.tempC, pressureBar: latest.tires.rl.pressureBar },
+            rr: { tempC: latest.tires.rr.tempC, pressureBar: latest.tires.rr.pressureBar },
+          },
         },
-      })) as { result?: AdvisorResp; error?: string; fallback?: "no-key" | "local" | "local-llm" };
+      })) as { result?: AdvisorResp; error?: string; fallback?: "no-key" | "local" };
       if (resp.error) {
         setError(resp.error);
       } else if (resp.result) {
@@ -125,9 +189,10 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
   };
 
   const segBtn = (active: boolean) =>
-    `px-2.5 py-1 text-[10px] uppercase tracking-wider rounded ring-1 transition ${active
-      ? "bg-racing-orange/20 text-racing-orange ring-racing-orange/40"
-      : "bg-zinc-900/40 text-zinc-400 ring-white/5 hover:text-zinc-200"
+    `px-2.5 py-1 text-[10px] uppercase tracking-wider rounded ring-1 transition ${
+      active
+        ? "bg-racing-orange/20 text-racing-orange ring-racing-orange/40"
+        : "bg-zinc-900/40 text-zinc-400 ring-white/5 hover:text-zinc-200"
     }`;
 
   return (
@@ -202,10 +267,11 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
                     <button
                       key={s.id}
                       onClick={() => toggleSymptom(s.id)}
-                      className={`px-2 py-0.5 text-[10px] rounded ring-1 transition ${active
-                        ? "bg-racing-cyan/20 text-racing-cyan ring-racing-cyan/40"
-                        : "bg-zinc-950/50 text-zinc-400 ring-white/5 hover:text-zinc-200"
-                        }`}
+                      className={`px-2 py-0.5 text-[10px] rounded ring-1 transition ${
+                        active
+                          ? "bg-racing-cyan/20 text-racing-cyan ring-racing-cyan/40"
+                          : "bg-zinc-950/50 text-zinc-400 ring-white/5 hover:text-zinc-200"
+                      }`}
                     >
                       {s.label}
                     </button>
@@ -264,7 +330,7 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
             <div className="text-xs text-zinc-400 mt-0.5">{result.summary}</div>
             {fallback && (
               <div className="mt-1 text-[10px] uppercase tracking-wider text-zinc-500">
-                {fallback === "no-key" ? "Local analysis (no AI key)" : fallback === "local-llm" ? "Local LLM via device" : "Local analysis (AI fallback)"}
+                {fallback === "no-key" ? "Local analysis (no AI key)" : "Local analysis (AI fallback)"}
               </div>
             )}
           </div>

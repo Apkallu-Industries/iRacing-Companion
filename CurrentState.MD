@@ -353,8 +353,8 @@ Neither is imported in `sessions.$id.tsx` or `sessions.index.tsx` (only `ShareBu
 | Target | Config |
 | --- | --- |
 | Production | Lovable → Cloudflare Workers + Supabase |
-| Local dev | `npm run dev` / `bun run dev` (Vite) |
-| Bridge | `cd desktop/bridge && npm start` |
+| Local dev | `npm run dev` (Vite) |
+| Bridge | `cd desktop/bridge && node server.js` |
 
 ### 10.2 Environment variables (names only — no values)
 
@@ -367,7 +367,7 @@ Neither is imported in `sessions.$id.tsx` or `sessions.index.tsx` (only `ShareBu
 ### 10.3 CI (`.github/workflows/build.yml`)
 
 - Trigger: all branches push/PR
-- Steps: `bun install --frozen-lockfile`, `bun run build` with placeholder `VITE_*`
+- Steps: `npm ci`, `npm run build` with placeholder `VITE_*`
 - **Does not run:** `lint`, dedicated `tsc`, tests
 
 ### 10.4 Package scripts

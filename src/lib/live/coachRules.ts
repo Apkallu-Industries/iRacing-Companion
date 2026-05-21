@@ -33,32 +33,8 @@ export interface RuleInput {
   recentDeltas: number[]; // last few (lap - pb) deltas, oldest first
 }
 
-/** 0–100: how strongly the rules support speaking this call-out. */
-export function coachConfidence(reasonCode: RuleSummary["reasonCode"], deltaToPbS: number | null): number {
-  switch (reasonCode) {
-    case "incident":
-    case "pb-streak-warn":
-      return 92;
-    case "pb-streak-soft":
-    case "off-pace-hard":
-      return 85;
-    case "trending-slower":
-    case "first-pb":
-      return 78;
-    case "matching-pb":
-      return 72;
-    case "off-pace-soft":
-      return deltaToPbS != null && deltaToPbS > 0.25 ? 68 : 58;
-    case "no-pb-yet":
-      return 45;
-    default:
-      return 60;
-  }
-}
-
 export interface RuleSummary {
   tone: Tone;
-  confidence: number;
   reasonCode:
     | "incident"
     | "pb-streak-warn"
@@ -186,13 +162,5 @@ function summarize(
   flags: RuleSummary["flags"],
   beats: string[],
 ): RuleSummary {
-  return {
-    tone,
-    reasonCode,
-    deltaToPbS,
-    sectorOpportunities,
-    flags,
-    beats,
-    confidence: coachConfidence(reasonCode, deltaToPbS),
-  };
+  return { tone, reasonCode, deltaToPbS, sectorOpportunities, flags, beats };
 }

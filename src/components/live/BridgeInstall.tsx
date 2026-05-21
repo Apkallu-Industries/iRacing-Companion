@@ -1,177 +1,76 @@
-import { useState } from "react";
-import {
-  Download,
-  Terminal,
-  Wifi,
-  Play,
-  Loader2,
-  CheckCircle2,
-  Circle,
-  RefreshCw,
-} from "lucide-react";
-import { startBridge } from "@/lib/bridge.functions";
-import { useBridgeConnection } from "@/lib/useBridgeConnection";
-import { toast } from "sonner";
+import { Download, Terminal, Wifi } from "lucide-react";
 
-interface BridgeInstallProps {
-  /** True when iRacing is streaming telemetry (from useTelemetry). */
-  iracingLive?: boolean;
-}
-
-function StepRow({
-  done,
-  active,
-  label,
-  detail,
-}: {
-  done: boolean;
-  active: boolean;
-  label: string;
-  detail: string;
-}) {
-  return (
-    <div
-      className={`flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors ${
-        active ? "bg-zinc-800/80 ring-1 ring-racing-orange/30" : done ? "bg-zinc-900/40" : "bg-zinc-900/20"
-      }`}
-    >
-      {done ? (
-        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-      ) : (
-        <Circle className={`mt-0.5 h-4 w-4 shrink-0 ${active ? "text-racing-orange" : "text-zinc-600"}`} />
-      )}
-      <div>
-        <div className={`text-[11px] font-mono uppercase tracking-wider ${done ? "text-emerald-400" : "text-zinc-300"}`}>
-          {label}
-        </div>
-        <p className="mt-0.5 text-[11px] text-zinc-400 leading-relaxed">{detail}</p>
-      </div>
-    </div>
-  );
-}
-
-export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
-  const [launching, setLaunching] = useState(false);
-  const bridge = useBridgeConnection(iracingLive);
-
-  const step1 = bridge.serviceRunning || bridge.wsReachable;
-  const step2 = bridge.wsReachable;
-  const step3 = iracingLive;
-
-  const handleStart = async () => {
-    setLaunching(true);
-    try {
-      const res = await startBridge();
-      if (res.success) {
-        toast.success(res.message || "Bridge started.");
-        bridge.refresh();
-      } else {
-        toast.error(res.error || "Failed to start local bridge.");
-      }
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to contact server.");
-    } finally {
-      setLaunching(false);
-    }
-  };
-
+/**
+ * Install instructions for the local iRacing → WebSocket bridge.
+ * Rendered on /live when the WebSocket can't reach localhost:3001 so a
+ * brand-new user without an .ibt file or a running bridge still has a clear
+ * next step.
+ */
+export function BridgeInstall() {
   return (
     <div className="rounded-lg bg-zinc-925 ring-1 ring-racing-orange/40 p-5">
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
-          <Wifi className={`h-4 w-4 ${step3 ? "text-emerald-400" : "text-racing-orange"}`} />
-          <h2 className="text-[11px] uppercase tracking-[0.2em] font-medium font-mono text-zinc-300">
-            {step3 ? "Live — iRacing connected" : step1 ? "Bridge ready — waiting for iRacing" : "Connect telemetry"}
-          </h2>
-        </div>
-        <button
-          type="button"
-          onClick={() => bridge.refresh()}
-          disabled={bridge.checking}
-          className="rounded p-1 text-zinc-500 hover:text-zinc-200 disabled:opacity-40"
-          aria-label="Refresh connection status"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${bridge.checking ? "animate-spin" : ""}`} />
-        </button>
+      <div className="flex items-center gap-2 mb-3">
+        <Wifi className="h-4 w-4 text-racing-orange" />
+        <h2 className="text-[11px] uppercase tracking-[0.2em] text-racing-orange font-medium">
+          Bridge offline — running on simulator
+        </h2>
       </div>
+      <p className="text-xs text-zinc-300 leading-relaxed">
+        Pit Wall reads iRacing through a tiny local helper that exposes the
+        SDK over <code className="font-mono text-[11px]">ws://localhost:3001</code>.
+        Pick the desktop app for a single double-click install, or grab the
+        bridge-only zip if you prefer to run it yourself.
+      </p>
 
-      <div className="space-y-2 mb-4">
-        <StepRow
-          done={step1}
-          active={!step1}
-          label="Step 1 — Bridge service"
-          detail={
-            step1
-              ? "WebSocket service is running on port 3001."
-              : 'Click "Run Local Bridge" below, or start desktop/bridge on this PC.'
-          }
-        />
-        <StepRow
-          done={step2}
-          active={step1 && !step2}
-          label="Step 2 — Port reachable"
-          detail={
-            step2
-              ? "Browser can reach ws://localhost:3001."
-              : "If this stays red, check Windows Firewall allows Node.js on port 3001."
-          }
-        />
-        <StepRow
-          done={step3}
-          active={step2 && !step3}
-          label="Step 3 — iRacing session"
-          detail={
-            step3
-              ? "Telemetry is streaming from the sim."
-              : "Launch iRacing, get in a car, and enter practice or a session."
-          }
-        />
-      </div>
-
-      {!step1 && (
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={launching}
-          className="flex w-full items-center justify-center gap-2 rounded bg-primary py-2.5 text-xs font-mono font-medium uppercase tracking-wider text-primary-foreground hover:opacity-95 disabled:opacity-50 transition-opacity mb-4"
-        >
-          {launching ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Starting bridge…
-            </>
-          ) : (
-            <>
-              <Play className="h-3.5 w-3.5 fill-current" />
-              Run Local Bridge
-            </>
-          )}
-        </button>
-      )}
-
-      {step1 && !step3 && (
-        <p className="text-[11px] text-zinc-400 mb-4 leading-relaxed">
-          Bridge is up. Open iRacing on this PC — data appears automatically when you are on track.
-        </p>
-      )}
-
-      <div className="pt-3 border-t border-zinc-900 flex items-center justify-between text-[10px] text-zinc-500 font-mono">
-        <span>Standalone install</span>
-        <div className="flex gap-3">
+      {/* Primary option: bundled desktop app */}
+      <div className="mt-4 rounded-md bg-zinc-900/70 ring-1 ring-racing-green/30 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-racing-green font-mono">
+              Pit Wall Desktop
+            </div>
+            <div className="mt-0.5 text-[11px] text-zinc-400">
+              Bundled bridge + native dashboard window · Windows x64 · ~110 MB
+            </div>
+          </div>
           <a
             href="/downloads/pit-wall-desktop-win-x64.zip"
-            className="flex items-center gap-1 hover:text-zinc-300 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md bg-racing-green/20 hover:bg-racing-green/30 text-racing-green px-3 py-1.5 text-xs font-mono uppercase tracking-wider whitespace-nowrap"
           >
-            <Download className="h-3 w-3" /> Desktop
-          </a>
-          <a
-            href="/downloads/pit-wall-bridge.zip"
-            className="flex items-center gap-1 hover:text-zinc-300 transition-colors"
-          >
-            <Terminal className="h-3 w-3" /> CLI
+            <Download className="h-3.5 w-3.5" />
+            Download
           </a>
         </div>
+        <ol className="mt-3 space-y-1 text-[11px] text-zinc-400">
+          <li>1. Unzip anywhere.</li>
+          <li>2. Run <code className="font-mono text-zinc-300">Pit Wall Desktop.exe</code> — bridge starts automatically.</li>
+          <li>3. Jump in iRacing — live data flows the moment you load a session.</li>
+        </ol>
       </div>
+
+      {/* Secondary option: bridge-only zip */}
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-zinc-900/40 ring-1 ring-zinc-800 p-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-zinc-300 font-mono">
+            Bridge only
+          </div>
+          <div className="mt-0.5 text-[11px] text-zinc-500">
+            Node-only zip · ~13 KB · for advanced users who already have Node 20+
+          </div>
+        </div>
+        <a
+          href="/downloads/pit-wall-bridge.zip"
+          className="inline-flex items-center gap-1.5 rounded-md ring-1 ring-zinc-800 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 text-xs font-mono uppercase tracking-wider whitespace-nowrap"
+        >
+          <Terminal className="h-3.5 w-3.5" />
+          Get bridge
+        </a>
+      </div>
+
+      <p className="mt-3 text-[10px] text-zinc-300/70">
+        No bridge? No problem — the dashboard runs on simulated telemetry so
+        you can still try out the AI coach and recording.
+      </p>
     </div>
   );
 }

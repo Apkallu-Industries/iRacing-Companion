@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { BackButton } from "@/components/BackButton";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { useTelemetryBuffer } from "@/lib/useTelemetryBuffer";
 import type { Telemetry } from "@/lib/telemetry-types";
@@ -15,7 +14,7 @@ import { DerivedMetrics } from "@/components/live/DerivedMetrics";
 import { ConfigurableChannelList } from "@/components/live/ConfigurableChannelList";
 import { GearAdvisor } from "@/components/live/GearAdvisor";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
-import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
+import { SchemaAudit } from "@/components/live/SchemaAudit";
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -50,29 +49,18 @@ function Dashboard() {
   const handleCursor = useCallback((c: CursorInfo | null) => setCursor(c), []);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-200 font-mono p-0 select-none flex flex-col overflow-hidden">
+    <main className="min-h-screen bg-zinc-950 text-zinc-200 font-mono p-4 select-none">
       <TopBar t={t} />
-      <BridgeConnectionBanner t={t} />
       <RpmBar rpm={t.rpm} warn={t.rpmShiftWarn} red={t.rpmShiftRedline} max={t.rpmMax} />
 
-      {/* Main content: Fill all remaining vertical space */}
-      <div className="flex-1 min-h-0 grid grid-cols-12 gap-0">
-        {/* Left column: Channels + Metrics */}
-        <section className="col-span-3 flex flex-col overflow-hidden border-r border-zinc-900">
-          <div className="flex-1 min-h-0 overflow-auto">
-            <ConfigurableChannelList t={t} />
-          </div>
-          <div className="border-t border-zinc-900">
-            <SectorPanel t={t} />
-          </div>
-          <div className="border-t border-zinc-900 flex-1 min-h-0 overflow-auto">
-            <TirePanel t={t} />
-          </div>
+      <div className="mt-3 grid grid-cols-12 gap-3">
+        <section className="col-span-3 space-y-3">
+          <ConfigurableChannelList t={t} />
+          <SectorPanel t={t} />
         </section>
 
-        {/* Center column: Main traces (fill most space) */}
-        <section className="col-span-6 flex flex-col overflow-hidden border-r border-zinc-900">
-          <div className="flex items-center justify-between px-2 py-1 border-b border-zinc-900 flex-shrink-0 bg-zinc-925">
+        <section className="col-span-6 space-y-3">
+          <div className="flex items-center justify-between px-1">
             <PanelHeader
               title="Time Trace"
               right={cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 30Hz"}
@@ -84,42 +72,30 @@ function Dashboard() {
               onWindow={setSmoothWindow}
             />
           </div>
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <TraceStack
-              samples={samples}
-              smoothing={smoothing}
-              smoothWindow={smoothWindow}
-              onCursorChange={handleCursor}
-            />
-          </div>
-          <div className="border-t border-zinc-900 flex-shrink-0">
-            <InputBars t={t} />
-          </div>
-          <div className="border-t border-zinc-900 flex-shrink-0 max-h-24">
-            <DerivedMetrics samples={samples} t={t} cursor={cursor} />
-          </div>
+          <TraceStack
+            samples={samples}
+            smoothing={smoothing}
+            smoothWindow={smoothWindow}
+            onCursorChange={handleCursor}
+          />
+          <InputBars t={t} />
+          <DerivedMetrics samples={samples} t={t} cursor={cursor} />
         </section>
 
-        {/* Right column: G-G + Coach */}
-        <section className="col-span-3 flex flex-col overflow-hidden">
-          <div className="flex-shrink-0 px-2 py-1 border-b border-zinc-900 bg-zinc-925">
-            <PanelHeader title="G-G Diagram" right={`${samples.length} pts`} />
-          </div>
-          <div className="flex-1 min-h-0 overflow-hidden border-b border-zinc-900">
-            <GGScatter samples={samples} />
-          </div>
-          <div className="flex-1 min-h-0 overflow-auto">
-            <LiveCoach t={t} />
-          </div>
+        <section className="col-span-3 space-y-3">
+          <PanelHeader title="G-G Diagram" right={`${samples.length} pts`} />
+          <GGScatter samples={samples} />
+          <TirePanel t={t} />
+          <GearAdvisor t={t} samples={samples} />
         </section>
       </div>
 
-      {/* Bottom bar: Controls (no gaps, packed) */}
-      <div className="border-t border-zinc-900 bg-zinc-925 px-2 py-1 flex flex-wrap gap-1 items-center text-xs flex-shrink-0">
-        {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
-        <GearAdvisor t={t} samples={samples} />
-        <AdvisorButton t={t} />
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        {t.connected ? <RecordingControls t={t} /> : <BridgeInstall />}
+        {t.connected && <SchemaAudit t={t} />}
         <LiveReference t={t} />
+        <LiveCoach t={t} />
+        <AdvisorButton t={t} />
         <FingerprintUploadCard />
         <DesktopLapSync />
       </div>
@@ -134,7 +110,6 @@ function Dashboard() {
 function TopBar({ t }: { t: Telemetry }) {
   return (
     <header className="flex items-center gap-3 border-b border-zinc-900 pb-2 text-[11px] uppercase tracking-wider">
-      <BackButton />
       <span className="rounded-sm bg-zinc-900 px-2 py-1 text-zinc-400">Pit Wall i2</span>
       <div className="flex items-center gap-4 text-zinc-500">
         <Field label="Session" value={t.session} />

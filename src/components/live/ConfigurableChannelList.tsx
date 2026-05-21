@@ -74,7 +74,7 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
 
   const loadRows = useCallback(async (): Promise<CommunityRow[]> => {
     const out = await listCloud();
-    return (out.rows || []).map((r: any) => ({
+    return (out.rows || []).map((r) => ({
       id: r.id,
       user_id: r.user_id,
       votes: r.votes,

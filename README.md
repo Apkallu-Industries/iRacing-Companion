@@ -3,7 +3,7 @@
 > Live iRacing telemetry dashboard **+** MoTeC‑style `.ibt` lap analysis workbench, in the browser.
 > Telemetry on track. Analysis off track. One app.
 
-**Live:** [https://iracing-companion.lovable.app](https://iracing-companion.lovable.app)
+**Live:** https://iracing-companion.lovable.app
 
 ---
 
@@ -55,7 +55,7 @@ Everything is account‑scoped via row‑level security — your laps are yours.
 ## Feature map
 
 | Area | Route | Highlights |
-| --- | --- | --- |
+|---|---|---|
 | Marketing / landing | `/` | Hero, feature overview, schema.org metadata |
 | How it works | `/how-it-works` | Parsing pipeline diagram, `.ibt` format breakdown |
 | Auth | `/auth` | Email + password, Google OAuth |
@@ -111,7 +111,7 @@ Route: **`/sessions/$id`** · Components: `src/components/workbench/*`
 ### Panes
 
 | Component | What it does |
-| --- | --- |
+|---|---|
 | `ChannelBrowser.tsx` | All 250+ channels grouped (Driver Inputs · Vehicle · Engine · Tires · Suspension · Session · Environment), searchable, click‑to‑plot |
 | `StackedTraces.tsx` | Synchronized uPlot panels with min/max/avg readout per channel |
 | `TrackMap.tsx` | Reconstructed XY outline, live cursor dot, optional sector overlay |
@@ -212,7 +212,7 @@ See `supabase/migrations/` for the full schema history.
 
 ## Project structure
 
-```bash
+```
 src/
 ├── routes/                     # TanStack Start file-based routes
 │   ├── __root.tsx              # Shell + global providers + BackButton
@@ -255,33 +255,17 @@ supabase/
 
 ---
 
-## Running locally & Offline Mode
+## Running locally
 
-You can run Pit Wall entirely locally on your Windows machine without a Supabase cloud connection, using a local MongoDB database and browser-level IndexedDB file storage.
+This project is built and previewed in [Lovable](https://lovable.dev). For local development against your own Lovable Cloud project:
 
-### 1. Boot the Application
-Install dependencies and boot the development server:
 ```bash
 npm install
-npm run dev
+npm run dev      # vite dev (TanStack Start)
+npm run build    # production build (Cloudflare Worker target)
 ```
 
-### 2. Standalone Offline / Local Developer Mode
-1. Open [http://localhost:3000](http://localhost:3000) in your browser.
-2. Go to the login screen and click **"Continue as Local Developer (No Cloud)"**. This logs you in with a mock credential and directs your traffic to local storage endpoints.
-
-### 3. Local Database & File Setup
-1. **Database**: Download and start a local **MongoDB** server.
-   * On Windows: `winget install MongoDB.Community.Server` (or verify the service is running).
-   * Via Docker: `docker run -d -p 27017:27017 --name iracing-mongo mongo:latest`
-2. **File Storage**: Telemetry binary files are automatically cached inside your browser's private **IndexedDB** memory.
-3. Open the **Database** setup panel in the header to run connection tests and manage your local browser cache size.
-
-### 4. Spawning the iRacing Bridge
-* Start the companion app.
-* Navigate to the **Live** dashboard (`/live`).
-* If the bridge is stopped, simply click **"Run Local Bridge"** directly in the browser UI. The app will spawn the background listener node service on port `3001` automatically.
-* Launch iRacing and start driving — data will stream live immediately.
+Environment is auto‑provisioned by Lovable Cloud — `.env` contains `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` and is **not** hand‑edited.
 
 ---
 

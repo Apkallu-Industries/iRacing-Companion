@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { connectToLocalDb } from "@/lib/db.local";
 
 export interface LiveLapInput {
   track: string;
@@ -29,44 +28,28 @@ export const recordLiveLap = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const doc = {
-      user_id: userId,
-      track: data.track,
-      car: data.car,
-      lap_time_s: data.lapTimeS,
-      s1_s: data.s1S ?? null,
-      s2_s: data.s2S ?? null,
-      s3_s: data.s3S ?? null,
-      max_brake_pct: data.maxBrakePct ?? null,
-      max_throttle_pct: data.maxThrottlePct ?? null,
-      peak_lat_g: data.peakLatG ?? null,
-      peak_lon_g: data.peakLonG ?? null,
-      tire_avg_c: data.tireAvgC ?? null,
-      fuel_used_l: data.fuelUsedL ?? null,
-      is_valid: data.isValid ?? true,
-      recorded_at: new Date().toISOString(),
-    };
-
-    // 1. Write to Local DB first (Zero Latency)
-    let localId = null;
-    try {
-      const db = await connectToLocalDb();
-      const res = await db.collection("live_lap_records").insertOne(doc);
-      localId = res.insertedId.toString();
-    } catch (e) {
-      console.warn("[LocalDB] Record failed or not available:", e);
-    }
-
-    // 2. Sync to Cloud Supabase
     const { data: row, error } = await supabase
       .from("live_lap_records")
-      .insert(doc)
+      .insert({
+        user_id: userId,
+        track: data.track,
+        car: data.car,
+        lap_time_s: data.lapTimeS,
+        s1_s: data.s1S ?? null,
+        s2_s: data.s2S ?? null,
+        s3_s: data.s3S ?? null,
+        max_brake_pct: data.maxBrakePct ?? null,
+        max_throttle_pct: data.maxThrottlePct ?? null,
+        peak_lat_g: data.peakLatG ?? null,
+        peak_lon_g: data.peakLonG ?? null,
+        tire_avg_c: data.tireAvgC ?? null,
+        fuel_used_l: data.fuelUsedL ?? null,
+        is_valid: data.isValid ?? true,
+      })
       .select("id")
       .single();
-
-    if (error && !localId) return { ok: false as const, error: error.message };
-
-    return { ok: true as const, id: row?.id ?? localId };
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const, id: row.id };
   });
 
 export const getPersonalBest = createServerFn({ method: "POST" })
@@ -74,33 +57,15 @@ export const getPersonalBest = createServerFn({ method: "POST" })
   .inputValidator((data: { track: string; car: string }) => data)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let rows: any[] | null = null;
-    let errorMsg: string | null = null;
-
-    // 1. Attempt to fetch instantly from Local DB
-    try {
-      const db = await connectToLocalDb();
-      rows = await db.collection("live_lap_records")
-        .find({ track: data.track, car: data.car, is_valid: true })
-        .sort({ lap_time_s: 1 })
-        .limit(50)
-        .toArray();
-    } catch (e) {
-      // 2. Fallback to Cloud Supabase
-      const { data: sbRows, error } = await supabase
-        .from("live_lap_records")
-        .select("lap_time_s, s1_s, s2_s, s3_s, recorded_at")
-        .eq("track", data.track)
-        .eq("car", data.car)
-        .eq("is_valid", true)
-        .order("lap_time_s", { ascending: true })
-        .limit(50);
-
-      rows = sbRows;
-      if (error) errorMsg = error.message;
-    }
-
-    if (errorMsg && !rows) return { pb: null, sectorBests: null, count: 0, error: errorMsg };
+    const { data: rows, error } = await supabase
+      .from("live_lap_records")
+      .select("lap_time_s, s1_s, s2_s, s3_s, recorded_at")
+      .eq("track", data.track)
+      .eq("car", data.car)
+      .eq("is_valid", true)
+      .order("lap_time_s", { ascending: true })
+      .limit(50);
+    if (error) return { pb: null, sectorBests: null, count: 0, error: error.message };
     if (!rows || rows.length === 0) return { pb: null, sectorBests: null, count: 0 };
     const pb = rows[0];
     const sectorBests = {

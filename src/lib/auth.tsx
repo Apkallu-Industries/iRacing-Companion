@@ -21,41 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if there is a local mock session first
-    const localSess = typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
-    if (localSess) {
-      try {
-        setSession(JSON.parse(localSess));
-        setLoading(false);
-        return;
-      } catch (e) {
-        localStorage.removeItem("apex_local_session");
-      }
-    }
-
     // Listener first per Supabase guidance
-    const { data: sub } = supabase.auth.onAuthStateChange((_e: any, s: Session | null) => {
-      if (s) {
-        setSession(s);
-      } else {
-        const ls = typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
-        if (ls) {
-          try {
-            setSession(JSON.parse(ls));
-          } catch (_) {
-            setSession(null);
-          }
-        } else {
-          setSession(null);
-        }
-      }
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
       setLoading(false);
     });
-
-    supabase.auth.getSession().then(({ data }: any) => {
-      if (data.session) {
-        setSession(data.session);
-      }
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
@@ -68,13 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         loading,
         signOut: async () => {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("apex_local_session");
-          }
-          try {
-            await supabase.auth.signOut();
-          } catch (_) {}
-          setSession(null);
+          await supabase.auth.signOut();
         },
       }}
     >

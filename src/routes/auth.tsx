@@ -9,8 +9,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Pit Wall" },
-      { name: "description", content: "Sign in to your Pit Wall telemetry workbench." },
+      { title: "Sign in — ApexTrace" },
+      { name: "description", content: "Sign in to your ApexTrace telemetry workbench." },
     ],
   }),
   component: AuthPage,
@@ -59,24 +59,6 @@ function AuthPage() {
       toast.error((err as Error).message);
       setBusy(false);
     }
-  };
-
-  const loginAsLocal = () => {
-    const mockSession = {
-      access_token: "mock-local-token",
-      expires_at: Math.floor(Date.now() / 1000) + 31536000,
-      user: {
-        id: "local-user-id",
-        email: "local-developer@apex.trace",
-        app_metadata: { provider: "local", providers: ["local"] },
-        user_metadata: {},
-        aud: "authenticated",
-        role: "authenticated",
-        created_at: new Date().toISOString(),
-      }
-    };
-    localStorage.setItem("apex_local_session", JSON.stringify(mockSession));
-    window.location.href = "/sessions";
   };
 
   // Derive provider info from the Supabase user object
@@ -211,14 +193,6 @@ function AuthPage() {
           </p>
 
           <div className="mt-6 space-y-2">
-            <button
-              type="button"
-              onClick={loginAsLocal}
-              disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-emerald-500/30 bg-emerald-500/5 py-2.5 text-sm text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 font-medium transition-colors"
-            >
-              <Activity className="h-4 w-4" /> Continue as Local Developer (No Cloud)
-            </button>
             <button
               type="button"
               onClick={() => oauth("google")}

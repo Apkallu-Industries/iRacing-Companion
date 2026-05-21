@@ -17,8 +17,6 @@ export const CHANNEL_COLOR: Record<string, string> = {
   LongAccel: "var(--ch-glong)",
 };
 
-export type SubscriptionPlan = { name: string; price: string; features: string[] } | null;
-
 export function colorForChannel(name: string): string {
   return CHANNEL_COLOR[name] ?? "var(--ch-default)";
 }
@@ -58,27 +56,6 @@ interface WorkbenchState {
 
   mapThicknessBySpeed: boolean;
   setMapThicknessBySpeed: (v: boolean) => void;
-
-  llmProvider: "cloud" | "lmstudio" | "ollama" | "huggingface" | "lemonade";
-  llmBaseUrl: string;
-  llmModelId: string;
-  setLlmProvider: (provider: "cloud" | "lmstudio" | "ollama" | "huggingface" | "lemonade") => void;
-  setLlmBaseUrl: (url: string) => void;
-  setLlmModelId: (modelId: string) => void;
-
-  liveTrack: string;
-  liveCar: string;
-  liveConnected: boolean;
-  setLiveContext: (track: string, car: string, connected: boolean) => void;
-
-  pendingLocalBlob: Blob | null;
-  setPendingLocalBlob: (blob: Blob | null) => void;
-
-  llmApiKey: string;
-  setLlmApiKey: (key: string) => void;
-
-  subscriptionPlan: SubscriptionPlan;
-  setSubscriptionPlan: (plan: SubscriptionPlan) => void;
 }
 
 export const useWorkbench = create<WorkbenchState>((set) => ({
@@ -145,24 +122,4 @@ export const useWorkbench = create<WorkbenchState>((set) => ({
 
   mapThicknessBySpeed: false,
   setMapThicknessBySpeed: (v) => set({ mapThicknessBySpeed: v }),
-
-  llmProvider: "cloud",
-  llmBaseUrl: "http://localhost:1234/v1",
-  llmModelId: "llama-3-8b-instruct",
-  llmApiKey: "",
-  setLlmProvider: (provider) => set({ llmProvider: provider }),
-  setLlmBaseUrl: (url) => set({ llmBaseUrl: url }),
-  setLlmModelId: (id) => set({ llmModelId: id }),
-  setLlmApiKey: (key: string) => set({ llmApiKey: key }),
-
-  liveTrack: "",
-  liveCar: "",
-  liveConnected: false,
-  setLiveContext: (track, car, connected) => set({ liveTrack: track, liveCar: car, liveConnected: connected }),
-
-  pendingLocalBlob: null,
-  setPendingLocalBlob: (blob) => set({ pendingLocalBlob: blob }),
-
-  subscriptionPlan: null as SubscriptionPlan,
-  setSubscriptionPlan: (plan: SubscriptionPlan) => set({ subscriptionPlan: plan }),
 }));

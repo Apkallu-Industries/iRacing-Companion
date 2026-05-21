@@ -55,7 +55,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       .select("theme")
       .eq("user_id", user.id)
       .maybeSingle()
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         if (data?.theme) {
           setThemeState(data.theme as ThemeMap);
           saveLocalTheme(data.theme as ThemeMap);

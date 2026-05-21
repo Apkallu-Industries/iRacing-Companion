@@ -14,7 +14,7 @@ type Sess = Tables<"telemetry_sessions">;
 export const Route = createFileRoute("/sessions/")({
   head: () => ({
     meta: [
-      { title: "Sessions — Pit Wall" },
+      { title: "Sessions — ApexTrace" },
       { name: "description", content: "Your uploaded iRacing telemetry sessions." },
     ],
   }),
@@ -139,18 +139,6 @@ function SessionsPage() {
     <div className="min-h-screen bg-background text-foreground">
       <AppHeader>
         <span className="font-mono uppercase tracking-wider">Sessions</span>
-        <Link to="/live" className="ml-3 text-muted-foreground hover:text-foreground">
-          Live
-        </Link>
-        <Link to="/lab/lapfile" className="ml-3 text-muted-foreground hover:text-foreground">
-          Lapfile Lab
-        </Link>
-        <Link to="/fingerprint" className="ml-3 text-muted-foreground hover:text-foreground">
-          Fingerprint
-        </Link>
-        <Link to="/how-it-works" className="ml-3 text-muted-foreground hover:text-foreground">
-          How it works
-        </Link>
       </AppHeader>
 
       <main className="mx-auto max-w-7xl p-6">

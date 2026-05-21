@@ -5,7 +5,6 @@ import { Circle, Square, Save, Trash2 } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { useLiveRecorder } from "@/lib/liveRecorder";
 import { useAuth } from "@/lib/auth";
-import { useWorkbench } from "@/lib/store";
 
 function fmtElapsed(s: number) {
   const m = Math.floor(s / 60);
@@ -23,7 +22,6 @@ export function RecordingControls({ t }: { t: Telemetry }) {
   const { state, sampleCount, elapsed, channelCount, save, start, stop, reset } = useLiveRecorder(t);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const setPendingLocalBlob = useWorkbench((s) => s.setPendingLocalBlob);
   const [pulse, setPulse] = useState(false);
 
   const onStart = () => {
@@ -38,9 +36,6 @@ export function RecordingControls({ t }: { t: Telemetry }) {
       const res = await save(user?.id ?? null);
       if (res.sessionId) {
         toast.success("Session saved");
-        // Push the file directly into memory so the workbench loads it instantly
-        // without waiting for the Supabase network trip (Gap 4).
-        if (res.blob) setPendingLocalBlob(res.blob);
         navigate({ to: "/sessions/$id", params: { id: res.sessionId } });
       } else {
         toast.message("Recording downloaded", {
@@ -60,8 +55,9 @@ export function RecordingControls({ t }: { t: Telemetry }) {
         </h2>
         <div className="flex items-center gap-2">
           <span
-            className={`size-2 rounded-full ${state === "recording" ? "bg-racing-red animate-pulse" : "bg-zinc-700"
-              } ${pulse ? "scale-150 transition-transform" : ""}`}
+            className={`size-2 rounded-full ${
+              state === "recording" ? "bg-racing-red animate-pulse" : "bg-zinc-700"
+            } ${pulse ? "scale-150 transition-transform" : ""}`}
           />
           <span className="text-[10px] font-mono uppercase text-zinc-300">
             {state === "recording"

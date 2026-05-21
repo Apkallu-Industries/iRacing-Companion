@@ -19,7 +19,7 @@ export const fetchPbSetup = createServerFn({ method: "POST" })
       .limit(10);
     if (error) return { error: error.message } as const;
     const candidates = (rows ?? []).filter(
-      (r: any) => r.id !== data.excludeSessionId && r.setup_yaml,
+      (r) => r.id !== data.excludeSessionId && r.setup_yaml,
     );
     if (candidates.length === 0) return { pb: null } as const;
     const pb = candidates[0];

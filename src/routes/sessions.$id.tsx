@@ -10,46 +10,33 @@ import { AppHeader } from "@/components/AppHeader";
 import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
 import { StackedTraces } from "@/components/workbench/StackedTraces";
 import { TrackMap } from "@/components/workbench/TrackMap";
+import { LiveReadout } from "@/components/workbench/LiveReadout";
+import { LiveBridgeStrip } from "@/components/workbench/LiveBridgeStrip";
 import { Timeline } from "@/components/workbench/Timeline";
-import { lazy, Suspense } from "react";
-import {
-  WorkbenchBottomPane,
-  BOTTOM_TAB_LABELS,
-  type WorkbenchBottomTab,
-} from "@/components/workbench/WorkbenchBottomPane";
-import { WorkbenchPerfHud, type WorkbenchPerfStats } from "@/components/workbench/WorkbenchPerfHud";
+import { LapList } from "@/components/workbench/LapList";
+import { GGDiagram } from "@/components/workbench/GGDiagram";
+import { OptimalLap } from "@/components/workbench/OptimalLap";
+import { Counterfactuals } from "@/components/workbench/Counterfactuals";
+import { BrakeBias } from "@/components/workbench/BrakeBias";
+import { SlipAngle } from "@/components/workbench/SlipAngle";
+import { AICoach } from "@/components/workbench/AICoach";
+import { ReplayThree } from "@/components/workbench/ReplayThree";
+import { PianoRoll } from "@/components/workbench/PianoRoll";
+import { SectorSpider } from "@/components/workbench/SectorSpider";
+import { SetupSheet } from "@/components/workbench/SetupSheet";
+import { SetupDiff } from "@/components/workbench/SetupDiff";
 import { ShareButton } from "@/components/workbench/ShareButton";
+import { MinCornerSpeed } from "@/components/workbench/MinCornerSpeed";
+import { TimeLossWaterfall } from "@/components/workbench/TimeLossWaterfall";
+import { CinemaPlayback } from "@/components/workbench/CinemaPlayback";
 import { FingerprintDelta } from "@/components/workbench/FingerprintDelta";
-
-const LazyAICoach = lazy(() =>
-  import("@/components/workbench/AICoach").then((m) => ({ default: m.AICoach })),
-);
-
-const BOTTOM_TABS: WorkbenchBottomTab[] = [
-  "cinema",
-  "readout",
-  "laps",
-  "stint",
-  "gg",
-  "optimal",
-  "whatif",
-  "apex",
-  "waterfall",
-  "brake",
-  "slip",
-  "replay3d",
-  "piano",
-  "spider",
-  "setup",
-  "setupdiff",
-];
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sessions/$id")({
   head: () => ({
     meta: [
-      { title: "Workbench — Pit Wall" },
+      { title: "Workbench — ApexTrace" },
       { name: "description", content: "Telemetry workbench for an iRacing .ibt session." },
     ],
   }),
@@ -60,23 +47,19 @@ function WorkbenchPage() {
   const { id } = Route.useParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { parsed, setParsed, refLap, cmpLap, setRefLap, setCmpLap, pendingLocalBlob, setPendingLocalBlob } = useWorkbench();
+  const { parsed, setParsed, refLap, cmpLap, setRefLap, setCmpLap } = useWorkbench();
   const [sess, setSess] = useState<Tables<"telemetry_sessions"> | null>(null);
   const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>({ phase: "fetch", pct: 0 });
   const [err, setErr] = useState<string | null>(null);
-  const [bottomTab, setBottomTab] = useState<WorkbenchBottomTab>("cinema");
-  const [perfStats, setPerfStats] = useState<WorkbenchPerfStats | null>(null);
-  const [debugHud, setDebugHud] = useState(false);
-
-  useEffect(() => {
-    setDebugHud(new URLSearchParams(window.location.search).get("debug") === "1");
-  }, []);
+  const [bottomTab, setBottomTab] = useState<
+    "cinema" | "readout" | "laps" | "gg" | "optimal" | "whatif" | "brake" | "slip" | "replay3d" | "piano" | "spider" | "setup" | "setupdiff" | "apex" | "waterfall"
+  >("cinema");
 
   // Guests can't load cloud sessions — show a friendly prompt instead of redirecting.
 
   useEffect(() => {
     if (loading) return;
-    if (!user && !pendingLocalBlob) {
+    if (!user) {
       setProgress(null);
       return;
     }
@@ -85,48 +68,21 @@ function WorkbenchPage() {
     setProgress({ phase: "fetch", pct: 0 });
     (async () => {
       try {
-        let row: Tables<"telemetry_sessions">;
-
-        if (!user && pendingLocalBlob) {
-          row = { name: "Guest Session.pwlap", storage_path: "Guest Session.pwlap" } as any;
-        } else {
-          try {
-            const { data: fetchRow, error: e1 } = await supabase
-              .from("telemetry_sessions")
-              .select("*")
-              .eq("id", id)
-              .single();
-            if (e1) throw e1;
-            row = fetchRow;
-            if (!cancelled) setSess(row);
-          } catch (e) {
-            if (pendingLocalBlob) {
-              row = { name: "Live Recording.pwlap", storage_path: "Live Recording.pwlap" } as any;
-            } else {
-              throw e;
-            }
-          }
-        }
+        const { data: row, error: e1 } = await supabase
+          .from("telemetry_sessions")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (e1) throw e1;
         if (cancelled) return;
+        setSess(row);
         setProgress({ phase: "download", pct: 5 });
-        let buf: ArrayBuffer;
-
-        // Gap 4: If we have the blob in memory, read it directly and don't download it from supabase
-        if (pendingLocalBlob) {
-          buf = await pendingLocalBlob.arrayBuffer();
-          setProgress({ phase: "download", pct: 50, msg: "Reading from local memory" });
-          setPendingLocalBlob(null); // clear it
-        } else {
-          const { data: blob, error: e2 } = await supabase.storage
-            .from("telemetry")
-            .download(row.storage_path);
-          if (e2) throw e2;
-          buf = await blob.arrayBuffer();
-        }
-
+        const { data: blob, error: e2 } = await supabase.storage
+          .from("telemetry")
+          .download(row.storage_path);
+        if (e2) throw e2;
+        const buf = await blob.arrayBuffer();
         if (cancelled) return;
-        const fileSizeMb = buf.byteLength / (1024 * 1024);
-        const parseStart = performance.now();
         const isPwlap = isPwlapPath(row.storage_path) || isPwlapPath(row.name);
         if (isPwlap) {
           setProgress({ phase: "parse", pct: 50, msg: "Decoding .pwlap recording" });
@@ -136,7 +92,6 @@ function WorkbenchPage() {
           const result = pwlapToParsed(doc);
           if (cancelled) return;
           setParsed(result);
-          setPerfStats({ parseMs: Math.round(performance.now() - parseStart), fileSizeMb });
           setProgress(null);
         } else {
           const result = await parseIbtInWorker(buf, (phase, pct, msg) => {
@@ -144,7 +99,6 @@ function WorkbenchPage() {
           });
           if (cancelled) return;
           setParsed(result);
-          setPerfStats({ parseMs: Math.round(performance.now() - parseStart), fileSizeMb });
           setProgress(null);
         }
       } catch (e) {
@@ -161,8 +115,7 @@ function WorkbenchPage() {
   }, [id, setParsed, user, loading]);
 
   // Guest gate — no redirect, friendly prompt instead.
-  // We allow guests if they have an active recording parsing (pendingLocalBlob) or already parsed.
-  if (!loading && !user && !parsed && !err && !progress) {
+  if (!loading && !user) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background text-foreground">
         <div className="max-w-md text-center">
@@ -267,6 +220,8 @@ function WorkbenchPage() {
         )}
       </AppHeader>
 
+      <LiveBridgeStrip />
+
       {err && (
         <div className="bg-destructive/20 px-3 py-2 text-sm text-destructive-foreground">{err}</div>
       )}
@@ -301,22 +256,67 @@ function WorkbenchPage() {
                   <TrackMap parsed={parsed} />
                 </div>
                 <div className="flex flex-1 flex-col bg-panel">
-                  <div className="hairline-b flex items-center gap-px overflow-x-auto bg-border font-mono text-[11px] uppercase tracking-wider">
-                    {BOTTOM_TABS.map((t) => (
+                  <div className="hairline-b flex items-center gap-px bg-border font-mono text-[11px] uppercase tracking-wider">
+                    {(["cinema", "readout", "laps", "gg", "optimal", "whatif", "apex", "waterfall", "brake", "slip", "replay3d", "piano", "spider", "setup", "setupdiff"] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setBottomTab(t)}
-                        className={`shrink-0 px-3 py-1.5 text-left ${bottomTab === t
-                          ? "bg-panel text-foreground"
-                          : "bg-rail text-muted-foreground hover:text-foreground"
-                          }`}
+                        className={`flex-1 px-3 py-1.5 text-left ${
+                          bottomTab === t
+                            ? "bg-panel text-foreground"
+                            : "bg-rail text-muted-foreground hover:text-foreground"
+                        }`}
                       >
-                        {t === "laps" ? `${BOTTOM_TAB_LABELS[t]} · ${parsed.laps.length}` : BOTTOM_TAB_LABELS[t]}
+                        {t === "cinema"
+                          ? "Cinema"
+                          : t === "readout"
+                          ? "Readout"
+                          : t === "laps"
+                            ? `Laps · ${parsed.laps.length}`
+                            : t === "gg"
+                              ? "g-g"
+                              : t === "optimal"
+                                ? "Optimal"
+                                : t === "whatif"
+                                  ? "What-if"
+                                  : t === "apex"
+                                    ? "Apex"
+                                    : t === "waterfall"
+                                      ? "Waterfall"
+                                      : t === "brake"
+                                    ? "Brake"
+                                    : t === "slip"
+                                      ? "Slip"
+                                      : t === "replay3d"
+                                        ? "3D"
+                                        : t === "piano"
+                                          ? "Piano"
+                                          : t === "spider"
+                                            ? "Spider"
+                                            : t === "setup"
+                                              ? "Setup"
+                                              : "Δ Setup"}
                       </button>
                     ))}
                   </div>
                   <div className="min-h-0 flex-1">
-                    <WorkbenchBottomPane tab={bottomTab} parsed={parsed} sess={sess} sessionId={id} />
+                    {bottomTab === "cinema" && <CinemaPlayback parsed={parsed} />}
+                    {bottomTab === "readout" && <LiveReadout parsed={parsed} />}
+                    {bottomTab === "laps" && <LapList parsed={parsed} />}
+                    {bottomTab === "gg" && <GGDiagram parsed={parsed} />}
+                    {bottomTab === "optimal" && <OptimalLap parsed={parsed} />}
+                    {bottomTab === "whatif" && <Counterfactuals parsed={parsed} />}
+                    {bottomTab === "apex" && <MinCornerSpeed parsed={parsed} />}
+                    {bottomTab === "waterfall" && <TimeLossWaterfall parsed={parsed} />}
+                    {bottomTab === "brake" && <BrakeBias parsed={parsed} />}
+                    {bottomTab === "slip" && <SlipAngle parsed={parsed} />}
+                    {bottomTab === "replay3d" && <ReplayThree parsed={parsed} />}
+                    {bottomTab === "piano" && <PianoRoll parsed={parsed} />}
+                    {bottomTab === "spider" && <SectorSpider parsed={parsed} />}
+                    {bottomTab === "setup" && <SetupSheet parsed={parsed} />}
+                    {bottomTab === "setupdiff" && (
+                      <SetupDiff parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -327,20 +327,9 @@ function WorkbenchPage() {
                   thisLapS={sess?.best_lap_s != null ? Number(sess.best_lap_s) : null}
                 />
               </div>
-              <Suspense
-                fallback={
-                  <div className="hairline-t bg-bg p-3 font-mono text-[10px] uppercase text-muted-foreground">
-                    Loading AI coach…
-                  </div>
-                }
-              >
-                <LazyAICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
-              </Suspense>
+              <AICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
             </div>
           </div>
-          {debugHud && parsed && perfStats && (
-            <WorkbenchPerfHud parsed={parsed} stats={perfStats} />
-          )}
         </>
       )}
     </div>
