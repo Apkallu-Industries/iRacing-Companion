@@ -26,6 +26,7 @@ const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
 const lapCache = require("./lap-cache");
+const pkgJson = require("./package.json");
 
 let IRacingSDK = null;
 try {

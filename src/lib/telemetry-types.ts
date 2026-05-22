@@ -55,7 +55,7 @@ export const DEFAULT_TELEMETRY: Telemetry = {
   track: "Spa-Francorchamps",
   car: "DALLARA P217",
   carNumber: "44",
-  sdkVersion: "irsdk v1.0",
+  sdkVersion: "irsdk v4.4.0",  // Updated dynamically from bridge
   latencyMs: 24,
   safetyRating: 4.82,
   gear: 4,

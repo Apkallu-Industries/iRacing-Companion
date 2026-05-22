@@ -12,6 +12,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
+const pkgJson = require("./package.json");
 
 let IRacingSDK = null;
 try {
@@ -274,7 +275,7 @@ function mapTelemetry(v, session) {
     track: weekend?.TrackDisplayName ?? "—",
     car: me.CarScreenName ?? "—",
     carNumber: me.CarNumber ?? "0",
-    sdkVersion: "irsdk v1.0", latencyMs: 0,
+    sdkVersion: `irsdk v${pkgJson.dependencies['irsdk-node'].replace(/^\^/, '')}`, latencyMs: 0,
     safetyRating: parseFloat(me.LicSafetyRating ?? "0"),
     gear: v.Gear ?? 0, speedKph: Math.max(0, speedMs * 3.6), rpm,
     rpmMax: driverInfo?.DriverCarSLLastRPM ?? 11000,

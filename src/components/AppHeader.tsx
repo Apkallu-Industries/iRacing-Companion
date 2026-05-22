@@ -3,6 +3,7 @@ import { Activity, LogOut, Radio } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeEditor } from "@/components/ThemeEditor";
 import { useBridgeStatus } from "@/lib/useBridgeStatus";
+import { BackButton } from "@/components/BackButton";
 
 const NAV: Array<{ to: string; label: string; exact?: boolean }> = [
   { to: "/sessions", label: "Sessions" },
@@ -26,6 +27,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
       </Link>
 
       <nav className="ml-4 flex items-center gap-1 text-xs">
+        <BackButton />
         {NAV.map((item) => (
           <Link
             key={item.to}

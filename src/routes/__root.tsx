@@ -15,7 +15,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/themeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { BackButton } from "@/components/BackButton";
+
 
 function NotFoundComponent() {
   return (
