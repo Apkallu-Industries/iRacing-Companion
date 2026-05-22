@@ -103,20 +103,24 @@ const DEFAULT_KEYS = [
 
 export interface ChannelPrefs {
   visible: string[]; // ordered
+  modeByKey?: Record<string, "raw" | "trace">;
 }
 
 export function loadChannelPrefs(): ChannelPrefs {
-  if (typeof window === "undefined") return { visible: DEFAULT_KEYS };
+  if (typeof window === "undefined") return { visible: DEFAULT_KEYS, modeByKey: {} };
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { visible: DEFAULT_KEYS };
+    if (!raw) return { visible: DEFAULT_KEYS, modeByKey: {} };
     const parsed = JSON.parse(raw) as ChannelPrefs;
     if (!Array.isArray(parsed.visible) || parsed.visible.length === 0) {
-      return { visible: DEFAULT_KEYS };
+      return { visible: DEFAULT_KEYS, modeByKey: {} };
     }
-    return parsed;
+    return {
+      visible: parsed.visible,
+      modeByKey: parsed.modeByKey ?? {},
+    };
   } catch {
-    return { visible: DEFAULT_KEYS };
+    return { visible: DEFAULT_KEYS, modeByKey: {} };
   }
 }
 

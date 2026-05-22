@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { Telemetry } from "@/lib/telemetry-types";
 import {
@@ -33,6 +33,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
   const [editing, setEditing] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [modeByKey, setModeByKey] = useState<Record<string, "raw" | "trace">>({});
+  const [publishing, setPublishing] = useState(false);
+  const historyRef = useRef<Record<string, number[]>>({});
 
   const { session } = useAuth();
   const upsertCloud = useServerFn(upsertMyChannelLayout);
@@ -43,31 +46,44 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
   useEffect(() => {
     const prefs = loadChannelPrefs();
     setVisibleKeys(prefs.visible);
+    setModeByKey(prefs.modeByKey ?? {});
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    saveChannelPrefs({ visible: visibleKeys });
+    saveChannelPrefs({ visible: visibleKeys, modeByKey });
     if (!session) return;
     // Debounced cloud sync.
     const id = setTimeout(() => {
-      upsertCloud({ data: { name: "default", layout: { visible: visibleKeys } } }).catch(() => {});
+      upsertCloud({ data: { name: "default", layout: { visible: visibleKeys, modeByKey } } }).catch(() => {});
     }, 1500);
     return () => clearTimeout(id);
-  }, [visibleKeys, hydrated, upsertCloud, session]);
+  }, [visibleKeys, modeByKey, hydrated, upsertCloud, session]);
 
   const publish = async () => {
-    await upsertCloud({ data: { name: "default", layout: { visible: visibleKeys } } });
-    const out = await publishCloud({ data: { name: "default", published: true } });
-    if ("ok" in out && out.ok) toast.success("Channel layout published to community.");
-    else toast.error("Publish failed.");
+    if (!session) {
+      toast.error("Sign in to publish your workspace.");
+      return;
+    }
+    setPublishing(true);
+    try {
+      await upsertCloud({ data: { name: "default", layout: { visible: visibleKeys, modeByKey } } });
+      const out = await publishCloud({ data: { name: "default", published: true } });
+      if ("ok" in out && out.ok) toast.success("Workspace published to community.");
+      else toast.error("Publish failed.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Publish failed.");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const onImport = (row: CommunityRow) => {
-    const layout = row.payload as { visible: string[] };
+    const layout = row.payload as { visible: string[]; modeByKey?: Record<string, "raw" | "trace"> };
     if (!Array.isArray(layout?.visible)) return;
     setVisibleKeys(layout.visible);
+    setModeByKey(layout.modeByKey ?? {});
     setBrowseOpen(false);
     toast.success(`Imported layout with ${layout.visible.length} channels.`);
   };
@@ -93,6 +109,17 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     .map((k) => byKey.get(k))
     .filter((c): c is ChannelDef => Boolean(c));
 
+  useEffect(() => {
+    const next: Record<string, number[]> = {};
+    for (const c of visibleChannels) {
+      const key = c.key;
+      const prev = historyRef.current[key] ?? [];
+      const n = getNumericValue(t, key);
+      next[key] = Number.isFinite(n) ? [...prev.slice(-59), n] : prev.slice(-59);
+    }
+    historyRef.current = next;
+  }, [t, visibleChannels]);
+
   return (
     <div className="rounded-sm border border-zinc-900 bg-zinc-950">
       <div className="flex items-center justify-between border-b border-zinc-900 px-2 py-1.5">
@@ -112,10 +139,11 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
           <button
             type="button"
             onClick={publish}
+            disabled={!session || publishing}
             className="rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-emerald-300 hover:bg-emerald-500/30"
-            title="Publish your channel layout to the community"
+            title={session ? "Publish your channel layout to the community" : "Sign in to publish workspace"}
           >
-            publish
+            {publishing ? "publishing..." : "publish workspace"}
           </button>
           <button
             type="button"
@@ -139,7 +167,13 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
               <span className="w-24 truncate text-zinc-500" title={c.key}>
                 {c.label}
               </span>
-              <span className="ml-auto truncate tabular-nums text-zinc-100">{c.read(t)}</span>
+              {modeByKey[c.key] === "trace" ? (
+                <span className="ml-auto">
+                  <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
+                </span>
+              ) : (
+                <span className="ml-auto truncate tabular-nums text-zinc-100">{c.read(t)}</span>
+              )}
               <span className="w-8 text-right text-[9px] text-zinc-600">{c.unit}</span>
             </li>
           ))}
@@ -153,7 +187,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
         <EditPanel
           registry={registry}
           visibleKeys={visibleKeys}
+          modeByKey={modeByKey}
           onChange={setVisibleKeys}
+          onSetMode={(key, mode) => setModeByKey((m) => ({ ...m, [key]: mode }))}
         />
       )}
       <CommunityBrowser
@@ -171,11 +207,15 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
 function EditPanel({
   registry,
   visibleKeys,
+  modeByKey,
   onChange,
+  onSetMode,
 }: {
   registry: ChannelDef[];
   visibleKeys: string[];
+  modeByKey: Record<string, "raw" | "trace">;
   onChange: (keys: string[]) => void;
+  onSetMode: (key: string, mode: "raw" | "trace") => void;
 }) {
   const visibleSet = new Set(visibleKeys);
   const groups = useMemo(() => {
@@ -244,6 +284,15 @@ function EditPanel({
                 >
                   ×
                 </button>
+                <button
+                  type="button"
+                  onClick={() => onSetMode(key, modeByKey[key] === "trace" ? "raw" : "trace")}
+                  className="rounded-sm bg-cyan-500/20 px-1.5 py-0.5 text-cyan-300 hover:bg-cyan-500/30"
+                  aria-label="Toggle display mode"
+                  title="Toggle RAW / Trace"
+                >
+                  {modeByKey[key] === "trace" ? "Trace" : "Raw"}
+                </button>
               </span>
             </li>
           );
@@ -305,5 +354,37 @@ function EditPanel({
         </button>
       </div>
     </div>
+  );
+}
+
+function getNumericValue(t: Telemetry, key: string): number {
+  if (key.startsWith("extras.")) {
+    const v = t.extras?.[key.slice(7)];
+    return typeof v === "number" ? v : Number.NaN;
+  }
+  const parts = key.split(".");
+  let cur: any = t;
+  for (const p of parts) cur = cur?.[p];
+  return typeof cur === "number" ? cur : Number.NaN;
+}
+
+function MiniTrace({ values, color }: { values: number[]; color: string }) {
+  const w = 72;
+  const h = 18;
+  if (values.length < 2) return <span className="inline-block w-[72px] text-[9px] text-zinc-600">...</span>;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(1e-6, max - min);
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * (w - 1);
+      const y = h - 1 - ((v - min) / span) * (h - 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.25" strokeLinecap="round" />
+    </svg>
   );
 }
