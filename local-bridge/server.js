@@ -123,6 +123,14 @@ if (IRacingSDK) {
     if (!latestSchema) {
       latestSchema = buildSchema(raw);
       console.log(`[bridge] schema built — ${latestSchema.channelCount} channels (${latestSchema.expandedChannelCount} expanded)`);
+      
+      // Diagnostic: log G-force related variables
+      const gVars = Object.keys(raw).filter(k => /accel|g|lat|lon/i.test(k));
+      if (gVars.length > 0) {
+        console.log(`[bridge] G-force variables found: ${gVars.join(", ")}`);
+      } else {
+        console.warn("[bridge] ⚠️ No acceleration/G-force variables detected in iRSDK telemetry");
+      }
     }
     const flat = flattenTelemetry(raw);
     const wide = expandTelemetry(raw, ARRAY_DEPTH);
@@ -252,6 +260,14 @@ function mapTelemetry(v, session) {
   const rpm = v.RPM ?? 0;
   const speedMs = v.Speed ?? 0;
 
+  // Debug G-Meter data availability
+  if (!v.LatAccel && !v.LongAccel && v.Speed) {
+    console.warn(
+      "[bridge] ⚠️ G-Meter data not available: LatAccel and LongAccel missing from iRSDK telemetry. " +
+      "Available vars count: " + Object.keys(v).length,
+    );
+  }
+
   return {
     connected: true, source: "live",
     session: `${weekend?.EventType ?? "SESSION"} — ${weekend?.TrackDisplayName ?? "TRACK"}`.toUpperCase(),
@@ -277,7 +293,7 @@ function mapTelemetry(v, session) {
       fl: tireCorner(v, "LF"), fr: tireCorner(v, "RF"),
       rl: tireCorner(v, "LR"), rr: tireCorner(v, "RR"),
     },
-    gLat: v.LatAccel ?? 0, gLon: v.LongAccel ?? 0,
+    gLat: v.LatAccel ?? v.LatG ?? v.LateralAccel ?? v.AccelLat ?? 0, gLon: v.LongAccel ?? v.LonG ?? v.LongitudinalAccel ?? v.AccelLon ?? 0,
     drsAvailable: !!v.DRS_Status,
     brakeBias: v.dcBrakeBias ?? 0,
     diffMap: v.dcDiffEntry ?? 0,

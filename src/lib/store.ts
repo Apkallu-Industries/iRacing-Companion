@@ -56,6 +56,15 @@ interface WorkbenchState {
 
   mapThicknessBySpeed: boolean;
   setMapThicknessBySpeed: (v: boolean) => void;
+
+  llmProvider: string;
+  llmBaseUrl: string;
+  llmModelId: string;
+  llmApiKey: string;
+  setLlmProvider: (v: string) => void;
+  setLlmBaseUrl: (v: string) => void;
+  setLlmModelId: (v: string) => void;
+  setLlmApiKey: (v: string) => void;
 }
 
 export const useWorkbench = create<WorkbenchState>((set) => ({
@@ -122,4 +131,13 @@ export const useWorkbench = create<WorkbenchState>((set) => ({
 
   mapThicknessBySpeed: false,
   setMapThicknessBySpeed: (v) => set({ mapThicknessBySpeed: v }),
+
+  llmProvider: "cloud",
+  llmBaseUrl: "",
+  llmModelId: "",
+  llmApiKey: "",
+  setLlmProvider: (v) => set({ llmProvider: v }),
+  setLlmBaseUrl: (v) => set({ llmBaseUrl: v }),
+  setLlmModelId: (v) => set({ llmModelId: v }),
+  setLlmApiKey: (v) => set({ llmApiKey: v }),
 }));
