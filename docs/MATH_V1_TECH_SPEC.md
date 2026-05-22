@@ -7,6 +7,7 @@ Last updated: 2026-05-22
 Enable users to define reusable derived channels (live + workbench) without code changes.
 
 Examples:
+
 - `brake_throttle_overlap = max(0, brake_pct + throttle_pct - 1)`
 - `aero_balance_proxy = rear_ride_height - front_ride_height`
 - `entry_stability = abs(yaw_rate) / max(speed_kph, 1)`
@@ -36,12 +37,14 @@ type MathExpression = {
 ```
 
 Storage:
+
 - local cache for offline/local mode
 - server persistence by user/workspace in cloud mode
 
 ## 4. Grammar (v1)
 
 Allowed tokens:
+
 - numbers: `12`, `3.14`, `-0.5`
 - identifiers: channel keys and constants (`speedKph`, `gLat`, `const.brake_ref`)
 - operators: `+ - * /`
@@ -50,6 +53,7 @@ Allowed tokens:
 - parentheses
 
 Disallowed:
+
 - property traversal beyond known keys
 - arbitrary function names
 - assignment
@@ -58,6 +62,7 @@ Disallowed:
 ## 5. Evaluation Engine
 
 Requirements:
+
 - parse to AST (shunting-yard or Pratt parser)
 - evaluate against a flat numeric context map
 - zero `eval`, zero `new Function` for user expressions
@@ -65,6 +70,7 @@ Requirements:
 - guard divide-by-zero and NaN propagation
 
 Runtime behavior:
+
 - expression errors do not crash render loop
 - invalid expression surfaces a channel-level warning badge
 - disabled expression is skipped entirely
@@ -79,6 +85,7 @@ Runtime behavior:
 ## 7. UI/UX
 
 Editor fields:
+
 - Name
 - Key (auto-slug, editable)
 - Expression
@@ -87,6 +94,7 @@ Editor fields:
 - Scope
 
 Validation UX:
+
 - realtime parse feedback
 - inline unknown-variable hints
 - preview value against current telemetry
@@ -94,26 +102,31 @@ Validation UX:
 ## 8. Integration Points
 
 Live:
+
 - inject derived channels into live channel registry after base channels
 
 Workbench:
+
 - include derived channels in selectable channel browser and traces
 
 Persistence:
+
 - attach to workspace model and community workspace publish/import
 
 ## 9. Test Plan
 
 Unit tests:
+
 - parser correctness
 - evaluator correctness
 - edge handling (`NaN`, divide-by-zero, unknown vars)
 
 Integration tests:
+
 - live channel appears and updates at stream rate
 - workbench channel appears and plots
 - save/load preserves expression metadata
 
 Performance tests:
-- 50 active expressions at 60Hz UI stream without frame instability on target beta hardware
 
+- 50 active expressions at 60Hz UI stream without frame instability on target beta hardware

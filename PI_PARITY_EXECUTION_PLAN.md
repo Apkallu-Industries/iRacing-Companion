@@ -27,6 +27,7 @@ Goal: ship Math v1 backbone + first diagnostics surface.
 - [ ] WS4-T2 Add reconnect + dropped message counters
 
 Exit criteria:
+
 - user can define at least 5 derived channels
 - derived channels render in live + workbench
 - diagnostics panel visible and stable
@@ -43,6 +44,7 @@ Goal: ship Display Expansion v1 + workspace save/load.
 - [ ] WS3-T3 Ship presets (Live Driving, Engineer, Post-Lap)
 
 Exit criteria:
+
 - 3 new widgets in production routes
 - users can save/load at least 3 workspace profiles
 
@@ -56,6 +58,7 @@ Goal: event engine foundation.
 - [ ] WS5-T4 Event templates library
 
 Exit criteria:
+
 - users can define and visualize triggers without code changes
 
 ## 5. Sprint 4 (Days 46-60)
@@ -68,6 +71,7 @@ Goal: stint analytics suite v1.
 - [ ] Session-level KPI summary
 
 Exit criteria:
+
 - complete stint review possible without external tools
 
 ## 6. Tracking Cadence
@@ -81,4 +85,3 @@ Exit criteria:
 - Scope creep: only roadmap-priority tasks accepted during parity sprints
 - Performance regressions: enforce debug metrics on every PR
 - UX complexity: ship templates/defaults before advanced customization
-
