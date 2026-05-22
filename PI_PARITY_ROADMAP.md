@@ -3,6 +3,7 @@
 Last updated: 2026-05-22
 
 Execution artifacts:
+
 - [PI_PARITY_EXECUTION_PLAN.md](PI_PARITY_EXECUTION_PLAN.md)
 - [docs/MATH_V1_TECH_SPEC.md](docs/MATH_V1_TECH_SPEC.md)
 
