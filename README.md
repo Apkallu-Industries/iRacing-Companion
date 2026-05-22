@@ -22,6 +22,7 @@
 11. [Backend, auth & security](#backend-auth--security)
 12. [Project structure](#project-structure)
 13. [Running locally](#running-locally)
+14. [Pi-parity roadmap](#pi-parity-roadmap)
 
 ---
 
@@ -307,3 +308,11 @@ npm run dev
 
 Built with [Lovable](https://lovable.dev) on Lovable Cloud + Lovable AI Gateway.
 iRacing® and IRSDK are trademarks of iRacing.com Motorsport Simulations, LLC. This project is an independent companion tool and is not affiliated with or endorsed by iRacing.
+
+---
+
+## Pi-parity roadmap
+
+For a full gap matrix and 30/60/90 execution plan toward Pi Toolbox-class workflows, see:
+
+- [PI_PARITY_ROADMAP.md](PI_PARITY_ROADMAP.md)
