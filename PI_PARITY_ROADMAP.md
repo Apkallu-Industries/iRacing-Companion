@@ -37,6 +37,7 @@ Pit Wall is behind in:
 ## 3. Widget/Display Parity Matrix
 
 Legend:
+
 - `Done` = available now
 - `Partial` = basic version exists, not engineering-grade yet
 - `Missing` = not available
@@ -69,25 +70,29 @@ Legend:
 ## Day 0-30 (Foundation + Highest ROI)
 
 1. Ship Math v1
+
 - Add user formula editor for derived channels:
   - arithmetic, min/max, abs, clamp
   - channel references + constants
 - Persist formulas per user/workspace.
 
-2. Ship Display Expansion v1
+1. Ship Display Expansion v1
+
 - Add:
   - histogram widget
   - XY scatter widget
   - lap table with sortable metrics
 
-3. Workspace UX pass
+1. Workspace UX pass
+
 - Save/Load named workspaces.
 - Quick presets for:
   - live driving
   - race engineer
   - post-lap review
 
-4. Reliability telemetry
+1. Reliability telemetry
+
 - Add bridge/client diagnostics:
   - effective stream rate
   - dropped frames
@@ -98,18 +103,21 @@ Deliverable: v1 “Engineer Beta” profile with measurable gains in setup/revie
 ## Day 31-60 (Engineering Depth)
 
 1. Event Engine v1
+
 - Trigger rules:
   - threshold crossing
   - duration-in-state
   - lap sector-bound windows
 - Event markers on traces/map.
 
-2. Stint analysis suite
+1. Stint analysis suite
+
 - Tire temp/pressure trend views
 - Pace decay vs fuel
 - consistency and variance widgets
 
-3. Reporting v1
+1. Reporting v1
+
 - Auto session summary:
   - top gains/losses
   - corner priorities
@@ -121,14 +129,17 @@ Deliverable: complete stint workflow without external tools.
 ## Day 61-90 (Parity Push)
 
 1. Comparative power tools
+
 - Multi-session overlay manager
 - batch comparisons against reference sets
 
-2. Collaboration layer
+1. Collaboration layer
+
 - Annotations/bookmarks at timestamp/corner
 - shared team workspace links
 
-3. Polishing + scale hardening
+1. Polishing + scale hardening
+
 - Large session performance tuning
 - regression tests for parser, math engine, widget rendering
 
@@ -141,22 +152,28 @@ Deliverable: “Pi-class” functional parity for sim-racing coaching/engineerin
 Parity milestone is “ready” when:
 
 1. Analysis speed
+
 - Users can perform common review tasks in <= 3 clicks from a saved workspace.
 
-2. Display breadth
+1. Display breadth
+
 - At least 20 high-value display/widget types available and composable.
 
-3. Custom math/events
+1. Custom math/events
+
 - Users can define and persist formulas + event triggers without code changes.
 
-4. Stability
+1. Stability
+
 - 60Hz UI mode stable for 30-minute sessions on target hardware.
 - automatic fallback to 30Hz with clear indicator under load.
 
-5. Data confidence
+1. Data confidence
+
 - Diagnostics panel exposes stream health and warns on degraded conditions.
 
-6. Collaboration
+1. Collaboration
+
 - Session annotations + workspace sharing available to team users.
 
 ---
@@ -195,4 +212,3 @@ Mitigation: show evidence traces and confidence score for every AI recommendatio
 2. Build widget backlog issues with acceptance criteria.
 3. Add beta telemetry dashboard (FPS, stream Hz, reconnects) visible via debug toggle.
 4. Schedule a weekly parity review against this matrix and mark status.
-
