@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { MathExpressionSchema } from "@/lib/math/schema";
 
 /* ───────────────────────────── Gear Ratios ───────────────────────────── */
 
@@ -74,6 +75,11 @@ export const listCommunityGearRatios = createServerFn({ method: "GET" })
   });
 
 /* ─────────────────────────── Channel Layouts ─────────────────────────── */
+const ChannelLayoutSchema = z.object({
+  visible: z.array(z.string().max(120)).max(300),
+  modeByKey: z.record(z.string().max(120), z.enum(["raw", "trace"])).optional(),
+  mathExpressions: z.array(MathExpressionSchema).max(100).optional(),
+});
 
 export const upsertMyChannelLayout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -81,7 +87,7 @@ export const upsertMyChannelLayout = createServerFn({ method: "POST" })
     z
       .object({
         name: z.string().min(1).max(120),
-        layout: z.object({ visible: z.array(z.string().max(120)).max(200) }),
+        layout: ChannelLayoutSchema,
       })
       .parse(input),
   )

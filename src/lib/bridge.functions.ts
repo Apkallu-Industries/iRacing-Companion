@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { spawn } from "child_process";
 import path from "path";
 import net from "net";
+import { z } from "zod";
 
 // Keep track of active bridge process on the server
 let activeBridgePid: number | null = null;
@@ -38,7 +39,10 @@ export const getBridgeStatus = createServerFn({ method: "GET" })
   });
 
 export const startBridge = createServerFn({ method: "POST" })
-  .handler(async () => {
+  .inputValidator((input) =>
+    z.object({ mode: z.enum(["stable30", "balanced60"]).optional() }).optional().parse(input),
+  )
+  .handler(async ({ data }) => {
     try {
       const isAlreadyRunning = await checkPort(3001);
       if (isAlreadyRunning) {
@@ -54,6 +58,13 @@ export const startBridge = createServerFn({ method: "POST" })
 
       const child = spawn("node", ["server.js"], {
         cwd: bridgeDir,
+        env: {
+          ...process.env,
+          TICK_HZ: data?.mode === "stable30" ? "120" : "240",
+          UI_HZ: data?.mode === "stable30" ? "30" : "60",
+          RECORD_HZ: data?.mode === "stable30" ? "60" : "120",
+          ADAPTIVE_UI: "1",
+        },
         detached: true,
         stdio: ["ignore", logStream, logStream]
       });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_TELEMETRY, type Telemetry } from "./telemetry-types";
+import { saveBridgePerformanceSnapshot } from "./bridgePerformance";
 
 const WS_PORT = 3001;
 
@@ -88,6 +89,7 @@ export function useTelemetry(): Telemetry {
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
       try {
         ws.send(JSON.stringify({ type: "perf", fps: Math.round(latestFps) }));
+        saveBridgePerformanceSnapshot(latestFps);
       } catch {
         // ignore
       }

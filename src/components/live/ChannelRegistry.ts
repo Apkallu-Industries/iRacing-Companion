@@ -1,4 +1,5 @@
 import type { Telemetry } from "@/lib/telemetry-types";
+import type { MathExpression } from "@/lib/math/schema";
 
 export interface ChannelDef {
   key: string;
@@ -104,23 +105,25 @@ const DEFAULT_KEYS = [
 export interface ChannelPrefs {
   visible: string[]; // ordered
   modeByKey?: Record<string, "raw" | "trace">;
+  mathExpressions?: MathExpression[];
 }
 
 export function loadChannelPrefs(): ChannelPrefs {
-  if (typeof window === "undefined") return { visible: DEFAULT_KEYS, modeByKey: {} };
+  if (typeof window === "undefined") return { visible: DEFAULT_KEYS, modeByKey: {}, mathExpressions: [] };
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { visible: DEFAULT_KEYS, modeByKey: {} };
+    if (!raw) return { visible: DEFAULT_KEYS, modeByKey: {}, mathExpressions: [] };
     const parsed = JSON.parse(raw) as ChannelPrefs;
     if (!Array.isArray(parsed.visible) || parsed.visible.length === 0) {
-      return { visible: DEFAULT_KEYS, modeByKey: {} };
+      return { visible: DEFAULT_KEYS, modeByKey: {}, mathExpressions: [] };
     }
     return {
       visible: parsed.visible,
       modeByKey: parsed.modeByKey ?? {},
+      mathExpressions: parsed.mathExpressions ?? [],
     };
   } catch {
-    return { visible: DEFAULT_KEYS, modeByKey: {} };
+    return { visible: DEFAULT_KEYS, modeByKey: {}, mathExpressions: [] };
   }
 }
 

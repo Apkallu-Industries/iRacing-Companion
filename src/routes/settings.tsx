@@ -5,6 +5,7 @@ import { LLMSettings } from "@/components/LLMSettings";
 import { LocalDbSettings } from "@/components/LocalDbSettings";
 import { VoiceSettings } from "@/components/VoiceSettings";
 import { ThemeEditor } from "@/components/ThemeEditor";
+import { BridgePerformanceSettings } from "@/components/BridgePerformanceSettings";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -85,6 +86,16 @@ function SettingsPage() {
                 Tune visual theme and color accents used across dashboard and workbench.
               </p>
               <ThemeEditor />
+            </div>
+
+            <div className="hairline rounded-sm bg-rail p-4 sm:col-span-2">
+              <div className="mb-2 flex items-center gap-2 font-mono text-xs uppercase tracking-wider">
+                <Cpu className="h-3.5 w-3.5" /> Live Performance
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Choose bridge streaming profile. Stable uses 30Hz UI updates; Balanced uses 60Hz with adaptive fallback.
+              </p>
+              <BridgePerformanceSettings />
             </div>
           </div>
         </div>

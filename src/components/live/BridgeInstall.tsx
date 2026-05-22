@@ -12,6 +12,7 @@ import {
 import { startBridge } from "@/lib/bridge.functions";
 import { useBridgeConnection } from "@/lib/useBridgeConnection";
 import { toast } from "sonner";
+import { getBridgePerformanceMode } from "@/lib/bridgePerformance";
 
 interface BridgeInstallProps {
   /** True when iRacing is streaming telemetry (from useTelemetry). */
@@ -61,9 +62,10 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
   const handleStart = async () => {
     setLaunching(true);
     try {
-      const res = await startBridge();
+      const mode = getBridgePerformanceMode();
+      const res = await startBridge({ data: { mode } });
       if (res.success) {
-        toast.success(res.message || "Bridge started.");
+        toast.success(`${res.message || "Bridge started."} Mode: ${mode === "stable30" ? "Stable 30Hz" : "Balanced 60Hz"}`);
         bridge.refresh();
       } else {
         toast.error(res.error || "Failed to start local bridge.");

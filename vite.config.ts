@@ -14,14 +14,24 @@ export default defineConfig({
   },
   vite: {
     build: {
+      // We intentionally ship a large isolated three.js core chunk.
+      // Raise warning threshold so CI surfaces only unexpected growth.
+      chunkSizeWarningLimit: 1800,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (!id.includes("node_modules")) return;
             if (id.includes("@tanstack")) return "tanstack";
-            if (id.includes("three") || id.includes("@react-three")) return "three";
-            if (id.includes("uplot") || id.includes("recharts")) return "charts";
-            if (id.includes("lucide-react")) return "icons";
+            if (id.includes("/react/") || id.includes("/react-dom/") || id.includes("/scheduler/")) return "react-core";
+            if (id.includes("/three/")) return "three-core";
+            if (id.includes("@react-three") || id.includes("/three-stdlib/") || id.includes("/meshline/")) return "three-addons";
+            if (id.includes("/uplot/") || id.includes("/recharts/") || id.includes("/d3-")) return "charts";
+            if (id.includes("/lucide-react/")) return "icons";
+            if (id.includes("@radix-ui")) return "radix-ui";
+            if (id.includes("@supabase")) return "supabase";
+            if (id.includes("/mongodb/") || id.includes("/bson/")) return "mongodb";
+            if (id.includes("/zod/")) return "zod";
+            if (id.includes("/zustand/")) return "zustand";
             return "vendor";
           },
         },

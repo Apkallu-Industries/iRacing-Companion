@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { Telemetry } from "@/lib/telemetry-types";
+import { compileMathExpression, evaluateCompiledMathExpression } from "@/lib/math/evaluator";
+import { telemetryToMathContext } from "@/lib/math/context";
+import {
+  MathExpressionSchema,
+  type MathExpression,
+  validateMathExpressionSyntax,
+} from "@/lib/math/schema";
 import {
   buildRegistry,
   loadChannelPrefs,
@@ -18,6 +25,23 @@ import { CommunityBrowser, type CommunityRow } from "@/components/community/Comm
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 
+const MATH_PRESETS: Array<{
+  name: string;
+  key: string;
+  expression: string;
+  unit?: string;
+  precision?: number;
+  color?: string;
+}> = [
+  { name: "Brake-Throttle Overlap", key: "brake_throttle_overlap", expression: "min(brake,throttle)*100", unit: "%", precision: 1, color: "#f97316" },
+  { name: "Steering Smoothness", key: "steering_smoothness", expression: "abs(steeringDeg)/max(speedKph,1)", unit: "deg/kmh", precision: 3, color: "#22d3ee" },
+  { name: "Tyre Temp Spread Front", key: "tyre_temp_spread_front", expression: "abs(tires.fl.tempC-tires.fr.tempC)", unit: "C", precision: 1, color: "#fb923c" },
+  { name: "Tyre Temp Spread Rear", key: "tyre_temp_spread_rear", expression: "abs(tires.rl.tempC-tires.rr.tempC)", unit: "C", precision: 1, color: "#f59e0b" },
+  { name: "Tyre Press Spread Front", key: "tyre_press_spread_front", expression: "abs(tires.fl.pressureBar-tires.fr.pressureBar)", unit: "bar", precision: 3, color: "#a78bfa" },
+  { name: "Tyre Press Spread Rear", key: "tyre_press_spread_rear", expression: "abs(tires.rl.pressureBar-tires.rr.pressureBar)", unit: "bar", precision: 3, color: "#8b5cf6" },
+  { name: "Fuel Burn Proxy", key: "fuel_burn_proxy", expression: "max(0,100-lapsEstimated)", unit: "", precision: 2, color: "#34d399" },
+];
+
 /**
  * MoTeC-style configurable Channel List.
  *
@@ -26,7 +50,65 @@ import { useAuth } from "@/lib/auth";
  * - Choice is persisted to localStorage so the layout follows the driver.
  */
 export function ConfigurableChannelList({ t }: { t: Telemetry }) {
-  const registry = useMemo(() => buildRegistry(t), [t]);
+  const baseRegistry = useMemo(() => buildRegistry(t), [t]);
+  const [mathExpressions, setMathExpressions] = useState<MathExpression[]>([]);
+  const enabledMathExpressions = useMemo(
+    () => mathExpressions.filter((m) => m.enabled && (m.scope === "live" || m.scope === "both")),
+    [mathExpressions],
+  );
+  const compiledMath = useMemo(
+    () =>
+      enabledMathExpressions.map((m) => {
+        const compiled = compileMathExpression(m.expression);
+        return { expression: m, compiled };
+      }),
+    [enabledMathExpressions],
+  );
+  const mathValues = useMemo(() => {
+    const ctx = telemetryToMathContext(t);
+    const out: Record<string, number> = {};
+    for (const item of compiledMath) {
+      if (!item.compiled.ok) continue;
+      const value = evaluateCompiledMathExpression(item.compiled.compiled, ctx);
+      if (value.ok) out[item.expression.id] = value.value;
+    }
+    return out;
+  }, [compiledMath, t]);
+  const mathRegistry = useMemo<ChannelDef[]>(() => {
+    const seen = new Set<string>();
+    return enabledMathExpressions.map((m, i) => {
+      const dedupe = seen.has(m.key);
+      seen.add(m.key);
+      const channelKey = dedupe ? `math.${m.key}_${i + 1}` : `math.${m.key}`;
+      return {
+        key: channelKey,
+        label: m.name.toUpperCase(),
+        unit: m.unit ?? "",
+        color: m.color ?? "#22d3ee",
+        group: "Extras",
+        read: () => {
+          const v = mathValues[m.id];
+          if (!Number.isFinite(v)) return "—";
+          const p = Math.max(0, Math.min(6, m.precision ?? 2));
+          return v.toFixed(p);
+        },
+      };
+    });
+  }, [enabledMathExpressions, mathValues]);
+  const mathNumericByChannelKey = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Record<string, number> = {};
+    for (let i = 0; i < enabledMathExpressions.length; i += 1) {
+      const m = enabledMathExpressions[i];
+      const dedupe = seen.has(m.key);
+      seen.add(m.key);
+      const channelKey = dedupe ? `math.${m.key}_${i + 1}` : `math.${m.key}`;
+      const v = mathValues[m.id];
+      if (Number.isFinite(v)) out[channelKey] = v;
+    }
+    return out;
+  }, [enabledMathExpressions, mathValues]);
+  const registry = useMemo(() => [...baseRegistry, ...mathRegistry], [baseRegistry, mathRegistry]);
   const byKey = useMemo(() => new Map(registry.map((c) => [c.key, c])), [registry]);
 
   const [visibleKeys, setVisibleKeys] = useState<string[]>(DEFAULT_CHANNEL_KEYS);
@@ -47,19 +129,22 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     const prefs = loadChannelPrefs();
     setVisibleKeys(prefs.visible);
     setModeByKey(prefs.modeByKey ?? {});
+    setMathExpressions((prefs.mathExpressions ?? []).filter((m) => MathExpressionSchema.safeParse(m).success));
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    saveChannelPrefs({ visible: visibleKeys, modeByKey });
+    saveChannelPrefs({ visible: visibleKeys, modeByKey, mathExpressions });
     if (!session) return;
     // Debounced cloud sync.
     const id = setTimeout(() => {
-      upsertCloud({ data: { name: "default", layout: { visible: visibleKeys, modeByKey } } }).catch(() => {});
+      upsertCloud({
+        data: { name: "default", layout: { visible: visibleKeys, modeByKey, mathExpressions } },
+      }).catch(() => {});
     }, 1500);
     return () => clearTimeout(id);
-  }, [visibleKeys, modeByKey, hydrated, upsertCloud, session]);
+  }, [visibleKeys, modeByKey, mathExpressions, hydrated, upsertCloud, session]);
 
   const publish = async () => {
     if (!session) {
@@ -68,7 +153,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     }
     setPublishing(true);
     try {
-      await upsertCloud({ data: { name: "default", layout: { visible: visibleKeys, modeByKey } } });
+      await upsertCloud({
+        data: { name: "default", layout: { visible: visibleKeys, modeByKey, mathExpressions } },
+      });
       const out = await publishCloud({ data: { name: "default", published: true } });
       if ("ok" in out && out.ok) toast.success("Workspace published to community.");
       else toast.error("Publish failed.");
@@ -80,10 +167,15 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
   };
 
   const onImport = (row: CommunityRow) => {
-    const layout = row.payload as { visible: string[]; modeByKey?: Record<string, "raw" | "trace"> };
+    const layout = row.payload as {
+      visible: string[];
+      modeByKey?: Record<string, "raw" | "trace">;
+      mathExpressions?: MathExpression[];
+    };
     if (!Array.isArray(layout?.visible)) return;
     setVisibleKeys(layout.visible);
     setModeByKey(layout.modeByKey ?? {});
+    setMathExpressions((layout.mathExpressions ?? []).filter((m) => MathExpressionSchema.safeParse(m).success));
     setBrowseOpen(false);
     toast.success(`Imported layout with ${layout.visible.length} channels.`);
   };
@@ -114,11 +206,11 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     for (const c of visibleChannels) {
       const key = c.key;
       const prev = historyRef.current[key] ?? [];
-      const n = getNumericValue(t, key);
+      const n = getNumericValue(t, key, mathNumericByChannelKey);
       next[key] = Number.isFinite(n) ? [...prev.slice(-59), n] : prev.slice(-59);
     }
     historyRef.current = next;
-  }, [t, visibleChannels]);
+  }, [t, visibleChannels, mathNumericByChannelKey]);
 
   return (
     <div className="rounded-sm border border-zinc-900 bg-zinc-950">
@@ -188,8 +280,10 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
           registry={registry}
           visibleKeys={visibleKeys}
           modeByKey={modeByKey}
+          mathExpressions={mathExpressions}
           onChange={setVisibleKeys}
           onSetMode={(key, mode) => setModeByKey((m) => ({ ...m, [key]: mode }))}
+          onSetMathExpressions={setMathExpressions}
         />
       )}
       <CommunityBrowser
@@ -208,14 +302,18 @@ function EditPanel({
   registry,
   visibleKeys,
   modeByKey,
+  mathExpressions,
   onChange,
   onSetMode,
+  onSetMathExpressions,
 }: {
   registry: ChannelDef[];
   visibleKeys: string[];
   modeByKey: Record<string, "raw" | "trace">;
+  mathExpressions: MathExpression[];
   onChange: (keys: string[]) => void;
   onSetMode: (key: string, mode: "raw" | "trace") => void;
+  onSetMathExpressions: (expressions: MathExpression[]) => void;
 }) {
   const visibleSet = new Set(visibleKeys);
   const groups = useMemo(() => {
@@ -241,6 +339,67 @@ function EditPanel({
     const next = visibleKeys.slice();
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
+  };
+  const addExpression = () => {
+    const now = new Date().toISOString();
+    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
+    onSetMathExpressions([
+      ...mathExpressions,
+      {
+        id,
+        name: `Derived ${mathExpressions.length + 1}`,
+        key: `derived_${mathExpressions.length + 1}`,
+        expression: "speedKph",
+        unit: "",
+        precision: 2,
+        color: "#22d3ee",
+        enabled: true,
+        scope: "both",
+        created_at: now,
+        updated_at: now,
+      },
+    ]);
+  };
+  const addPresets = () => {
+    const now = new Date().toISOString();
+    const existing = new Set(mathExpressions.map((m) => m.key));
+    const additions = MATH_PRESETS
+      .filter((p) => !existing.has(p.key))
+      .map((p) => ({
+        id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${p.key}`,
+        name: p.name,
+        key: p.key,
+        expression: p.expression,
+        unit: p.unit ?? "",
+        precision: p.precision ?? 2,
+        color: p.color ?? "#22d3ee",
+        enabled: true,
+        scope: "both" as const,
+        created_at: now,
+        updated_at: now,
+      }));
+    if (additions.length === 0) {
+      toast.message("Math presets already installed.");
+      return;
+    }
+    onSetMathExpressions([...mathExpressions, ...additions]);
+    onChange([
+      ...visibleKeys,
+      ...additions.map((m) => `math.${m.key}`),
+    ]);
+    toast.success(`Added ${additions.length} math presets.`);
+  };
+  const updateExpression = (id: string, patch: Partial<MathExpression>) => {
+    const now = new Date().toISOString();
+    onSetMathExpressions(
+      mathExpressions.map((m) => (m.id === id ? { ...m, ...patch, updated_at: now } : m)),
+    );
+  };
+  const removeExpression = (id: string) => {
+    const target = mathExpressions.find((m) => m.id === id);
+    onSetMathExpressions(mathExpressions.filter((m) => m.id !== id));
+    if (!target) return;
+    onChange(visibleKeys.filter((k) => k !== `math.${target.key}` && !k.startsWith(`math.${target.key}_`)));
   };
 
   return (
@@ -329,6 +488,77 @@ function EditPanel({
           </div>
         );
       })}
+      <div className="border-y border-zinc-900 bg-zinc-900/30 px-2 py-1 text-[9px] uppercase tracking-wider text-zinc-500">
+        Math
+      </div>
+      <div className="space-y-2 px-2 py-2">
+        {mathExpressions.map((m) => {
+          const syntax = validateMathExpressionSyntax(m.expression);
+          const compiled = compileMathExpression(m.expression);
+          const valid = syntax.ok && compiled.ok;
+          return (
+            <div key={m.id} className="rounded-sm border border-zinc-900 bg-zinc-950 p-2">
+              <div className="mb-1 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={m.enabled}
+                  onChange={(e) => updateExpression(m.id, { enabled: e.target.checked })}
+                />
+                <input
+                  value={m.name}
+                  onChange={(e) => updateExpression(m.id, { name: e.target.value })}
+                  className="min-w-0 flex-1 rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[11px] text-zinc-200"
+                  placeholder="Name"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeExpression(m.id)}
+                  className="rounded-sm bg-rose-500/20 px-1.5 py-0.5 text-[10px] text-rose-300 hover:bg-rose-500/30"
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <input
+                  value={m.key}
+                  onChange={(e) => updateExpression(m.id, { key: e.target.value })}
+                  className="rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                  placeholder="key (snake_case)"
+                />
+                <input
+                  value={m.unit ?? ""}
+                  onChange={(e) => updateExpression(m.id, { unit: e.target.value })}
+                  className="rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                  placeholder="unit"
+                />
+                <input
+                  value={m.expression}
+                  onChange={(e) => updateExpression(m.id, { expression: e.target.value })}
+                  className="col-span-2 rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                  placeholder="expression"
+                />
+              </div>
+              <div className="mt-1 text-[9px] text-zinc-500">
+                {valid ? "Valid expression." : (syntax.error ?? (!compiled.ok ? compiled.error : "Invalid expression."))}
+              </div>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={addExpression}
+          className="rounded-sm bg-cyan-500/20 px-2 py-1 text-[9px] uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/30"
+        >
+          Add derived channel
+        </button>
+        <button
+          type="button"
+          onClick={addPresets}
+          className="ml-2 rounded-sm bg-emerald-500/20 px-2 py-1 text-[9px] uppercase tracking-wider text-emerald-300 hover:bg-emerald-500/30"
+        >
+          Install presets
+        </button>
+      </div>
 
       <div className="flex items-center justify-between gap-2 border-t border-zinc-900 px-2 py-2 text-[9px] uppercase tracking-wider">
         <button
@@ -357,7 +587,10 @@ function EditPanel({
   );
 }
 
-function getNumericValue(t: Telemetry, key: string): number {
+function getNumericValue(t: Telemetry, key: string, mathValues: Record<string, number>): number {
+  if (key.startsWith("math.")) {
+    return typeof mathValues[key] === "number" ? mathValues[key] : Number.NaN;
+  }
   if (key.startsWith("extras.")) {
     const v = t.extras?.[key.slice(7)];
     return typeof v === "number" ? v : Number.NaN;
