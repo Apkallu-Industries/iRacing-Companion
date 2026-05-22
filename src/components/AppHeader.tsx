@@ -1,15 +1,18 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Activity, LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeEditor } from "@/components/ThemeEditor";
 import { LLMSettings } from "@/components/LLMSettings";
 import { LocalDbSettings } from "@/components/LocalDbSettings";
+import { VoiceSettings } from "@/components/VoiceSettings";
 import { BackButton } from "@/components/BackButton";
 import { HeaderBreadcrumbs } from "@/components/HeaderBreadcrumbs";
 
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const settingsActive = pathname === "/settings" || pathname.startsWith("/settings/");
   return (
     <header className="hairline-b flex h-12 items-center bg-panel px-4">
       <BackButton />
@@ -24,10 +27,22 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
       <div className="mx-3 h-4 w-px bg-border hidden sm:block" />
       <div className="flex flex-1 items-center gap-3 text-xs text-muted-foreground">{children}</div>
       <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+        <Link
+          to="/settings"
+          className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-colors ${
+            settingsActive
+              ? "bg-primary/15 text-primary ring-1 ring-primary/40"
+              : "hover:bg-accent hover:text-foreground"
+          }`}
+        >
+          <Settings className="h-3.5 w-3.5" />
+          Settings
+        </Link>
         {user ? (
           <>
             <span className="font-mono">{user.email}</span>
             <LLMSettings />
+            <VoiceSettings />
             <LocalDbSettings />
             <ThemeEditor />
             <button
@@ -45,6 +60,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
           <>
             <span className="font-mono uppercase tracking-wider text-racing-orange">Guest</span>
             <LLMSettings />
+            <VoiceSettings />
             <LocalDbSettings />
             <ThemeEditor />
             <Link

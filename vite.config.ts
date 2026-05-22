@@ -12,4 +12,20 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("@tanstack")) return "tanstack";
+            if (id.includes("three") || id.includes("@react-three")) return "three";
+            if (id.includes("uplot") || id.includes("recharts")) return "charts";
+            if (id.includes("lucide-react")) return "icons";
+            return "vendor";
+          },
+        },
+      },
+    },
+  },
 });

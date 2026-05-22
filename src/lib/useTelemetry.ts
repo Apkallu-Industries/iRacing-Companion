@@ -20,6 +20,7 @@ function getBridgeUrl() {
 export function useTelemetry(): Telemetry {
   const [t, setT] = useState<Telemetry>(DEFAULT_TELEMETRY);
   const liveRef = useRef(false);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Live WS connection
   useEffect(() => {
@@ -30,6 +31,7 @@ export function useTelemetry(): Telemetry {
     const connect = () => {
       try {
         ws = new WebSocket(getBridgeUrl());
+        wsRef.current = ws;
       } catch {
         retry = setTimeout(connect, 3000);
         return;
@@ -44,6 +46,7 @@ export function useTelemetry(): Telemetry {
         }
       };
       ws.onclose = () => {
+        wsRef.current = null;
         liveRef.current = false;
         setT((prev) => ({ ...prev, connected: false, source: "simulated" }));
         if (!cancelled) retry = setTimeout(connect, 3000);
@@ -56,6 +59,43 @@ export function useTelemetry(): Telemetry {
       cancelled = true;
       if (retry) clearTimeout(retry);
       ws?.close();
+      wsRef.current = null;
+    };
+  }, []);
+
+  // Report approximate browser FPS to bridge for adaptive UI stream rate.
+  useEffect(() => {
+    let raf = 0;
+    let last = performance.now();
+    let frames = 0;
+    let latestFps = 60;
+    let report: ReturnType<typeof setInterval> | null = null;
+
+    const loop = (now: number) => {
+      frames += 1;
+      const elapsed = now - last;
+      if (elapsed >= 1000) {
+        latestFps = (frames * 1000) / elapsed;
+        frames = 0;
+        last = now;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    report = setInterval(() => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      try {
+        ws.send(JSON.stringify({ type: "perf", fps: Math.round(latestFps) }));
+      } catch {
+        // ignore
+      }
+    }, 2000);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      if (report) clearInterval(report);
     };
   }, []);
 

@@ -7,6 +7,7 @@ import { dispatchLiveCoach } from "@/lib/llm";
 import { speakText } from "@/lib/tts.functions";
 import { decideTone, type RuleSummary, type Tone } from "@/lib/live/coachRules";
 import { waitForStraight } from "@/lib/live/isInCorner";
+import { useWorkbench } from "@/lib/store";
 
 const COACH_DEBOUNCE_MS = 45_000;
 const MIN_CONFIDENCE = 55;
@@ -35,6 +36,7 @@ const toneStyles: Record<Tone, { bg: string; ring: string; text: string; label: 
 
 export function LiveCoach({ t }: { t: Telemetry }) {
   const { user } = useAuth();
+  const { elevenLabsApiKey, elevenLabsVoiceId } = useWorkbench();
   const [call, setCall] = useState<RadioCall | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -230,7 +232,9 @@ export function LiveCoach({ t }: { t: Telemetry }) {
     setSpeaking(true);
     try {
       const text = c.focus ? `${c.headline}. ${c.detail}. Focus: ${c.focus}.` : `${c.headline}. ${c.detail}.`;
-      const resp = (await speakText({ data: { text } })) as { audioBase64?: string; mime?: string; error?: string };
+      const resp = (await speakText({
+        data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId },
+      })) as { audioBase64?: string; mime?: string; error?: string };
       if (!resp.audioBase64) {
         setSpeaking(false);
         return;

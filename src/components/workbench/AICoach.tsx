@@ -53,7 +53,7 @@ export function AICoach({
   car?: string | null;
   sessionId?: string;
 }) {
-  const { refLap, cmpLap } = useWorkbench();
+  const { refLap, cmpLap, elevenLabsApiKey, elevenLabsVoiceId } = useWorkbench();
   const [mode, setMode] = useState<CoachMode>("single");
   const [detailed, setDetailed] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
@@ -149,7 +149,7 @@ export function AICoach({
       const text = resultDetailed
         ? renderDetailedForSpeech(result as DetailedResult)
         : renderConciseForSpeech(result as ConciseResult);
-      const resp = await speakText({ data: { text } });
+      const resp = await speakText({ data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId } });
       const r = resp as { error?: string; audioBase64?: string; mime?: string };
       if (r.error || !r.audioBase64) {
         setTtsError(r.error ?? "Voice unavailable");

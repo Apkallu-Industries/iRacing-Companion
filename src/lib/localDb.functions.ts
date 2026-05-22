@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { connectToLocalDb } from "@/lib/db.local";
-import { ObjectId } from "mongodb";
+
+async function createObjectId(id: string) {
+  const dynamicImport = new Function("s", "return import(s)");
+  const { ObjectId } = (await dynamicImport("mongodb")) as any;
+  return new ObjectId(id);
+}
 
 export const getLocalSessions = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -28,7 +33,8 @@ export const getLocalSessionById = createServerFn({ method: "POST" })
   .handler(async ({ data: id }) => {
     try {
       const db = await connectToLocalDb();
-      const session = await db.collection("telemetry_sessions").findOne({ _id: new ObjectId(id) });
+      const objectId = await createObjectId(id);
+      const session = await db.collection("telemetry_sessions").findOne({ _id: objectId });
       if (!session) {
         return { data: null, error: { message: "Session not found" } };
       }
@@ -70,7 +76,8 @@ export const deleteLocalSession = createServerFn({ method: "POST" })
   .handler(async ({ data: id }) => {
     try {
       const db = await connectToLocalDb();
-      await db.collection("telemetry_sessions").deleteOne({ _id: new ObjectId(id) });
+      const objectId = await createObjectId(id);
+      await db.collection("telemetry_sessions").deleteOne({ _id: objectId });
       return { error: null };
     } catch (e: any) {
       console.error("[MongoDB] deleteLocalSession failed:", e);

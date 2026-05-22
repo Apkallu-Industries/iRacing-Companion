@@ -26,7 +26,7 @@ The core product is **production-usable** for cloud users on Lovable (Supabase +
 | AI coach / advisor / TTS | Shipped (cloud AI gateway) |
 | Community + themes + sharing | Shipped |
 | Local/offline dev mode | Shipped (partial; mock auth limits some server paths) |
-| Bridge → MongoDB 30Hz capture | Code complete; requires `MONGODB_URI` on bridge |
+| Bridge → MongoDB capture | Code complete; configurable `RECORD_HZ`, requires `MONGODB_URI` on bridge |
 | `.pwlap` export/import (server) | Code complete; not deployed |
 | `.pwlap` UI (Export/Import dialogs) | Built; **not imported** in routes |
 | Automated tests | **None** |
@@ -58,7 +58,7 @@ Naming is inconsistent across routes, storage keys, and copy:
 flowchart TB
   subgraph windows [Windows PC - iRacing]
     IRSDK[iRacing IRSDK]
-    Bridge[desktop/bridge :3001]
+    Bridge[local-bridge :3001]
     MongoBridge[(MongoDB iracing_companion)]
     IRSDK --> Bridge
     Bridge --> MongoBridge
@@ -242,7 +242,7 @@ Two connection paths with **different database names**:
 | `src/lib/db.local.ts` | `iracing` | Local session documents | Local developer mode proxy |
 | `desktop/bridge/telemetry-recorder.js` | `iracing_companion` | Same as server | Bridge live capture |
 
-Bridge aggregates 30Hz samples into **1-second documents** (min/max/avg per channel). Server export caps at **100,000 samples** (~33 min @ 30Hz).
+Bridge sampling/stream/record rates are configurable (`TICK_HZ`, `UI_HZ`, `RECORD_HZ`) with optional adaptive UI fallback to 30Hz.
 
 ### 5.3 Browser storage
 
@@ -261,12 +261,12 @@ Bridge aggregates 30Hz samples into **1-second documents** (min/max/avg per chan
 - **Port:** 3001 (HTTP + WebSocket + optional PWA at `public/`)
 - **Dependencies:** `irsdk-node`, `ws`, `mongodb`
 - **Entry:** `server.js` — IRSDK loop, WebSocket broadcast, lap cache, `TelemetryRecorder` when `MONGODB_URI` set
-- **Recorder:** `telemetry-recorder.js` — 30Hz capture, per-second aggregation, lap metadata
+- **Recorder:** `telemetry-recorder.js` — configurable sample/record rates, per-second aggregation, lap metadata
 
 ### 6.2 Browser connection
 
 - `src/lib/useTelemetry.ts` — `WS_PORT = 3001`
-- `BridgeInstall` can spawn bridge via `startBridge()` server function
+- `BridgeInstall` can spawn bridge via `startBridge()` server function (currently launches `local-bridge`)
 - `DesktopLapSync` polls bridge for completed laps
 
 ### 6.3 Live recording (browser `.pwlap`)
@@ -354,7 +354,7 @@ Neither is imported in `sessions.$id.tsx` or `sessions.index.tsx` (only `ShareBu
 | --- | --- |
 | Production | Lovable → Cloudflare Workers + Supabase |
 | Local dev | `npm run dev` / `bun run dev` (Vite) |
-| Bridge | `cd desktop/bridge && npm start` |
+| Bridge | `cd local-bridge && npm start` |
 
 ### 10.2 Environment variables (names only — no values)
 
@@ -451,7 +451,7 @@ src/lib/pwlap/       # .pwlap format
 src/lib/*.functions.ts
 desktop/bridge/      # Local IRSDK bridge
 supabase/migrations/
-local-bridge/        # Alternate bridge package (legacy/alternate)
+local-bridge/        # Primary downloadable bridge package
 ```
 
 ### 14.3 Related links

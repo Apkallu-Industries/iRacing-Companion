@@ -1,16 +1,27 @@
-import { MongoClient, ServerApiVersion, type Db } from "mongodb";
-
 // Use a consistent connection URI prioritizing localhost explicitly for Windows/Docker stability.
 const uri = "mongodb://127.0.0.1:27017/";
+type DbLike = {
+    collection: (name: string) => any;
+    listCollections: () => { toArray: () => Promise<Array<{ name: string }>> };
+    createCollection: (name: string, options?: Record<string, unknown>) => Promise<unknown>;
+    command: (cmd: Record<string, unknown>) => Promise<unknown>;
+};
 
-let cachedClient: MongoClient | null = null;
-let cachedDb: Db | null = null;
+let cachedClient: any | null = null;
+let cachedDb: DbLike | null = null;
 
-export async function connectToLocalDb(): Promise<Db> {
+async function loadMongo() {
+    // Avoid static bundling of mongodb in worker builds.
+    const dynamicImport = new Function("s", "return import(s)");
+    return await dynamicImport("mongodb") as any;
+}
+
+export async function connectToLocalDb(): Promise<DbLike> {
     if (cachedDb) {
         return cachedDb;
     }
 
+    const { MongoClient, ServerApiVersion } = await loadMongo();
     const client = new MongoClient(uri, {
         serverApi: {
             version: ServerApiVersion.v1,
@@ -38,7 +49,7 @@ export async function connectToLocalDb(): Promise<Db> {
     }
 }
 
-async function setupIndexes(db: Db) {
+async function setupIndexes(db: DbLike) {
     // 1. Establish strict JSON Schema validation for 'telemetry_sessions'
     const sessionValidator = {
         $jsonSchema: {

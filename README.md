@@ -60,6 +60,7 @@ Everything is account‑scoped via row‑level security — your laps are yours.
 | How it works | `/how-it-works` | Parsing pipeline diagram, `.ibt` format breakdown |
 | Auth | `/auth` | Email + password, Google OAuth |
 | Live dashboard | `/live` | Real‑time telemetry, gauges, AI coach, bridge install |
+| Settings | `/settings` | AI provider, Voice (ElevenLabs), Local DB diagnostics, Appearance |
 | Workbench | `/sessions/$id` | Lap analysis for an uploaded `.ibt` |
 | Sessions list | `/sessions` | All uploaded laps, fingerprint deltas |
 | Car fingerprint | `/fingerprint` | Tire / brake / aero fingerprint vs reference |
@@ -67,7 +68,7 @@ Everything is account‑scoped via row‑level security — your laps are yours.
 | Lab | `/lab/lapfile` | Diagnostic parser playground |
 | Sitemap | `/sitemap.xml` | SEO sitemap |
 
-A global floating **Back** button (`src/components/BackButton.tsx`) renders on every non‑landing page so you’re never trapped.
+A global fixed **Back** button (`src/components/BackButton.tsx`) is pinned top‑left on every non‑landing page so you’re never trapped.
 
 ---
 
@@ -78,6 +79,11 @@ Route: **`/live`** · Components: `src/components/live/*`
 ### Bridge
 
 - **`BridgeInstall.tsx`** — One‑click download + setup instructions for the local desktop bridge that exposes iRacing’s IRSDK over a local websocket.
+- Bridge runtime now supports independent rates and adaptive streaming:
+  - `TICK_HZ` (sample rate, up to 360Hz)
+  - `UI_HZ` (dashboard websocket rate)
+  - `RECORD_HZ` (recording rate)
+  - `ADAPTIVE_UI=1` auto-falls back to 30Hz for slow clients based on reported browser FPS
 - **`DesktopLapSync.tsx`** — Auto‑uploads completed laps from the bridge into your session history so you can analyze them in the workbench right after the run.
 
 ### Dashboard widgets
@@ -142,6 +148,7 @@ Powered by **Lovable AI Gateway** (no API key needed):
 - `src/lib/coach/physics.ts` — Lightweight vehicle physics features fed to the LLM (load transfer estimates, slip ratios).
 - `src/lib/advisor.functions.ts` + `src/lib/advisor.knowledge.ts` — Setup advisor that combines a curated knowledge base (springs, dampers, bars, aero, brake bias) with lap telemetry to recommend setup nudges.
 - `src/lib/tts.functions.ts` — Server‑side TTS so the live coach can *speak* call‑outs while you drive.
+- `src/components/VoiceSettings.tsx` — Per-user ElevenLabs API key + Voice ID configuration from Settings.
 
 All AI calls go through authenticated server functions (`requireSupabaseAuth`) so user context and rate limits are honored.
 
@@ -260,28 +267,39 @@ supabase/
 You can run Pit Wall entirely locally on your Windows machine without a Supabase cloud connection, using a local MongoDB database and browser-level IndexedDB file storage.
 
 ### 1. Boot the Application
+
 Install dependencies and boot the development server:
+
 ```bash
 npm install
 npm run dev
 ```
 
 ### 2. Standalone Offline / Local Developer Mode
+
 1. Open [http://localhost:3000](http://localhost:3000) in your browser.
 2. Go to the login screen and click **"Continue as Local Developer (No Cloud)"**. This logs you in with a mock credential and directs your traffic to local storage endpoints.
 
 ### 3. Local Database & File Setup
+
 1. **Database**: Download and start a local **MongoDB** server.
-   * On Windows: `winget install MongoDB.Community.Server` (or verify the service is running).
-   * Via Docker: `docker run -d -p 27017:27017 --name iracing-mongo mongo:latest`
+   - On Windows: `winget install MongoDB.Community.Server` (or verify the service is running).
+   - Via Docker: `docker run -d -p 27017:27017 --name iracing-mongo mongo:latest`
 2. **File Storage**: Telemetry binary files are automatically cached inside your browser's private **IndexedDB** memory.
 3. Open the **Database** setup panel in the header to run connection tests and manage your local browser cache size.
 
 ### 4. Spawning the iRacing Bridge
-* Start the companion app.
-* Navigate to the **Live** dashboard (`/live`).
-* If the bridge is stopped, simply click **"Run Local Bridge"** directly in the browser UI. The app will spawn the background listener node service on port `3001` automatically.
-* Launch iRacing and start driving — data will stream live immediately.
+
+**iRacing Bridge** is a Node.js process that runs in the background. It connects to your local database and file storage, and streams telemetry data from iRacing to your browser. Start the companion app.
+
+- Navigate to the **Live** dashboard (`/live`).
+- If the bridge is stopped, click **"Run Local Bridge"** in the UI. The app spawns `local-bridge` on port `3001` automatically.
+- Optional performance env vars for the bridge process:
+  - `TICK_HZ` (default `120`)
+  - `UI_HZ` (default `60`)
+  - `RECORD_HZ` (default `120`)
+  - `ADAPTIVE_UI` (`1` default, set `0` to disable adaptive fallback)
+- Launch iRacing and start driving — data will stream live immediately.
 
 ---
 

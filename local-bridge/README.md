@@ -1,44 +1,53 @@
-# iRacing → Pit Wall Bridge + Local Dashboard
+# iRacing → Pit Wall Local Bridge
 
-One command. One URL. Live telemetry from iRacing on any device on your network,
-installable as a PWA.
+Run the bridge on your Windows iRacing PC and stream live telemetry to the app on port `3001`.
 
 ## Requirements
 
-- **Windows PC** running iRacing
-- Node.js 20 LTS or newer
+- Windows PC running iRacing
+- Node.js 20+ installed
 
 ## Run
 
 ```powershell
-cd C:\Dev\racedash-live-main\local-bridge
+cd C:\Dev\iRacing-Companion\local-bridge
 npm install
 npm start
 ```
 
-Then open **http://localhost:3001** on the same PC, or
-**http://<your-pc-ip>:3001** from your phone, tablet, or second screen.
-The terminal prints all the URLs when it starts.
+Then open:
 
-That's it. No HTTPS, no mixed-content errors, no cloud account needed.
+- `http://localhost:3001` on the same PC
+- `http://<your-pc-ip>:3001` from another device on your network
 
-## Install as an app
+## Performance rate controls
 
-Open the dashboard in Chrome/Edge → click the **Install** button (top right)
-or use the browser menu → "Install Pit Wall". It launches like a native app,
-full screen, no browser chrome.
+Optional environment variables:
+
+- `TICK_HZ` (sampling rate from IRSDK, default `120`, max `360`)
+- `UI_HZ` (WebSocket stream rate, default `60`)
+- `RECORD_HZ` (recording rate, default `120`)
+- `ADAPTIVE_UI` (`1` default): auto-fallback to `30Hz` for slow clients
+
+Example:
+
+```powershell
+$env:TICK_HZ=240
+$env:UI_HZ=60
+$env:RECORD_HZ=240
+$env:ADAPTIVE_UI=1
+npm start
+```
 
 ## Troubleshooting
 
-- **Phone can't connect** → Windows Firewall is blocking port 3001. Allow Node.js
-  through "Private networks" the first time it prompts, or run
-  `New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow`
-  in an Administrator PowerShell.
-- **`npm install` fails with C++ / `AccessorSignature` errors** → stale
-  `node_modules`. Delete and reinstall:
+- Phone cannot connect:
+  - Allow Node.js through Windows Firewall on private networks.
+- iRacing data not updating:
+  - Bridge must run on the same Windows machine as iRacing (IRSDK is Windows shared-memory).
+- Install/build errors:
+  - Clear stale modules and reinstall:
   ```powershell
   Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
   npm install
   ```
-- **macOS/Linux** → the bridge runs but iRacing's Shared Memory API is
-  Windows-only, so there's nothing to read. Use a Windows PC.

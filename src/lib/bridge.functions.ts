@@ -45,7 +45,7 @@ export const startBridge = createServerFn({ method: "POST" })
         return { success: true, message: "Bridge is already running on port 3001." };
       }
 
-      const bridgeDir = path.resolve(process.cwd(), "desktop/bridge");
+      const bridgeDir = path.resolve(process.cwd(), "local-bridge");
       console.log(`[Bridge Server] Starting bridge in ${bridgeDir}...`);
       
       const fs = await import("fs");
@@ -68,7 +68,7 @@ export const startBridge = createServerFn({ method: "POST" })
       if (started) {
         return { success: true, message: "Bridge started successfully." };
       } else {
-        throw new Error("Bridge process spawned but port 3001 is not responding. Please make sure node packages are installed in 'desktop/bridge'.");
+        throw new Error("Bridge process spawned but port 3001 is not responding. Please make sure node packages are installed in 'local-bridge'.");
       }
     } catch (e: any) {
       console.error("[Bridge Server] Start failed:", e);

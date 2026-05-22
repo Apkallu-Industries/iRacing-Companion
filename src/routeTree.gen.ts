@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
@@ -26,6 +27,11 @@ import { Route as ApiPublicOgShareTokenRouteImport } from './routes/api/public/o
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoadmapRoute = RoadmapRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
   '/roadmap': typeof RoadmapRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
   '/roadmap': typeof RoadmapRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
   '/roadmap': typeof RoadmapRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/live'
     | '/roadmap'
+    | '/settings'
     | '/sitemap.xml'
     | '/lab/lapfile'
     | '/sessions/$id'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/live'
     | '/roadmap'
+    | '/settings'
     | '/sitemap.xml'
     | '/lab/lapfile'
     | '/sessions/$id'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/live'
     | '/roadmap'
+    | '/settings'
     | '/sitemap.xml'
     | '/lab/lapfile'
     | '/sessions/$id'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   LiveRoute: typeof LiveRoute
   RoadmapRoute: typeof RoadmapRoute
+  SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   LabLapfileRoute: typeof LabLapfileRoute
   SessionsIdRoute: typeof SessionsIdRoute
@@ -206,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/roadmap': {
@@ -303,6 +323,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   LiveRoute: LiveRoute,
   RoadmapRoute: RoadmapRoute,
+  SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   LabLapfileRoute: LabLapfileRoute,
   SessionsIdRoute: SessionsIdRoute,

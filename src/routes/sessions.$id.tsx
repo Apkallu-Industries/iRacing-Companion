@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useWorkbench } from "@/lib/store";
@@ -11,19 +11,24 @@ import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
 import { StackedTraces } from "@/components/workbench/StackedTraces";
 import { TrackMap } from "@/components/workbench/TrackMap";
 import { LiveReadout } from "@/components/workbench/LiveReadout";
-import { Timeline } from "@/components/workbench/Timeline";
 import { LapList } from "@/components/workbench/LapList";
 import { GGDiagram } from "@/components/workbench/GGDiagram";
 import { OptimalLap } from "@/components/workbench/OptimalLap";
 import { Counterfactuals } from "@/components/workbench/Counterfactuals";
 import { BrakeBias } from "@/components/workbench/BrakeBias";
 import { SlipAngle } from "@/components/workbench/SlipAngle";
-import { lazy, Suspense } from "react";
-
 const LazyAICoach = lazy(() =>
   import("@/components/workbench/AICoach").then((m) => ({ default: m.AICoach })),
 );
-import { ReplayThree } from "@/components/workbench/ReplayThree";
+const LazyTimeline = lazy(() =>
+  import("@/components/workbench/Timeline").then((m) => ({ default: m.Timeline })),
+);
+const LazyReplayThree = lazy(() =>
+  import("@/components/workbench/ReplayThree").then((m) => ({ default: m.ReplayThree })),
+);
+const LazyCinemaPlayback = lazy(() =>
+  import("@/components/workbench/CinemaPlayback").then((m) => ({ default: m.CinemaPlayback })),
+);
 import { PianoRoll } from "@/components/workbench/PianoRoll";
 import { SectorSpider } from "@/components/workbench/SectorSpider";
 import { SetupSheet } from "@/components/workbench/SetupSheet";
@@ -31,7 +36,6 @@ import { SetupDiff } from "@/components/workbench/SetupDiff";
 import { ShareButton } from "@/components/workbench/ShareButton";
 import { MinCornerSpeed } from "@/components/workbench/MinCornerSpeed";
 import { TimeLossWaterfall } from "@/components/workbench/TimeLossWaterfall";
-import { CinemaPlayback } from "@/components/workbench/CinemaPlayback";
 import { FingerprintDelta } from "@/components/workbench/FingerprintDelta";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -277,7 +281,15 @@ function WorkbenchPage() {
               <div className="min-h-0 flex-1 overflow-hidden">
                 <StackedTraces parsed={parsed} />
               </div>
-              <Timeline parsed={parsed} />
+              <Suspense
+                fallback={
+                  <div className="hairline-t px-3 py-2 font-mono text-[10px] uppercase text-muted-foreground">
+                    Loading timeline...
+                  </div>
+                }
+              >
+                <LazyTimeline parsed={parsed} />
+              </Suspense>
               <div className="hairline-t flex h-72 shrink-0">
                 <div className="hairline-r w-1/2 bg-panel">
                   <TrackMap parsed={parsed} />
@@ -326,7 +338,11 @@ function WorkbenchPage() {
                     ))}
                   </div>
                   <div className="min-h-0 flex-1">
-                    {bottomTab === "cinema" && <CinemaPlayback parsed={parsed} />}
+                    {bottomTab === "cinema" && (
+                      <Suspense fallback={<div className="p-3 text-xs text-muted-foreground">Loading cinema...</div>}>
+                        <LazyCinemaPlayback parsed={parsed} />
+                      </Suspense>
+                    )}
                     {bottomTab === "readout" && <LiveReadout parsed={parsed} />}
                     {bottomTab === "laps" && <LapList parsed={parsed} />}
                     {bottomTab === "gg" && <GGDiagram parsed={parsed} />}
@@ -336,7 +352,11 @@ function WorkbenchPage() {
                     {bottomTab === "waterfall" && <TimeLossWaterfall parsed={parsed} />}
                     {bottomTab === "brake" && <BrakeBias parsed={parsed} />}
                     {bottomTab === "slip" && <SlipAngle parsed={parsed} />}
-                    {bottomTab === "replay3d" && <ReplayThree parsed={parsed} />}
+                    {bottomTab === "replay3d" && (
+                      <Suspense fallback={<div className="p-3 text-xs text-muted-foreground">Loading 3D replay...</div>}>
+                        <LazyReplayThree parsed={parsed} />
+                      </Suspense>
+                    )}
                     {bottomTab === "piano" && <PianoRoll parsed={parsed} />}
                     {bottomTab === "spider" && <SectorSpider parsed={parsed} />}
                     {bottomTab === "setup" && <SetupSheet parsed={parsed} />}

@@ -76,6 +76,10 @@ interface WorkbenchState {
 
   llmApiKey: string;
   setLlmApiKey: (key: string) => void;
+  elevenLabsApiKey: string;
+  elevenLabsVoiceId: string;
+  setElevenLabsApiKey: (key: string) => void;
+  setElevenLabsVoiceId: (voiceId: string) => void;
 
   subscriptionPlan: SubscriptionPlan;
   setSubscriptionPlan: (plan: SubscriptionPlan) => void;
@@ -154,6 +158,10 @@ export const useWorkbench = create<WorkbenchState>((set) => ({
   setLlmBaseUrl: (url) => set({ llmBaseUrl: url }),
   setLlmModelId: (id) => set({ llmModelId: id }),
   setLlmApiKey: (key: string) => set({ llmApiKey: key }),
+  elevenLabsApiKey: "",
+  elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
+  setElevenLabsApiKey: (key: string) => set({ elevenLabsApiKey: key }),
+  setElevenLabsVoiceId: (voiceId: string) => set({ elevenLabsVoiceId: voiceId }),
 
   liveTrack: "",
   liveCar: "",

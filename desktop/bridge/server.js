@@ -27,7 +27,10 @@ try {
 }
 
 const PORT = 3001;
-const TICK_HZ = 30;
+const TICK_HZ = intFromEnv("TICK_HZ", 120, 1, 360);
+const UI_HZ = intFromEnv("UI_HZ", 60, 1, 360);
+const RECORD_HZ = intFromEnv("RECORD_HZ", TICK_HZ, 1, 360);
+const ADAPTIVE_UI = (process.env.ADAPTIVE_UI ?? "1") !== "0";
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 const MIME = {
@@ -112,6 +115,7 @@ const wss = new WebSocketServer({ server });
 server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
   console.log(`[bridge] websocket:  ws://localhost:${PORT}`);
+  console.log(`[bridge] rates: sample=${TICK_HZ}Hz ui=${UI_HZ}Hz record=${RECORD_HZ}Hz adaptive=${ADAPTIVE_UI ? "on" : "off"}`);
   printNetworkUrls(PORT);
 });
 
@@ -119,6 +123,9 @@ let latest = null;
 let packetCount = 0;
 let lastLapNum = -1;
 let telemetryRecorder = null;
+let sampleTick = 0;
+let uiIntervalMs = Math.round(1000 / clampHz(UI_HZ));
+const clientPerf = new Map();
 
 if (IRacingSDK) {
   const iracing = new IRacingSDK({ autoEnableTelemetry: true });
@@ -164,13 +171,16 @@ if (IRacingSDK) {
     const flat = flattenTelemetry(raw);            // scalar view (first element of arrays)
     const wide = expandTelemetry(raw);             // every channel, arrays exploded into _0,_1,...
     latest = mapTelemetry(flat, iracing.getSessionData());
+    latest.streamHz = Math.round(1000 / uiIntervalMs);
     latest.all = flat;                              // legacy passthrough
     latest.extras = numericOnly(wide);              // full .ibt-equivalent channel set
     packetCount += 1;
+    sampleTick += 1;
 
     // Record telemetry sample to MongoDB
     const lapNum = Number(flat.Lap ?? flat.LapCompleted ?? -1);
-    if (telemetryRecorder) {
+    const recordEveryTicks = Math.max(1, Math.round(TICK_HZ / RECORD_HZ));
+    if (telemetryRecorder && sampleTick % recordEveryTicks === 0) {
       telemetryRecorder.recordSample(latest.extras || {}, lapNum);
     }
 
@@ -210,13 +220,55 @@ setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
   const msg = JSON.stringify(latest);
   for (const client of wss.clients) if (client.readyState === 1) client.send(msg);
-}, 1000 / TICK_HZ);
+}, uiIntervalMs);
+
+setInterval(() => {
+  if (!ADAPTIVE_UI) return;
+  const now = Date.now();
+  let hasSlowClient = false;
+  for (const perf of clientPerf.values()) {
+    if (now - perf.at > 5000) continue;
+    if (perf.fps < 50) {
+      hasSlowClient = true;
+      break;
+    }
+  }
+  const targetHz = hasSlowClient ? Math.min(30, UI_HZ) : UI_HZ;
+  const next = Math.round(1000 / clampHz(targetHz));
+  if (next !== uiIntervalMs) {
+    uiIntervalMs = next;
+    console.log(`[bridge] adaptive ui rate -> ${Math.round(1000 / uiIntervalMs)}Hz`);
+  }
+}, 2000);
 
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
   if (latest) ws.send(JSON.stringify(latest));
-  ws.on("close", () => console.log("[bridge] dashboard disconnected"));
+  ws.on("message", (raw) => {
+    try {
+      const msg = JSON.parse(String(raw));
+      if (msg?.type === "perf" && Number.isFinite(msg.fps)) {
+        clientPerf.set(ws, { fps: Number(msg.fps), at: Date.now() });
+      }
+    } catch {
+      // ignore
+    }
+  });
+  ws.on("close", () => {
+    clientPerf.delete(ws);
+    console.log("[bridge] dashboard disconnected");
+  });
 });
+
+function intFromEnv(name, fallback, min, max) {
+  const raw = process.env[name];
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+function clampHz(n) {
+  return Math.max(1, Math.min(360, n));
+}
 
 function printNetworkUrls(port) {
   try {
