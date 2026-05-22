@@ -11,13 +11,13 @@ installable as a PWA.
 ## Run
 
 ```powershell
-cd C:\Dev\racedash-live-main\local-bridge
+cd C:\Dev\iRacing-Companion\local-bridge
 npm install
 npm start
 ```
 
-Then open **http://localhost:3001** on the same PC, or
-**http://<your-pc-ip>:3001** from your phone, tablet, or second screen.
+Then open **<http://localhost:3001>** on the same PC, or
+**<http://:3001>** on a different PC.** from your phone, tablet, or second screen.
 The terminal prints all the URLs when it starts.
 
 That's it. No HTTPS, no mixed-content errors, no cloud account needed.
@@ -36,9 +36,12 @@ full screen, no browser chrome.
   in an Administrator PowerShell.
 - **`npm install` fails with C++ / `AccessorSignature` errors** → stale
   `node_modules`. Delete and reinstall:
+
   ```powershell
   Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
   npm install
-  ```
-- **macOS/Linux** → the bridge runs but iRacing's Shared Memory API is
+
+  ```text
+
+***I'm on Linux/Android/iOS and can't connect** → you need to run Pit Wall as an**macOS/Linux** → the bridge runs but iRacing's Shared Memory API is***
   Windows-only, so there's nothing to read. Use a Windows PC.
