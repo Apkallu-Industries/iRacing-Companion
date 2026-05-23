@@ -15,7 +15,7 @@ import { testLLMConnection } from "@/lib/llm";
 
 const PROVIDERS = [
     { id: "cloud", name: "Cloud (Lovable/Default)", icon: Server, url: "", desc: "Route requests securely through the Lovable AI Gateway." },
-    { id: "lmstudio", name: "LM Studio", icon: Laptop, url: "http://localhost:1234/v1", desc: "OpenAI-compatible local inference." },
+    { id: "lmstudio", name: "LM Studio", icon: Laptop, url: "http://localhost:1234/api/v1", desc: "lmstudio-native." },
     { id: "ollama", name: "Ollama", icon: Cpu, url: "http://localhost:11434/v1", desc: "Local inference via Ollama." },
     { id: "huggingface", name: "HuggingFace TGI", icon: Server, url: "http://localhost:8080/v1", desc: "Local TGI container backend." },
     { id: "lemonade", name: "LlamaEdge / Lemonade", icon: Laptop, url: "http://localhost:8080/v1", desc: "Wasm edge inference." },
