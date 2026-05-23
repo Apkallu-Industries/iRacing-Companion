@@ -1,45 +1,47 @@
-# iRacing → Pit Wall Desktop Bridge
+# iRacing → Pit Wall Bridge + Local Dashboard
 
-`desktop/bridge` is the enhanced bridge variant with local lap cache and MongoDB recording support.
-
-For most users, use `local-bridge` (download + one-click launcher path). Use this variant when you explicitly want local recorder features.
+One command. One URL. Live telemetry from iRacing on any device on your network,
+installable as a PWA.
 
 ## Requirements
 
-- Windows PC running iRacing
-- Node.js 20+
-- Optional: MongoDB for telemetry recording
+- **Windows PC** running iRacing
+- Node.js 20 LTS or newer
 
 ## Run
 
 ```powershell
-cd C:\Dev\iRacing-Companion\desktop\bridge
+cd C:\Dev\racedash-live-main\local-bridge
 npm install
 npm start
 ```
 
-Bridge UI and WebSocket are exposed on:
+Then open **http://localhost:3001** on the same PC, or
+**http://<your-pc-ip>:3001** from your phone, tablet, or second screen.
+The terminal prints all the URLs when it starts.
 
-- `http://localhost:3001`
-- `ws://localhost:3001`
+That's it. No HTTPS, no mixed-content errors, no cloud account needed.
 
-## Optional MongoDB recording
+## Install as an app
 
-If `MONGODB_URI` is set, bridge records telemetry + lap metadata.
+Open the dashboard in Chrome/Edge → click the **Install** button (top right)
+or use the browser menu → "Install Pit Wall". It launches like a native app,
+full screen, no browser chrome.
 
-```powershell
-$env:MONGODB_URI="mongodb://127.0.0.1:27017/"
-npm start
-```
+## Troubleshooting
 
-## Performance rate controls
+- **Phone can't connect** → Windows Firewall is blocking port 3001. Allow Node.js
+  through "Private networks" the first time it prompts, or run
+  `New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow`
+  in an Administrator PowerShell.
+- **`npm install` fails with C++ / `AccessorSignature` errors** → stale
+  `node_modules`. Delete and reinstall:
 
-- `TICK_HZ` default `120` (sample loop, max `360`)
-- `UI_HZ` default `60` (stream loop)
-- `RECORD_HZ` default `120` (record loop)
-- `ADAPTIVE_UI` default `1` (auto-fallback to 30Hz on slow clients)
+  ```powershell
 
-## Notes
+  Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
+  npm install
+  ```
 
-- Keep this bridge and `local-bridge` behavior aligned unless intentionally diverging.
-- App UI “Run Local Bridge” currently launches `local-bridge`.
+***macOS/Linux*** → the bridge runs but iRacing's Shared Memory API is
+  Windows-only, so there's nothing to read. Use a Windows PC.

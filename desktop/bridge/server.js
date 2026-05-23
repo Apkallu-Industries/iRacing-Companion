@@ -14,9 +14,6 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
-const lapCache = require("./lap-cache");
-const { TelemetryRecorder } = require("./telemetry-recorder");
-const { buildChannelsManifest } = require("./channel-manifest");
 
 let IRacingSDK = null;
 try {
@@ -27,10 +24,7 @@ try {
 }
 
 const PORT = 3001;
-const TICK_HZ = intFromEnv("TICK_HZ", 120, 1, 360);
-const UI_HZ = intFromEnv("UI_HZ", 60, 1, 360);
-const RECORD_HZ = intFromEnv("RECORD_HZ", TICK_HZ, 1, 360);
-const ADAPTIVE_UI = (process.env.ADAPTIVE_UI ?? "1") !== "0";
+const TICK_HZ = 30;
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 const MIME = {
@@ -48,45 +42,6 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
-
-  // Offline lap cache endpoint — reads ~/.pitwall/laps.jsonl
-  if (urlPath === "/api/laps") {
-    const limit = Number(new URL(req.url, "http://x").searchParams.get("limit")) || 500;
-    res.writeHead(200, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": "*",
-      "Cache-Control": "no-store",
-    });
-    res.end(JSON.stringify({ file: lapCache.FILE, laps: lapCache.readLaps(limit) }));
-    return;
-  }
-
-  // Mark laps as synced (dashboard tells bridge after cloud insert).
-  if (urlPath === "/api/laps/mark-synced" && req.method === "POST") {
-    let body = "";
-    req.on("data", (c) => (body += c));
-    req.on("end", () => {
-      let ts = [];
-      try { ts = JSON.parse(body).timestamps || []; } catch {}
-      const changed = lapCache.markSynced(ts);
-      res.writeHead(200, {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      });
-      res.end(JSON.stringify({ ok: true, changed }));
-    });
-    return;
-  }
-  if (urlPath === "/api/laps/mark-synced" && req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    });
-    res.end();
-    return;
-  }
-
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
 
   // Prevent path traversal
@@ -115,96 +70,27 @@ const wss = new WebSocketServer({ server });
 server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
   console.log(`[bridge] websocket:  ws://localhost:${PORT}`);
-  console.log(`[bridge] rates: sample=${TICK_HZ}Hz ui=${UI_HZ}Hz record=${RECORD_HZ}Hz adaptive=${ADAPTIVE_UI ? "on" : "off"}`);
   printNetworkUrls(PORT);
 });
 
 let latest = null;
 let packetCount = 0;
-let lastLapNum = -1;
-let telemetryRecorder = null;
-let sampleTick = 0;
-let uiIntervalMs = Math.round(1000 / clampHz(UI_HZ));
-const clientPerf = new Map();
 
 if (IRacingSDK) {
   const iracing = new IRacingSDK({ autoEnableTelemetry: true });
   let wasConnected = false;
-  let recordingStarted = false;
 
-  setInterval(async () => {
+  setInterval(() => {
     const connected = iracing.sessionStatusOK || iracing.startSDK();
     if (connected !== wasConnected) {
       console.log(connected ? "[bridge] iRacing connected" : "[bridge] iRacing disconnected");
       wasConnected = connected;
-
-      if (connected && !recordingStarted) {
-        // Start telemetry recording to MongoDB
-        recordingStarted = true;
-        const mUri = process.env.MONGODB_URI && process.env.MONGODB_URI !== "undefined" && process.env.MONGODB_URI !== "null"
-          ? process.env.MONGODB_URI
-          : "mongodb://127.0.0.1:27017/";
-        telemetryRecorder = new TelemetryRecorder(
-          mUri,
-          process.env.USER_ID || "bridge-user",
-          {
-            track: "loading...",
-            car: "loading...",
-            driver: "bridge",
-          }
-        );
-        const connected = await telemetryRecorder.connect();
-        if (connected) {
-          // Build manifest from current telemetry
-          const telemetry = iracing.getTelemetry();
-          const manifest = buildChannelsManifest(telemetry);
-          const sessionId = await telemetryRecorder.startSession(manifest);
-          if (sessionId) {
-            console.log(`[bridge] Telemetry recording started (MongoDB)`);
-          }
-        }
-      }
     }
-
     if (!connected || !iracing.waitForData(1000 / TICK_HZ)) return;
-    const raw = iracing.getTelemetry();
-    const flat = flattenTelemetry(raw);            // scalar view (first element of arrays)
-    const wide = expandTelemetry(raw);             // every channel, arrays exploded into _0,_1,...
+    const flat = flattenTelemetry(iracing.getTelemetry());
     latest = mapTelemetry(flat, iracing.getSessionData());
-    latest.streamHz = Math.round(1000 / uiIntervalMs);
-    latest.all = flat;                              // legacy passthrough
-    latest.extras = numericOnly(wide);              // full .ibt-equivalent channel set
+    latest.all = flat;
     packetCount += 1;
-    sampleTick += 1;
-
-    // Record telemetry sample to MongoDB
-    const lapNum = Number(flat.Lap ?? flat.LapCompleted ?? -1);
-    const recordEveryTicks = Math.max(1, Math.round(TICK_HZ / RECORD_HZ));
-    if (telemetryRecorder && sampleTick % recordEveryTicks === 0) {
-      telemetryRecorder.recordSample(latest.extras || {}, lapNum);
-    }
-
-    // Detect lap rollover and append to offline cache + record to MongoDB.
-    const lastLapT = Number(flat.LapLastLapTime ?? 0);
-    if (lapNum !== lastLapNum && lastLapNum >= 0 && lastLapT > 0) {
-      lapCache.recordLap({
-        car: latest.car,
-        track: latest.track,
-        lap: lastLapNum,
-        lapTimeS: lastLapT,
-        fuel: latest.fuelRemainingL,
-        sof: latest.sof,
-        source: "live",
-      });
-
-      // Also record lap metadata to MongoDB
-      if (telemetryRecorder) {
-        const trackTemp = flat.TrackTempCelsius ?? 20;
-        const airTemp = flat.AirTempCelsius ?? 20;
-        await telemetryRecorder.recordLap(lastLapNum, lastLapT, latest.fuelRemainingL, trackTemp, airTemp);
-      }
-    }
-    if (lapNum !== lastLapNum) lastLapNum = lapNum;
     if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
       console.log(
         `[bridge] live packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
@@ -220,55 +106,13 @@ setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
   const msg = JSON.stringify(latest);
   for (const client of wss.clients) if (client.readyState === 1) client.send(msg);
-}, uiIntervalMs);
-
-setInterval(() => {
-  if (!ADAPTIVE_UI) return;
-  const now = Date.now();
-  let hasSlowClient = false;
-  for (const perf of clientPerf.values()) {
-    if (now - perf.at > 5000) continue;
-    if (perf.fps < 50) {
-      hasSlowClient = true;
-      break;
-    }
-  }
-  const targetHz = hasSlowClient ? Math.min(30, UI_HZ) : UI_HZ;
-  const next = Math.round(1000 / clampHz(targetHz));
-  if (next !== uiIntervalMs) {
-    uiIntervalMs = next;
-    console.log(`[bridge] adaptive ui rate -> ${Math.round(1000 / uiIntervalMs)}Hz`);
-  }
-}, 2000);
+}, 1000 / TICK_HZ);
 
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
   if (latest) ws.send(JSON.stringify(latest));
-  ws.on("message", (raw) => {
-    try {
-      const msg = JSON.parse(String(raw));
-      if (msg?.type === "perf" && Number.isFinite(msg.fps)) {
-        clientPerf.set(ws, { fps: Number(msg.fps), at: Date.now() });
-      }
-    } catch {
-      // ignore
-    }
-  });
-  ws.on("close", () => {
-    clientPerf.delete(ws);
-    console.log("[bridge] dashboard disconnected");
-  });
+  ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
-
-function intFromEnv(name, fallback, min, max) {
-  const raw = process.env[name];
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(max, Math.round(n)));
-}
-function clampHz(n) {
-  return Math.max(1, Math.min(360, n));
-}
 
 function printNetworkUrls(port) {
   try {
@@ -292,37 +136,6 @@ function flattenTelemetry(raw) {
     values[key] = Array.isArray(value) ? value[0] : value;
   }
   return values;
-}
-
-/**
- * Wide-form telemetry: every channel iRacing exposes, with array channels
- * (CarIdxLap, tire temps per-row, etc.) exploded into `Name_0`, `Name_1`, …
- * This matches the per-channel layout of an .ibt file so a recorded .pwlap
- * preserves the same coverage.
- */
-function expandTelemetry(raw) {
-  const out = {};
-  for (const [key, variable] of Object.entries(raw ?? {})) {
-    const value = variable && typeof variable === "object" && "value" in variable ? variable.value : variable;
-    if (Array.isArray(value)) {
-      // Cap exploded arrays at 64 entries — covers CarIdx* (64 cars) without runaway payloads.
-      const n = Math.min(value.length, 64);
-      for (let i = 0; i < n; i++) out[`${key}_${i}`] = value[i];
-    } else {
-      out[key] = value;
-    }
-  }
-  return out;
-}
-
-/** Keep only finite numeric / boolean entries (booleans become 0/1). */
-function numericOnly(obj) {
-  const out = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === "number" && Number.isFinite(v)) out[k] = v;
-    else if (typeof v === "boolean") out[k] = v ? 1 : 0;
-  }
-  return out;
 }
 
 function mapTelemetry(v, session) {
