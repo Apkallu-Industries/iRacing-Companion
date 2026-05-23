@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { connectToLocalDb } from "@/lib/db.local";
+import { connectToLocalDb, readDbConfig, writeDbConfig, resetDbConnection } from "@/lib/db.local";
 
 async function createObjectId(id: string) {
   const dynamicImport = new Function("s", "return import(s)");
@@ -16,7 +16,7 @@ export const getLocalSessions = createServerFn({ method: "GET" })
         .sort({ recorded_at: -1 })
         .toArray();
       return { 
-        data: sessions.map(s => {
+        data: sessions.map((s: any) => {
           const { _id, ...rest } = s;
           return { ...rest, id: _id.toString() };
         }), 
@@ -105,5 +105,27 @@ export const testLocalDbConnection = createServerFn({ method: "POST" })
         success: false,
         message: `Connection failed.\nError: ${e.message || String(e)}\n\nSuggestions:\n1. Ensure MongoDB is installed and running on port 27017.\n2. If using Docker, run: docker run -d -p 27017:27017 mongo\n3. On Windows, check if the 'MongoDB Server' service is started in task manager.`
       };
+    }
+  });
+
+export const getDbConfig = createServerFn({ method: "GET" })
+  .handler(async () => {
+    try {
+      const config = await readDbConfig();
+      return { data: config, error: null };
+    } catch (e: any) {
+      return { data: { localUri: "mongodb://127.0.0.1:27017/", cloudUri: "" }, error: { message: e.message } };
+    }
+  });
+
+export const saveDbConfig = createServerFn({ method: "POST" })
+  .inputValidator((config: any) => config)
+  .handler(async ({ data: config }) => {
+    try {
+      await writeDbConfig(config);
+      resetDbConnection();
+      return { success: true, error: null };
+    } catch (e: any) {
+      return { success: false, error: { message: e.message } };
     }
   });

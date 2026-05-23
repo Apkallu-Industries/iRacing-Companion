@@ -20,6 +20,7 @@ import { LiveBridgeSync } from "@/components/LiveBridgeSync";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { HelpSystem } from "@/components/HelpSystem";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { GlobalSettingsDialog } from "@/components/GlobalSettingsDialog";
 
 function NotFoundComponent() {
   return (
@@ -177,6 +178,7 @@ function RootComponent() {
           <LiveBridgeSync t={t} />
           <DesktopLapSync />
           <HelpSystem />
+          <GlobalSettingsDialog />
           <KeyboardShortcuts />
           <Outlet />
           <Toaster />

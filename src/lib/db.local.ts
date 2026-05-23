@@ -1,5 +1,35 @@
-// Use a consistent connection URI prioritizing localhost explicitly for Windows/Docker stability.
-const uri = "mongodb://127.0.0.1:27017/";
+async function loadNodeFs() {
+    const dynamicImport = new Function("s", "return import(s)");
+    return await dynamicImport("fs") as any;
+}
+
+async function loadNodePath() {
+    const dynamicImport = new Function("s", "return import(s)");
+    return await dynamicImport("path") as any;
+}
+
+export async function readDbConfig() {
+    try {
+        const fs = await loadNodeFs();
+        const path = await loadNodePath();
+        const configPath = path.resolve(process.cwd(), "db-config.json");
+        const data = await fs.promises.readFile(configPath, "utf-8");
+        return JSON.parse(data);
+    } catch (e) {
+        return {
+            localUri: "mongodb://127.0.0.1:27017/",
+            cloudUri: ""
+        };
+    }
+}
+
+export async function writeDbConfig(config: { localUri: string; cloudUri: string }) {
+    const fs = await loadNodeFs();
+    const path = await loadNodePath();
+    const configPath = path.resolve(process.cwd(), "db-config.json");
+    await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2), "utf-8");
+}
+
 type DbLike = {
     collection: (name: string) => any;
     listCollections: () => { toArray: () => Promise<Array<{ name: string }>> };
@@ -9,6 +39,19 @@ type DbLike = {
 
 let cachedClient: any | null = null;
 let cachedDb: DbLike | null = null;
+
+export function resetDbConnection() {
+    if (cachedClient) {
+        try {
+            cachedClient.close();
+            console.log("[MongoDB] Closed cached MongoDB connection.");
+        } catch (e) {
+            console.error("[MongoDB] Error closing cached client:", e);
+        }
+    }
+    cachedClient = null;
+    cachedDb = null;
+}
 
 async function loadMongo() {
     // Avoid static bundling of mongodb in worker builds.
@@ -22,7 +65,10 @@ export async function connectToLocalDb(): Promise<DbLike> {
     }
 
     const { MongoClient, ServerApiVersion } = await loadMongo();
-    const client = new MongoClient(uri, {
+    const config = await readDbConfig();
+    const connectionUri = config.localUri || "mongodb://127.0.0.1:27017/";
+
+    const client = new MongoClient(connectionUri, {
         serverApi: {
             version: ServerApiVersion.v1,
             strict: true,
@@ -35,16 +81,17 @@ export async function connectToLocalDb(): Promise<DbLike> {
 
     try {
         await client.connect();
+        const db = client.db("iracing");
         cachedClient = client;
-        cachedDb = client.db("iracing");
-        console.log("[MongoDB] Connected to local database successfully.");
+        cachedDb = db;
+        console.log(`[MongoDB] Connected to database successfully at: ${connectionUri}`);
 
         // Ensure essential indexes exist (fire and forget)
-        setupIndexes(cachedDb).catch(console.error);
+        setupIndexes(db).catch(console.error);
 
-        return cachedDb;
+        return db;
     } catch (error) {
-        console.error("[MongoDB] Connection failed. Ensure the MongoDB instance is running on port 27017.", error);
+        console.error(`[MongoDB] Connection failed at ${connectionUri}.`, error);
         throw error;
     }
 }

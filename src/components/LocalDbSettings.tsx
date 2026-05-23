@@ -9,7 +9,8 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { testLocalDbConnection } from "@/lib/localDb.functions";
+import { Input } from "@/components/ui/input";
+import { testLocalDbConnection, getDbConfig, saveDbConfig } from "@/lib/localDb.functions";
 import { toast } from "sonner";
 
 export function LocalDbSettings() {
@@ -18,6 +19,38 @@ export function LocalDbSettings() {
     const [status, setStatus] = useState<"unchecked" | "connected" | "failed">("unchecked");
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
     const [idbUsage, setIdbUsage] = useState<string>("Calculating...");
+    const [localUri, setLocalUri] = useState("mongodb://127.0.0.1:27017/");
+    const [cloudUri, setCloudUri] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    const loadDbSettings = async () => {
+        try {
+            const res = await getDbConfig();
+            if (res.data) {
+                setLocalUri(res.data.localUri || "mongodb://127.0.0.1:27017/");
+                setCloudUri(res.data.cloudUri || "");
+            }
+        } catch (e: any) {
+            console.error("Failed to load db config:", e);
+        }
+    };
+
+    const handleSaveConfig = async () => {
+        setSaving(true);
+        try {
+            const res = await saveDbConfig({ localUri, cloudUri });
+            if (res.success) {
+                toast.success("Database settings saved successfully.");
+                checkConnection();
+            } else {
+                toast.error(res.error?.message || "Failed to save configuration.");
+            }
+        } catch (e: any) {
+            toast.error(e.message || "Error saving database configuration.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const checkConnection = async () => {
         setTesting(true);
@@ -72,6 +105,7 @@ export function LocalDbSettings() {
 
     useEffect(() => {
         if (open) {
+            loadDbSettings();
             checkConnection();
             checkIndexedDbSize();
         }
@@ -127,6 +161,47 @@ export function LocalDbSettings() {
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Local Cache Size</span>
                             <span className="text-xs font-mono text-muted-foreground">{idbUsage}</span>
+                        </div>
+                    </div>
+
+                    {/* Database Configurations */}
+                    <div className="space-y-4 pt-2 border-t border-border/20">
+                        <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1">
+                            Database URI Configuration
+                        </h3>
+                        <div className="space-y-3">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                    Local MongoDB URI
+                                </label>
+                                <Input
+                                    type="text"
+                                    value={localUri}
+                                    onChange={(e) => setLocalUri(e.target.value)}
+                                    placeholder="mongodb://127.0.0.1:27017/"
+                                    className="font-mono text-xs"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                                    Cloud MongoDB URI (Sync)
+                                </label>
+                                <Input
+                                    type="password"
+                                    value={cloudUri}
+                                    onChange={(e) => setCloudUri(e.target.value)}
+                                    placeholder="mongodb+srv://username:password@cluster0.abcde.mongodb.net/iracing"
+                                    className="font-mono text-xs"
+                                />
+                            </div>
+                            <Button 
+                                type="button" 
+                                onClick={handleSaveConfig}
+                                disabled={saving}
+                                className="w-full font-mono text-[10px] uppercase tracking-wider h-8"
+                            >
+                                {saving ? "Saving Configuration..." : "Save Connection URIs"}
+                            </Button>
                         </div>
                     </div>
 
