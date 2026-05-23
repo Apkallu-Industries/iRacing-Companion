@@ -201,13 +201,17 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     .map((k) => byKey.get(k))
     .filter((c): c is ChannelDef => Boolean(c));
 
+  const toggleMode = useCallback((key: string) => {
+    setModeByKey((m) => ({ ...m, [key]: m[key] === "trace" ? "raw" : "trace" }));
+  }, []);
+
   useEffect(() => {
     const next: Record<string, number[]> = {};
     for (const c of visibleChannels) {
       const key = c.key;
       const prev = historyRef.current[key] ?? [];
       const n = getNumericValue(t, key, mathNumericByChannelKey);
-      next[key] = Number.isFinite(n) ? [...prev.slice(-59), n] : prev.slice(-59);
+      next[key] = Number.isFinite(n) ? [...prev.slice(-119), n] : prev.slice(-119);
     }
     historyRef.current = next;
   }, [t, visibleChannels, mathNumericByChannelKey]);
@@ -253,22 +257,37 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
 
       {!editing ? (
         <ul className="divide-y divide-zinc-900">
-          {visibleChannels.map((c) => (
-            <li key={c.key} className="flex items-center gap-2 px-2 py-1 text-[11px]">
-              <span className="size-1.5 rounded-full" style={{ background: c.color }} />
-              <span className="w-24 truncate text-zinc-500" title={c.key}>
-                {c.label}
-              </span>
-              {modeByKey[c.key] === "trace" ? (
-                <span className="ml-auto">
-                  <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
+          {visibleChannels.map((c) => {
+            const isTrace = modeByKey[c.key] === "trace";
+            return (
+              <li
+                key={c.key}
+                className="flex items-center gap-2 px-2 py-1 text-[11px] cursor-pointer hover:bg-zinc-900/60 transition-colors group"
+                onClick={() => toggleMode(c.key)}
+                title={`Click to switch to ${isTrace ? "RAW" : "TRACE"} view`}
+              >
+                <span
+                  className="size-1.5 rounded-full ring-1 ring-transparent group-hover:ring-current transition-all"
+                  style={{ background: c.color, color: c.color }}
+                />
+                <span className="w-24 truncate text-zinc-500 group-hover:text-zinc-400 transition-colors" title={c.key}>
+                  {c.label}
                 </span>
-              ) : (
-                <span className="ml-auto truncate tabular-nums text-zinc-100">{c.read(t)}</span>
-              )}
-              <span className="w-8 text-right text-[9px] text-zinc-600">{c.unit}</span>
-            </li>
-          ))}
+                {isTrace ? (
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
+                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">trc</span>
+                  </span>
+                ) : (
+                  <span className="ml-auto flex items-center gap-1.5">
+                    <span className="truncate tabular-nums text-zinc-100">{c.read(t)}</span>
+                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">raw</span>
+                  </span>
+                )}
+                <span className="w-8 text-right text-[9px] text-zinc-600">{c.unit}</span>
+              </li>
+            );
+          })}
           {visibleChannels.length === 0 && (
             <li className="px-2 py-3 text-center text-[10px] text-zinc-600">
               No channels selected · tap Edit
@@ -602,9 +621,9 @@ function getNumericValue(t: Telemetry, key: string, mathValues: Record<string, n
 }
 
 function MiniTrace({ values, color }: { values: number[]; color: string }) {
-  const w = 72;
-  const h = 18;
-  if (values.length < 2) return <span className="inline-block w-[72px] text-[9px] text-zinc-600">...</span>;
+  const w = 100;
+  const h = 20;
+  if (values.length < 2) return <span className="inline-block w-[100px] text-[9px] text-zinc-600">...</span>;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = Math.max(1e-6, max - min);
@@ -615,9 +634,30 @@ function MiniTrace({ values, color }: { values: number[]; color: string }) {
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
+  // Build gradient fill path
+  const firstX = "0";
+  const lastX = ((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1);
+  const fillPoints = `0,${h} ${points} ${lastX},${h}`;
+  const gradId = `mg_${color.replace(/[^a-z0-9]/gi, "")}`;
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.25" strokeLinecap="round" />
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillPoints} fill={`url(#${gradId})`} />
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Current value dot */}
+      {values.length > 0 && (
+        <circle
+          cx={((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1)}
+          cy={(h - 1 - ((values[values.length - 1] - min) / span) * (h - 2)).toFixed(1)}
+          r="2"
+          fill={color}
+        />
+      )}
     </svg>
   );
 }
