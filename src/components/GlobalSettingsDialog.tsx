@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { 
+import {
   Settings, Database, Cloud, Cpu, Keyboard,
   RefreshCw, Trash2, CheckCircle2, AlertCircle, RotateCcw,
   Server, Laptop, Terminal, Copy, Check
@@ -22,7 +22,7 @@ import { toast } from "sonner";
 
 const LLM_PROVIDERS = [
   { id: "cloud", name: "Cloud (Lovable/Default)", icon: Server, url: "", desc: "Route requests securely through the Lovable AI Gateway." },
-  { id: "lmstudio", name: "LM Studio", icon: Laptop, url: "http://localhost:1234/v1", desc: "OpenAI-compatible local inference." },
+  { id: "lmstudio", name: "LM Studio", icon: Laptop, url: "http://localhost:1234/api/v1", desc: "lmstudio-native." },
   { id: "ollama", name: "Ollama", icon: Cpu, url: "http://localhost:11434/v1", desc: "Local inference via Ollama." },
   { id: "huggingface", name: "HuggingFace TGI", icon: Server, url: "http://localhost:8080/v1", desc: "Local TGI container backend." },
   { id: "lemonade", name: "LlamaEdge / Lemonade", icon: Laptop, url: "http://localhost:8080/v1", desc: "Wasm edge inference." },
@@ -43,9 +43,9 @@ export function GlobalSettingsDialog() {
   const [idbUsage, setIdbUsage] = useState("Calculating...");
 
   // AI Engine state
-  const { 
-    llmProvider, llmBaseUrl, llmModelId, llmApiKey, 
-    setLlmProvider, setLlmBaseUrl, setLlmModelId, setLlmApiKey 
+  const {
+    llmProvider, llmBaseUrl, llmModelId, llmApiKey,
+    setLlmProvider, setLlmBaseUrl, setLlmModelId, setLlmApiKey
   } = useWorkbench();
   const [aiTesting, setAiTesting] = useState(false);
   const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -89,7 +89,7 @@ export function GlobalSettingsDialog() {
   const handleSaveDbConfig = async () => {
     setSavingDb(true);
     try {
-      const res = await saveDbConfig({ localUri, cloudUri });
+      const res = await saveDbConfig({ data: { localUri, cloudUri } });
       if (res.success) {
         toast.success("Database configuration saved successfully.");
         // Test connection right after saving
@@ -297,8 +297,8 @@ export function GlobalSettingsDialog() {
                       placeholder="mongodb://127.0.0.1:27017/"
                       className="font-mono text-xs flex-1"
                     />
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       onClick={handleSaveDbConfig}
                       disabled={savingDb}
                       size="sm"
@@ -434,8 +434,8 @@ export function GlobalSettingsDialog() {
                       placeholder="mongodb+srv://username:password@cluster0.abcde.mongodb.net/iracing"
                       className="font-mono text-xs flex-1"
                     />
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       onClick={handleSaveDbConfig}
                       disabled={savingDb}
                       size="sm"

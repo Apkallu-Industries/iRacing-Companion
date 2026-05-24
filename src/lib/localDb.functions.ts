@@ -15,12 +15,12 @@ export const getLocalSessions = createServerFn({ method: "GET" })
         .find({})
         .sort({ recorded_at: -1 })
         .toArray();
-      return { 
+      return {
         data: sessions.map((s: any) => {
           const { _id, ...rest } = s;
           return { ...rest, id: _id.toString() };
-        }), 
-        error: null 
+        }),
+        error: null
       };
     } catch (e: any) {
       console.error("[MongoDB] getLocalSessions failed:", e);
@@ -39,9 +39,9 @@ export const getLocalSessionById = createServerFn({ method: "POST" })
         return { data: null, error: { message: "Session not found" } };
       }
       const { _id, ...rest } = session;
-      return { 
-        data: { ...rest, id: _id.toString() }, 
-        error: null 
+      return {
+        data: { ...rest, id: _id.toString() },
+        error: null
       };
     } catch (e: any) {
       console.error("[MongoDB] getLocalSessionById failed:", e);
@@ -61,9 +61,9 @@ export const insertLocalSession = createServerFn({ method: "POST" })
       };
       const res = await db.collection("telemetry_sessions").insertOne(doc);
       const { _id, ...rest } = doc as any;
-      return { 
-        data: { ...rest, id: res.insertedId.toString() }, 
-        error: null 
+      return {
+        data: { ...rest, id: res.insertedId.toString() },
+        error: null
       };
     } catch (e: any) {
       console.error("[MongoDB] insertLocalSession failed:", e);
@@ -91,11 +91,11 @@ export const testLocalDbConnection = createServerFn({ method: "POST" })
       const db = await connectToLocalDb();
       // Run a simple command to verify connection works
       await db.command({ ping: 1 });
-      
+
       // Fetch some collection stats to confirm access
       const colls = await db.listCollections().toArray();
       const names = colls.map(c => c.name);
-      
+
       return {
         success: true,
         message: `Successfully connected to MongoDB at 127.0.0.1:27017.\nDatabase 'iracing' is active.\nActive collections: ${names.join(", ") || "none"}`

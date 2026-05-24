@@ -3,12 +3,19 @@ import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench, colorForChannel } from "@/lib/store";
 import { Search, ChevronRight, ChevronDown, Star, Eye, EyeOff } from "lucide-react";
 import { catalogEntry, ESSENTIAL_CHANNELS, GROUP_DESCRIPTIONS } from "@/lib/ibt/channelCatalog";
+import { MiniTrace } from "@/components/ui/MiniTrace";
 
 export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
   const { selectedChannels, toggleChannel, setChannels, cursorTick } = useWorkbench();
   const [q, setQ] = useState("");
   const [essentialsOnly, setEssentialsOnly] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({ "Driver Inputs": true, Vehicle: true });
+  const [traceMode, setTraceMode] = useState<Record<string, boolean>>({});
+
+  const windowFrames = useMemo(() => {
+    // Keep ~3.5 seconds of data for traces based on the file's tick rate (e.g. 60Hz or 360Hz)
+    return Math.max(120, Math.floor((parsed.meta.tickRate || 60) * 3.5));
+  }, [parsed.meta.tickRate]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, string[]> = {};
@@ -118,22 +125,46 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
                     const v = ch.data[cursorTick] ?? 0;
                     const cat = catalogEntry(name);
                     return (
-                      <li key={name}>
+                      <li key={name} className="flex items-center w-full group">
                         <button
                           onClick={() => toggleChannel(name)}
                           title={cat?.desc ?? ch.desc ?? name}
-                          className={`flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-accent ${sel ? "bg-accent/60" : ""}`}
+                          className={`flex flex-1 items-center gap-2 px-2 py-1 text-left hover:bg-accent group/btn ${sel ? "bg-accent/60" : ""}`}
                         >
                           <span
                             className="inline-block h-2 w-2 rounded-full"
                             style={{ background: sel ? colorForChannel(name) : "transparent", outline: "1px solid var(--border-strong)" }}
                           />
-                          <span className="truncate">{name}</span>
-                          <span className="ml-auto tabular-nums text-muted-foreground">
-                            {Number.isFinite(v) ? v.toFixed(2) : "—"}
-                            {ch.unit ? ` ${ch.unit}` : ""}
-                          </span>
+                          <span className="truncate group-hover/btn:text-zinc-300 transition-colors">{name}</span>
                         </button>
+                        
+                        {/* Value / Trace toggle area */}
+                        <div 
+                          className="ml-auto flex items-center shrink-0 cursor-pointer pl-2 hover:bg-zinc-800/50 rounded transition-colors group/val"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTraceMode(m => ({ ...m, [name]: !m[name] }));
+                          }}
+                          title={`Click to show ${traceMode[name] ? "RAW" : "TRACE"}`}
+                        >
+                          {traceMode[name] ? (
+                            <span className="flex items-center gap-1.5">
+                              <MiniTrace 
+                                values={ch.data.slice(Math.max(0, cursorTick - windowFrames), cursorTick + 1)} 
+                                color={colorForChannel(name)} 
+                              />
+                              <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none">trc</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5">
+                              <span className="tabular-nums text-muted-foreground w-16 text-right">
+                                {Number.isFinite(v) ? v.toFixed(2) : "—"}
+                                {ch.unit ? <span className="text-[9px] text-zinc-600 ml-0.5">{ch.unit}</span> : ""}
+                              </span>
+                              <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none w-4">raw</span>
+                            </span>
+                          )}
+                        </div>
                       </li>
                     );
                   })}

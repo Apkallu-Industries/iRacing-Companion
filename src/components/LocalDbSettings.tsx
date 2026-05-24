@@ -38,7 +38,7 @@ export function LocalDbSettings() {
     const handleSaveConfig = async () => {
         setSaving(true);
         try {
-            const res = await saveDbConfig({ localUri, cloudUri });
+            const res = await saveDbConfig({ data: { localUri, cloudUri } });
             if (res.success) {
                 toast.success("Database settings saved successfully.");
                 checkConnection();
@@ -194,8 +194,8 @@ export function LocalDbSettings() {
                                     className="font-mono text-xs"
                                 />
                             </div>
-                            <Button 
-                                type="button" 
+                            <Button
+                                type="button"
                                 onClick={handleSaveConfig}
                                 disabled={saving}
                                 className="w-full font-mono text-[10px] uppercase tracking-wider h-8"

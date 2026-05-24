@@ -10,15 +10,20 @@ import { COACH_SCHEMA_CONCISE, COACH_SCHEMA_DETAILED, COACH_SYSTEM_PROMPT, build
  */
 export function resolveLLMUrl(baseUrl: string): string {
   let url = baseUrl.trim().replace(/\/$/, "");
-  if (!url) return "http://localhost:1234/v1/chat/completions";
+  if (!url) return "http://localhost:1234/api/v1/chat";
   
   // If the user already pasted the full endpoint, just use it
   if (url.endsWith("/chat/completions") || url.endsWith("/chat")) {
     return url;
   }
   
-  // If they provided a base URL without /v1 or /api/v1 namespace, append /v1
-  if (!url.includes("/v1") && !url.includes("/api/v1")) {
+  // LM Studio native API uses /api/v1/chat
+  if (url.endsWith("/api/v1")) {
+    return `${url}/chat`;
+  }
+  
+  // If they provided a base URL without /v1 namespace, append /v1
+  if (!url.includes("/v1")) {
     url = `${url}/v1`;
   }
   

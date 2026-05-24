@@ -15,6 +15,7 @@ import {
   DEFAULT_CHANNEL_KEYS,
   type ChannelDef,
 } from "./ChannelRegistry";
+import { MiniTrace } from "@/components/ui/MiniTrace";
 import {
   upsertMyChannelLayout,
   publishMyChannelLayout,
@@ -33,14 +34,14 @@ const MATH_PRESETS: Array<{
   precision?: number;
   color?: string;
 }> = [
-  { name: "Brake-Throttle Overlap", key: "brake_throttle_overlap", expression: "min(brake,throttle)*100", unit: "%", precision: 1, color: "#f97316" },
-  { name: "Steering Smoothness", key: "steering_smoothness", expression: "abs(steeringDeg)/max(speedKph,1)", unit: "deg/kmh", precision: 3, color: "#22d3ee" },
-  { name: "Tyre Temp Spread Front", key: "tyre_temp_spread_front", expression: "abs(tires.fl.tempC-tires.fr.tempC)", unit: "C", precision: 1, color: "#fb923c" },
-  { name: "Tyre Temp Spread Rear", key: "tyre_temp_spread_rear", expression: "abs(tires.rl.tempC-tires.rr.tempC)", unit: "C", precision: 1, color: "#f59e0b" },
-  { name: "Tyre Press Spread Front", key: "tyre_press_spread_front", expression: "abs(tires.fl.pressureBar-tires.fr.pressureBar)", unit: "bar", precision: 3, color: "#a78bfa" },
-  { name: "Tyre Press Spread Rear", key: "tyre_press_spread_rear", expression: "abs(tires.rl.pressureBar-tires.rr.pressureBar)", unit: "bar", precision: 3, color: "#8b5cf6" },
-  { name: "Fuel Burn Proxy", key: "fuel_burn_proxy", expression: "max(0,100-lapsEstimated)", unit: "", precision: 2, color: "#34d399" },
-];
+    { name: "Brake-Throttle Overlap", key: "brake_throttle_overlap", expression: "min(brake,throttle)*100", unit: "%", precision: 1, color: "#f97316" },
+    { name: "Steering Smoothness", key: "steering_smoothness", expression: "abs(steeringDeg)/max(speedKph,1)", unit: "deg/kmh", precision: 3, color: "#22d3ee" },
+    { name: "Tyre Temp Spread Front", key: "tyre_temp_spread_front", expression: "abs(tires.fl.tempC-tires.fr.tempC)", unit: "C", precision: 1, color: "#fb923c" },
+    { name: "Tyre Temp Spread Rear", key: "tyre_temp_spread_rear", expression: "abs(tires.rl.tempC-tires.rr.tempC)", unit: "C", precision: 1, color: "#f59e0b" },
+    { name: "Tyre Press Spread Front", key: "tyre_press_spread_front", expression: "abs(tires.fl.pressureBar-tires.fr.pressureBar)", unit: "bar", precision: 3, color: "#a78bfa" },
+    { name: "Tyre Press Spread Rear", key: "tyre_press_spread_rear", expression: "abs(tires.rl.pressureBar-tires.rr.pressureBar)", unit: "bar", precision: 3, color: "#8b5cf6" },
+    { name: "Fuel Burn Proxy", key: "fuel_burn_proxy", expression: "max(0,100-lapsEstimated)", unit: "", precision: 2, color: "#34d399" },
+  ];
 
 /**
  * MoTeC-style configurable Channel List.
@@ -141,7 +142,7 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     const id = setTimeout(() => {
       upsertCloud({
         data: { name: "default", layout: { visible: visibleKeys, modeByKey, mathExpressions } },
-      }).catch(() => {});
+      }).catch(() => { });
     }, 1500);
     return () => clearTimeout(id);
   }, [visibleKeys, modeByKey, mathExpressions, hydrated, upsertCloud, session]);
@@ -211,7 +212,7 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
       const key = c.key;
       const prev = historyRef.current[key] ?? [];
       const n = getNumericValue(t, key, mathNumericByChannelKey);
-      next[key] = Number.isFinite(n) ? [...prev.slice(-119), n] : prev.slice(-119);
+      next[key] = Number.isFinite(n) ? [...prev.slice(-719), n] : prev.slice(-719);
     }
     historyRef.current = next;
   }, [t, visibleChannels, mathNumericByChannelKey]);
@@ -244,11 +245,10 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className={`rounded-sm px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
-              editing
+            className={`rounded-sm px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${editing
                 ? "bg-amber-500/20 text-amber-300"
                 : "bg-zinc-900 text-zinc-400 hover:text-zinc-200"
-            }`}
+              }`}
           >
             {editing ? "Done" : "Edit"}
           </button>
@@ -618,46 +618,4 @@ function getNumericValue(t: Telemetry, key: string, mathValues: Record<string, n
   let cur: any = t;
   for (const p of parts) cur = cur?.[p];
   return typeof cur === "number" ? cur : Number.NaN;
-}
-
-function MiniTrace({ values, color }: { values: number[]; color: string }) {
-  const w = 100;
-  const h = 20;
-  if (values.length < 2) return <span className="inline-block w-[100px] text-[9px] text-zinc-600">...</span>;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(1e-6, max - min);
-  const points = values
-    .map((v, i) => {
-      const x = (i / (values.length - 1)) * (w - 1);
-      const y = h - 1 - ((v - min) / span) * (h - 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-  // Build gradient fill path
-  const firstX = "0";
-  const lastX = ((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1);
-  const fillPoints = `0,${h} ${points} ${lastX},${h}`;
-  const gradId = `mg_${color.replace(/[^a-z0-9]/gi, "")}`;
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <polygon points={fillPoints} fill={`url(#${gradId})`} />
-      <polyline points={points} fill="none" stroke={color} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Current value dot */}
-      {values.length > 0 && (
-        <circle
-          cx={((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1)}
-          cy={(h - 1 - ((values[values.length - 1] - min) / span) * (h - 2)).toFixed(1)}
-          r="2"
-          fill={color}
-        />
-      )}
-    </svg>
-  );
 }
