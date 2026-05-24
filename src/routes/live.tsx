@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { useTelemetryBuffer } from "@/lib/useTelemetryBuffer";
+import { useBridgeDiagnostics } from "@/lib/bridgeDiagnostics";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { LiveCoach } from "@/components/live/LiveCoach";
 import { LiveReference } from "@/components/live/LiveReference";
@@ -16,6 +17,7 @@ import { ConfigurableChannelList } from "@/components/live/ConfigurableChannelLi
 import { GearAdvisor } from "@/components/live/GearAdvisor";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
+import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -44,10 +46,32 @@ export const Route = createFileRoute("/live")({
 function Dashboard() {
   const t = useTelemetry();
   const samples = useTelemetryBuffer(t, 30_000, 30);
+  const diagnostics = useBridgeDiagnostics(t, t.connected);
   const [smoothing, setSmoothing] = useState<SmoothingMode>("none");
   const [smoothWindow, setSmoothWindow] = useState<number>(5);
   const [cursor, setCursor] = useState<CursorInfo | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
   const handleCursor = useCallback((c: CursorInfo | null) => setCursor(c), []);
+
+  // Keyboard shortcut for debug mode (Ctrl+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "D") {
+        e.preventDefault();
+        setDebugMode((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Check query param for debug mode
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("debug") === "1") {
+      setDebugMode(true);
+    }
+  }, []);
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-200 font-mono p-0 select-none flex flex-col overflow-hidden">
@@ -125,6 +149,7 @@ function Dashboard() {
       </div>
 
       <FooterBar t={t} />
+      {debugMode && <DiagnosticsPanel diagnostics={diagnostics} />}
     </main>
   );
 }
