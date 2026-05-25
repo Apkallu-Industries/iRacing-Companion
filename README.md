@@ -302,6 +302,27 @@ npm run dev
   - `ADAPTIVE_UI` (`1` default, set `0` to disable adaptive fallback)
 - Launch iRacing and start driving — data will stream live immediately.
 
+### 5. Local AI Setup (LM Studio / Ollama)
+
+Pit Wall supports fully offline **AI Coaching and Setup Advice** by connecting directly to local large language model (LLM) engines running on your machine.
+
+1. **Choose/Install your Local AI Engine**:
+   - **LM Studio**: Download and start [LM Studio](https://lmstudio.ai/).
+   - **Ollama**: Download and run [Ollama](https://ollama.com/).
+2. **Load a Model**:
+   - Open your local AI engine and download/load an instruction-following model (e.g., `Llama 3 8B Instruct`, `Mistral 7B Instruct`, or `Liquid LFM 2.5`).
+   - *Note: For the Setup Advisor to function correctly, it is recommended to use models that support tool-calling schemas.*
+3. **Configure the AI Engine in Pit Wall**:
+   - Open [http://localhost:3000/settings](http://localhost:3000/settings) in your browser.
+   - Under **AI Provider**, choose either **LM Studio** or **Ollama**.
+   - The app will pre-fill the default endpoints:
+     - **LM Studio**: `http://localhost:1234/v1`
+     - **Ollama**: `http://localhost:11434/v1`
+   - Enter your loaded **Model ID** (e.g. `llama-3-8b-instruct`).
+4. **Test the Connection**:
+   - Click **"Test Local Host Software Connection"** (or **"Test Connection"**) under the settings card to verify the app can successfully communicate with your local AI engine.
+   - Once verified, all telemetry analysis, lap critiques, and car setup recommendations will be processed locally on your machine, with 100% data privacy.
+
 ---
 
 ## Credits
