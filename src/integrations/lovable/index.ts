@@ -8,7 +8,7 @@ type SignInOptions = {
 export const lovable = {
   auth: {
     signInWithOAuth: async (
-      provider: "google" | "apple" | "microsoft" | "lovable",
+      provider: "google" | "apple" | "microsoft" | "steam" | "lovable",
       opts?: SignInOptions,
     ) => {
       if (provider === "lovable") {

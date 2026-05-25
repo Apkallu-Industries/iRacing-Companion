@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { IbtParsed } from "./ibt/types";
 import type { MathExpression } from "./math/schema";
 
@@ -98,93 +99,116 @@ interface WorkbenchState {
   setMathExpressions: (exprs: MathExpression[]) => void;
 }
 
-export const useWorkbench = create<WorkbenchState>((set) => ({
-  parsed: null,
-  setParsed: (p) => {
-    // Default refLap = fastest valid lap (skip in/out & corrupt laps).
-    let bestLap: number | null = null;
-    if (p && p.laps.length) {
-      let bestT = Infinity;
-      for (const l of p.laps) {
-        const valid = l.endTick - l.startTick > 30 && l.timeS > 5;
-        if (valid && l.timeS < bestT) {
-          bestT = l.timeS;
-          bestLap = l.lap;
+export const useWorkbench = create<WorkbenchState>()(
+  persist(
+    (set) => ({
+      parsed: null,
+      setParsed: (p) => {
+        // Default refLap = fastest valid lap (skip in/out & corrupt laps).
+        let bestLap: number | null = null;
+        if (p && p.laps.length) {
+          let bestT = Infinity;
+          for (const l of p.laps) {
+            const valid = l.endTick - l.startTick > 30 && l.timeS > 5;
+            if (valid && l.timeS < bestT) {
+              bestT = l.timeS;
+              bestLap = l.lap;
+            }
+          }
+          if (bestLap == null) bestLap = p.laps[0].lap;
         }
-      }
-      if (bestLap == null) bestLap = p.laps[0].lap;
-    }
-    // Cursor starts at the fastest lap so widgets reflect the best run.
-    const startTick =
-      bestLap != null ? (p!.laps.find((l) => l.lap === bestLap)?.startTick ?? 0) : 0;
-    set(() => ({
-      parsed: p,
-      cursorTick: startTick,
-      selectedChannels: p ? DEFAULT_CHANNELS.filter((c) => c in p.channels) : [],
-      refLap: bestLap,
+        // Cursor starts at the fastest lap so widgets reflect the best run.
+        const startTick =
+          bestLap != null ? (p!.laps.find((l) => l.lap === bestLap)?.startTick ?? 0) : 0;
+        set(() => ({
+          parsed: p,
+          cursorTick: startTick,
+          selectedChannels: p ? DEFAULT_CHANNELS.filter((c) => c in p.channels) : [],
+          refLap: bestLap,
+          cmpLap: null,
+          playing: false,
+        }));
+      },
+      cursorTick: 0,
+      setCursorTick: (t) => set({ cursorTick: t }),
+      selectedChannels: [],
+      toggleChannel: (name) =>
+        set((s) => ({
+          selectedChannels: s.selectedChannels.includes(name)
+            ? s.selectedChannels.filter((n) => n !== name)
+            : [...s.selectedChannels, name],
+        })),
+      setChannels: (names) => set({ selectedChannels: names }),
+      refLap: null,
       cmpLap: null,
+      setRefLap: (l) => set({ refLap: l }),
+      setCmpLap: (l) => set({ cmpLap: l }),
       playing: false,
-    }));
-  },
-  cursorTick: 0,
-  setCursorTick: (t) => set({ cursorTick: t }),
-  selectedChannels: [],
-  toggleChannel: (name) =>
-    set((s) => ({
-      selectedChannels: s.selectedChannels.includes(name)
-        ? s.selectedChannels.filter((n) => n !== name)
-        : [...s.selectedChannels, name],
-    })),
-  setChannels: (names) => set({ selectedChannels: names }),
-  refLap: null,
-  cmpLap: null,
-  setRefLap: (l) => set({ refLap: l }),
-  setCmpLap: (l) => set({ cmpLap: l }),
-  playing: false,
-  speed: 1,
-  setPlaying: (p) => set({ playing: p }),
-  setSpeed: (s) => set({ speed: s }),
+      speed: 1,
+      setPlaying: (p) => set({ playing: p }),
+      setSpeed: (s) => set({ speed: s }),
 
-  mapMode: "aligned",
-  mapColorBy: "Throttle",
-  setMapMode: (m) => set({ mapMode: m }),
-  setMapColorBy: (c) => set({ mapColorBy: c }),
+      mapMode: "aligned",
+      mapColorBy: "Throttle",
+      setMapMode: (m) => set({ mapMode: m }),
+      setMapColorBy: (c) => set({ mapColorBy: c }),
 
-  showSectorHeat: false,
-  showTrackBands: false,
-  showDeviation: false,
-  setShowSectorHeat: (v) => set({ showSectorHeat: v }),
-  setShowTrackBands: (v) => set({ showTrackBands: v }),
-  setShowDeviation: (v) => set({ showDeviation: v }),
+      showSectorHeat: false,
+      showTrackBands: false,
+      showDeviation: false,
+      setShowSectorHeat: (v) => set({ showSectorHeat: v }),
+      setShowTrackBands: (v) => set({ showTrackBands: v }),
+      setShowDeviation: (v) => set({ showDeviation: v }),
 
-  mapThicknessBySpeed: false,
-  setMapThicknessBySpeed: (v) => set({ mapThicknessBySpeed: v }),
+      mapThicknessBySpeed: false,
+      setMapThicknessBySpeed: (v) => set({ mapThicknessBySpeed: v }),
 
-  llmProvider: "cloud",
-  llmBaseUrl: "http://localhost:1234/v1",
-  llmModelId: "llama-3-8b-instruct",
-  llmApiKey: "",
-  setLlmProvider: (provider) => set({ llmProvider: provider }),
-  setLlmBaseUrl: (url) => set({ llmBaseUrl: url }),
-  setLlmModelId: (id) => set({ llmModelId: id }),
-  setLlmApiKey: (key: string) => set({ llmApiKey: key }),
-  elevenLabsApiKey: "",
-  elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
-  setElevenLabsApiKey: (key: string) => set({ elevenLabsApiKey: key }),
-  setElevenLabsVoiceId: (voiceId: string) => set({ elevenLabsVoiceId: voiceId }),
+      llmProvider: "cloud",
+      llmBaseUrl: "http://localhost:1234/v1",
+      llmModelId: "llama-3-8b-instruct",
+      llmApiKey: "",
+      setLlmProvider: (provider) => set({ llmProvider: provider }),
+      setLlmBaseUrl: (url) => set({ llmBaseUrl: url }),
+      setLlmModelId: (id) => set({ llmModelId: id }),
+      setLlmApiKey: (key: string) => set({ llmApiKey: key }),
+      elevenLabsApiKey: "",
+      elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
+      setElevenLabsApiKey: (key: string) => set({ elevenLabsApiKey: key }),
+      setElevenLabsVoiceId: (voiceId: string) => set({ elevenLabsVoiceId: voiceId }),
 
-  liveTrack: "",
-  liveCar: "",
-  liveConnected: false,
-  setLiveContext: (track, car, connected) =>
-    set({ liveTrack: track, liveCar: car, liveConnected: connected }),
+      liveTrack: "",
+      liveCar: "",
+      liveConnected: false,
+      setLiveContext: (track, car, connected) =>
+        set({ liveTrack: track, liveCar: car, liveConnected: connected }),
 
-  pendingLocalBlob: null,
-  setPendingLocalBlob: (blob) => set({ pendingLocalBlob: blob }),
+      pendingLocalBlob: null,
+      setPendingLocalBlob: (blob) => set({ pendingLocalBlob: blob }),
 
-  subscriptionPlan: null as SubscriptionPlan,
-  setSubscriptionPlan: (plan: SubscriptionPlan) => set({ subscriptionPlan: plan }),
+      subscriptionPlan: null as SubscriptionPlan,
+      setSubscriptionPlan: (plan: SubscriptionPlan) => set({ subscriptionPlan: plan }),
 
-  mathExpressions: [],
-  setMathExpressions: (exprs) => set({ mathExpressions: exprs }),
-}));
+      mathExpressions: [],
+      setMathExpressions: (exprs) => set({ mathExpressions: exprs }),
+    }),
+    {
+      name: "pitwall-workbench-storage",
+      partialize: (state) => ({
+        selectedChannels: state.selectedChannels,
+        mapMode: state.mapMode,
+        mapColorBy: state.mapColorBy,
+        showSectorHeat: state.showSectorHeat,
+        showTrackBands: state.showTrackBands,
+        showDeviation: state.showDeviation,
+        mapThicknessBySpeed: state.mapThicknessBySpeed,
+        llmProvider: state.llmProvider,
+        llmBaseUrl: state.llmBaseUrl,
+        llmModelId: state.llmModelId,
+        llmApiKey: state.llmApiKey,
+        elevenLabsApiKey: state.elevenLabsApiKey,
+        elevenLabsVoiceId: state.elevenLabsVoiceId,
+        mathExpressions: state.mathExpressions,
+      }),
+    }
+  )
+);

@@ -13,6 +13,12 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth";
+
+const SteamIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M12 .002C5.385.002 0 5.387 0 12.002c0 5.253 3.385 9.712 8.1 11.298l-.053-.223c-.156-.632-.234-1.29-.234-1.97 0-.317.02-.63.056-.938l2.95 1.503c.092.176.222.327.382.433.456.303 1.077.228 1.442-.17.34-.37.315-.929-.057-1.267a1.002 1.002 0 0 0-.585-.198 1.026 1.026 0 0 0-.256.033l-2.92-1.393c.061-.318.175-.615.342-.876.357-.557.94-.925 1.62-.962l2.915 2.126c.11.196.28.35.485.441.493.22 1.073.048 1.345-.395.272-.44.2-.997-.17-1.294a1.008 1.008 0 0 0-.616-.234 1.01 1.01 0 0 0-.276.039l-2.95-1.502c.046-.226.136-.432.261-.611.385-.547 1.002-.888 1.706-.888 1.152 0 2.083.931 2.083 2.083s-.931 2.083-2.083 2.083a2.072 2.072 0 0 1-1.32-.472l-3.322 1.662c.287.652.797 1.18 1.455 1.487l3.327-1.662a3.076 3.076 0 0 0 1.96.72c1.71 0 3.097-1.387 3.097-3.096s-1.387-3.097-3.097-3.097c-1.4 0-2.583.928-2.975 2.19l-3.327-1.663c.277-.655.787-1.184 1.445-1.49l3.328 1.663c.522-.294.887-.852.887-1.499 0-1.71-1.387-3.097-3.097-3.097-1.71 0-3.097 1.387-3.097 3.097 0 .546.142 1.058.391 1.504l-3.355 1.677c-.502-.693-1.282-1.168-2.185-1.246V3.882c0-2.14 1.74-3.88 3.88-3.88h7.76c2.14 0 3.88 1.74 3.88 3.88v7.76c0 2.14-1.74 3.88-3.88 3.88zm3.082 17.585c-.822 0-1.49-.668-1.49-1.49 0-.822.668-1.49 1.49-1.49.822 0 1.49.668 1.49 1.49 0 .822-.668 1.49-1.49 1.49z"/>
+  </svg>
+);
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -56,7 +62,7 @@ function AuthPage() {
     }
   };
 
-  const oauth = async (provider: "google" | "apple") => {
+  const oauth = async (provider: "google" | "apple" | "steam") => {
     setBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth(provider, {
@@ -95,11 +101,12 @@ function AuthPage() {
   const lastSignInAt = user?.last_sign_in_at;
 
   const providerLabel = (p: string) =>
-    p === "google" ? "Google" : p === "apple" ? "Apple" : p === "email" ? "Email + password" : p;
+    p === "google" ? "Google" : p === "apple" ? "Apple" : p === "steam" ? "Steam" : p === "email" ? "Email + password" : p;
   const providerIcon = (p: string) => {
     if (p === "google") return Chrome;
     if (p === "apple") return Apple;
     if (p === "email") return Mail;
+    if (p === "steam") return SteamIcon as any;
     return KeyRound;
   };
 
@@ -222,9 +229,17 @@ function AuthPage() {
             </button>
             <button
               type="button"
+              onClick={() => oauth("steam")}
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-[#171a21]/50 bg-[#1b2838] py-2.5 text-sm text-[#c7d5e0] hover:bg-[#2a475e] hover:text-white disabled:opacity-50 font-medium transition-all cursor-pointer"
+            >
+              <SteamIcon className="h-4 w-4 fill-current shrink-0" /> Continue with Steam
+            </button>
+            <button
+              type="button"
               onClick={() => oauth("google")}
               disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border-strong bg-rail py-2 text-sm hover:bg-accent disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border-strong bg-rail py-2 text-sm hover:bg-accent disabled:opacity-50 cursor-pointer"
             >
               <Chrome className="h-4 w-4" /> Continue with Google
             </button>
@@ -232,7 +247,7 @@ function AuthPage() {
               type="button"
               onClick={() => oauth("apple")}
               disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border-strong bg-rail py-2 text-sm hover:bg-accent disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-sm border border-border-strong bg-rail py-2 text-sm hover:bg-accent disabled:opacity-50 cursor-pointer"
             >
               <Apple className="h-4 w-4" /> Continue with Apple
             </button>
