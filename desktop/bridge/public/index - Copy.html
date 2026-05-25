@@ -45,16 +45,6 @@
   .all{grid-column:1/-1}.all .bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}.all input[type="text"]{flex:1;min-width:220px;background:var(--panel-2);border:1px solid var(--line);color:var(--fg);border-radius:7px;padding:9px 10px;font-family:var(--mono);font-size:12px;outline:none}.all input:focus{border-color:#555c6e}.all .meta{font-family:var(--mono);font-size:11px;color:var(--mute);align-self:center}.all .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;max-height:520px;overflow:auto;padding-right:4px}.kv{display:flex;justify-content:space-between;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-family:var(--mono);font-size:11px}.kv b{color:var(--mute);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}.kv span{color:var(--fg);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:45%}.kv.changed{border-color:rgba(37,209,109,.45);background:#142018}
   @media(max-width:1150px){main{grid-template-columns:1fr 1fr}.center{grid-column:1/-1;grid-row:2}.right{grid-column:2}.dash-inner{grid-template-columns:1fr;gap:16px}.speed,.rpm{text-align:center;border-left:0;padding-left:0}.big-meta{align-self:center}.input-grid{grid-template-columns:1fr}}
   @media(max-width:760px){header{grid-template-columns:1fr;align-items:start}.identity{grid-template-columns:1fr}.top-status{justify-content:flex-start}main{grid-template-columns:1fr;padding:16px 12px}.center,.right{grid-column:auto;grid-row:auto}.dash{min-height:280px}.gear{font-size:116px}.big-value{font-size:38px}.footer{align-items:flex-start}.footer-left,.footer-right{gap:10px}.sep{display:none}}
-  .trace-panel{grid-column:1/-1;background:var(--panel);border:1px solid rgba(255,255,255,.055);border-radius:10px;padding:18px;display:grid;gap:12px;font-family:var(--mono)}
-  .trace-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;text-transform:uppercase;color:#c6cad5;font-weight:700;letter-spacing:.28em}
-  .trace-canvas-container{position:relative;height:120px;width:100%;border-radius:6px;overflow:hidden;background:#0d0e12;border:1px solid rgba(255,255,255,.08)}
-  canvas{display:block;width:100%;height:100%}
-  .trace-controls{display:flex;align-items:center;gap:16px}
-  .scrubber{flex:1;accent-color:var(--accent);height:6px;appearance:none;background:#242831;border-radius:4px;outline:none;cursor:pointer}
-  .scrubber::-webkit-slider-thumb{appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer}
-  .live-btn{background:#0b0c11;color:var(--good);border:1px solid var(--good);border-radius:7px;padding:6px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;opacity:0.5;transition:all .2s}
-  .live-btn.active{background:rgba(37,209,109,.1);opacity:1;box-shadow:0 0 10px rgba(37,209,109,.2)}
-  .live-btn:hover{opacity:1}
 </style>
 </head>
 <body>
@@ -162,19 +152,6 @@
     </div>
     <div class="grid" id="allGrid"></div>
   </section>
-  <section class="trace-panel">
-    <div class="trace-header">
-      <span>Live Trace (60s Buffer)</span>
-      <span id="traceTimeIndicator">LIVE</span>
-    </div>
-    <div class="trace-canvas-container">
-      <canvas id="traceCanvas"></canvas>
-    </div>
-    <div class="trace-controls">
-      <button class="live-btn active" id="liveBtn">Live</button>
-      <input type="range" class="scrubber" id="scrubber" min="0" max="1800" value="1800" step="1">
-    </div>
-  </section>
 </main>
 
 <script>
@@ -197,21 +174,7 @@ function connect() {
     setTimeout(connect, 1500);
   };
   ws.onerror = () => ws.close();
-  ws.onmessage = (e) => { 
-    try { 
-      const t = JSON.parse(e.data);
-      historyBuffer.push(t);
-      if (historyBuffer.length > HISTORY_MAX) historyBuffer.shift();
-      
-      $("scrubber").max = historyBuffer.length - 1;
-      
-      if (!isScrubbing) {
-        $("scrubber").value = historyBuffer.length - 1;
-        render(t); 
-        if (typeof drawTrace === "function") drawTrace(historyBuffer.length - 1);
-      }
-    } catch {} 
-  };
+  ws.onmessage = (e) => { try { render(JSON.parse(e.data)); } catch {} };
 }
 
 function render(t) {
@@ -255,8 +218,8 @@ function render(t) {
     el.querySelector(".p").textContent = `${Math.round(tire.wearPct)}%`;
   }
 
-  const gx = Math.max(-2, Math.min(2, t.gLat || 0));
-  const gy = Math.max(-2, Math.min(2, -(t.gLon || 0)));
+  const gx = Math.max(-2, Math.min(2, t.gLon || 0));
+  const gy = Math.max(-2, Math.min(2, -(t.gLat || 0)));
   $("gDot").style.transform = `translate(${gx * 30}px, ${gy * 30}px)`;
   $("gLat").textContent = `Lat: ${(t.gLat || 0).toFixed(1)}G`;
   $("gLon").textContent = `Lon: ${(t.gLon || 0).toFixed(1)}G`;
@@ -331,107 +294,6 @@ function escapeHtml(s) { return String(s).replace(/[&<>'"]/g, (c) => ({"&":"&amp
 
 connect();
 
-const HISTORY_MAX = 1800; // 60s at 30Hz
-const historyBuffer = [];
-let isScrubbing = false;
-
-setTimeout(() => {
-  const canvas = $("traceCanvas");
-  if(!canvas) return;
-  const ctx = canvas.getContext("2d");
-  let dpr = window.devicePixelRatio || 1;
-
-  function resizeCanvas() {
-    const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-  }
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas();
-
-  const scrubber = $("scrubber");
-  const liveBtn = $("liveBtn");
-  const timeInd = $("traceTimeIndicator");
-
-  scrubber.addEventListener("input", (e) => {
-    isScrubbing = parseInt(e.target.value) < historyBuffer.length - 1;
-    liveBtn.classList.toggle("active", !isScrubbing);
-    if (historyBuffer.length > 0) {
-      const idx = Math.min(parseInt(e.target.value), historyBuffer.length - 1);
-      const timeOffsetSec = ((historyBuffer.length - 1 - idx) / 30).toFixed(1);
-      timeInd.textContent = isScrubbing ? `-${timeOffsetSec}s` : "LIVE";
-      render(historyBuffer[idx]);
-      drawTrace(idx);
-    }
-  });
-
-  liveBtn.addEventListener("click", () => {
-    isScrubbing = false;
-    liveBtn.classList.add("active");
-    timeInd.textContent = "LIVE";
-    scrubber.value = historyBuffer.length - 1;
-    if (historyBuffer.length > 0) {
-      render(historyBuffer[historyBuffer.length - 1]);
-      drawTrace(historyBuffer.length - 1);
-    }
-  });
-
-  window.drawTrace = function(cursorIdx) {
-    const w = canvas.width / dpr;
-    const h = canvas.height / dpr;
-    ctx.clearRect(0, 0, w, h);
-    
-    if (historyBuffer.length === 0) return;
-
-    const pts = historyBuffer.length;
-    const stepX = w / HISTORY_MAX;
-    const startX = w - (pts * stepX);
-
-    const channels = [
-      { key: "speedKph", color: "#f4f6fb", max: 350 },
-      { key: "throttle", color: "#25d16d", max: 1 },
-      { key: "brake", color: "#ff4048", max: 1 },
-      { key: "steeringDeg", color: "#00d5ee", max: 180, min: -180 },
-    ];
-
-    channels.forEach(ch => {
-      ctx.beginPath();
-      ctx.strokeStyle = ch.color;
-      ctx.lineWidth = 1.5;
-      
-      for (let i = 0; i < pts; i++) {
-        const pkt = historyBuffer[i];
-        let val = pkt[ch.key] || 0;
-        
-        let norm;
-        if (ch.min !== undefined) {
-           norm = (val - ch.min) / (ch.max - ch.min);
-        } else {
-           norm = val / ch.max;
-        }
-        norm = Math.max(0, Math.min(1, norm));
-        
-        const x = startX + (i * stepX);
-        const y = h - (norm * h);
-        
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    });
-
-    const cursorX = startX + (cursorIdx * stepX);
-    ctx.beginPath();
-    ctx.strokeStyle = "rgba(255,255,255,0.4)";
-    ctx.lineWidth = 1;
-    ctx.moveTo(cursorX, 0);
-    ctx.lineTo(cursorX, h);
-    ctx.stroke();
-  };
-}, 100);
-
-
 let deferred;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("install").hidden = false; });
 $("install").addEventListener("click", async () => {
@@ -441,5 +303,3 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").cat
 </script>
 </body>
 </html>
-
-

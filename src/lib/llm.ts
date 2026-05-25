@@ -1,6 +1,8 @@
 import { useWorkbench } from "./store";
 import { advisorCall } from "./advisor.functions";
 import { analyzeTelemetry, liveCoach } from "./coach.functions";
+import { strategyCopilot, type StrategyCallResult } from "./strategy.functions";
+import { STRATEGY_SCHEMA, STRATEGY_SYSTEM_PROMPT, buildStrategyUserMessage } from "./strategy.prompts";
 import { ADVISOR_SCHEMA, getAdvisorSystemPrompt, buildAdvisorUserMessage } from "./advisor.prompts";
 import { COACH_SCHEMA_CONCISE, COACH_SCHEMA_DETAILED, COACH_SYSTEM_PROMPT, buildCoachUserMessage, LIVE_COACH_SCHEMA, LIVE_COACH_SYSTEM, buildLiveCoachUserMessage } from "./coach.prompts";
 
@@ -15,11 +17,6 @@ export function resolveLLMUrl(baseUrl: string): string {
   // If the user already pasted the full endpoint, just use it
   if (url.endsWith("/chat/completions") || url.endsWith("/chat")) {
     return url;
-  }
-  
-  // LM Studio native API uses /api/v1/chat
-  if (url.endsWith("/api/v1")) {
-    return `${url}/chat`;
   }
   
   // If they provided a base URL without /v1 namespace, append /v1
@@ -228,3 +225,23 @@ export async function testLLMConnection(baseUrl: string, modelId: string, apiKey
     };
   }
 }
+
+
+/** Wrapper for Live Strategy calls */
+export async function dispatchStrategyCopilot(data: any): Promise<{ call?: StrategyCallResult; error?: string }> {
+  try {
+    const { llmProvider } = useWorkbench.getState();
+    if (llmProvider === "cloud") {
+      return strategyCopilot({ data }); // Cloud fallback
+    }
+    const user = buildStrategyUserMessage(data.player, data.competitors);
+    const resultObj = await callLocalOpenAI(STRATEGY_SYSTEM_PROMPT, user, STRATEGY_SCHEMA);
+    return { call: resultObj as StrategyCallResult };
+  } catch (err: any) {
+    console.error("[Local LLM] Live Strategy failure:", err);
+    return { error: err.message };
+  }
+}
+
+
+

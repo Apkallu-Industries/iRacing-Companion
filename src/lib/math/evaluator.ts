@@ -1,3 +1,4 @@
+import type { IbtParsed } from "../ibt/types";
 export type MathContext = Record<string, number>;
 
 type Token =
@@ -263,3 +264,46 @@ function countNodes(node: Node): number {
   if (node.kind === "binary") return 1 + countNodes(node.left) + countNodes(node.right);
   return 1 + node.args.reduce((sum, n) => sum + countNodes(n), 0);
 }
+
+import type { IbtParsed } from "../ibt/types";
+
+export function evaluateMathExpressionForIbt(
+  compiled: CompiledMathExpression,
+  parsed: IbtParsed
+): Float32Array | null {
+  for (const id of compiled.identifiers) {
+    if (!(id in parsed.channels)) {
+      return null;
+    }
+  }
+
+  const sessionTime = parsed.channels["SessionTime"];
+  if (!sessionTime) return null;
+
+  const numTicks = sessionTime.data.length;
+  const out = new Float32Array(numTicks);
+  const arrays: Record<string, Float32Array | Float64Array> = {};
+  for (const id of compiled.identifiers) {
+    arrays[id] = parsed.channels[id].data;
+  }
+
+  const ctx: MathContext = {};
+  for (let i = 0; i < numTicks; i++) {
+    for (const id of compiled.identifiers) {
+      ctx[id] = arrays[id][i];
+    }
+    // We can evaluate manually to avoid overhead or just use the helper:
+    try {
+      let opCount = 0;
+      const value = evalNode(compiled.ast, ctx, () => {
+        opCount += 1;
+        if (opCount > 512) throw new Error();
+      });
+      out[i] = Number.isFinite(value) ? value : NaN;
+    } catch {
+      out[i] = NaN;
+    }
+  }
+  return out;
+}
+

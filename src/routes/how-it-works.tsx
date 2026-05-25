@@ -4,9 +4,9 @@ import { Activity, Upload, Cpu, LineChart, MapPin, Layers, GitCompare, Lock, Gau
 export const Route = createFileRoute("/how-it-works")({
   head: () => ({
     meta: [
-      { title: "How it works — ApexTrace" },
-      { name: "description", content: "How ApexTrace parses iRacing .ibt telemetry files in your browser and renders a MoTeC-style analysis workbench." },
-      { property: "og:title", content: "How ApexTrace works" },
+      { title: "How it works — Pit Wall" },
+      { name: "description", content: "How Pit Wall parses iRacing .ibt telemetry files in your browser and renders a MoTeC-style analysis workbench." },
+      { property: "og:title", content: "How Pit Wall works" },
       { property: "og:description", content: "From .ibt binary to stacked traces, track map and lap compare — the parsing pipeline explained." },
     ],
   }),
@@ -52,7 +52,7 @@ function HowItWorksPage() {
             to a workbench, in seconds.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            ApexTrace reads iRacing's native <code className="font-mono text-foreground">.ibt</code> telemetry
+            Pit Wall reads iRacing's native <code className="font-mono text-foreground">.ibt</code> telemetry
             format directly in your browser. No plugins, no installs, no upload pipeline waiting on a
             server. The same data your sim writes to disk — parsed locally, indexed, and rendered as a
             MoTeC-style analysis workspace.
@@ -100,7 +100,7 @@ function HowItWorksPage() {
               Each variable header tells us its type (<code className="font-mono">Float</code>,{" "}
               <code className="font-mono">Double</code>, <code className="font-mono">Int</code>,{" "}
               <code className="font-mono">Bitfield</code>, <code className="font-mono">Bool</code>),
-              its byte offset within a tick record, and its array count. ApexTrace materializes each variable
+              its byte offset within a tick record, and its array count. Pit Wall materializes each variable
               into a typed array so any channel can be plotted instantly without a re-parse.
             </p>
           </div>
@@ -189,7 +189,7 @@ function HowItWorksPage() {
           {[
             {
               q: "Where do .ibt files come from?",
-              a: "iRacing writes one to your Documents/iRacing/telemetry folder whenever you press Alt+L on track. ApexTrace reads that file as-is — no conversion needed.",
+              a: "iRacing writes one to your Documents/iRacing/telemetry folder whenever you press Alt+L on track. Pit Wall reads that file as-is — no conversion needed.",
             },
             {
               q: "Which IRSDK version is supported?",

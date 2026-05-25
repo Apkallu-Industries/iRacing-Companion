@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/public/og/share/$token")({
           .maybeSingle();
 
         let track = "Shared Lap";
-        let car = "ApexTrace telemetry";
+        let car = "Pit Wall telemetry";
         let refLap: number | null = null;
         let cmpLap: number | null = null;
         let bestLapS: number | null = null;

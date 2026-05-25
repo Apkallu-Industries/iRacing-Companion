@@ -14,7 +14,7 @@ export function BackButton() {
   if (location.pathname === "/") return null;
 
   const baseClass =
-    "fixed left-3 top-3 z-[70] inline-flex items-center gap-1.5 rounded-md border border-border bg-rail/85 px-2 py-1 text-xs font-mono uppercase tracking-wider text-zinc-400 shadow-sm backdrop-blur hover:bg-accent hover:text-zinc-100 transition-colors";
+    "inline-flex items-center gap-1.5 rounded-sm border border-border bg-rail px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-zinc-400 hover:bg-accent hover:text-foreground transition-all hover:scale-105 mr-1.5 shrink-0 cursor-pointer";
 
   if (canGoBack) {
     return (

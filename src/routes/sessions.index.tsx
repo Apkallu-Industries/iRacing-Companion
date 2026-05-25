@@ -6,6 +6,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { AppHeader } from "@/components/AppHeader";
 import { Upload, Trash2, Clock, Flag, Car, MapPin, Fingerprint } from "lucide-react";
 import { uploadAndIndexIbt } from "@/lib/uploadIbt";
+import { ImportPwlapButton } from "@/components/workbench/ImportPwlapButton";
 import { hasAnyFingerprint } from "@/lib/fingerprint.functions";
 import { toast } from "sonner";
 
@@ -14,7 +15,7 @@ type Sess = Tables<"telemetry_sessions">;
 export const Route = createFileRoute("/sessions/")({
   head: () => ({
     meta: [
-      { title: "Sessions — ApexTrace" },
+      { title: "Sessions — Pit Wall" },
       { name: "description", content: "Your uploaded iRacing telemetry sessions." },
     ],
   }),
@@ -104,6 +105,11 @@ function SessionsPage() {
   }, [user, sessionsLoaded, sessions.length, busy, navigate]);
 
   const handleFile = async (file: File) => {
+    if (file.name.toLowerCase().endsWith(".pwlap")) {
+      // Let ImportPwlapButton handle it conceptually, but we can do it here if we want.
+      toast.error("Please use the Import .pwlap button for .pwlap files");
+      return;
+    }
     if (!file.name.toLowerCase().endsWith(".ibt")) {
       toast.error("Please choose an .ibt file");
       return;
@@ -166,6 +172,7 @@ function SessionsPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              <ImportPwlapButton />
               <Link
                 to="/live"
                 className="rounded-sm border border-border bg-rail px-3 py-2 font-mono text-[11px] uppercase tracking-wider hover:bg-accent"
@@ -225,7 +232,7 @@ function SessionsPage() {
                 {progress?.phase} · {progress?.pct}% {progress?.msg ? `· ${progress.msg}` : ""}
               </span>
             ) : (
-              <>Drop an <span className="font-mono text-primary">.ibt</span> file or click to browse</>
+              <>Drop an <span className="font-mono text-primary">.ibt</span> or <span className="font-mono text-primary">.pwlap</span> file or click to browse</>
             )}
           </p>
           {busy && progress && (
@@ -242,7 +249,7 @@ function SessionsPage() {
           <input
             ref={fileRef}
             type="file"
-            accept=".ibt"
+            accept=".ibt,.pwlap"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];

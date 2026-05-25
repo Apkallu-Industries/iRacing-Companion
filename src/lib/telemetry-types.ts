@@ -25,10 +25,10 @@ export interface Telemetry {
   fuelRemainingL: number;
   lapsEstimated: number;
   tires: {
-    fl: { tempC: number; pressureBar: number; wearPct: number; state: "cold" | "ok" | "hot" };
-    fr: { tempC: number; pressureBar: number; wearPct: number; state: "cold" | "ok" | "hot" };
-    rl: { tempC: number; pressureBar: number; wearPct: number; state: "cold" | "ok" | "hot" };
-    rr: { tempC: number; pressureBar: number; wearPct: number; state: "cold" | "ok" | "hot" };
+    fl: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
+    fr: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
+    rl: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
+    rr: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
   };
   gLat: number;
   gLon: number;
@@ -37,7 +37,22 @@ export interface Telemetry {
   diffMap: number;
   airTempC: number;
   trackTempC: number;
+  liveAirTempC: number;
+  liveTrackTempC: number;
+  airDensity: number;
+  airPressure: number;
+  windVel: number;
+  windDir: number;
+  trackWetness: number;
   sof: number;
+  myCarIdx?: number;
+  competitors?: Array<{
+    pos: number;
+    carIdx: number;
+    lap: number;
+    lastTime: number;
+    fastestTime: number;
+  }>;
   /**
    * Passthrough for any additional numeric channels the bridge wants to
    * expose (LapDistPct, Yaw, VelocityX/Y, suspension travel, etc.). The
@@ -75,17 +90,25 @@ export const DEFAULT_TELEMETRY: Telemetry = {
   fuelRemainingL: 42.1,
   lapsEstimated: 14.2,
   tires: {
-    fl: { tempC: 82, pressureBar: 1.84, wearPct: 98, state: "ok" },
-    fr: { tempC: 94, pressureBar: 1.92, wearPct: 94, state: "hot" },
-    rl: { tempC: 84, pressureBar: 1.88, wearPct: 97, state: "ok" },
-    rr: { tempC: 88, pressureBar: 1.9, wearPct: 96, state: "ok" },
+    fl: { tempC: 82, pressureBar: 1.84, wearPct: 98, estWearPct: 98, brakeTempC: 320, brakeLinePress: 0, state: "ok" },
+    fr: { tempC: 94, pressureBar: 1.92, wearPct: 94, estWearPct: 94, brakeTempC: 350, brakeLinePress: 0, state: "hot" },
+    rl: { tempC: 84, pressureBar: 1.88, wearPct: 97, estWearPct: 97, brakeTempC: 310, brakeLinePress: 0, state: "ok" },
+    rr: { tempC: 88, pressureBar: 1.9, wearPct: 96, estWearPct: 96, brakeTempC: 315, brakeLinePress: 0, state: "ok" },
   },
   gLat: 1.8,
   gLon: -0.4,
   drsAvailable: true,
   brakeBias: 54.5,
   diffMap: 3,
-  airTempC: 19,
-  trackTempC: 24,
-  sof: 4120,
+  airTempC: 22.5,
+  trackTempC: 38.2,
+  liveAirTempC: 22.8,
+  liveTrackTempC: 39.5,
+  airDensity: 1.2,
+  airPressure: 101325,
+  windVel: 5.2,
+  windDir: 1.5,
+  trackWetness: 0,
+  sof: 2150,
 };
+

@@ -23,7 +23,7 @@ import { loadTargets, saveTargets, pairKey, parseLapInput, type TargetMap } from
 export const Route = createFileRoute("/fingerprint")({
   head: () => ({
     meta: [
-      { title: "Driver Fingerprint — ApexTrace" },
+      { title: "Driver Fingerprint — Pit Wall" },
       {
         name: "description",
         content:

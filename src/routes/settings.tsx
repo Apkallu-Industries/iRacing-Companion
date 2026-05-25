@@ -10,7 +10,7 @@ import { BridgePerformanceSettings } from "@/components/BridgePerformanceSetting
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings - ApexTrace" },
+      { title: "Settings - Pit Wall" },
       {
         name: "description",
         content: "Configure AI provider, local LLM host, and local MongoDB diagnostics.",
@@ -55,7 +55,7 @@ function SettingsPage() {
               <p className="mb-3 text-xs text-muted-foreground">
                 Choose cloud or local LLM backends and set your local host URL/model.
               </p>
-              <LLMSettings />
+              <LLMSettings inline />
             </div>
 
             <div className="hairline rounded-sm bg-rail p-4">
@@ -65,7 +65,7 @@ function SettingsPage() {
               <p className="mb-3 text-xs text-muted-foreground">
                 Set ElevenLabs API key and preferred voice ID for spoken coach feedback.
               </p>
-              <VoiceSettings />
+              <VoiceSettings inline />
             </div>
 
             <div className="hairline rounded-sm bg-rail p-4">

@@ -1,6 +1,6 @@
 {
-  "name": "ApexTrace — iRacing Telemetry Workbench",
-  "short_name": "ApexTrace",
+  "name": "Pit Wall — iRacing Telemetry Workbench",
+  "short_name": "Pit Wall",
   "description": "Open and analyze iRacing .ibt telemetry files in a MoTeC-style workspace.",
   "start_url": "/",
   "scope": "/",

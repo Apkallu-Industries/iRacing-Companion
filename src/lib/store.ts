@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { IbtParsed } from "./ibt/types";
+import type { MathExpression } from "./math/schema";
 
 export const DEFAULT_CHANNELS = ["Speed", "Throttle", "Brake", "RPM", "Gear", "SteeringWheelAngle", "LatAccel", "LongAccel"];
 
@@ -83,6 +84,9 @@ interface WorkbenchState {
 
   subscriptionPlan: SubscriptionPlan;
   setSubscriptionPlan: (plan: SubscriptionPlan) => void;
+
+  mathExpressions: MathExpression[];
+  setMathExpressions: (exprs: MathExpression[]) => void;
 }
 
 export const useWorkbench = create<WorkbenchState>((set) => ({
@@ -173,4 +177,7 @@ export const useWorkbench = create<WorkbenchState>((set) => ({
 
   subscriptionPlan: null as SubscriptionPlan,
   setSubscriptionPlan: (plan: SubscriptionPlan) => set({ subscriptionPlan: plan }),
+
+  mathExpressions: [],
+  setMathExpressions: (exprs) => set({ mathExpressions: exprs }),
 }));

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, Gauge, LineChart, ArrowRight, Download, Terminal, Wifi, Cpu } from "lucide-react";
+import { Activity, Gauge, LineChart, ArrowRight, Download, Terminal, Wifi, Cpu, Settings } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -54,6 +54,14 @@ function LandingPage() {
           <Link to="/sessions" className="hover:text-primary">Sessions</Link>
           <Link to="/how-it-works" className="hover:text-primary">How it works</Link>
           <Link to="/roadmap" className="hover:text-primary">Roadmap</Link>
+          <Link
+            to="/settings"
+            className="flex items-center gap-1.5 hover:text-primary transition-all group text-muted-foreground"
+            title="Settings"
+          >
+            <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90" />
+            <span>Settings</span>
+          </Link>
           <Link
             to="/auth"
             className="rounded-sm bg-primary px-3 py-1 text-primary-foreground hover:opacity-90"

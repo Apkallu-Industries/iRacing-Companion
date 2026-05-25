@@ -29,14 +29,14 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
       <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
         <Link
           to="/settings"
-          className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-colors ${
+          className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-all group ${
             settingsActive
-              ? "bg-primary/15 text-primary ring-1 ring-primary/40"
-              : "hover:bg-accent hover:text-foreground"
+              ? "bg-primary/15 text-primary ring-1 ring-primary/40 font-semibold"
+              : "hover:bg-accent hover:text-foreground text-muted-foreground"
           }`}
         >
-          <Settings className="h-3.5 w-3.5" />
-          Settings
+          <Settings className={`h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90 ${settingsActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
+          <span>Settings</span>
         </Link>
         {user ? (
           <>

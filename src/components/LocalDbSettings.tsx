@@ -215,7 +215,7 @@ export function LocalDbSettings() {
                             <div className="space-y-1">
                                 <div className="font-semibold text-foreground font-mono text-[11px]">Step 1: Install & Run MongoDB</div>
                                 <p>
-                                    ApexTrace requires a running MongoDB server on your local machine to keep your lap records and session metadata.
+                                    Pit Wall requires a running MongoDB server on your local machine to keep your lap records and session metadata.
                                 </p>
                                 <div className="mt-2 rounded bg-rail p-2.5 font-mono text-[10px] text-foreground border border-border/60">
                                     <span className="text-muted-foreground"># Windows (via winget)</span>

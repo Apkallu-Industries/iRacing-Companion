@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/lab/lapfile")({
   head: () => ({
     meta: [
-      { title: "Lapfile Lab — ApexTrace" },
+      { title: "Lapfile Lab — Pit Wall" },
       { name: "description", content: "Inspect iRacing .olap / .blap reference lap files." },
     ],
   }),

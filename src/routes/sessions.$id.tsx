@@ -4,9 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useWorkbench } from "@/lib/store";
 import { parseIbtInWorker } from "@/lib/ibt/parseInWorker";
+import { loadChannelPrefs } from "@/components/live/ChannelRegistry";
 import { pwlapToParsed, isPwlapPath } from "@/lib/pwlap/adapter";
 import type { RecordingDoc } from "@/lib/liveRecorder";
 import { AppHeader } from "@/components/AppHeader";
+import { ExportPwlapDialog } from "@/components/workbench/ExportPwlapDialog";
+
 import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
 import { StackedTraces } from "@/components/workbench/StackedTraces";
 import { TrackMap } from "@/components/workbench/TrackMap";
@@ -43,7 +46,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/sessions/$id")({
   head: () => ({
     meta: [
-      { title: "Workbench — ApexTrace" },
+      { title: "Workbench — Pit Wall" },
       { name: "description", content: "Telemetry workbench for an iRacing .ibt session." },
     ],
   }),
@@ -54,8 +57,9 @@ function WorkbenchPage() {
   const { id } = Route.useParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { parsed, setParsed, refLap, cmpLap, setRefLap, setCmpLap, pendingLocalBlob, setPendingLocalBlob } = useWorkbench();
+  const { parsed, setParsed, refLap, cmpLap, setRefLap, setCmpLap, pendingLocalBlob, setPendingLocalBlob, setMathExpressions } = useWorkbench();
   const [sess, setSess] = useState<Tables<"telemetry_sessions"> | null>(null);
+  const [showExport, setShowExport] = useState(false);
   const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>({ phase: "fetch", pct: 0 });
   const [err, setErr] = useState<string | null>(null);
   const [bottomTab, setBottomTab] = useState<
@@ -73,6 +77,8 @@ function WorkbenchPage() {
     let cancelled = false;
     setParsed(null);
     setProgress({ phase: "fetch", pct: 0 });
+    const prefs = loadChannelPrefs();
+    setMathExpressions(prefs.mathExpressions || []);
     (async () => {
       try {
         let row: Tables<"telemetry_sessions">;
@@ -296,7 +302,7 @@ function WorkbenchPage() {
                 </div>
                 <div className="flex flex-1 flex-col bg-panel">
                   <div className="hairline-b flex items-center gap-px bg-border font-mono text-[11px] uppercase tracking-wider">
-                    {(["cinema", "readout", "laps", "gg", "optimal", "whatif", "apex", "waterfall", "brake", "slip", "replay3d", "piano", "spider", "setup", "setupdiff"] as const).map((t) => (
+                    {(["cinema", "readout", "laps", "gg", "histogram", "scatter", "optimal", "whatif", "apex", "waterfall", "brake", "slip", "replay3d", "piano", "spider", "setup", "setupdiff"] as const).map((t) => (
                       <button
                         key={t}
                         onClick={() => setBottomTab(t)}
@@ -346,6 +352,8 @@ function WorkbenchPage() {
                     {bottomTab === "readout" && <LiveReadout parsed={parsed} />}
                     {bottomTab === "laps" && <LapList parsed={parsed} />}
                     {bottomTab === "gg" && <GGDiagram parsed={parsed} />}
+                    {bottomTab === "histogram" && <HistogramPanel />}
+                    {bottomTab === "scatter" && <XYScatterPanel />}
                     {bottomTab === "optimal" && <OptimalLap parsed={parsed} />}
                     {bottomTab === "whatif" && <Counterfactuals parsed={parsed} />}
                     {bottomTab === "apex" && <MinCornerSpeed parsed={parsed} />}
@@ -389,3 +397,5 @@ function WorkbenchPage() {
     </div>
   );
 }
+
+

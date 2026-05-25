@@ -1,8 +1,9 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
+import { Settings } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
 import { useTelemetry } from "@/lib/useTelemetry";
-import { useTelemetryBuffer } from "@/lib/useTelemetryBuffer";
+import { useTelemetryBuffer, type Sample } from "@/lib/useTelemetryBuffer";
 import { useBridgeDiagnostics } from "@/lib/bridgeDiagnostics";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { LiveCoach } from "@/components/live/LiveCoach";
@@ -19,7 +20,7 @@ import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
 import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
 import { TabedAnalysisPanel } from "@/components/live/TabedAnalysisPanel";
-import { GGScatter } from "@/components/live/MotecPanels";
+
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -187,6 +188,13 @@ function TopBar({ t }: { t: Telemetry }) {
             {t.connected ? `${t.sdkVersion} · ${t.latencyMs}ms` : "Simulated"}
           </span>
         </div>
+        <Link
+          to="/settings"
+          className="flex h-6 w-6 items-center justify-center rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-primary hover:border-primary/50 transition-all hover:scale-110 group cursor-pointer"
+          title="Settings"
+        >
+          <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90 text-zinc-500 group-hover:text-primary" />
+        </Link>
       </div>
     </header>
   );

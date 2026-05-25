@@ -25,7 +25,7 @@ Items from the [CurrentState.MD](CurrentState.MD) audit, ordered by priority. Sh
 
 ### P1 — Quality and consistency
 
-- [ ] Unify product name in page titles, OG tags, and [`LocalDbSettings.tsx`](src/components/LocalDbSettings.tsx) (Pit Wall vs ApexTrace).
+- [ ] Unify product name in page titles, OG tags, and [`LocalDbSettings.tsx`](src/components/LocalDbSettings.tsx) (Pit Wall vs Pit Wall).
 - [ ] Add `live_coach_events` migration (supports roadmap item **#2** below).
 - [ ] IBT parser golden-file test harness (see **Cross-cutting** table).
 - [ ] CI: run `lint` and `tsc --noEmit` (or equivalent) in [`.github/workflows/build.yml`](.github/workflows/build.yml).

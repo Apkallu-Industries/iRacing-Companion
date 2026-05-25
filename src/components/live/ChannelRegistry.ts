@@ -50,6 +50,19 @@ export const STATIC_CHANNELS: ChannelDef[] = [
   { key: "tires.fr.wearPct", label: "FR WEAR", unit: "%", color: "#10b981", group: "Tyres", read: (t) => fmt.int(t.tires.fr.wearPct) },
   { key: "tires.rl.wearPct", label: "RL WEAR", unit: "%", color: "#10b981", group: "Tyres", read: (t) => fmt.int(t.tires.rl.wearPct) },
   { key: "tires.rr.wearPct", label: "RR WEAR", unit: "%", color: "#10b981", group: "Tyres", read: (t) => fmt.int(t.tires.rr.wearPct) },
+  { key: "tires.fl.estWearPct", label: "FL EST. WEAR", unit: "%", color: "#34d399", group: "Tyres", read: (t) => fmt.f1(t.tires.fl.estWearPct) },
+  { key: "tires.fr.estWearPct", label: "FR EST. WEAR", unit: "%", color: "#34d399", group: "Tyres", read: (t) => fmt.f1(t.tires.fr.estWearPct) },
+  { key: "tires.rl.estWearPct", label: "RL EST. WEAR", unit: "%", color: "#34d399", group: "Tyres", read: (t) => fmt.f1(t.tires.rl.estWearPct) },
+  { key: "tires.rr.estWearPct", label: "RR EST. WEAR", unit: "%", color: "#34d399", group: "Tyres", read: (t) => fmt.f1(t.tires.rr.estWearPct) },
+  // Brakes
+  { key: "tires.fl.brakeTempC", label: "FL BRAKE", unit: "C", color: "#f43f5e", group: "Tyres", read: (t) => fmt.int(t.tires.fl.brakeTempC) },
+  { key: "tires.fr.brakeTempC", label: "FR BRAKE", unit: "C", color: "#f43f5e", group: "Tyres", read: (t) => fmt.int(t.tires.fr.brakeTempC) },
+  { key: "tires.rl.brakeTempC", label: "RL BRAKE", unit: "C", color: "#f43f5e", group: "Tyres", read: (t) => fmt.int(t.tires.rl.brakeTempC) },
+  { key: "tires.rr.brakeTempC", label: "RR BRAKE", unit: "C", color: "#f43f5e", group: "Tyres", read: (t) => fmt.int(t.tires.rr.brakeTempC) },
+  { key: "tires.fl.brakeLinePress", label: "FL B.PRES", unit: "bar", color: "#fca5a5", group: "Tyres", read: (t) => fmt.f1(t.tires.fl.brakeLinePress) },
+  { key: "tires.fr.brakeLinePress", label: "FR B.PRES", unit: "bar", color: "#fca5a5", group: "Tyres", read: (t) => fmt.f1(t.tires.fr.brakeLinePress) },
+  { key: "tires.rl.brakeLinePress", label: "RL B.PRES", unit: "bar", color: "#fca5a5", group: "Tyres", read: (t) => fmt.f1(t.tires.rl.brakeLinePress) },
+  { key: "tires.rr.brakeLinePress", label: "RR B.PRES", unit: "bar", color: "#fca5a5", group: "Tyres", read: (t) => fmt.f1(t.tires.rr.brakeLinePress) },
   // Session
   { key: "lastLap", label: "LAST LAP", unit: "", color: "#e5e5e5", group: "Session", read: (t) => t.lastLap },
   { key: "bestLap", label: "BEST LAP", unit: "", color: "#34d399", group: "Session", read: (t) => t.bestLap },
@@ -100,6 +113,10 @@ const DEFAULT_KEYS = [
   "speedKph", "rpm", "gear", "throttle", "brake", "clutch", "steeringDeg",
   "gLat", "gLon", "fuelRemainingL", "lapsEstimated", "brakeBias",
   "tires.fl.tempC", "tires.fr.tempC", "tires.rl.tempC", "tires.rr.tempC",
+  "tires.fl.brakeTempC", "tires.fr.brakeTempC", "tires.rl.brakeTempC", "tires.rr.brakeTempC",
+  "tires.fl.brakeLinePress", "tires.fr.brakeLinePress", "tires.rl.brakeLinePress", "tires.rr.brakeLinePress",
+  "tires.fl.wearPct", "tires.fr.wearPct", "tires.rl.wearPct", "tires.rr.wearPct",
+  "tires.fl.estWearPct", "tires.fr.estWearPct", "tires.rl.estWearPct", "tires.rr.estWearPct"
 ];
 
 export interface ChannelPrefs {
@@ -137,3 +154,7 @@ export function saveChannelPrefs(prefs: ChannelPrefs) {
 }
 
 export const DEFAULT_CHANNEL_KEYS = DEFAULT_KEYS;
+
+
+
+
