@@ -12,12 +12,37 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 
-const DASHBOARD_URL = "https://iracing-companion.lovable.app/live";
+// Check if we are running in local development mode
+const isDev = process.argv.includes("--dev") || process.env.DEV === "1";
+const DASHBOARD_URL = isDev
+  ? "http://localhost:3000/live"
+  : "https://iracing-companion.lovable.app/live";
+
 const BRIDGE_DIR = path.join(__dirname, "bridge");
+const STATE_FILE_PATH = path.join(app.getPath("userData"), "window-state.json");
 
 let mainWindow = null;
 let bridgeProc = null;
 let bridgeStatus = "starting"; // 'starting' | 'running' | 'crashed'
+
+// Load previous window bounds state or fall back to defaults
+let windowState = {
+  width: 1600,
+  height: 980,
+  x: undefined,
+  y: undefined,
+};
+
+try {
+  if (fs.existsSync(STATE_FILE_PATH)) {
+    const data = JSON.parse(fs.readFileSync(STATE_FILE_PATH, "utf-8"));
+    if (data.width && data.height) {
+      windowState = data;
+    }
+  }
+} catch (e) {
+  console.error("[desktop] failed to load window state:", e);
+}
 
 function startBridge() {
   if (bridgeProc) return;
@@ -52,15 +77,34 @@ function stopBridge() {
   bridgeStatus = "starting";
 }
 
+function saveWindowState() {
+  if (!mainWindow) return;
+  try {
+    const bounds = mainWindow.getBounds();
+    fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(bounds), "utf-8");
+  } catch (e) {
+    console.error("[desktop] failed to save window state:", e);
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1600,
-    height: 980,
+    width: windowState.width,
+    height: windowState.height,
+    x: windowState.x,
+    y: windowState.y,
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: "#09090b",
     title: "Pit Wall Desktop",
-    autoHideMenuBar: false,
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      color: "#09090b",
+      symbolColor: "#71717a",
+      height: 32,
+    },
+    autoHideMenuBar: true,
+    show: false, // Prevent white flicker on load
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -68,6 +112,14 @@ function createWindow() {
   });
 
   mainWindow.loadURL(DASHBOARD_URL);
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
+
+  // Track window resizing and movement to persist layout bounds
+  mainWindow.on("resize", saveWindowState);
+  mainWindow.on("move", saveWindowState);
 
   // External links open in the user's browser, not in the app shell.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -138,6 +190,7 @@ app.whenReady().then(() => {
 });
 
 app.on("before-quit", () => {
+  saveWindowState();
   stopBridge();
 });
 

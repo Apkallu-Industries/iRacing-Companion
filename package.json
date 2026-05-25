@@ -10,7 +10,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "desktop": "npm --prefix desktop run start",
+    "desktop:dev": "npm --prefix desktop run dev"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
