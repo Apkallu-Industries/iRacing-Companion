@@ -18,6 +18,8 @@ import { GearAdvisor } from "@/components/live/GearAdvisor";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
 import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
+import { TabedAnalysisPanel } from "@/components/live/TabedAnalysisPanel";
+import { GGScatter } from "@/components/live/MotecPanels";
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -124,13 +126,13 @@ function Dashboard() {
           </div>
         </section>
 
-        {/* Right column: G-G + Coach */}
+        {/* Right column: Analysis Panels + Coach */}
         <section className="col-span-3 flex flex-col overflow-hidden">
-          <div className="flex-shrink-0 px-2 py-1 border-b border-zinc-900 bg-zinc-925">
-            <PanelHeader title="G-G Diagram" right={`${samples.length} pts`} />
-          </div>
           <div className="flex-1 min-h-0 overflow-hidden border-b border-zinc-900">
-            <GGScatter samples={samples} />
+            <TabedAnalysisPanel
+              samples={samples}
+              ggScatterComponent={<GGScatterPanel samples={samples} />}
+            />
           </div>
           <div className="flex-1 min-h-0 overflow-auto">
             <LiveCoach t={t} />
@@ -449,5 +451,18 @@ function FooterBar({ t }: { t: Telemetry }) {
         </span>
       </div>
     </footer>
+  );
+}
+
+function GGScatterPanel({ samples }: { samples: Sample[] }) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0 px-2 py-1 border-b border-zinc-900 bg-zinc-925">
+        <PanelHeader title="G-G Diagram" right={`${samples.length} pts`} />
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <GGScatter samples={samples} />
+      </div>
+    </div>
   );
 }
