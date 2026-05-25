@@ -45,7 +45,6 @@ import {
   isWithinInterval,
 } from "date-fns";
 
-// @ts-ignore - Temporary bypass until the IDE type server indexes the generated routeTree.gen.ts file
 export const Route = createFileRoute("/team")({
   head: () => ({
     meta: [
@@ -86,8 +85,8 @@ type RaceIncident = {
   duration: number;
 };
 
-const CAR_CLASSES = ["GTP", "LMP2", "GT3"] as const;
-const CLASS_COLORS: Record<string, string> = { GTP: "#3b82f6", LMP2: "#10b981", GT3: "#f59e0b" };
+const CAR_CLASSES = ["GTP", "LMP2", "GT3", "IndyCar", "NASCAR Cup", "NASCAR Xfinity", "NASCAR Trucks", "Touring Car", "GT4", "MX5", "Formula Vee", "Other"] as const;
+const CLASS_COLORS: Record<string, string> = { GTP: "#3b82f6", LMP2: "#10b981", GT3: "#f59e0b", SRF3: "#f59e0b", GT4: "#f59e0b", MX5: "#f59e0b", "IndyCar": "#f59e0b", "NASCAR Cup": "#f59e0b", "NASCAR Xfinity": "#f59e0b", "NASCAR Trucks": "#f59e0b", "Touring Car": "#f59e0b", "Other": "#f59e0b" };
 const WEATHER_COLORS: Record<WeatherType, string> = {
   Sunny: "#f59e0b",
   "Partly Cloudy": "#60a5fa",
@@ -122,16 +121,98 @@ function formatDuration(minutes: number): string {
 }
 
 function TeamPage() {
-  // SimTeam Core State Variables
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [cars, setCars] = useState<Car[]>([]);
-  const [stints, setStints] = useState<Stint[]>([]);
-  const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>([]);
-  const [incidents, setIncidents] = useState<RaceIncident[]>([]);
-  const [raceStartTime, setRaceStartTime] = useState<string>(startOfHour(new Date()).toISOString());
+  // SimTeam Core State Variables with localStorage persistence
+  const [drivers, setDrivers] = useState<Driver[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_drivers");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [cars, setCars] = useState<Car[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_cars");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [stints, setStints] = useState<Stint[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_stints");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_weather");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [incidents, setIncidents] = useState<RaceIncident[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_incidents");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+  const [raceStartTime, setRaceStartTime] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_race_start_time");
+      return saved ? saved : startOfHour(new Date()).toISOString();
+    }
+    return startOfHour(new Date()).toISOString();
+  });
   const [defaultStintDuration, setDefaultStintDuration] = useState<number>(60);
-  const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
+  const [selectedCarId, setSelectedCarId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("team_selected_car_id");
+      return saved ? saved : null;
+    }
+    return null;
+  });
   const [realTime, setRealTime] = useState(new Date());
+
+  // Strategy planner calculator states
+  const [calcFuelBurn, setCalcFuelBurn] = useState<number>(3.15);
+  const [calcStintLaps, setCalcStintLaps] = useState<number>(22);
+
+  // Sync to localStorage hooks
+  useEffect(() => {
+    localStorage.setItem("team_drivers", JSON.stringify(drivers));
+  }, [drivers]);
+
+  useEffect(() => {
+    localStorage.setItem("team_cars", JSON.stringify(cars));
+    if (cars.length > 0 && !selectedCarId) {
+      setSelectedCarId(cars[0].id);
+    }
+  }, [cars, selectedCarId]);
+
+  useEffect(() => {
+    localStorage.setItem("team_stints", JSON.stringify(stints));
+  }, [stints]);
+
+  useEffect(() => {
+    localStorage.setItem("team_weather", JSON.stringify(weatherEvents));
+  }, [weatherEvents]);
+
+  useEffect(() => {
+    localStorage.setItem("team_incidents", JSON.stringify(incidents));
+  }, [incidents]);
+
+  useEffect(() => {
+    localStorage.setItem("team_race_start_time", raceStartTime);
+  }, [raceStartTime]);
+
+  useEffect(() => {
+    if (selectedCarId) {
+      localStorage.setItem("team_selected_car_id", selectedCarId);
+    } else {
+      localStorage.removeItem("team_selected_car_id");
+    }
+  }, [selectedCarId]);
 
   // Interactive panels
   const [activeTab, setActiveTab] = useState<"timeline" | "strategy" | "calc">("timeline");
@@ -154,6 +235,7 @@ function TeamPage() {
     duration: 60,
   });
   const [newStint, setNewStint] = useState({
+    carId: "",
     driverId: "",
     startOffset: 0,
     duration: 60,
@@ -216,6 +298,25 @@ function TeamPage() {
 
   // Derived variables
   const selectedCar = cars.find((c) => c.id === selectedCarId) || cars[0];
+
+  // Dynamic calculator derivations
+  const calculatedFuelRequired = useMemo(() => {
+    return Number((calcFuelBurn * calcStintLaps).toFixed(2));
+  }, [calcFuelBurn, calcStintLaps]);
+
+  const calculatedFuelMargin = useMemo(() => {
+    return Number((calcFuelBurn * 1.5).toFixed(2));
+  }, [calcFuelBurn]);
+
+  const calculatedTireWearCoefficient = useMemo(() => {
+    const baseWear =
+      selectedCar?.carClass === "GTP" ? 1.65 : selectedCar?.carClass === "LMP2" ? 1.45 : 1.25;
+    return Number(baseWear.toFixed(2));
+  }, [selectedCar]);
+
+  const calculatedStintDurationMin = useMemo(() => {
+    return calcStintLaps * 1.5;
+  }, [calcStintLaps]);
 
   const raceElapsedMs = useMemo(() => {
     return differenceInMinutes(realTime, parseISO(raceStartTime)) * 60 * 1000;
@@ -371,6 +472,45 @@ function TeamPage() {
     return () => clearInterval(t);
   }, [liveTelemetry]);
 
+  // Delete handlers
+  const handleDeleteCar = (carId: string) => {
+    setCars((prev) => prev.filter((c) => c.id !== carId));
+    setStints((prev) => prev.filter((s) => s.carId !== carId));
+    if (selectedCarId === carId) {
+      const remaining = cars.filter((c) => c.id !== carId);
+      setSelectedCarId(remaining.length > 0 ? remaining[0].id : null);
+    }
+  };
+
+  const handleDeleteDriver = (driverId: string) => {
+    setDrivers((prev) => prev.filter((d) => d.id !== driverId));
+    setStints((prev) => prev.filter((s) => s.driverId !== driverId));
+  };
+
+  const handleDeleteStint = (stintId: string) => {
+    setStints((prev) => prev.filter((s) => s.id !== stintId));
+  };
+
+  const handleDeleteWeather = (wId: string) => {
+    setWeatherEvents((prev) => prev.filter((w) => w.id !== wId));
+  };
+
+  const handleDeleteIncident = (iId: string) => {
+    setIncidents((prev) => prev.filter((inc) => inc.id !== iId));
+  };
+
+  // Open stint popup handler
+  const handleOpenAddStint = () => {
+    setNewStint({
+      carId: selectedCarId || cars[0]?.id || "",
+      driverId: drivers[0]?.id || "",
+      startOffset: 0,
+      duration: defaultStintDuration,
+      note: "",
+    });
+    setIsAddStintOpen(true);
+  };
+
   // Command handlers
   const handleAddCar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -418,10 +558,11 @@ function TeamPage() {
 
   const handleAddStint = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCarId || !newStint.driverId) return;
+    const targetCarId = newStint.carId || selectedCarId;
+    if (!targetCarId || !newStint.driverId) return;
     const stint: Stint = {
       id: `s_${Date.now()}`,
-      carId: selectedCarId,
+      carId: targetCarId,
       driverId: newStint.driverId,
       startTime: addMinutes(timelineStartTime, newStint.startOffset).toISOString(),
       endTime: addMinutes(
@@ -431,7 +572,6 @@ function TeamPage() {
       note: newStint.note,
     };
     setStints((prev) => [...prev, stint]);
-    setNewStint({ driverId: "", startOffset: 0, duration: 60, note: "" });
     setIsAddStintOpen(false);
   };
 
@@ -540,11 +680,10 @@ function TeamPage() {
               <div className="flex gap-1">
                 <button
                   onClick={toggleStopwatch}
-                  className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                    stopwatch.isRunning
-                      ? "bg-red-500/20 border-red-500/30 text-red-400"
-                      : "bg-green-500/20 border-green-500/30 text-green-400"
-                  }`}
+                  className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${stopwatch.isRunning
+                    ? "bg-red-500/20 border-red-500/30 text-red-400"
+                    : "bg-green-500/20 border-green-500/30 text-green-400"
+                    }`}
                 >
                   {stopwatch.isRunning ? (
                     <Square className="w-3.5 h-3.5 fill-red-400" />
@@ -576,21 +715,19 @@ function TeamPage() {
             <div className="flex p-0.5 bg-muted rounded-2xl border border-border/40">
               <button
                 onClick={() => setActiveTab("timeline")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === "timeline"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === "timeline"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 Timeline
               </button>
               <button
                 onClick={() => setActiveTab("strategy")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === "strategy"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === "strategy"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 Fuel Stints
               </button>
@@ -636,7 +773,7 @@ function TeamPage() {
                     </button>
                     {cars.length > 0 && (
                       <button
-                        onClick={() => setIsAddStintOpen(true)}
+                        onClick={handleOpenAddStint}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground hover:opacity-90 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -680,17 +817,19 @@ function TeamPage() {
                             <div
                               key={inc.id}
                               style={{ left: `${left}%`, width: `${width}%` }}
-                              className={`absolute h-full rounded-full ${
-                                inc.type === "Caution"
-                                  ? "bg-amber-400 shadow-[0_0_8px_#fbbf24]"
-                                  : inc.type === "Safety Car"
-                                    ? "bg-orange-500 shadow-[0_0_8px_#f97316]"
-                                    : inc.type === "Red Flag"
-                                      ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
-                                      : "bg-emerald-500"
-                              }`}
-                              title={`${inc.type}: ${inc.duration}m`}
-                            />
+                              className={`absolute h-full rounded-full flex items-center justify-end pr-1 cursor-pointer group/inc ${inc.type === "Caution"
+                                ? "bg-amber-400 shadow-[0_0_8px_#fbbf24]"
+                                : inc.type === "Safety Car"
+                                  ? "bg-orange-500 shadow-[0_0_8px_#f97316]"
+                                  : inc.type === "Red Flag"
+                                    ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
+                                    : "bg-emerald-500"
+                                }`}
+                              title={`${inc.type}: ${inc.duration}m (Click to delete)`}
+                              onClick={() => handleDeleteIncident(inc.id)}
+                            >
+                              <X className="w-2 h-2 text-black opacity-0 group-hover/inc:opacity-100 transition-opacity" />
+                            </div>
                           );
                         })}
                       </div>
@@ -713,9 +852,12 @@ function TeamPage() {
                                 width: `${width}%`,
                                 backgroundColor: WEATHER_COLORS[w.type],
                               }}
-                              className="absolute h-full rounded-full transition-all"
-                              title={`${w.type}: ${format(parseISO(w.startTime), "HH:mm")} - ${format(parseISO(w.endTime), "HH:mm")}`}
-                            />
+                              className="absolute h-full rounded-full transition-all flex items-center justify-end pr-1 cursor-pointer group/wea"
+                              title={`${w.type}: ${format(parseISO(w.startTime), "HH:mm")} - ${format(parseISO(w.endTime), "HH:mm")} (Click to delete)`}
+                              onClick={() => handleDeleteWeather(w.id)}
+                            >
+                              <X className="w-2 h-2 text-black opacity-0 group-hover/wea:opacity-100 transition-opacity" />
+                            </div>
                           );
                         })}
                       </div>
@@ -748,15 +890,25 @@ function TeamPage() {
                                     style={{
                                       left: `${left}%`,
                                       width: `${width}%`,
-                                      backgroundColor: `${driver.color}25`,
+                                      backgroundColor: `${driver.color}20`,
                                       borderColor: driver.color,
                                     }}
-                                    className="absolute h-6 rounded-lg border flex items-center px-2 select-none overflow-hidden transition-all"
+                                    className="absolute h-6 rounded-lg border flex items-center justify-between px-2 select-none overflow-hidden transition-all group/stint"
                                     title={`${driver.name}: ${stint.note || "No notes"}`}
                                   >
-                                    <span className="text-[8px] font-mono font-black tracking-widest text-white leading-none uppercase truncate">
+                                    <span className="text-[8px] font-mono font-black tracking-widest text-zinc-100 leading-none uppercase truncate mr-1">
                                       {driver.shortName}
                                     </span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteStint(stint.id);
+                                      }}
+                                      className="opacity-0 group-hover/stint:opacity-100 p-0.5 hover:bg-red-500/30 rounded text-red-400 transition-all duration-150 shrink-0 cursor-pointer"
+                                      title="Remove Stint"
+                                    >
+                                      <X className="w-2.5 h-2.5" />
+                                    </button>
                                   </div>
                                 );
                               })}
@@ -799,22 +951,36 @@ function TeamPage() {
                     </div>
                     <div className="space-y-3.5">
                       <div>
-                        <span className="text-muted-foreground block mb-0.5">
-                          PIT ACCURACY MATRIX
+                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
+                          ESTIMATED STINT DURATION
                         </span>
-                        <span className="text-sm font-bold text-foreground">47 Lap stint</span>
+                        <span className="text-sm font-bold text-foreground">
+                          {formatDuration(calculatedStintDurationMin)} ({calcStintLaps} Laps)
+                        </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block mb-0.5">
-                          FUEL MARGIN TARGET
+                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
+                          FUEL REQUIRED
                         </span>
-                        <span className="text-sm font-bold text-blue-400">1.82 Liters</span>
+                        <span className="text-sm font-bold text-blue-400">
+                          {calculatedFuelRequired} Liters
+                        </span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block mb-0.5">
-                          TIRE WEAR COEFFICIENT
+                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
+                          RECOMMENDED MARGIN (1.5 LAPS)
                         </span>
-                        <span className="text-sm font-bold text-emerald-400">1.25% per lap</span>
+                        <span className="text-sm font-bold text-amber-500">
+                          {calculatedFuelMargin} Liters
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
+                          EST. TIRE WEAR COEFFICIENT
+                        </span>
+                        <span className="text-sm font-bold text-emerald-400">
+                          {calculatedTireWearCoefficient}% per lap
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -834,7 +1000,9 @@ function TeamPage() {
                         <input
                           id="fuel-burn"
                           type="number"
-                          defaultValue={3.15}
+                          step="0.01"
+                          value={calcFuelBurn}
+                          onChange={(e) => setCalcFuelBurn(parseFloat(e.target.value) || 0)}
                           className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
                         />
                       </div>
@@ -848,13 +1016,18 @@ function TeamPage() {
                         <input
                           id="stint-laps"
                           type="number"
-                          defaultValue={22}
+                          value={calcStintLaps}
+                          onChange={(e) => setCalcStintLaps(parseInt(e.target.value) || 0)}
                           className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
                         />
                       </div>
-                      <button className="w-full py-2.5 bg-primary text-primary-foreground hover:opacity-90 font-bold uppercase tracking-wider text-[10px] rounded-xl shadow mt-2 cursor-pointer">
-                        Calculate Strategy Accents
-                      </button>
+                      <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[10px] text-muted-foreground font-sans leading-normal">
+                        Calculates stints for{" "}
+                        <span className="font-bold text-foreground">
+                          #{selectedCar?.number || "No active car"}
+                        </span>
+                        . Adjust burn rates and lap targets to update required race fuel.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -882,26 +1055,45 @@ function TeamPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto scrollbar-hide pr-1">
-                    {cars.map((c) => (
-                      <div
-                        key={c.id}
-                        className="p-3 bg-muted/20 border border-border/30 rounded-2xl flex flex-col justify-between relative group overflow-hidden"
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: CLASS_COLORS[c.carClass] }}
-                          />
-                          <span className="text-[8px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
-                            {c.carClass}
-                          </span>
+                    {cars.map((c) => {
+                      const isSelected = c.id === selectedCarId;
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => setSelectedCarId(c.id)}
+                          className={`p-3 rounded-2xl flex flex-col justify-between relative group overflow-hidden transition-all duration-300 cursor-pointer ${isSelected
+                            ? "bg-primary/10 border-primary ring-1 ring-primary/40 shadow-[0_0_12px_rgba(var(--primary-rgb),0.15)]"
+                            : "bg-muted/20 border-border/30 border hover:border-border/60 hover:bg-muted/30"
+                            }`}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: CLASS_COLORS[c.carClass] }}
+                              />
+                              <span className="text-[8px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
+                                {c.carClass}
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCar(c.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-muted-foreground transition-all duration-200 cursor-pointer"
+                              title="Delete Car"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="text-xs font-bold truncate pr-6">{c.name}</div>
+                          <div className="text-[10px] font-mono text-blue-400 font-bold mt-0.5">
+                            #{c.number}
+                          </div>
                         </div>
-                        <div className="text-xs font-bold truncate pr-6">{c.name}</div>
-                        <div className="text-[10px] font-mono text-blue-400 font-bold mt-0.5">
-                          #{c.number}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {cars.length === 0 && (
                       <div className="col-span-2 text-center py-4 text-[10px] text-muted-foreground italic opacity-50">
                         No cars registered
@@ -933,20 +1125,32 @@ function TeamPage() {
                     {drivers.map((d) => (
                       <div
                         key={d.id}
-                        className="p-3 bg-muted/20 border border-border/30 rounded-2xl flex items-center gap-3 relative group overflow-hidden"
+                        className="p-3 bg-muted/20 border border-border/30 rounded-2xl flex items-center justify-between relative group overflow-hidden"
                       >
-                        <div
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shrink-0 shadow-sm"
-                          style={{ backgroundColor: d.color }}
-                        >
-                          {d.shortName}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold truncate pr-3">{d.name}</div>
-                          <div className="text-[8px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">
-                            Active
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shrink-0 shadow-sm"
+                            style={{ backgroundColor: d.color }}
+                          >
+                            {d.shortName}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold truncate pr-3">{d.name}</div>
+                            <div className="text-[8px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">
+                              Active
+                            </div>
                           </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDriver(d.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-muted-foreground transition-all duration-200 cursor-pointer"
+                          title="Delete Driver"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                     {drivers.length === 0 && (
@@ -1041,13 +1245,12 @@ function TeamPage() {
                             return (
                               <div
                                 key={idx}
-                                className={`flex-1 h-full rounded-sm transition-colors ${
-                                  active
-                                    ? isHigh
-                                      ? "bg-red-500 shadow-[0_0_4px_red]"
-                                      : "bg-emerald-500"
-                                    : "bg-white/[0.03]"
-                                }`}
+                                className={`flex-1 h-full rounded-sm transition-colors ${active
+                                  ? isHigh
+                                    ? "bg-red-500 shadow-[0_0_4px_red]"
+                                    : "bg-emerald-500"
+                                  : "bg-white/[0.03]"
+                                  }`}
                               />
                             );
                           })}
@@ -1338,26 +1541,51 @@ function TeamPage() {
                 Schedule Driver Stint
               </h3>
               <form onSubmit={handleAddStint} className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="stint-driver-input"
-                    className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                  >
-                    Select Driver
-                  </label>
-                  <select
-                    id="stint-driver-input"
-                    value={newStint.driverId}
-                    onChange={(e) => setNewStint((prev) => ({ ...prev, driverId: e.target.value }))}
-                    className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                  >
-                    <option value="">-- Choose Driver --</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.shortName})
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor="stint-car-input"
+                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
+                    >
+                      Assign to Car
+                    </label>
+                    <select
+                      id="stint-car-input"
+                      value={newStint.carId}
+                      onChange={(e) => setNewStint((prev) => ({ ...prev, carId: e.target.value }))}
+                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
+                    >
+                      <option value="">-- Choose Car --</option>
+                      {cars.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          #{c.number} {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label
+                      htmlFor="stint-driver-input"
+                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
+                    >
+                      Select Driver
+                    </label>
+                    <select
+                      id="stint-driver-input"
+                      value={newStint.driverId}
+                      onChange={(e) =>
+                        setNewStint((prev) => ({ ...prev, driverId: e.target.value }))
+                      }
+                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
+                    >
+                      <option value="">-- Choose Driver --</option>
+                      {drivers.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} ({d.shortName})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
