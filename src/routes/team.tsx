@@ -33,6 +33,8 @@ import {
   Sliders,
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { useWorkbench } from "@/lib/store";
+import { resolveLLMUrl } from "@/lib/llm";
 import {
   format,
   addHours,
@@ -121,6 +123,9 @@ function formatDuration(minutes: number): string {
 }
 
 function TeamPage() {
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
   // SimTeam Core State Variables with localStorage persistence
   const [drivers, setDrivers] = useState<Driver[]>(() => {
     if (typeof window !== "undefined") {
@@ -497,6 +502,111 @@ function TeamPage() {
 
   const handleDeleteIncident = (iId: string) => {
     setIncidents((prev) => prev.filter((inc) => inc.id !== iId));
+  };
+
+  const evaluateTeamStrategy = async () => {
+    setAiLoading(true);
+    setAiResponse("");
+    try {
+      // 1. Serialize schedule details
+      const serializedDrivers = drivers.map(d => `${d.name} (${d.shortName})`).join(", ");
+      const serializedCars = cars.map(c => `Car #${c.number} (${c.name}, Class: ${c.carClass})`).join(", ");
+      
+      const serializedStints = stints.map(s => {
+        const dr = drivers.find(d => d.id === s.driverId);
+        const cr = cars.find(c => c.id === s.carId);
+        return `- Driver: ${dr ? dr.name : "Unknown"} on Car #${cr ? cr.number : "Unknown"}. Scheduled from ${format(parseISO(s.startTime), "HH:mm")} to ${format(parseISO(s.endTime), "HH:mm")}.${s.note ? ` Note: ${s.note}` : ""}`;
+      }).join("\n");
+
+      const serializedWeather = weatherEvents.map(w => 
+        `- ${w.type} forecast from ${format(parseISO(w.startTime), "HH:mm")} to ${format(parseISO(w.endTime), "HH:mm")}`
+      ).join("\n");
+
+      const serializedIncidents = incidents.map(inc => 
+        `- ${inc.type} occurred at ${format(parseISO(inc.startTime), "HH:mm")} for a duration of ${inc.duration} mins.`
+      ).join("\n");
+
+      // 2. Build the race engineering prompt
+      const prompt = `You are a legendary race strategist and principal race engineer in competitive endurance motorsport. 
+Analyze the current team race schedule and timeline:
+
+Active Drivers: ${serializedDrivers || "None registered"}
+Active Cars: ${serializedCars || "None registered"}
+
+Scheduled Stints:
+${serializedStints || "- No stints scheduled"}
+
+Weather Forecast Timeline:
+${serializedWeather || "- Constant green track conditions, sunny weather forecast."}
+
+Track Incidents Tracked:
+${serializedIncidents || "- Clear green flag racing, no caution/incident periods reported."}
+
+Based on this complete operations dashboard, provide a highly specific, professional Race Strategy Briefing:
+1. Identify any critical bottlenecks (e.g., driver changes coinciding with weather transitions, gaps in scheduled stints, active incidents causing caution windows).
+2. Recommend pit windows and fuel/tire strategy adjustments, taking note of weather changes (like rain transitions requiring wet tires).
+3. Draft a clear 'Race Engineer Alert' if any scheduling overlap, driver gap, or double-stint tire wear risk is detected.
+
+Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
+
+      // 3. Fetch dynamic LLM configurations from store
+      const { llmBaseUrl, llmModelId, llmApiKey } = useWorkbench.getState();
+      const url = resolveLLMUrl(llmBaseUrl);
+      
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (llmApiKey) {
+        headers["Authorization"] = `Bearer ${llmApiKey}`;
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: llmModelId || "local-model",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          stream: true,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to query AI Race Engineer (${res.status} ${res.statusText}).`);
+      }
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split("\n").filter((l) => l.trim() !== "");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const dataStr = line.replace("data: ", "");
+              if (dataStr === "[DONE]") return;
+              try {
+                const data = JSON.parse(dataStr);
+                const token = data.choices?.[0]?.delta?.content;
+                if (token) {
+                  setAiResponse((prev) => (prev || "") + token);
+                }
+              } catch (e) {
+                // Ignore parse errors on incomplete chunks
+              }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      const { llmBaseUrl } = useWorkbench.getState();
+      setAiResponse(
+        `Error invoking Local LLM: ${err.message}\n\nVerify that your Local LLM Server is running at "${llmBaseUrl}" and CORS is enabled! If using Ollama, launch with OLLAMA_ORIGINS="*" environment variable.`
+      );
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // Open stint popup handler
@@ -1271,6 +1381,65 @@ function TeamPage() {
               <div className="mt-6 text-[10px] text-muted-foreground leading-relaxed font-sans shrink-0 border-t border-border/20 pt-4">
                 * Relays multiple driver rig bridges simultaneously matching active car numbers for
                 race strategy calculations.
+              </div>
+            </section>
+
+            {/* AI Race Strategist Panel */}
+            <section className="hairline bg-panel rounded-3xl p-6 backdrop-blur-md shadow-2xl flex-1 flex flex-col justify-between relative overflow-hidden mt-6">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+
+              <div className="flex-1 flex flex-col justify-start min-h-0">
+                <div className="flex items-center justify-between mb-6 border-b border-border/40 pb-4 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-primary/10 border border-primary/20 text-primary rounded-2xl">
+                      <BrainCircuit className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-mono uppercase tracking-widest text-foreground font-bold">
+                        AI Race Strategist
+                      </h2>
+                      <p className="text-[10px] text-muted-foreground">
+                        Local LLM operation planning co-pilot
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 flex-1">
+                  <button
+                    onClick={evaluateTeamStrategy}
+                    disabled={aiLoading}
+                    className="w-full py-3 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed font-bold uppercase tracking-wider text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    {aiLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Analyzing Operations...</span>
+                      </>
+                    ) : (
+                      <>
+                        <BrainCircuit className="w-4 h-4" />
+                        <span>Run Strategy Briefing</span>
+                      </>
+                    )}
+                  </button>
+
+                  {aiResponse && (
+                    <div className="p-4 bg-muted/15 border border-border/30 rounded-2xl text-xs text-zinc-300 leading-relaxed font-mono whitespace-pre-wrap max-h-96 overflow-y-auto scrollbar-hide">
+                      {aiResponse}
+                    </div>
+                  )}
+
+                  {!aiResponse && !aiLoading && (
+                    <div className="text-center py-6 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
+                      Awaiting timeline schedule briefing trigger...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 text-[10px] text-muted-foreground leading-relaxed font-sans shrink-0 border-t border-border/20 pt-4">
+                * Combines weather fronts, incident metrics, and driver stint logs to construct advanced racing recommendations.
               </div>
             </section>
           </div>

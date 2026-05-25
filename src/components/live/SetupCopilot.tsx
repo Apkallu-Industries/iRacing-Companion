@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Telemetry } from "@/lib/telemetry-types";
 import { Bot, Wrench, Wind, Thermometer, CloudRain } from "lucide-react";
+import { useWorkbench } from "@/lib/store";
+import { resolveLLMUrl } from "@/lib/llm";
 
 export function SetupCopilot({ t }: { t: Telemetry }) {
   const [loading, setLoading] = useState(false);
@@ -23,12 +25,20 @@ Here is the current environmental data:
 
 Based on this specific car, track, and environmental conditions, what setup adjustments should the driver make? Consider aerodynamics, tire pressures, brake ducts, and gearing. Be concise but specific.`;
 
-      // LM Studio API
-      const res = await fetch("http://localhost:1234/v1/chat/completions", {
+      // Fetch dynamic LLM configurations from store
+      const { llmBaseUrl, llmModelId, llmApiKey } = useWorkbench.getState();
+      const url = resolveLLMUrl(llmBaseUrl);
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (llmApiKey) {
+        headers["Authorization"] = `Bearer ${llmApiKey}`;
+      }
+
+      const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
-          model: "local-model",
+          model: llmModelId || "local-model",
           messages: [{ role: "user", content: prompt }],
           temperature: 0.7,
           stream: true,
@@ -36,7 +46,7 @@ Based on this specific car, track, and environmental conditions, what setup adju
       });
 
       if (!res.ok) {
-        throw new Error("Failed to connect to local LLM.");
+        throw new Error(`Failed to connect to local LLM (${res.status} ${res.statusText}).`);
       }
 
       const reader = res.body?.getReader();
@@ -66,10 +76,11 @@ Based on this specific car, track, and environmental conditions, what setup adju
         }
       }
     } catch (e: any) {
+      const { llmBaseUrl } = useWorkbench.getState();
       setResponse(
         "Error asking Setup Copilot: " +
           e.message +
-          "\n\nMake sure your local LM Studio server is running on port 1234!",
+          `\n\nMake sure your local LLM server is running at "${llmBaseUrl}" and CORS is enabled (e.g. OLLAMA_ORIGINS="*" for Ollama, or --cors parameter for other systems).`
       );
     } finally {
       setLoading(false);
