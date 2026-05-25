@@ -20,6 +20,10 @@ export const MathExpressionSchema = z.object({
   color: z.string().regex(COLOR_RE, "Color must be #RRGGBB or #RRGGBBAA.").optional(),
   enabled: z.boolean(),
   scope: MathScopeSchema,
+  speechAlertEnabled: z.boolean().optional(),
+  speechAlertThreshold: z.number().optional(),
+  speechAlertText: z.string().trim().max(256).optional(),
+  speechAlertDebounceS: z.number().int().min(1).max(3600).optional(),
   created_at: z.string().datetime(),
   updated_at: z.string().datetime(),
 });

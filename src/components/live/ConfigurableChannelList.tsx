@@ -25,6 +25,8 @@ import {
 import { CommunityBrowser, type CommunityRow } from "@/components/community/CommunityBrowser";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useWorkbench } from "@/lib/store";
+import { speakText } from "@/lib/tts.functions";
 
 const MATH_PRESETS: Array<{
   name: string;
@@ -53,6 +55,8 @@ const MATH_PRESETS: Array<{
 export function ConfigurableChannelList({ t }: { t: Telemetry }) {
   const baseRegistry = useMemo(() => buildRegistry(t), [t]);
   const [mathExpressions, setMathExpressions] = useState<MathExpression[]>([]);
+  const { elevenLabsApiKey, elevenLabsVoiceId } = useWorkbench();
+  const lastAlertTimes = useRef<Record<string, number>>({});
   const enabledMathExpressions = useMemo(
     () => mathExpressions.filter((m) => m.enabled && (m.scope === "live" || m.scope === "both")),
     [mathExpressions],
@@ -75,6 +79,40 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     }
     return out;
   }, [compiledMath, t]);
+
+  useEffect(() => {
+    for (const item of compiledMath) {
+      const m = item.expression;
+      if (!m.speechAlertEnabled || !m.speechAlertText) continue;
+
+      const val = mathValues[m.id];
+      const threshold = m.speechAlertThreshold ?? 0.5;
+
+      if (Number.isFinite(val) && val > threshold) {
+        const now = Date.now();
+        const lastTime = lastAlertTimes.current[m.id] || 0;
+        const cooldown = (m.speechAlertDebounceS ?? 15) * 1000;
+
+        if (now - lastTime > cooldown) {
+          lastAlertTimes.current[m.id] = now;
+
+          speakText({
+            data: {
+              text: m.speechAlertText,
+              apiKey: elevenLabsApiKey,
+              voiceId: elevenLabsVoiceId,
+            }
+          }).then((resp) => {
+            if (resp && resp.audioBase64) {
+              const audio = new Audio(`data:${resp.mime ?? "audio/mpeg"};base64,${resp.audioBase64}`);
+              audio.play().catch(() => {});
+            }
+          }).catch(() => {});
+        }
+      }
+    }
+  }, [mathValues, compiledMath, elevenLabsApiKey, elevenLabsVoiceId]);
+
   const mathRegistry = useMemo<ChannelDef[]>(() => {
     const seen = new Set<string>();
     return enabledMathExpressions.map((m, i) => {
@@ -374,6 +412,10 @@ function EditPanel({
         color: "#22d3ee",
         enabled: true,
         scope: "both",
+        speechAlertEnabled: false,
+        speechAlertThreshold: 0.5,
+        speechAlertText: "",
+        speechAlertDebounceS: 15,
         created_at: now,
         updated_at: now,
       },
@@ -394,6 +436,10 @@ function EditPanel({
         color: p.color ?? "#22d3ee",
         enabled: true,
         scope: "both" as const,
+        speechAlertEnabled: false,
+        speechAlertThreshold: 0.5,
+        speechAlertText: "",
+        speechAlertDebounceS: 15,
         created_at: now,
         updated_at: now,
       }));
@@ -556,6 +602,53 @@ function EditPanel({
                   className="col-span-2 rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
                   placeholder="expression"
                 />
+              </div>
+              <div className="mt-2 border-t border-zinc-900 pt-2 space-y-2">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={m.speechAlertEnabled ?? false}
+                    onChange={(e) => updateExpression(m.id, { speechAlertEnabled: e.target.checked })}
+                    className="accent-cyan-500 h-3.5 w-3.5"
+                  />
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400">Vocal Alert Enable</span>
+                </label>
+                {(m.speechAlertEnabled ?? false) && (
+                  <div className="grid grid-cols-2 gap-1 bg-zinc-900/20 p-1.5 rounded-sm border border-zinc-900/50">
+                    <div className="col-span-2 space-y-1">
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">Alert Speech Text</span>
+                      <input
+                        value={m.speechAlertText ?? ""}
+                        onChange={(e) => updateExpression(m.id, { speechAlertText: e.target.value })}
+                        className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                        placeholder="e.g. Stop overlapping brake and throttle!"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">Trigger Threshold</span>
+                      <input
+                        type="number"
+                        step="any"
+                        value={m.speechAlertThreshold ?? ""}
+                        onChange={(e) => updateExpression(m.id, { speechAlertThreshold: e.target.value === "" ? undefined : parseFloat(e.target.value) })}
+                        className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                        placeholder="e.g. 1.2"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">Cooldown (sec)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="3600"
+                        value={m.speechAlertDebounceS ?? ""}
+                        onChange={(e) => updateExpression(m.id, { speechAlertDebounceS: e.target.value === "" ? undefined : parseInt(e.target.value, 10) })}
+                        className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                        placeholder="e.g. 15"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="mt-1 text-[9px] text-zinc-500">
                 {valid ? "Valid expression." : (syntax.error ?? (!compiled.ok ? compiled.error : "Invalid expression."))}
