@@ -26,8 +26,8 @@ export const fetchTrackCarHistory = createServerFn({ method: "POST" })
         .toArray();
 
       sessions = sessDocs
-        .map(d => ({ ...d, id: d._id.toString() }))
-        .filter((r) => r.id !== data.excludeSessionId);
+        .map((d: any) => ({ ...d, id: d._id.toString() }))
+        .filter((r: any) => r.id !== data.excludeSessionId);
 
       const pbDocs = await db.collection("live_lap_records")
         .find({ track: data.track, car: data.car, is_valid: true })

@@ -150,7 +150,7 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
                           {traceMode[name] ? (
                             <span className="flex items-center gap-1.5">
                               <MiniTrace 
-                                values={ch.data.slice(Math.max(0, cursorTick - windowFrames), cursorTick + 1)} 
+                                values={Array.from(ch.data.slice(Math.max(0, cursorTick - windowFrames), cursorTick + 1))} 
                                 color={colorForChannel(name)} 
                               />
                               <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none">trc</span>

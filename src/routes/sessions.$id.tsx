@@ -20,6 +20,8 @@ import { OptimalLap } from "@/components/workbench/OptimalLap";
 import { Counterfactuals } from "@/components/workbench/Counterfactuals";
 import { BrakeBias } from "@/components/workbench/BrakeBias";
 import { SlipAngle } from "@/components/workbench/SlipAngle";
+import { HistogramPanel } from "@/components/workbench/HistogramPanel";
+import { XYScatterPanel } from "@/components/workbench/XYScatterPanel";
 const LazyAICoach = lazy(() =>
   import("@/components/workbench/AICoach").then((m) => ({ default: m.AICoach })),
 );
@@ -63,7 +65,7 @@ function WorkbenchPage() {
   const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>({ phase: "fetch", pct: 0 });
   const [err, setErr] = useState<string | null>(null);
   const [bottomTab, setBottomTab] = useState<
-    "cinema" | "readout" | "laps" | "gg" | "optimal" | "whatif" | "brake" | "slip" | "replay3d" | "piano" | "spider" | "setup" | "setupdiff" | "apex" | "waterfall"
+    "cinema" | "readout" | "laps" | "gg" | "histogram" | "scatter" | "optimal" | "whatif" | "brake" | "slip" | "replay3d" | "piano" | "spider" | "setup" | "setupdiff" | "apex" | "waterfall"
   >("cinema");
 
   // Guests can't load cloud sessions — show a friendly prompt instead of redirecting.

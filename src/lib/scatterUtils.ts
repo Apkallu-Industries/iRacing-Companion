@@ -9,7 +9,7 @@ export interface ScatterPoint {
 export type DensityMode = "none" | "grid";
 
 export function prepareScatterData(
-  samples: Array<{ [key: string]: number }>,
+  samples: Array<Record<string, any>>,
   xKey: string,
   yKey: string,
 ): ScatterPoint[] {

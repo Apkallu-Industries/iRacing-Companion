@@ -265,8 +265,6 @@ function countNodes(node: Node): number {
   return 1 + node.args.reduce((sum, n) => sum + countNodes(n), 0);
 }
 
-import type { IbtParsed } from "../ibt/types";
-
 export function evaluateMathExpressionForIbt(
   compiled: CompiledMathExpression,
   parsed: IbtParsed

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { CompiledMathExpression } from "./evaluator";
 
 export const MATH_V1_MAX_EXPRESSION_LEN = 256;
 export const MATH_V1_MAX_IDENTIFIERS = 32;
@@ -23,7 +24,9 @@ export const MathExpressionSchema = z.object({
   updated_at: z.string().datetime(),
 });
 
-export type MathExpression = z.infer<typeof MathExpressionSchema>;
+export type MathExpression = z.infer<typeof MathExpressionSchema> & {
+  compiled?: CompiledMathExpression;
+};
 
 const TOKEN_RE = /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|[()+\-*/,])\s*/g;
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;

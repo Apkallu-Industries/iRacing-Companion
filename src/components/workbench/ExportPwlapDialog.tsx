@@ -4,7 +4,7 @@ import { useWorkbench } from "@/lib/store";
 import { serializePwlap } from "@/lib/pwlap/serialize";
 import type { PwlapContent, PwlapExportOptions } from "@/lib/pwlap/types";
 import { toast } from "sonner";
-import { generateKeyPair, exportPrivateKey, importPrivateKey } from "@/lib/pwlap/sign"; // Might need these exports from sign.ts if they aren't there
+
 
 export function ExportPwlapDialog({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
   const { parsed } = useWorkbench();
@@ -26,30 +26,30 @@ export function ExportPwlapDialog({ sessionId, onClose }: { sessionId: string; o
       const content: PwlapContent = {
         version: 1,
         metadata: {
-          track: parsed.sessionInfo?.WeekendInfo?.TrackDisplayName || "unknown",
-          car: parsed.sessionInfo?.DriverInfo?.Drivers?.[parsed.sessionInfo?.DriverInfo?.DriverCarIdx]?.CarScreenName || "unknown",
-          recorded_at: new Date().toISOString(), // we don't have exact recorded_at in parsing without extra logic
-          duration_s: 0,
+          track: parsed.meta.trackDisplayName || "unknown",
+          car: parsed.meta.carName || "unknown",
+          recorded_at: parsed.meta.recordedAt || new Date().toISOString(),
+          duration_s: parsed.meta.durationS || 0,
           lap_count: parsed.laps.length,
-          best_lap_s: parsed.laps.reduce((best, l) => (l.lapTime > 0 && (best === 0 || l.lapTime < best)) ? l.lapTime : best, 0),
+          best_lap_s: parsed.meta.bestLapS || parsed.laps.reduce((best, l) => (l.timeS > 0 && (best === 0 || l.timeS < best)) ? l.timeS : best, 0),
         },
         channels_manifest: Object.keys(parsed.channels).map(c => ({
           name: c,
-          unit: parsed.channels[c].unit,
-          desc: parsed.channels[c].desc,
-          type: "float32", // assuming mostly float32 for now
-          min: parsed.channels[c].min,
-          max: parsed.channels[c].max,
+          unit: parsed.channels[c].unit || "",
+          description: parsed.channels[c].desc || "",
+          type: parsed.channels[c].type,
+          group: parsed.channels[c].group,
         })),
         granularity,
         laps: granularity !== "metadata" ? parsed.laps.map(l => ({
-          lap_num: l.lap,
-          lap_time_s: l.lapTime,
-          valid: true,
-          events: []
+          lap_number: l.lap,
+          duration_s: l.timeS,
+          fuel_remaining_l: parsed.channels["FuelLevel"]?.data[l.endTick] ?? 0,
+          track_temp_c: parsed.channels["TrackTemp"]?.data[l.endTick] ?? 0,
+          air_temp_c: parsed.channels["AirTemp"]?.data[l.endTick] ?? 0,
         })) : undefined,
-        setup: granularity !== "metadata" ? {} : undefined, // Setup info from sessionInfo could go here
-        samples: [], // Full sample payload could be very large, omitted for simplicity in this implementation unless really needed by the client. We could encode parsed.channels here!
+        setup: granularity !== "metadata" ? {} : undefined,
+        samples: [],
       };
 
       if (granularity === "full") {
