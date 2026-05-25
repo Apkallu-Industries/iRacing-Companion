@@ -14,8 +14,8 @@ Items from the [CurrentState.MD](CurrentState.MD) audit, ordered by priority. Sh
 
 - [ ] Apply migration [`supabase/migrations/20260519_pwlap_tables.sql`](supabase/migrations/20260519_pwlap_tables.sql) (`user_signing_keys`, `pwlap_imports`, `pwlap_exports`).
 - [ ] Create Supabase Storage bucket `pwlap_exports` with RLS (authenticated signed URLs only).
-- [ ] Wire [`ExportPwlapDialog.tsx`](src/components/workbench/ExportPwlapDialog.tsx) into [`sessions.$id.tsx`](src/routes/sessions.$id.tsx) (workbench header, beside `ShareButton`).
-- [ ] Wire [`ImportPwlapButton.tsx`](src/components/ImportPwlapButton.tsx) into [`sessions.index.tsx`](src/routes/sessions.index.tsx).
+- [x] Wire [`ExportPwlapDialog.tsx`](src/components/workbench/ExportPwlapDialog.tsx) into [`sessions.$id.tsx`](src/routes/sessions.$id.tsx) (workbench header, beside `ShareButton`).
+- [x] Wire [`ImportPwlapButton.tsx`](src/components/ImportPwlapButton.tsx) into [`sessions.index.tsx`](src/routes/sessions.index.tsx).
 - [ ] Add `pako` to `package.json` (compression); optionally `tweetnacl` (Ed25519 fallback). Fail loudly in `serialize.ts` if compression is requested but unavailable.
 - [ ] E2E validation: bridge capture (`MONGODB_URI`) → export (metadata + full) → import on second account → workbench shows data.
 - [ ] **Security:** stop storing `private_key` server-side in `user_signing_keys`; keep public keys in DB, signing client-side only.

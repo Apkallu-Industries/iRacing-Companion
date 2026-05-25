@@ -54,11 +54,11 @@ Legend:
 | G-G and core vehicle dynamics views | Done | Maintain |
 | Sector/corner comparative summaries | Done | Maintain |
 | Multi-lap batch/stint analytics dashboards | Partial | High |
-| Advanced scatter/XY tooling (configurable axes, density/heat) | Partial | High |
-| Histograms/distribution panels per channel | Missing | High |
+| Advanced scatter/XY tooling (configurable axes, density/heat) | Done | High |
+| Histograms/distribution panels per channel | Done | High |
 | Event-latched channels and event windows | Missing | High |
-| User-built derived channels (formula editor) | Missing | Critical |
-| Constants library + reusable formulas | Missing | Critical |
+| User-built derived channels (formula editor) | Done | Critical |
+| Constants library + reusable formulas | Done | Critical |
 | Trigger/event engine (if/then, thresholds, state) | Missing | Critical |
 | Workspace templates / role-based presets | Partial | High |
 | Multi-window / linked panes / saved layouts | Partial | High |
@@ -74,31 +74,31 @@ Legend:
 
 ## Day 0-30 (Foundation + Highest ROI)
 
-1. Ship Math v1
+1. Ship Math v1 (Shipped)
 
-- Add user formula editor for derived channels:
+- [x] Add user formula editor for derived channels:
   - arithmetic, min/max, abs, clamp
   - channel references + constants
-- Persist formulas per user/workspace.
+- [x] Persist formulas per user/workspace.
 
-1. Ship Display Expansion v1
+1. Ship Display Expansion v1 (Shipped)
 
-- Add:
+- [x] Add:
   - histogram widget
   - XY scatter widget
   - lap table with sortable metrics
 
-1. Workspace UX pass
+1. Workspace UX pass (In Progress)
 
-- Save/Load named workspaces.
-- Quick presets for:
+- [ ] Save/Load named workspaces.
+- [ ] Quick presets for:
   - live driving
   - race engineer
   - post-lap review
 
-1. Reliability telemetry
+1. Reliability telemetry (Shipped)
 
-- Add bridge/client diagnostics:
+- [x] Add bridge/client diagnostics:
   - effective stream rate
   - dropped frames
   - reconnect count

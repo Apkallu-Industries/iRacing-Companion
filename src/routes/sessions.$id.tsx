@@ -257,6 +257,12 @@ function WorkbenchPage() {
               );
             })()}
             <ShareButton sessionId={id} />
+            <button
+              onClick={() => setShowExport(true)}
+              className="rounded-sm border border-border bg-panel px-3 py-1 font-mono text-[10px] uppercase tracking-wider hover:bg-accent flex items-center gap-1.5"
+            >
+              Export .pwlap
+            </button>
           </>
         )}
       </AppHeader>
@@ -395,6 +401,9 @@ function WorkbenchPage() {
             </div>
           </div>
         </>
+      )}
+      {showExport && (
+        <ExportPwlapDialog sessionId={id} onClose={() => setShowExport(false)} />
       )}
     </div>
   );

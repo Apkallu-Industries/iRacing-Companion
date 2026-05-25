@@ -157,6 +157,11 @@ function SessionsPage() {
         <Link to="/how-it-works" className="ml-3 text-muted-foreground hover:text-foreground">
           How it works
         </Link>
+        {user && (
+          <div className="ml-3">
+            <ImportPwlapButton />
+          </div>
+        )}
       </AppHeader>
 
       <main className="mx-auto max-w-7xl p-6">

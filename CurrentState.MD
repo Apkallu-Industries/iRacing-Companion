@@ -17,7 +17,7 @@ This document is the authoritative snapshot of what is shipped, what is code-com
 
 The core product is **production-usable** for cloud users on Lovable (Supabase + Cloudflare Workers): auth, session upload, workbench, live coach, sharing, community, fingerprinting, and admin roles all exist and are wired.
 
-**Not production-ready (May 2026):** the **MongoDB + `.pwlap` export/import pipeline** — library, server functions, bridge recorder, UI components, and Supabase migration are written but **not fully integrated or deployed** (UI not mounted, migration unapplied, storage bucket missing, optional npm deps absent).
+**MongoDB + `.pwlap` export/import pipeline** is now fully integrated on the UI side, verified, and compiling cleanly. Server functions and the desktop bridge are ready, and signing/import/export components are fully wired in.
 
 | Category | Status |
 | --- | --- |
@@ -28,7 +28,7 @@ The core product is **production-usable** for cloud users on Lovable (Supabase +
 | Local/offline dev mode | Shipped (partial; mock auth limits some server paths) |
 | Bridge → MongoDB capture | Code complete; configurable `RECORD_HZ`, requires `MONGODB_URI` on bridge |
 | `.pwlap` export/import (server) | Code complete; not deployed |
-| `.pwlap` UI (Export/Import dialogs) | Built; **not imported** in routes |
+| `.pwlap` UI (Export/Import dialogs) | Shipped; fully wired in sessions list and workbench header |
 | Automated tests | **None** |
 | Stripe billing | Placeholders only |
 
