@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
 }
 
@@ -33,8 +34,7 @@ export const Route = createFileRoute("/api/public/og/share/$token")({
 
         if (share) {
           if (share.revoked_at) badge = "REVOKED";
-          else if (share.expires_at && new Date(share.expires_at) < new Date())
-            badge = "EXPIRED";
+          else if (share.expires_at && new Date(share.expires_at) < new Date()) badge = "EXPIRED";
           refLap = share.ref_lap;
           cmpLap = share.cmp_lap;
           const { data: sess } = await supabaseAdmin

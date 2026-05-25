@@ -21,14 +21,51 @@ export interface Telemetry {
   lastLap: string;
   bestLap: string;
   deltaSec: number;
-  sectors: { s1: string | null; s2: string | null; s3: string | null; bestSector: 1 | 2 | 3 | null };
+  sectors: {
+    s1: string | null;
+    s2: string | null;
+    s3: string | null;
+    bestSector: 1 | 2 | 3 | null;
+  };
   fuelRemainingL: number;
   lapsEstimated: number;
   tires: {
-    fl: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
-    fr: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
-    rl: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
-    rr: { tempC: number; pressureBar: number; wearPct: number; estWearPct: number; brakeTempC: number; brakeLinePress: number; state: "cold" | "ok" | "hot" };
+    fl: {
+      tempC: number;
+      pressureBar: number;
+      wearPct: number;
+      estWearPct: number;
+      brakeTempC: number;
+      brakeLinePress: number;
+      state: "cold" | "ok" | "hot";
+    };
+    fr: {
+      tempC: number;
+      pressureBar: number;
+      wearPct: number;
+      estWearPct: number;
+      brakeTempC: number;
+      brakeLinePress: number;
+      state: "cold" | "ok" | "hot";
+    };
+    rl: {
+      tempC: number;
+      pressureBar: number;
+      wearPct: number;
+      estWearPct: number;
+      brakeTempC: number;
+      brakeLinePress: number;
+      state: "cold" | "ok" | "hot";
+    };
+    rr: {
+      tempC: number;
+      pressureBar: number;
+      wearPct: number;
+      estWearPct: number;
+      brakeTempC: number;
+      brakeLinePress: number;
+      state: "cold" | "ok" | "hot";
+    };
   };
   gLat: number;
   gLon: number;
@@ -90,10 +127,42 @@ export const DEFAULT_TELEMETRY: Telemetry = {
   fuelRemainingL: 42.1,
   lapsEstimated: 14.2,
   tires: {
-    fl: { tempC: 82, pressureBar: 1.84, wearPct: 98, estWearPct: 98, brakeTempC: 320, brakeLinePress: 0, state: "ok" },
-    fr: { tempC: 94, pressureBar: 1.92, wearPct: 94, estWearPct: 94, brakeTempC: 350, brakeLinePress: 0, state: "hot" },
-    rl: { tempC: 84, pressureBar: 1.88, wearPct: 97, estWearPct: 97, brakeTempC: 310, brakeLinePress: 0, state: "ok" },
-    rr: { tempC: 88, pressureBar: 1.9, wearPct: 96, estWearPct: 96, brakeTempC: 315, brakeLinePress: 0, state: "ok" },
+    fl: {
+      tempC: 82,
+      pressureBar: 1.84,
+      wearPct: 98,
+      estWearPct: 98,
+      brakeTempC: 320,
+      brakeLinePress: 0,
+      state: "ok",
+    },
+    fr: {
+      tempC: 94,
+      pressureBar: 1.92,
+      wearPct: 94,
+      estWearPct: 94,
+      brakeTempC: 350,
+      brakeLinePress: 0,
+      state: "hot",
+    },
+    rl: {
+      tempC: 84,
+      pressureBar: 1.88,
+      wearPct: 97,
+      estWearPct: 97,
+      brakeTempC: 310,
+      brakeLinePress: 0,
+      state: "ok",
+    },
+    rr: {
+      tempC: 88,
+      pressureBar: 1.9,
+      wearPct: 96,
+      estWearPct: 96,
+      brakeTempC: 315,
+      brakeLinePress: 0,
+      state: "ok",
+    },
   },
   gLat: 1.8,
   gLon: -0.4,
@@ -111,4 +180,3 @@ export const DEFAULT_TELEMETRY: Telemetry = {
   trackWetness: 0,
   sof: 2150,
 };
-

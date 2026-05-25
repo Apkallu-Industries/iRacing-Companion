@@ -11,10 +11,7 @@ interface TabedAnalysisPanelProps {
 
 type TabId = "gg" | "histogram" | "scatter" | "metrics";
 
-export function TabedAnalysisPanel({
-  samples,
-  ggScatterComponent,
-}: TabedAnalysisPanelProps) {
+export function TabedAnalysisPanel({ samples, ggScatterComponent }: TabedAnalysisPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("gg");
 
   const tabs: { id: TabId; label: string }[] = [
@@ -45,20 +42,14 @@ export function TabedAnalysisPanel({
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        {activeTab === "gg" && (
-          <div className="w-full h-full">
-            {ggScatterComponent}
-          </div>
-        )}
+        {activeTab === "gg" && <div className="w-full h-full">{ggScatterComponent}</div>}
         {activeTab === "histogram" && (
           <HistogramWidget samples={samples} selectedChannelKey="throttle" />
         )}
         {activeTab === "scatter" && (
           <ScatterWidget samples={samples} xChannelKey="throttle" yChannelKey="brake" />
         )}
-        {activeTab === "metrics" && (
-          <LapMetricsTable samples={samples} />
-        )}
+        {activeTab === "metrics" && <LapMetricsTable samples={samples} />}
       </div>
     </div>
   );

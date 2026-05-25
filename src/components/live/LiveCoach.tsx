@@ -28,10 +28,31 @@ function fmtLap(s: number | null | undefined): string {
   return `${m}:${r.toFixed(3).padStart(6, "0")}`;
 }
 
-const toneStyles: Record<Tone, { bg: string; ring: string; text: string; label: string; icon: typeof Zap }> = {
-  push: { bg: "bg-racing-green/15", ring: "ring-racing-green/60", text: "text-racing-green", label: "PUSH", icon: Zap },
-  hold: { bg: "bg-racing-orange/15", ring: "ring-racing-orange/60", text: "text-racing-orange", label: "HOLD", icon: Gauge },
-  warn: { bg: "bg-racing-red/15", ring: "ring-racing-red/60", text: "text-racing-red", label: "WARN", icon: ShieldAlert },
+const toneStyles: Record<
+  Tone,
+  { bg: string; ring: string; text: string; label: string; icon: typeof Zap }
+> = {
+  push: {
+    bg: "bg-racing-green/15",
+    ring: "ring-racing-green/60",
+    text: "text-racing-green",
+    label: "PUSH",
+    icon: Zap,
+  },
+  hold: {
+    bg: "bg-racing-orange/15",
+    ring: "ring-racing-orange/60",
+    text: "text-racing-orange",
+    label: "HOLD",
+    icon: Gauge,
+  },
+  warn: {
+    bg: "bg-racing-red/15",
+    ring: "ring-racing-red/60",
+    text: "text-racing-red",
+    label: "WARN",
+    icon: ShieldAlert,
+  },
 };
 
 export function LiveCoach({ t }: { t: Telemetry }) {
@@ -42,8 +63,17 @@ export function LiveCoach({ t }: { t: Telemetry }) {
   const [error, setError] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [speaking, setSpeaking] = useState(false);
-  const [pb, setPb] = useState<{ lapTimeS: number; s1S: number | null; s2S: number | null; s3S: number | null } | null>(null);
-  const [sectorBests, setSectorBests] = useState<{ s1: number | null; s2: number | null; s3: number | null } | null>(null);
+  const [pb, setPb] = useState<{
+    lapTimeS: number;
+    s1S: number | null;
+    s2S: number | null;
+    s3S: number | null;
+  } | null>(null);
+  const [sectorBests, setSectorBests] = useState<{
+    s1: number | null;
+    s2: number | null;
+    s3: number | null;
+  } | null>(null);
   const [pbCount, setPbCount] = useState(0);
   const [validLapsThisSession, setValidLapsThisSession] = useState(0);
   const [lastConfidence, setLastConfidence] = useState<number | null>(null);
@@ -52,7 +82,11 @@ export function LiveCoach({ t }: { t: Telemetry }) {
   const pbStreakRef = useRef(0);
   // Recent deltas vs PB (per lap) for trend detection
   const recentDeltasRef = useRef<number[]>([]);
-  const lastCalloutRef = useRef<{ reasonCode: string; at: number; deltaToPb: number | null } | null>(null);
+  const lastCalloutRef = useRef<{
+    reasonCode: string;
+    at: number;
+    deltaToPb: number | null;
+  } | null>(null);
   const telemetryRef = useRef(t);
   telemetryRef.current = t;
 
@@ -231,7 +265,9 @@ export function LiveCoach({ t }: { t: Telemetry }) {
     if (speaking) return;
     setSpeaking(true);
     try {
-      const text = c.focus ? `${c.headline}. ${c.detail}. Focus: ${c.focus}.` : `${c.headline}. ${c.detail}.`;
+      const text = c.focus
+        ? `${c.headline}. ${c.detail}. Focus: ${c.focus}.`
+        : `${c.headline}. ${c.detail}.`;
       const resp = (await speakText({
         data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId },
       })) as { audioBase64?: string; mime?: string; error?: string };
@@ -327,7 +363,11 @@ export function LiveCoach({ t }: { t: Telemetry }) {
               disabled={speaking}
               className="ml-auto flex items-center gap-1 rounded-sm bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-zinc-200 hover:bg-black/50 disabled:opacity-40"
             >
-              {speaking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Volume2 className="h-3 w-3" />}
+              {speaking ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Volume2 className="h-3 w-3" />
+              )}
               {speaking ? "Speaking" : "Speak"}
             </button>
           </div>
@@ -344,11 +384,21 @@ export function LiveCoach({ t }: { t: Telemetry }) {
   );
 }
 
-function PbCell({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function PbCell({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
     <div className="rounded-sm bg-zinc-900/50 px-2 py-1">
       <div className="text-[9px] uppercase tracking-widest text-zinc-500">{label}</div>
-      <div className={`tabular-nums ${highlight ? "text-racing-green" : "text-zinc-200"}`}>{value}</div>
+      <div className={`tabular-nums ${highlight ? "text-racing-green" : "text-zinc-200"}`}>
+        {value}
+      </div>
     </div>
   );
 }

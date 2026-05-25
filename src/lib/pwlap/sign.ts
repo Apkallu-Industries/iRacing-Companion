@@ -9,7 +9,7 @@
  */
 export async function signEd25519(
   data: Uint8Array,
-  privateKeyBytes: Uint8Array
+  privateKeyBytes: Uint8Array,
 ): Promise<Uint8Array> {
   // Try native SubtleCrypto (modern browsers)
   if (crypto.subtle && "sign" in crypto.subtle) {
@@ -26,7 +26,7 @@ export async function signEd25519(
 
   // Fallback: require tweetnacl (must be imported separately)
   throw new Error(
-    "Ed25519 signing not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser."
+    "Ed25519 signing not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser.",
   );
 }
 
@@ -37,7 +37,7 @@ export async function signEd25519(
 export async function verifyEd25519(
   data: Uint8Array,
   publicKeyBytes: Uint8Array,
-  signature: Uint8Array
+  signature: Uint8Array,
 ): Promise<boolean> {
   // Try native SubtleCrypto (modern browsers)
   if (crypto.subtle && "verify" in crypto.subtle) {
@@ -53,7 +53,7 @@ export async function verifyEd25519(
 
   // Fallback: require tweetnacl (must be imported separately)
   throw new Error(
-    "Ed25519 verification not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser."
+    "Ed25519 verification not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser.",
   );
 }
 
@@ -69,7 +69,7 @@ export async function generateEd25519Keypair(): Promise<{
   publicKey: Uint8Array;
 }> {
   throw new Error(
-    "Ed25519 key generation requires tweetnacl.js or use SubtleCrypto's generateKey() with Ed25519."
+    "Ed25519 key generation requires tweetnacl.js or use SubtleCrypto's generateKey() with Ed25519.",
   );
 }
 
@@ -81,6 +81,6 @@ export async function generateEd25519Keypair(): Promise<{
  */
 export function derivePublicKeyEd25519(privateKeyBytes: Uint8Array): Uint8Array {
   throw new Error(
-    "Requires tweetnacl.js or equivalent Ed25519 implementation. Install with: npm install tweetnacl"
+    "Requires tweetnacl.js or equivalent Ed25519 implementation. Install with: npm install tweetnacl",
   );
 }

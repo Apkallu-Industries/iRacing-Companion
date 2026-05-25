@@ -158,12 +158,13 @@ export function MinCornerSpeed({ parsed }: { parsed: IbtParsed }) {
   return (
     <div className="flex h-full flex-col">
       <div className="hairline-b flex items-center justify-between px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span>Min-corner-speed · {corners.length} turns · ref L{refLap}</span>
+        <span>
+          Min-corner-speed · {corners.length} turns · ref L{refLap}
+        </span>
         <div className="flex items-center gap-2">
           {cmpLap != null && (
             <span>
-              cmp L{cmpLap}{" "}
-              <span className="text-emerald-400">+{totalGain.toFixed(0)}</span>/
+              cmp L{cmpLap} <span className="text-emerald-400">+{totalGain.toFixed(0)}</span>/
               <span className="text-fuchsia-400">{totalLoss.toFixed(0)}</span> {unitLabel}
             </span>
           )}
@@ -194,8 +195,12 @@ export function MinCornerSpeed({ parsed }: { parsed: IbtParsed }) {
               <th className="px-2 py-1 text-right">Entry</th>
               <th className="px-2 py-1 text-right">Apex</th>
               <th className="px-2 py-1">Apex bar</th>
-              <th className="px-2 py-1 text-right" title="Best apex seen across all laps">PB</th>
-              <th className="px-2 py-1 text-right" title="Apex vs PB (negative = leaving time)">Δ PB</th>
+              <th className="px-2 py-1 text-right" title="Best apex seen across all laps">
+                PB
+              </th>
+              <th className="px-2 py-1 text-right" title="Apex vs PB (negative = leaving time)">
+                Δ PB
+              </th>
               {cmpLap != null && <th className="px-2 py-1 text-right">Δ cmp</th>}
             </tr>
           </thead>
@@ -221,10 +226,7 @@ export function MinCornerSpeed({ parsed }: { parsed: IbtParsed }) {
                   </td>
                   <td className="px-2 py-1">
                     <div className="h-2 w-full rounded-sm bg-rail">
-                      <div
-                        className="h-full rounded-sm bg-primary/70"
-                        style={{ width: `${w}%` }}
-                      />
+                      <div className="h-full rounded-sm bg-primary/70" style={{ width: `${w}%` }} />
                     </div>
                   </td>
                   <td className="px-2 py-1 text-right tabular-nums text-muted-foreground">

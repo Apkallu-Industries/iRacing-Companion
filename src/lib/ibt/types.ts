@@ -63,7 +63,14 @@ export interface IbtParsed {
   channelNames: string[];
   laps: IbtLap[];
   /** Reconstructed XY track outline (one point per tick, normalized). */
-  trackXY?: { x: Float32Array; y: Float32Array; minX: number; maxX: number; minY: number; maxY: number };
+  trackXY?: {
+    x: Float32Array;
+    y: Float32Array;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
 }
 
 export interface IbtParseProgress {

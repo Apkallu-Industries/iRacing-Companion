@@ -141,7 +141,10 @@ function SharedLapPage() {
             {progress?.phase ?? "loading"} · {progress?.pct ?? 0}%
           </div>
           <div className="h-1 w-72 overflow-hidden rounded-full bg-rail">
-            <div className="h-full bg-primary transition-all" style={{ width: `${progress?.pct ?? 0}%` }} />
+            <div
+              className="h-full bg-primary transition-all"
+              style={{ width: `${progress?.pct ?? 0}%` }}
+            />
           </div>
         </div>
       ) : (
@@ -157,7 +160,13 @@ function SharedLapPage() {
                     : "bg-rail text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {t === "map" ? "Track Map" : t === "3d" ? "3D Replay" : t === "piano" ? "Piano Roll" : "Sector Spider"}
+                {t === "map"
+                  ? "Track Map"
+                  : t === "3d"
+                    ? "3D Replay"
+                    : t === "piano"
+                      ? "Piano Roll"
+                      : "Sector Spider"}
               </button>
             ))}
           </div>

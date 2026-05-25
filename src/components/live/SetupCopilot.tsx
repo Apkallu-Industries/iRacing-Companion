@@ -66,7 +66,11 @@ Based on this specific car, track, and environmental conditions, what setup adju
         }
       }
     } catch (e: any) {
-      setResponse("Error asking Setup Copilot: " + e.message + "\n\nMake sure your local LM Studio server is running on port 1234!");
+      setResponse(
+        "Error asking Setup Copilot: " +
+          e.message +
+          "\n\nMake sure your local LM Studio server is running on port 1234!",
+      );
     } finally {
       setLoading(false);
     }
@@ -85,20 +89,36 @@ Based on this specific car, track, and environmental conditions, what setup adju
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><Thermometer className="w-3 h-3"/> Air / Track Temp</span>
-          <span className="text-sm font-medium text-white">{t.liveAirTempC.toFixed(1)}°C / {t.liveTrackTempC.toFixed(1)}°C</span>
+          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+            <Thermometer className="w-3 h-3" /> Air / Track Temp
+          </span>
+          <span className="text-sm font-medium text-white">
+            {t.liveAirTempC.toFixed(1)}°C / {t.liveTrackTempC.toFixed(1)}°C
+          </span>
         </div>
         <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><Wind className="w-3 h-3"/> Wind / Aero</span>
-          <span className="text-sm font-medium text-white">{t.windVel.toFixed(1)} m/s | {t.airDensity.toFixed(2)} kg/m³</span>
+          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+            <Wind className="w-3 h-3" /> Wind / Aero
+          </span>
+          <span className="text-sm font-medium text-white">
+            {t.windVel.toFixed(1)} m/s | {t.airDensity.toFixed(2)} kg/m³
+          </span>
         </div>
         <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><CloudRain className="w-3 h-3"/> Track State</span>
-          <span className="text-sm font-medium text-white">{t.trackWetness > 0.5 ? "Wet" : t.trackWetness > 0.1 ? "Damp" : "Dry"}</span>
+          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+            <CloudRain className="w-3 h-3" /> Track State
+          </span>
+          <span className="text-sm font-medium text-white">
+            {t.trackWetness > 0.5 ? "Wet" : t.trackWetness > 0.1 ? "Damp" : "Dry"}
+          </span>
         </div>
         <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><Bot className="w-3 h-3"/> Context</span>
-          <span className="text-sm font-medium text-white truncate" title={t.car}>{t.car} @ {t.track}</span>
+          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+            <Bot className="w-3 h-3" /> Context
+          </span>
+          <span className="text-sm font-medium text-white truncate" title={t.car}>
+            {t.car} @ {t.track}
+          </span>
         </div>
       </div>
 

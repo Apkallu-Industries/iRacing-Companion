@@ -33,8 +33,12 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
     const cmpLapObj = cmpLap != null ? parsed.laps.find((l) => l.lap === cmpLap) : null;
 
     // Pick range: full session by default, or current lap if a refLap is set
-    let from = 0, to = sessionTime.length - 1;
-    if (refLapObj) { from = refLapObj.startTick; to = refLapObj.endTick; }
+    let from = 0,
+      to = sessionTime.length - 1;
+    if (refLapObj) {
+      from = refLapObj.startTick;
+      to = refLapObj.endTick;
+    }
 
     const xs = new Float64Array(to - from + 1);
     for (let i = 0; i < xs.length; i++) xs[i] = sessionTime[from + i] - sessionTime[from];
@@ -117,7 +121,8 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
 
       // Header label — build via DOM APIs to avoid HTML injection from .ibt metadata
       const header = document.createElement("div");
-      header.className = "flex items-center justify-between px-3 py-1 hairline-b text-[11px] font-mono uppercase tracking-wider";
+      header.className =
+        "flex items-center justify-between px-3 py-1 hairline-b text-[11px] font-mono uppercase tracking-wider";
       const nameSpan = document.createElement("span");
       nameSpan.style.color = resolveColor(name);
       nameSpan.textContent = name;

@@ -3,9 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const fetchPbSetup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { track: string; car: string; excludeSessionId?: string }) => data,
-  )
+  .inputValidator((data: { track: string; car: string; excludeSessionId?: string }) => data)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: rows, error } = await supabase

@@ -104,12 +104,13 @@ function inferUnit(name) {
 function inferGroup(name) {
   const n = name.toLowerCase();
   if (/(throttle|brake|clutch|steer|handbrake|driver)/i.test(n)) return "Driver Inputs";
-  if (/(speed|velocity|accel|yaw|pitch|roll|gear|rpm|enginerpm|track)/i.test(n))
-    return "Vehicle";
+  if (/(speed|velocity|accel|yaw|pitch|roll|gear|rpm|enginerpm|track)/i.test(n)) return "Vehicle";
   if (/(fuel|engine|oil|water|coolant|mgu|battery|kers|drs|boost|manifold)/i.test(n))
     return "Engine";
-  if (/(tire|tyre|temp|press|carcass|tread|wear|cf|cm|cl|lf|rf|lr|rr)/i.test(n) &&
-    /(temp|press|wear|tread|cold|carcass)/i.test(n))
+  if (
+    /(tire|tyre|temp|press|carcass|tread|wear|cf|cm|cl|lf|rf|lr|rr)/i.test(n) &&
+    /(temp|press|wear|tread|cold|carcass)/i.test(n)
+  )
     return "Tires";
   if (/(shock|spring|ride|damper|susp|arb|height|defl)/i.test(n)) return "Suspension";
   if (/(session|lap|race|incident|flag|pit|track|surface|sector)/i.test(n)) return "Session";

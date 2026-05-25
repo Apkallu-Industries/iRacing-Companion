@@ -21,7 +21,7 @@ Items from the [CurrentState.MD](CurrentState.MD) audit, ordered by priority. Sh
 - [ ] **Security:** stop storing `private_key` server-side in `user_signing_keys`; keep public keys in DB, signing client-side only.
 - [ ] Unify MongoDB database naming (`iracing` in `db.local.ts` vs `iracing_companion` in bridge/server) or document the split explicitly.
 
-*Maps to deployment steps in [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) and [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md).*
+_Maps to deployment steps in [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) and [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md)._
 
 ### P1 — Quality and consistency
 
@@ -33,13 +33,13 @@ Items from the [CurrentState.MD](CurrentState.MD) audit, ordered by priority. Sh
 
 ### P2 — Overlap with horizons below
 
-| Audit item | Existing roadmap item |
-| --- | --- |
-| Workbench perf (lazy panes, Float32) | **#3** Workbench performance budget |
-| Bridge onboarding checklist | **#4** Onboarding for the bridge |
-| Live coach confidence / debounce | **#2** Live coach signal quality |
-| Stripe / usage limits | Phase 4 in `/roadmap` UI (`billing`, `usage-limits`) |
-| MoTeC / CSV / webhooks export | **#13** Native data export pipeline |
+| Audit item                           | Existing roadmap item                                |
+| ------------------------------------ | ---------------------------------------------------- |
+| Workbench perf (lazy panes, Float32) | **#3** Workbench performance budget                  |
+| Bridge onboarding checklist          | **#4** Onboarding for the bridge                     |
+| Live coach confidence / debounce     | **#2** Live coach signal quality                     |
+| Stripe / usage limits                | Phase 4 in `/roadmap` UI (`billing`, `usage-limits`) |
+| MoTeC / CSV / webhooks export        | **#13** Native data export pipeline                  |
 
 ### P3 — Documentation hygiene
 
@@ -130,7 +130,7 @@ Bigger bets. Worth doing if the audience grows.
 
 ### 12. Predictive coaching
 
-- Train a per‑user model on their own historical laps to predict where they'll lose time in the *next* lap based on the first sector.
+- Train a per‑user model on their own historical laps to predict where they'll lose time in the _next_ lap based on the first sector.
 - Pre‑emptive call‑outs ("you're carrying 4kph less into T1 — watch T4 brake point").
 - Honest constraint: needs ~50+ laps of the same car/track to be useful. UI must say so.
 
@@ -169,14 +169,14 @@ Full‑duplex voice conversation with the AI during stints. Latency budget is br
 
 Not features — foundations that unblock the above.
 
-| Investment | Why it matters |
-| --- | --- |
-| **Test harness for `.ibt` parser** | Fixture files + golden snapshots. Right now a parser regression would only be caught by a user. |
-| **Server‑function observability** | Structured logs + traces for `coach.functions.ts`, `advisor.functions.ts`, `tts.functions.ts`. Today AI failures are silent. |
-| **Token‑cost dashboard** | Per‑user AI usage so we can spot abuse and tune model selection (Gemini Flash vs GPT‑5). |
-| **Migration to SSR‑first marketing pages** | Landing + `/how-it-works` should be statically rendered with proper OG images for sharing. |
-| **Schema for `live_coach_events`** | Required for any future "did the coach actually help?" analysis. |
-| **Rate limiting on community submissions** | Today nothing prevents a single user from publishing 10k gear ratio sets. Add per‑user daily caps via RPC. |
+| Investment                                 | Why it matters                                                                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Test harness for `.ibt` parser**         | Fixture files + golden snapshots. Right now a parser regression would only be caught by a user.                              |
+| **Server‑function observability**          | Structured logs + traces for `coach.functions.ts`, `advisor.functions.ts`, `tts.functions.ts`. Today AI failures are silent. |
+| **Token‑cost dashboard**                   | Per‑user AI usage so we can spot abuse and tune model selection (Gemini Flash vs GPT‑5).                                     |
+| **Migration to SSR‑first marketing pages** | Landing + `/how-it-works` should be statically rendered with proper OG images for sharing.                                   |
+| **Schema for `live_coach_events`**         | Required for any future "did the coach actually help?" analysis.                                                             |
+| **Rate limiting on community submissions** | Today nothing prevents a single user from publishing 10k gear ratio sets. Add per‑user daily caps via RPC.                   |
 
 ---
 

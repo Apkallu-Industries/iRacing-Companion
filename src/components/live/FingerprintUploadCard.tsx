@@ -21,7 +21,9 @@ export function FingerprintUploadCard() {
     setFp(loadFingerprint());
   }, []);
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const ingest = useCallback(

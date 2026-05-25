@@ -9,13 +9,7 @@ import { RotateCcw, X } from "lucide-react";
  * plus the speed-unit toggle. Saves automatically to localStorage via the
  * useHudPrefs hook (no explicit "save" needed).
  */
-export function HudSettings({
-  parsed,
-  onClose,
-}: {
-  parsed: IbtParsed;
-  onClose: () => void;
-}) {
+export function HudSettings({ parsed, onClose }: { parsed: IbtParsed; onClose: () => void }) {
   const [prefs, setPrefs, reset] = useHudPrefs();
 
   const channelNames = useMemo(
@@ -111,7 +105,8 @@ export function HudSettings({
                     {meta.hint}
                     {ch && (
                       <>
-                        {" "}· range {ch.min.toFixed(2)}–{ch.max.toFixed(2)}
+                        {" "}
+                        · range {ch.min.toFixed(2)}–{ch.max.toFixed(2)}
                         {ch.unit ? ` ${ch.unit}` : ""}
                       </>
                     )}

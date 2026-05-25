@@ -146,5 +146,9 @@ function clamp01(v: number) {
 }
 function jitterTire(t: Telemetry["tires"]["fl"]) {
   const tempC = t.tempC + (Math.random() - 0.5) * 0.6;
-  return { ...t, tempC, state: tempC > 92 ? ("hot" as const) : tempC < 70 ? ("cold" as const) : ("ok" as const) };
+  return {
+    ...t,
+    tempC,
+    state: tempC > 92 ? ("hot" as const) : tempC < 70 ? ("cold" as const) : ("ok" as const),
+  };
 }

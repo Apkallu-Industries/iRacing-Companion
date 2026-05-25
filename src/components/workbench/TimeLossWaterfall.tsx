@@ -11,7 +11,11 @@ import { useWorkbench } from "@/lib/store";
  */
 const SEGMENT_OPTIONS = [10, 20, 30, 50] as const;
 
-function segmentTimes(parsed: IbtParsed, lapNum: number, n: number): { times: number[]; ticks: number[] } | null {
+function segmentTimes(
+  parsed: IbtParsed,
+  lapNum: number,
+  n: number,
+): { times: number[]; ticks: number[] } | null {
   const lap = parsed.laps.find((l) => l.lap === lapNum);
   if (!lap) return null;
   const sessionTime = parsed.channels["SessionTime"]?.data;
@@ -89,9 +93,7 @@ export function TimeLossWaterfall({ parsed }: { parsed: IbtParsed }) {
   const total = cumulative[cumulative.length - 1];
 
   // Worst-loss + best-gain segments for headline.
-  const finite = deltas
-    .map((d, i) => ({ d, i }))
-    .filter((r) => isFinite(r.d));
+  const finite = deltas.map((d, i) => ({ d, i })).filter((r) => isFinite(r.d));
   const worst = finite.length ? finite.reduce((a, b) => (b.d > a.d ? b : a)) : null;
   const best = finite.length ? finite.reduce((a, b) => (b.d < a.d ? b : a)) : null;
 
@@ -118,7 +120,9 @@ export function TimeLossWaterfall({ parsed }: { parsed: IbtParsed }) {
   return (
     <div className="flex h-full flex-col">
       <div className="hairline-b flex items-center justify-between px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span>Time loss · cmp L{cmpLap} vs ref L{refLap}</span>
+        <span>
+          Time loss · cmp L{cmpLap} vs ref L{refLap}
+        </span>
         <div className="flex items-center gap-3">
           {worst && (
             <span title={`Worst: seg ${worst.i + 1}`}>
@@ -179,13 +183,34 @@ export function TimeLossWaterfall({ parsed }: { parsed: IbtParsed }) {
             strokeWidth={0.5}
           />
           {/* Y labels */}
-          <text x={PAD_L - 4} y={PAD_T + 4} fontSize={9} textAnchor="end" fill="var(--muted-foreground)" fontFamily="monospace">
+          <text
+            x={PAD_L - 4}
+            y={PAD_T + 4}
+            fontSize={9}
+            textAnchor="end"
+            fill="var(--muted-foreground)"
+            fontFamily="monospace"
+          >
             +{peak.toFixed(2)}s
           </text>
-          <text x={PAD_L - 4} y={H - PAD_B + 0} fontSize={9} textAnchor="end" fill="var(--muted-foreground)" fontFamily="monospace">
+          <text
+            x={PAD_L - 4}
+            y={H - PAD_B + 0}
+            fontSize={9}
+            textAnchor="end"
+            fill="var(--muted-foreground)"
+            fontFamily="monospace"
+          >
             −{peak.toFixed(2)}s
           </text>
-          <text x={PAD_L - 4} y={yMid + 3} fontSize={9} textAnchor="end" fill="var(--muted-foreground)" fontFamily="monospace">
+          <text
+            x={PAD_L - 4}
+            y={yMid + 3}
+            fontSize={9}
+            textAnchor="end"
+            fill="var(--muted-foreground)"
+            fontFamily="monospace"
+          >
             0
           </text>
           {/* Per-segment bars (per-segment delta scaled to peak) */}
@@ -240,11 +265,17 @@ export function TimeLossWaterfall({ parsed }: { parsed: IbtParsed }) {
         </svg>
         <div className="mt-2 flex items-center gap-4 px-1 font-mono text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3" style={{ background: "var(--ch-brake)", opacity: 0.7 }} />
+            <span
+              className="inline-block h-2 w-3"
+              style={{ background: "var(--ch-brake)", opacity: 0.7 }}
+            />
             Lost vs ref
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3" style={{ background: "var(--ch-throttle)", opacity: 0.7 }} />
+            <span
+              className="inline-block h-2 w-3"
+              style={{ background: "var(--ch-throttle)", opacity: 0.7 }}
+            />
             Gained vs ref
           </span>
           <span className="flex items-center gap-1">

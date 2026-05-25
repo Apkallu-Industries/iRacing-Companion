@@ -33,7 +33,7 @@ export function extractCarSetupYaml(yaml: string): string | null {
   const i = yaml.indexOf("\nCarSetup:");
   if (i < 0) return null;
   // Capture everything from CarSetup: up to the next top-level key (line that
- // starts at column 0 with a non-space character) or EOF.
+  // starts at column 0 with a non-space character) or EOF.
   const after = yaml.slice(i + 1);
   const lines = after.split("\n");
   const out: string[] = [lines[0]]; // "CarSetup:"

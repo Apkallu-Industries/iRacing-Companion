@@ -2,7 +2,16 @@ import { create } from "zustand";
 import type { IbtParsed } from "./ibt/types";
 import type { MathExpression } from "./math/schema";
 
-export const DEFAULT_CHANNELS = ["Speed", "Throttle", "Brake", "RPM", "Gear", "SteeringWheelAngle", "LatAccel", "LongAccel"];
+export const DEFAULT_CHANNELS = [
+  "Speed",
+  "Throttle",
+  "Brake",
+  "RPM",
+  "Gear",
+  "SteeringWheelAngle",
+  "LatAccel",
+  "LongAccel",
+];
 
 export type MapMode = "drift" | "aligned" | "averaged";
 export type MapColorChannel = "none" | "Throttle" | "Brake" | "Speed" | "RPM" | "Gear" | "DeltaT";
@@ -106,15 +115,12 @@ export const useWorkbench = create<WorkbenchState>((set) => ({
       if (bestLap == null) bestLap = p.laps[0].lap;
     }
     // Cursor starts at the fastest lap so widgets reflect the best run.
-    const startTick = bestLap != null
-      ? (p!.laps.find((l) => l.lap === bestLap)?.startTick ?? 0)
-      : 0;
+    const startTick =
+      bestLap != null ? (p!.laps.find((l) => l.lap === bestLap)?.startTick ?? 0) : 0;
     set(() => ({
       parsed: p,
       cursorTick: startTick,
-      selectedChannels: p
-        ? DEFAULT_CHANNELS.filter((c) => c in p.channels)
-        : [],
+      selectedChannels: p ? DEFAULT_CHANNELS.filter((c) => c in p.channels) : [],
       refLap: bestLap,
       cmpLap: null,
       playing: false,
@@ -170,7 +176,8 @@ export const useWorkbench = create<WorkbenchState>((set) => ({
   liveTrack: "",
   liveCar: "",
   liveConnected: false,
-  setLiveContext: (track, car, connected) => set({ liveTrack: track, liveCar: car, liveConnected: connected }),
+  setLiveContext: (track, car, connected) =>
+    set({ liveTrack: track, liveCar: car, liveConnected: connected }),
 
   pendingLocalBlob: null,
   setPendingLocalBlob: (blob) => set({ pendingLocalBlob: blob }),

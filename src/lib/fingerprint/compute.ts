@@ -124,9 +124,14 @@ export function parseRaw(raw: RawLapfile): ParsedLapfile {
 }
 
 /** Compute aggregates from already-parsed lapfiles. */
-export function buildFingerprint(parsed: { trackFolder: string; parsed: ParsedLapfile }[]): DriverFingerprint {
+export function buildFingerprint(
+  parsed: { trackFolder: string; parsed: ParsedLapfile }[],
+): DriverFingerprint {
   // Group by (track, car). Use header.trackName when available, fallback to folder name.
-  const groups = new Map<string, { track: string; car: string; folder: string; files: ParsedLapfile[] }>();
+  const groups = new Map<
+    string,
+    { track: string; car: string; folder: string; files: ParsedLapfile[] }
+  >();
   for (const r of parsed) {
     const track = r.parsed.header.trackName || r.trackFolder;
     const car = r.parsed.header.carShortName || "(unknown car)";
@@ -156,20 +161,19 @@ export function buildFingerprint(parsed: { trackFolder: string; parsed: ParsedLa
     const bestPerSector: number[] = [];
     let sectorsComplete = numSec > 0;
     for (let s = 0; s < numSec; s++) {
-      const vals = validSectorFiles
-        .map((f) => f.summary.sectorTimesS[s])
-        .filter(isValidSector);
+      const vals = validSectorFiles.map((f) => f.summary.sectorTimesS[s]).filter(isValidSector);
       if (vals.length) bestPerSector.push(Math.min(...vals));
       else sectorsComplete = false;
     }
     // Sanity: optimal must be ≤ bestEver and within 50% of it.
     const optimalSum = bestPerSector.reduce((a, b) => a + b, 0);
-    const optimalEver = sectorsComplete &&
+    const optimalEver =
+      sectorsComplete &&
       optimalSum > 0 &&
       optimalSum <= bestEver + 0.001 &&
       optimalSum >= bestEver * 0.5
-      ? bestPerSector.reduce((a, b) => a + b, 0)
-      : null;
+        ? bestPerSector.reduce((a, b) => a + b, 0)
+        : null;
 
     // Sector balance only meaningful if best lap's sectors are all valid AND
     // sum to ~bestEver (within 5%). Otherwise the balance is misleading.
@@ -177,9 +181,7 @@ export function buildFingerprint(parsed: { trackFolder: string; parsed: ParsedLa
     const allSectorsValid = bestSectors.length > 0 && bestSectors.every(isValidSector);
     const sectorSum = bestSectors.reduce((a, b) => a + b, 0);
     const sectorsCloseToLap = allSectorsValid && Math.abs(sectorSum - bestEver) / bestEver < 0.05;
-    const sectorBalancePct = sectorsCloseToLap
-      ? bestSectors.map((s) => (s / bestEver) * 100)
-      : [];
+    const sectorBalancePct = sectorsCloseToLap ? bestSectors.map((s) => (s / bestEver) * 100) : [];
 
     // Build dates → trend.
     const dated = g.files
@@ -236,7 +238,12 @@ export function buildFingerprint(parsed: { trackFolder: string; parsed: ParsedLa
 
   const trends = pairs.map((p) => p.trend).filter(Boolean) as string[];
   const trajectoryScore = trends.length
-    ? +(((trends.filter((t) => t === "improving").length - trends.filter((t) => t === "regressing").length) / trends.length) * 100).toFixed(1)
+    ? +(
+        ((trends.filter((t) => t === "improving").length -
+          trends.filter((t) => t === "regressing").length) /
+          trends.length) *
+        100
+      ).toFixed(1)
     : null;
 
   return {
@@ -277,7 +284,11 @@ export function clearFingerprint() {
 }
 
 /** Lookup helper for matching against an .ibt session. */
-export function findPair(fp: DriverFingerprint, track: string, car: string): TrackCarFingerprint | null {
+export function findPair(
+  fp: DriverFingerprint,
+  track: string,
+  car: string,
+): TrackCarFingerprint | null {
   const t = track.toLowerCase().trim();
   const c = car.toLowerCase().trim();
   return (

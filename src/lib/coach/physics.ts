@@ -68,10 +68,9 @@ function pickRange(parsed: IbtParsed, refLap: number | null): { a: number; b: nu
   }
   const fastest = parsed.laps
     .filter((l) => l.timeS > 5)
-    .reduce<typeof parsed.laps[number] | null>(
-      (best, l) => (best == null || l.timeS < best.timeS ? l : best),
-      null,
-    );
+    .reduce<
+      (typeof parsed.laps)[number] | null
+    >((best, l) => (best == null || l.timeS < best.timeS ? l : best), null);
   if (fastest) return { a: fastest.startTick, b: fastest.endTick };
   return { a: 0, b: parsed.meta.numTicks };
 }
@@ -82,7 +81,9 @@ function ggSummary(parsed: IbtParsed, a: number, b: number): GGSummary | undefin
   if (!lat || !lon) return undefined;
   const BINS = 12;
   const env = new Array(BINS).fill(0);
-  let pLat = 0, pAcc = 0, pBrk = 0;
+  let pLat = 0,
+    pAcc = 0,
+    pBrk = 0;
   for (let t = a; t < b; t++) {
     const x = lat[t] / G;
     const y = lon[t] / G;
@@ -131,8 +132,12 @@ function brakeSummary(parsed: IbtParsed, a: number, b: number): BrakeSummary | u
     return +s[Math.floor(s.length / 2)].toFixed(2);
   });
   const pts: { x: number; y: number }[] = [];
-  medians.forEach((m, i) => { if (m != null) pts.push({ x: (i + 0.5) / BINS, y: m }); });
-  let slope = 0, intercept = 0, r2 = 0;
+  medians.forEach((m, i) => {
+    if (m != null) pts.push({ x: (i + 0.5) / BINS, y: m });
+  });
+  let slope = 0,
+    intercept = 0,
+    r2 = 0;
   if (pts.length >= 3) {
     const len = pts.length;
     const sx = pts.reduce((s, p) => s + p.x, 0);
@@ -142,7 +147,8 @@ function brakeSummary(parsed: IbtParsed, a: number, b: number): BrakeSummary | u
     slope = (len * sxy - sx * sy) / (len * sxx - sx * sx);
     intercept = (sy - slope * sx) / len;
     const ymean = sy / len;
-    let ssr = 0, sst = 0;
+    let ssr = 0,
+      sst = 0;
     for (const p of pts) {
       const yhat = slope * p.x + intercept;
       ssr += (p.y - yhat) ** 2;
@@ -154,13 +160,17 @@ function brakeSummary(parsed: IbtParsed, a: number, b: number): BrakeSummary | u
   let bias: BrakeSummary["bias"];
   const biasCh = parsed.channels["dcBrakeBias"]?.data;
   if (biasCh) {
-    let mn = Infinity, mx = -Infinity, sm = 0, c = 0;
+    let mn = Infinity,
+      mx = -Infinity,
+      sm = 0,
+      c = 0;
     for (let t = a; t < b; t++) {
       const v = biasCh[t];
       if (!isFinite(v)) continue;
       if (v < mn) mn = v;
       if (v > mx) mx = v;
-      sm += v; c++;
+      sm += v;
+      c++;
     }
     if (c > 0) bias = { avgFront: +(sm / c).toFixed(3), min: +mn.toFixed(3), max: +mx.toFixed(3) };
   }
@@ -181,7 +191,10 @@ function slipSummary(parsed: IbtParsed, a: number, b: number): SlipSummary | und
   if (!vx || !vy || !lat) return undefined;
   const speedCh = parsed.channels["Speed"]?.data;
   let peak = 0;
-  let leftSum = 0, leftN = 0, rightSum = 0, rightN = 0;
+  let leftSum = 0,
+    leftN = 0,
+    rightSum = 0,
+    rightN = 0;
   let n = 0;
   for (let t = a; t < b; t++) {
     const fwd = vx[t];
@@ -192,16 +205,19 @@ function slipSummary(parsed: IbtParsed, a: number, b: number): SlipSummary | und
     if (Math.abs(beta) > peak) peak = Math.abs(beta);
     n++;
     const ay = lat[t] / G;
-    if (ay > 0.6) { leftSum += beta; leftN++; }
-    else if (ay < -0.6) { rightSum += beta; rightN++; }
+    if (ay > 0.6) {
+      leftSum += beta;
+      leftN++;
+    } else if (ay < -0.6) {
+      rightSum += beta;
+      rightN++;
+    }
   }
   if (n < 30) return undefined;
   const left = leftN ? leftSum / leftN : null;
   const right = rightN ? -rightSum / rightN : null;
-  const overall =
-    left != null && right != null ? (left + right) / 2 : (left ?? right ?? 0);
-  const balance =
-    Math.abs(overall) < 0.5 ? "neutral" : overall > 0 ? "loose" : "tight";
+  const overall = left != null && right != null ? (left + right) / 2 : (left ?? right ?? 0);
+  const balance = Math.abs(overall) < 0.5 ? "neutral" : overall > 0 ? "loose" : "tight";
   return {
     peakBetaDeg: +peak.toFixed(2),
     meanBetaLeftHighG: left != null ? +left.toFixed(2) : null,
@@ -232,13 +248,17 @@ function bandStats(
   const speed = parsed.channels["Speed"]?.data;
   const brake = parsed.channels["Brake"]?.data;
   if (!sessionTime || !lapDistPct || !speed || !brake) return null;
-  let tA = -1, tB = -1;
+  let tA = -1,
+    tB = -1;
   for (let t = startTick + 1; t <= endTick; t++) {
     const prev = lapDistPct[t - 1];
     const cur = lapDistPct[t];
     if (cur < prev) continue;
     if (tA < 0 && prev <= startPct && cur >= startPct) tA = t;
-    if (tA >= 0 && prev <= endPct && cur >= endPct) { tB = t; break; }
+    if (tA >= 0 && prev <= endPct && cur >= endPct) {
+      tB = t;
+      break;
+    }
   }
   if (tA < 0 || tB < 0 || tB <= tA) return null;
   let minSpeed = Infinity;
@@ -277,8 +297,10 @@ function counterfactualSummary(
     const b = brake[t] ?? 0;
     const p = lapDistPct[t];
     if (!isFinite(p)) continue;
-    if (!inZone && b > BRAKE_ON) { inZone = true; s = p; }
-    else if (inZone && b < BRAKE_OFF) {
+    if (!inZone && b > BRAKE_ON) {
+      inZone = true;
+      s = p;
+    } else if (inZone && b < BRAKE_OFF) {
       if (p > s && p - s > 0.005) zones.push({ startPct: s, endPct: Math.min(1, p + 0.04) });
       inZone = false;
     }
@@ -334,10 +356,9 @@ export function buildPhysicsSummary(parsed: IbtParsed, refLap: number | null): P
   if (refLapNum == null) {
     const fastest = parsed.laps
       .filter((l) => l.timeS > 5)
-      .reduce<typeof parsed.laps[number] | null>(
-        (best, l) => (best == null || l.timeS < best.timeS ? l : best),
-        null,
-      );
+      .reduce<
+        (typeof parsed.laps)[number] | null
+      >((best, l) => (best == null || l.timeS < best.timeS ? l : best), null);
     refLapNum = fastest?.lap ?? null;
   }
   return {

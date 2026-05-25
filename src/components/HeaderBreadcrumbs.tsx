@@ -8,10 +8,7 @@ function crumbsForPath(pathname: string, params: Record<string, string>): Crumb[
   if (pathname === "/live") return [{ label: "Live", to: "/live" }];
   if (pathname === "/sessions") return [{ label: "Sessions", to: "/sessions" }];
   if (pathname.startsWith("/sessions/") && params.id) {
-    return [
-      { label: "Sessions", to: "/sessions" },
-      { label: "Workbench" },
-    ];
+    return [{ label: "Sessions", to: "/sessions" }, { label: "Workbench" }];
   }
   if (pathname === "/fingerprint") return [{ label: "Fingerprint", to: "/fingerprint" }];
   if (pathname === "/auth") return [{ label: "Sign in" }];
@@ -31,7 +28,10 @@ export function HeaderBreadcrumbs() {
   if (crumbs.length === 0) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1 text-[11px] font-mono text-muted-foreground">
+    <nav
+      aria-label="Breadcrumb"
+      className="hidden sm:flex items-center gap-1 text-[11px] font-mono text-muted-foreground"
+    >
       <Link to="/" className="hover:text-foreground transition-colors">
         Home
       </Link>

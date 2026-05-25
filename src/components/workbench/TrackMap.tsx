@@ -98,7 +98,8 @@ function buildLapsByDist(
 
     // Re-anchor each lap so it starts at (0,0). Cheap drift cleanup that
     // makes laps overlay instead of marching across the page.
-    const x0 = x[0], y0 = y[0];
+    const x0 = x[0],
+      y0 = y[0];
     for (let i = 0; i < NUM_SAMPLES; i++) {
       x[i] -= x0;
       y[i] -= y0;
@@ -196,7 +197,10 @@ function averageLaps(laps: BuiltLap[]): {
       sumSq += perp * perp;
       sumAbs += Math.abs(perp);
       const j = (i + 1) % n;
-      const ang = Math.atan2(closedLaps[k].y[j] - closedLaps[k].y[i], closedLaps[k].x[j] - closedLaps[k].x[i]);
+      const ang = Math.atan2(
+        closedLaps[k].y[j] - closedLaps[k].y[i],
+        closedLaps[k].x[j] - closedLaps[k].x[i],
+      );
       let dh = ang - avgAng[i];
       while (dh > Math.PI) dh -= Math.PI * 2;
       while (dh < -Math.PI) dh += Math.PI * 2;
@@ -278,7 +282,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number } | null>(
+    null,
+  );
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   const reset = useCallback(() => {
@@ -306,10 +312,10 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
 
     // For DeltaT mode, compute per-bin cumulative time delta vs the reference lap.
     if (mapColorBy === "DeltaT") {
-      const ref =
-        lapsBuilt.laps.find((l) => l.lap === refLap) ?? lapsBuilt.laps[0];
+      const ref = lapsBuilt.laps.find((l) => l.lap === refLap) ?? lapsBuilt.laps[0];
       if (ref && ref.st.length === ref.x.length) {
-        let dMin = Infinity, dMax = -Infinity;
+        let dMin = Infinity,
+          dMax = -Infinity;
         const t0Ref = ref.st[0];
         for (const lap of lapsBuilt.laps) {
           if (lap.st.length !== lap.x.length || lap.c.length !== lap.x.length) continue;
@@ -333,7 +339,10 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     if (mapMode === "averaged") {
       const avg = averageLaps(lapsBuilt.laps);
       if (!avg) return null;
-      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      let minX = Infinity,
+        maxX = -Infinity,
+        minY = Infinity,
+        maxY = -Infinity;
       for (let i = 0; i < avg.x.length; i++) {
         if (avg.x[i] < minX) minX = avg.x[i];
         if (avg.x[i] > maxX) maxX = avg.x[i];
@@ -351,7 +360,10 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     }
 
     // aligned: every lap re-anchored at start
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
     const closed = lapsBuilt.laps.map((l) => {
       const c = closeLoop(l.x, l.y);
       for (let i = 0; i < c.x.length; i++) {
@@ -489,7 +501,8 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
         {built.laps.map((l) => {
           if (l.lap === refLapBuilt.lap) return null;
           let d = `M ${projection.px(l.x[0])} ${projection.py(l.y[0])}`;
-          for (let i = 1; i < l.x.length; i++) d += ` L ${projection.px(l.x[i])} ${projection.py(l.y[i])}`;
+          for (let i = 1; i < l.x.length; i++)
+            d += ` L ${projection.px(l.x[i])} ${projection.py(l.y[i])}`;
           return (
             <path
               key={l.lap}
@@ -517,9 +530,11 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
         ) : (
           (() => {
             const sp = mapThicknessBySpeed ? refLapBuilt.speed : undefined;
-            let smin = 0, smax = 0;
+            let smin = 0,
+              smax = 0;
             if (sp && sp.length) {
-              smin = Infinity; smax = -Infinity;
+              smin = Infinity;
+              smax = -Infinity;
               for (let i = 0; i < sp.length; i++) {
                 if (sp[i] < smin) smin = sp[i];
                 if (sp[i] > smax) smax = sp[i];
@@ -567,9 +582,11 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
       ) : (
         (() => {
           const sp = mapThicknessBySpeed ? avg.speed : undefined;
-          let smin = 0, smax = 0;
+          let smin = 0,
+            smax = 0;
           if (sp && sp.length) {
-            smin = Infinity; smax = -Infinity;
+            smin = Infinity;
+            smax = -Infinity;
             for (let i = 0; i < sp.length; i++) {
               if (sp[i] < smin) smin = sp[i];
               if (sp[i] > smax) smax = sp[i];
@@ -642,9 +659,7 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
   const zoomBy = (factor: number) => setZoom((z) => clampZoom(z * factor));
 
   const colorChannel =
-    mapColorBy !== "none" && mapColorBy !== "DeltaT"
-      ? parsed.channels[mapColorBy]
-      : undefined;
+    mapColorBy !== "none" && mapColorBy !== "DeltaT" ? parsed.channels[mapColorBy] : undefined;
 
   // ---------- Overlays ----------
   // Sector heatmap: per-sector, color the reference racing line by gain/loss vs
@@ -666,12 +681,13 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     const refLapBuilt =
       built.kind === "averaged"
         ? null
-        : (built as { laps: BuiltLap[] }).laps.find((l) => l.lap === refLap) ??
-          (built as { laps: BuiltLap[] }).laps[0];
+        : ((built as { laps: BuiltLap[] }).laps.find((l) => l.lap === refLap) ??
+          (built as { laps: BuiltLap[] }).laps[0]);
     const path = built.kind === "averaged" ? built.avg : refLapBuilt!;
-    const refTimes = built.kind === "averaged"
-      ? best // averaged path "is" the best per-sector reference
-      : lapSectorTimes(refLapBuilt!);
+    const refTimes =
+      built.kind === "averaged"
+        ? best // averaged path "is" the best per-sector reference
+        : lapSectorTimes(refLapBuilt!);
 
     // Build per-sector deltas vs best (seconds). Positive = loss, negative = gain (== 0 if best).
     const deltas: (number | null)[] = refTimes.map((t, i) =>
@@ -716,8 +732,10 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
       outerR.push({ x: avg.x[i] - nx * off, y: avg.y[i] - ny * off });
     }
     let d = `M ${projection.px(innerL[0].x)} ${projection.py(innerL[0].y)}`;
-    for (let i = 1; i < n; i++) d += ` L ${projection.px(innerL[i].x)} ${projection.py(innerL[i].y)}`;
-    for (let i = n - 1; i >= 0; i--) d += ` L ${projection.px(outerR[i].x)} ${projection.py(outerR[i].y)}`;
+    for (let i = 1; i < n; i++)
+      d += ` L ${projection.px(innerL[i].x)} ${projection.py(innerL[i].y)}`;
+    for (let i = n - 1; i >= 0; i--)
+      d += ` L ${projection.px(outerR[i].x)} ${projection.py(outerR[i].y)}`;
     d += " Z";
     return d;
   }, [showTrackBands, built, projection]);
@@ -741,7 +759,8 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
       segs.push({ d, color });
     }
     // Aggregate stats
-    let sumDev = 0, sumHead = 0;
+    let sumDev = 0,
+      sumHead = 0;
     for (let i = 0; i < n; i++) {
       sumDev += avg.meanDev[i];
       sumHead += avg.meanHead[i];
@@ -761,7 +780,7 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
       built.kind === "averaged"
         ? built.avg
         : ((built as { laps: BuiltLap[] }).laps.find((l) => l.lap === refLap) ??
-            (built as { laps: BuiltLap[] }).laps[0]);
+          (built as { laps: BuiltLap[] }).laps[0]);
     const n = path.x.length;
     const marks: { cx: number; cy: number; label: string }[] = [];
     for (let s = 0; s < NUM_SECTORS; s++) {
@@ -788,7 +807,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
                 key={m}
                 onClick={() => setMapMode(m)}
                 className={`px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
-                  mapMode === m ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"
+                  mapMode === m
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-rail text-muted-foreground hover:text-foreground"
                 }`}
                 title={
                   m === "drift"
@@ -820,7 +841,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
             <button
               onClick={() => setMapThicknessBySpeed(!mapThicknessBySpeed)}
               className={`flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase ${
-                mapThicknessBySpeed ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"
+                mapThicknessBySpeed
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-rail text-muted-foreground hover:text-foreground"
               }`}
               title="Line thickness driven by speed"
             >
@@ -829,7 +852,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
             <button
               onClick={() => setShowSectorHeat(!showSectorHeat)}
               className={`flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase ${
-                showSectorHeat ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"
+                showSectorHeat
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-rail text-muted-foreground hover:text-foreground"
               }`}
               title="Sector heatmap: gain / loss vs fastest sector"
             >
@@ -839,7 +864,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
               onClick={() => setShowTrackBands(!showTrackBands)}
               disabled={mapMode !== "averaged"}
               className={`flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase disabled:opacity-40 ${
-                showTrackBands ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"
+                showTrackBands
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-rail text-muted-foreground hover:text-foreground"
               }`}
               title="Track-width bands estimated from lap-to-lap spread (averaged mode)"
             >
@@ -849,7 +876,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
               onClick={() => setShowDeviation(!showDeviation)}
               disabled={mapMode !== "averaged"}
               className={`flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase disabled:opacity-40 ${
-                showDeviation ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"
+                showDeviation
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-rail text-muted-foreground hover:text-foreground"
               }`}
               title="Deviation: average XY distance & heading error vs averaged line"
             >
@@ -912,23 +941,70 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
           {foreground}
           {/* Track-width band */}
           {bandPath && (
-            <path d={bandPath} fill="var(--primary)" fillOpacity={0.08} stroke="var(--primary)" strokeOpacity={0.25} strokeWidth={0.6 / zoom} />
+            <path
+              d={bandPath}
+              fill="var(--primary)"
+              fillOpacity={0.08}
+              stroke="var(--primary)"
+              strokeOpacity={0.25}
+              strokeWidth={0.6 / zoom}
+            />
           )}
           {/* Sector heatmap line + dividers */}
-          {sectorOverlay && sectorOverlay.segs.map((s) => (
-            <path key={s.sector} d={s.d} fill="none" stroke={s.color} strokeWidth={4 / zoom} strokeLinecap="round" opacity={0.85} />
-          ))}
-          {sectorMarkers && sectorMarkers.map((m, i) => (
-            <g key={i}>
-              <circle cx={m.cx} cy={m.cy} r={3 / zoom} fill="var(--background)" stroke="var(--foreground)" strokeWidth={1 / zoom} />
-              <text x={m.cx + 5 / zoom} y={m.cy - 5 / zoom} fontSize={9 / zoom} fill="var(--foreground)" fontFamily="monospace">{m.label}</text>
-            </g>
-          ))}
+          {sectorOverlay &&
+            sectorOverlay.segs.map((s) => (
+              <path
+                key={s.sector}
+                d={s.d}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={4 / zoom}
+                strokeLinecap="round"
+                opacity={0.85}
+              />
+            ))}
+          {sectorMarkers &&
+            sectorMarkers.map((m, i) => (
+              <g key={i}>
+                <circle
+                  cx={m.cx}
+                  cy={m.cy}
+                  r={3 / zoom}
+                  fill="var(--background)"
+                  stroke="var(--foreground)"
+                  strokeWidth={1 / zoom}
+                />
+                <text
+                  x={m.cx + 5 / zoom}
+                  y={m.cy - 5 / zoom}
+                  fontSize={9 / zoom}
+                  fill="var(--foreground)"
+                  fontFamily="monospace"
+                >
+                  {m.label}
+                </text>
+              </g>
+            ))}
           {/* Deviation overlay */}
-          {deviationOverlay && deviationOverlay.segs.map((s, i) => (
-            <path key={`dev-${i}`} d={s.d} fill="none" stroke={s.color} strokeWidth={2 / zoom} strokeLinecap="round" />
-          ))}
-          <circle cx={dotX} cy={dotY} r={5 / zoom} fill="var(--primary)" stroke="white" strokeWidth={1.5 / zoom} />
+          {deviationOverlay &&
+            deviationOverlay.segs.map((s, i) => (
+              <path
+                key={`dev-${i}`}
+                d={s.d}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={2 / zoom}
+                strokeLinecap="round"
+              />
+            ))}
+          <circle
+            cx={dotX}
+            cy={dotY}
+            r={5 / zoom}
+            fill="var(--primary)"
+            stroke="white"
+            strokeWidth={1.5 / zoom}
+          />
         </svg>
       </div>
       {/* Sector heatmap legend */}
@@ -936,7 +1012,13 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
         <div className="hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
           <span>Sectors Δ</span>
           {sectorOverlay.deltas.map((d, i) => (
-            <span key={i} className="tabular-nums" style={{ color: d == null ? undefined : diffColor(Math.max(-1, Math.min(1, d / 0.5))) }}>
+            <span
+              key={i}
+              className="tabular-nums"
+              style={{
+                color: d == null ? undefined : diffColor(Math.max(-1, Math.min(1, d / 0.5))),
+              }}
+            >
               S{i + 1} {d == null ? "—" : (d >= 0 ? "+" : "") + d.toFixed(3) + "s"}
             </span>
           ))}
@@ -955,24 +1037,26 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
         </div>
       )}
       {/* Color-channel legend */}
-      {mapColorBy !== "none" && built.kind !== "drift" && (colorChannel || mapColorBy === "DeltaT") && (
-        <div className="hairline-t flex items-center gap-2 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          <span>{mapColorBy === "DeltaT" ? "Δt vs ref" : mapColorBy}</span>
-          <span className="tabular-nums">
-            {mapColorBy === "DeltaT" ? `${built.cMin.toFixed(2)}s` : built.cMin.toFixed(1)}
-          </span>
-          <span
-            className="h-1.5 flex-1 rounded-full"
-            style={{
-              background: `linear-gradient(to right, ${rampColor(mapColorBy, 0)}, ${rampColor(mapColorBy, 0.5)}, ${rampColor(mapColorBy, 1)})`,
-            }}
-          />
-          <span className="tabular-nums">
-            {mapColorBy === "DeltaT" ? `+${built.cMax.toFixed(2)}s` : built.cMax.toFixed(1)}
-          </span>
-          {colorChannel?.unit && <span>{colorChannel.unit}</span>}
-        </div>
-      )}
+      {mapColorBy !== "none" &&
+        built.kind !== "drift" &&
+        (colorChannel || mapColorBy === "DeltaT") && (
+          <div className="hairline-t flex items-center gap-2 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span>{mapColorBy === "DeltaT" ? "Δt vs ref" : mapColorBy}</span>
+            <span className="tabular-nums">
+              {mapColorBy === "DeltaT" ? `${built.cMin.toFixed(2)}s` : built.cMin.toFixed(1)}
+            </span>
+            <span
+              className="h-1.5 flex-1 rounded-full"
+              style={{
+                background: `linear-gradient(to right, ${rampColor(mapColorBy, 0)}, ${rampColor(mapColorBy, 0.5)}, ${rampColor(mapColorBy, 1)})`,
+              }}
+            />
+            <span className="tabular-nums">
+              {mapColorBy === "DeltaT" ? `+${built.cMax.toFixed(2)}s` : built.cMax.toFixed(1)}
+            </span>
+            {colorChannel?.unit && <span>{colorChannel.unit}</span>}
+          </div>
+        )}
     </div>
   );
 }

@@ -12,7 +12,12 @@ import { BridgeInstall } from "@/components/live/BridgeInstall";
 import { RecordingControls } from "@/components/live/RecordingControls";
 import { AdvisorButton } from "@/components/live/AdvisorButton";
 import { FingerprintUploadCard } from "@/components/live/FingerprintUploadCard";
-import { TraceStack, GGScatter, type SmoothingMode, type CursorInfo } from "@/components/live/MotecPanels";
+import {
+  TraceStack,
+  GGScatter,
+  type SmoothingMode,
+  type CursorInfo,
+} from "@/components/live/MotecPanels";
 import { DerivedMetrics } from "@/components/live/DerivedMetrics";
 import { ConfigurableChannelList } from "@/components/live/ConfigurableChannelList";
 import { GearAdvisor } from "@/components/live/GearAdvisor";
@@ -20,7 +25,6 @@ import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
 import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
 import { TabedAnalysisPanel } from "@/components/live/TabedAnalysisPanel";
-
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -39,9 +43,7 @@ export const Route = createFileRoute("/live")({
       },
       { property: "og:url", content: "https://iracing-companion.lovable.app/" },
     ],
-    links: [
-      { rel: "canonical", href: "https://iracing-companion.lovable.app/" },
-    ],
+    links: [{ rel: "canonical", href: "https://iracing-companion.lovable.app/" }],
   }),
   component: Dashboard,
 });
@@ -102,7 +104,9 @@ function Dashboard() {
           <div className="flex items-center justify-between px-2 py-1 border-b border-zinc-900 flex-shrink-0 bg-zinc-925">
             <PanelHeader
               title="Time Trace"
-              right={cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 30Hz"}
+              right={
+                cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 30Hz"
+              }
             />
             <FilterControls
               mode={smoothing}
@@ -180,9 +184,7 @@ function TopBar({ t }: { t: Telemetry }) {
         />
         <div className="flex items-center gap-1.5 rounded-sm bg-zinc-900 px-2 py-1">
           <span
-            className={`size-1.5 rounded-full ${
-              t.connected ? "bg-emerald-500" : "bg-amber-500"
-            }`}
+            className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`}
           />
           <span className="text-[10px]">
             {t.connected ? `${t.sdkVersion} · ${t.latencyMs}ms` : "Simulated"}
@@ -278,7 +280,9 @@ function FilterControls({
             type="button"
             onClick={() => onMode(m.k)}
             className={`px-2 py-0.5 ${
-              mode === m.k ? "bg-zinc-800 text-zinc-100" : "bg-zinc-950 text-zinc-500 hover:text-zinc-300"
+              mode === m.k
+                ? "bg-zinc-800 text-zinc-100"
+                : "bg-zinc-950 text-zinc-500 hover:text-zinc-300"
             }`}
           >
             {m.label}
@@ -329,9 +333,7 @@ function SectorPanel({ t }: { t: Telemetry }) {
               />
               <span className="w-8 text-zinc-500">S{idx}</span>
               <span
-                className={`ml-auto tabular-nums ${
-                  isBest ? "text-emerald-400" : "text-zinc-100"
-                }`}
+                className={`ml-auto tabular-nums ${isBest ? "text-emerald-400" : "text-zinc-100"}`}
               >
                 {time ?? "--.---"}
               </span>

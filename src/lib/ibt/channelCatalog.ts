@@ -24,11 +24,20 @@ export const CHANNEL_CATALOG: CatalogEntry[] = [
   { name: "Throttle", group: "Driver Inputs", desc: "Throttle pedal 0–1", essential: true },
   { name: "Brake", group: "Driver Inputs", desc: "Brake pedal 0–1", essential: true },
   { name: "Clutch", group: "Driver Inputs", desc: "Clutch pedal 0–1 (1 = engaged)" },
-  { name: "SteeringWheelAngle", group: "Driver Inputs", desc: "Steering angle, radians (+ left)", essential: true },
+  {
+    name: "SteeringWheelAngle",
+    group: "Driver Inputs",
+    desc: "Steering angle, radians (+ left)",
+    essential: true,
+  },
   { name: "SteeringWheelAngleMax", group: "Driver Inputs", desc: "Max steering lock (rad)" },
   { name: "SteeringWheelTorque", group: "Driver Inputs", desc: "Wheel torque feedback (Nm)" },
   { name: "SteeringWheelPctTorque", group: "Driver Inputs", desc: "Wheel torque % of max" },
-  { name: "SteeringWheelPctTorqueSign", group: "Driver Inputs", desc: "Signed torque % (sign = direction)" },
+  {
+    name: "SteeringWheelPctTorqueSign",
+    group: "Driver Inputs",
+    desc: "Signed torque % (sign = direction)",
+  },
   { name: "SteeringWheelPctIntensity", group: "Driver Inputs", desc: "FFB intensity %" },
   { name: "SteeringWheelPctSmoothing", group: "Driver Inputs", desc: "FFB smoothing %" },
   { name: "SteeringWheelPctDamper", group: "Driver Inputs", desc: "FFB damper %" },
@@ -244,7 +253,9 @@ export function catalogEntry(name: string): CatalogEntry | null {
 }
 
 /** Names of essential channels in catalog order. */
-export const ESSENTIAL_CHANNELS: string[] = CHANNEL_CATALOG.filter((c) => c.essential).map((c) => c.name);
+export const ESSENTIAL_CHANNELS: string[] = CHANNEL_CATALOG.filter((c) => c.essential).map(
+  (c) => c.name,
+);
 
 /**
  * Short human-friendly description of an ATLAS-style group, shown as a hint

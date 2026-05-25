@@ -22,7 +22,7 @@ export function MiniTrace({ values, color }: { values: number[]; color: string }
 
   // Build gradient fill path
   const firstX = "0";
-  const lastX = ((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1);
+  const lastX = (((values.length - 1) / (values.length - 1)) * (w - 1)).toFixed(1);
   const fillPoints = `0,${h} ${points} ${lastX},${h}`;
   const gradId = `mg_${color.replace(/[^a-z0-9]/gi, "")}`;
 
@@ -46,7 +46,7 @@ export function MiniTrace({ values, color }: { values: number[]; color: string }
       {/* Current value dot */}
       {values.length > 0 && (
         <circle
-          cx={((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1)}
+          cx={(((values.length - 1) / (values.length - 1)) * (w - 1)).toFixed(1)}
           cy={(h - 1 - ((values[values.length - 1] - min) / span) * (h - 2)).toFixed(1)}
           r="2"
           fill={color}

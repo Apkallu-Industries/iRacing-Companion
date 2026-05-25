@@ -58,10 +58,13 @@ export function SetupDiff({
   car?: string | null;
   sessionId: string;
 }) {
-  const [pb, setPb] = useState<
-    | { sessionId: string; name: string; recordedAt: string | null; bestLapS: number | null; setupYaml: string }
-    | null
-  >(null);
+  const [pb, setPb] = useState<{
+    sessionId: string;
+    name: string;
+    recordedAt: string | null;
+    bestLapS: number | null;
+    setupYaml: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -125,8 +128,7 @@ export function SetupDiff({
       return next;
     });
   const allCollapsed = grouped.length > 0 && grouped.every(([g]) => collapsed.has(g));
-  const toggleAll = () =>
-    setCollapsed(allCollapsed ? new Set() : new Set(grouped.map(([g]) => g)));
+  const toggleAll = () => setCollapsed(allCollapsed ? new Set() : new Set(grouped.map(([g]) => g)));
 
   if (!current) {
     return (
@@ -211,53 +213,49 @@ export function SetupDiff({
                     </button>
                   </td>
                 </tr>
-                {!collapsed.has(group) && rows.map((d) => {
-                  const delta = fmtDelta(d);
-                  const isTop = topPaths.has(d.path);
-                  // Strip group prefix for compact display.
-                  const shortPath = d.path.startsWith(group + ".")
-                    ? d.path.slice(group.length + 1)
-                    : d.path;
-                  return (
-                    <tr
-                      key={d.path}
-                      className={`hairline-b hover:bg-accent/40 ${
-                        isTop ? "bg-primary/5" : ""
-                      }`}
-                    >
-                      <td
-                        className="truncate px-3 py-0.5 text-muted-foreground"
-                        title={d.path}
+                {!collapsed.has(group) &&
+                  rows.map((d) => {
+                    const delta = fmtDelta(d);
+                    const isTop = topPaths.has(d.path);
+                    // Strip group prefix for compact display.
+                    const shortPath = d.path.startsWith(group + ".")
+                      ? d.path.slice(group.length + 1)
+                      : d.path;
+                    return (
+                      <tr
+                        key={d.path}
+                        className={`hairline-b hover:bg-accent/40 ${isTop ? "bg-primary/5" : ""}`}
                       >
-                        <span className="inline-flex items-center gap-1">
-                          {isTop && (
-                            <Flame className="h-3 w-3 text-primary" aria-label="Top delta" />
-                          )}
-                          <span className={isTop ? "text-foreground" : ""}>{shortPath}</span>
-                        </span>
-                      </td>
-                      <td className="px-2 py-0.5 text-right tabular-nums text-foreground/70">
-                        {d.a ?? "—"}
-                      </td>
-                      <td className="px-2 py-0.5 text-right tabular-nums text-foreground">
-                        {d.b ?? "—"}
-                      </td>
-                      <td
-                        className={`px-3 py-0.5 text-right tabular-nums ${
-                          isTop ? "font-semibold" : ""
-                        } ${
-                          delta
-                            ? delta.startsWith("+")
-                              ? "text-[var(--ch-throttle)]"
-                              : "text-[var(--ch-brake)]"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {delta ?? "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
+                        <td className="truncate px-3 py-0.5 text-muted-foreground" title={d.path}>
+                          <span className="inline-flex items-center gap-1">
+                            {isTop && (
+                              <Flame className="h-3 w-3 text-primary" aria-label="Top delta" />
+                            )}
+                            <span className={isTop ? "text-foreground" : ""}>{shortPath}</span>
+                          </span>
+                        </td>
+                        <td className="px-2 py-0.5 text-right tabular-nums text-foreground/70">
+                          {d.a ?? "—"}
+                        </td>
+                        <td className="px-2 py-0.5 text-right tabular-nums text-foreground">
+                          {d.b ?? "—"}
+                        </td>
+                        <td
+                          className={`px-3 py-0.5 text-right tabular-nums ${
+                            isTop ? "font-semibold" : ""
+                          } ${
+                            delta
+                              ? delta.startsWith("+")
+                                ? "text-[var(--ch-throttle)]"
+                                : "text-[var(--ch-brake)]"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {delta ?? "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             ))}
           </table>

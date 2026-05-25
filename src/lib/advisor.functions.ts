@@ -122,23 +122,34 @@ function localFallback(payload: AdvisorPayload): AdvisorResult {
     const sym = payload.symptoms ?? [];
     const oval = payload.trackType === "oval";
     const sec = (road: string, ovalSec: string) => (oval ? ovalSec : road);
-    if (sym.includes("understeer_entry") || sym.includes("understeer_apex") || sym.includes("understeer_exit")) {
+    if (
+      sym.includes("understeer_entry") ||
+      sym.includes("understeer_apex") ||
+      sym.includes("understeer_exit")
+    ) {
       tips.push({
         priority: "high",
         area: "Understeer — top-of-chart fix",
         tip: oval
           ? "Soften front ARB by 1 click (or stiffen rear ARB by 1)."
           : "Soften front ARB by 1 click (or stiffen rear ARB by 1).",
-        reason: "Driver reports understeer — start with the highest-impact lever from the flowchart.",
+        reason:
+          "Driver reports understeer — start with the highest-impact lever from the flowchart.",
         citation: sec("Road — General Understeer #1 (ARB)", "Oval — Push #1 (ARB)"),
       });
     }
-    if (sym.includes("oversteer_entry") || sym.includes("oversteer_apex") || sym.includes("oversteer_exit") || sym.includes("snap_oversteer")) {
+    if (
+      sym.includes("oversteer_entry") ||
+      sym.includes("oversteer_apex") ||
+      sym.includes("oversteer_exit") ||
+      sym.includes("snap_oversteer")
+    ) {
       tips.push({
         priority: "high",
         area: "Oversteer — top-of-chart fix",
         tip: "Stiffen front ARB by 1 click (or soften rear ARB by 1).",
-        reason: "Driver reports oversteer — apply the highest-impact lever from the flowchart first.",
+        reason:
+          "Driver reports oversteer — apply the highest-impact lever from the flowchart first.",
         citation: sec("Road — General Oversteer #1 (ARB)", "Oval — Loose #1 (ARB)"),
       });
     }
@@ -179,8 +190,15 @@ function localFallback(payload: AdvisorPayload): AdvisorResult {
       });
     }
 
-    const frontHot = sym.includes("tyres_overheating_front") || payload.tires.fl.tempC + payload.tires.fr.tempC > payload.tires.rl.tempC + payload.tires.rr.tempC + 10;
-    const rearHot = !frontHot && (sym.includes("tyres_overheating_rear") || payload.tires.rl.tempC + payload.tires.rr.tempC > payload.tires.fl.tempC + payload.tires.fr.tempC + 10);
+    const frontHot =
+      sym.includes("tyres_overheating_front") ||
+      payload.tires.fl.tempC + payload.tires.fr.tempC >
+        payload.tires.rl.tempC + payload.tires.rr.tempC + 10;
+    const rearHot =
+      !frontHot &&
+      (sym.includes("tyres_overheating_rear") ||
+        payload.tires.rl.tempC + payload.tires.rr.tempC >
+          payload.tires.fl.tempC + payload.tires.fr.tempC + 10);
     if (frontHot && !tips.some((x) => x.area === "Brake bias")) {
       tips.push({
         priority: "high",
@@ -199,7 +217,12 @@ function localFallback(payload: AdvisorPayload): AdvisorResult {
         citation: "eBook: Front-vs-Rear Temp Imbalance",
       });
     }
-    const avgPress = (payload.tires.fl.pressureBar + payload.tires.fr.pressureBar + payload.tires.rl.pressureBar + payload.tires.rr.pressureBar) / 4;
+    const avgPress =
+      (payload.tires.fl.pressureBar +
+        payload.tires.fr.pressureBar +
+        payload.tires.rl.pressureBar +
+        payload.tires.rr.pressureBar) /
+      4;
     if (avgPress > 1.95) {
       tips.push({
         priority: "medium",
@@ -230,7 +253,8 @@ function localFallback(payload: AdvisorPayload): AdvisorResult {
       priority: "low",
       area: "Diff mapping",
       tip: `Current diff map ${payload.setup.diffMap} — try ±1 click to bias rotation vs traction depending on driver complaint.`,
-      reason: "Small diff changes are the cheapest balance lever once tyres and bias are dialled in.",
+      reason:
+        "Small diff changes are the cheapest balance lever once tyres and bias are dialled in.",
       citation: "eBook: Diff Rules",
     });
   }
@@ -240,18 +264,20 @@ function localFallback(payload: AdvisorPayload): AdvisorResult {
     tips.push({
       priority: "low",
       area: payload.mode === "style" ? "Reference laps" : "Baseline check",
-      tip: payload.mode === "style"
-        ? "Bank 5 clean reference laps before changing anything else."
-        : "Reset to baseline setup, then change one parameter at a time.",
+      tip:
+        payload.mode === "style"
+          ? "Bank 5 clean reference laps before changing anything else."
+          : "Reset to baseline setup, then change one parameter at a time.",
       reason: "Insufficient signal yet — establish a stable baseline before iterating.",
     });
   }
 
   return {
     mode: payload.mode,
-    headline: payload.mode === "style"
-      ? "Driving-style read from your last laps"
-      : "Setup read from your last laps",
+    headline:
+      payload.mode === "style"
+        ? "Driving-style read from your last laps"
+        : "Setup read from your last laps",
     summary: `Based on ${laps.length} recent laps at ${payload.track} in ${payload.car}. Local analysis (AI unavailable).`,
     tips: tips.slice(0, 6),
   };
@@ -263,23 +289,41 @@ const AdvisorPayloadSchema = z.object({
   car: z.string().min(1).max(255),
   trackType: z.enum(["road", "oval"]),
   cornerBias: z.enum(["left", "right", "mixed"]),
-  symptoms: z.array(z.enum([
-    "understeer_entry", "understeer_apex", "understeer_exit",
-    "oversteer_entry", "oversteer_apex", "oversteer_exit",
-    "brake_lockup_front", "brake_lockup_rear", "poor_traction_exit",
-    "snap_oversteer", "tyres_overheating_front", "tyres_overheating_rear",
-    "bouncy_over_curbs",
-  ])).max(20).optional(),
-  laps: z.array(z.object({
-    lapTimeS: z.number(),
-    maxBrakePct: z.number(),
-    maxThrottlePct: z.number(),
-    peakLatG: z.number(),
-    peakLonG: z.number(),
-    tireAvgC: z.number(),
-    fuelUsedL: z.number(),
-    isValid: z.boolean(),
-  })).min(1).max(60),
+  symptoms: z
+    .array(
+      z.enum([
+        "understeer_entry",
+        "understeer_apex",
+        "understeer_exit",
+        "oversteer_entry",
+        "oversteer_apex",
+        "oversteer_exit",
+        "brake_lockup_front",
+        "brake_lockup_rear",
+        "poor_traction_exit",
+        "snap_oversteer",
+        "tyres_overheating_front",
+        "tyres_overheating_rear",
+        "bouncy_over_curbs",
+      ]),
+    )
+    .max(20)
+    .optional(),
+  laps: z
+    .array(
+      z.object({
+        lapTimeS: z.number(),
+        maxBrakePct: z.number(),
+        maxThrottlePct: z.number(),
+        peakLatG: z.number(),
+        peakLonG: z.number(),
+        tireAvgC: z.number(),
+        fuelUsedL: z.number(),
+        isValid: z.boolean(),
+      }),
+    )
+    .min(1)
+    .max(60),
   pbS: z.number().nullable(),
   conditions: z.object({ airTempC: z.number(), trackTempC: z.number() }),
   setup: z.object({ brakeBias: z.number(), diffMap: z.number() }),
@@ -294,46 +338,51 @@ const AdvisorPayloadSchema = z.object({
 export const advisorCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => AdvisorPayloadSchema.parse(data) as AdvisorPayload)
-  .handler(async ({ data }): Promise<{ result: AdvisorResult; fallback?: "no-key" | "local" } | { error: string }> => {
-    if (!data.laps || data.laps.length < 3) {
-      return { error: "Need at least 3 completed laps to give meaningful advice." };
-    }
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) {
-      return { result: localFallback(data), fallback: "no-key" };
-    }
-    const userMsg = buildAdvisorUserMessage(data);
-    try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          messages: [
-            { role: "system", content: getAdvisorSystemPrompt(data) },
-            { role: "user", content: userMsg },
-          ],
-          tools: [{ type: "function", function: ADVISOR_SCHEMA }],
-          tool_choice: { type: "function", function: { name: ADVISOR_SCHEMA.name } },
-        }),
-      });
-      if (resp.status === 429) return { error: "Rate limit hit — try again in a moment." };
-      if (resp.status === 402) return { error: "AI credits exhausted. Add credits in Settings → Workspace → Usage." };
-      if (!resp.ok) return { result: localFallback(data), fallback: "local" };
-      const json = await resp.json();
-      const args = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-      if (!args) return { result: localFallback(data), fallback: "local" };
+  .handler(
+    async ({
+      data,
+    }): Promise<{ result: AdvisorResult; fallback?: "no-key" | "local" } | { error: string }> => {
+      if (!data.laps || data.laps.length < 3) {
+        return { error: "Need at least 3 completed laps to give meaningful advice." };
+      }
+      const apiKey = process.env.LOVABLE_API_KEY;
+      if (!apiKey) {
+        return { result: localFallback(data), fallback: "no-key" };
+      }
+      const userMsg = buildAdvisorUserMessage(data);
       try {
-        const obj = JSON.parse(args);
-        if (!Array.isArray(obj?.tips) || obj.tips.length === 0) {
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-pro",
+            messages: [
+              { role: "system", content: getAdvisorSystemPrompt(data) },
+              { role: "user", content: userMsg },
+            ],
+            tools: [{ type: "function", function: ADVISOR_SCHEMA }],
+            tool_choice: { type: "function", function: { name: ADVISOR_SCHEMA.name } },
+          }),
+        });
+        if (resp.status === 429) return { error: "Rate limit hit — try again in a moment." };
+        if (resp.status === 402)
+          return { error: "AI credits exhausted. Add credits in Settings → Workspace → Usage." };
+        if (!resp.ok) return { result: localFallback(data), fallback: "local" };
+        const json = await resp.json();
+        const args = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        if (!args) return { result: localFallback(data), fallback: "local" };
+        try {
+          const obj = JSON.parse(args);
+          if (!Array.isArray(obj?.tips) || obj.tips.length === 0) {
+            return { result: localFallback(data), fallback: "local" };
+          }
+          return { result: { mode: data.mode, ...obj } as AdvisorResult };
+        } catch {
           return { result: localFallback(data), fallback: "local" };
         }
-        return { result: { mode: data.mode, ...obj } as AdvisorResult };
-      } catch {
+      } catch (e) {
+        console.error("[advisor] failed", e);
         return { result: localFallback(data), fallback: "local" };
       }
-    } catch (e) {
-      console.error("[advisor] failed", e);
-      return { result: localFallback(data), fallback: "local" };
-    }
-  });
+    },
+  );

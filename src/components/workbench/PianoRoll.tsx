@@ -88,7 +88,12 @@ export function PianoRoll({ parsed }: { parsed: IbtParsed }) {
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-2">
-        <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="block w-full" preserveAspectRatio="xMidYMin meet">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          className="block w-full"
+          preserveAspectRatio="xMidYMin meet"
+        >
           {/* sector dividers */}
           {[1 / 3, 2 / 3].map((p) => (
             <line
@@ -164,16 +169,40 @@ export function PianoRoll({ parsed }: { parsed: IbtParsed }) {
             );
           })}
           {/* axis labels */}
-          <text x={LABEL_W} y={H - 4} fontSize={9} fontFamily="monospace" fill="var(--muted-foreground)">
+          <text
+            x={LABEL_W}
+            y={H - 4}
+            fontSize={9}
+            fontFamily="monospace"
+            fill="var(--muted-foreground)"
+          >
             Start
           </text>
-          <text x={LABEL_W + PLOT_W / 3 - 8} y={H - 4} fontSize={9} fontFamily="monospace" fill="var(--muted-foreground)">
+          <text
+            x={LABEL_W + PLOT_W / 3 - 8}
+            y={H - 4}
+            fontSize={9}
+            fontFamily="monospace"
+            fill="var(--muted-foreground)"
+          >
             S2
           </text>
-          <text x={LABEL_W + (2 * PLOT_W) / 3 - 8} y={H - 4} fontSize={9} fontFamily="monospace" fill="var(--muted-foreground)">
+          <text
+            x={LABEL_W + (2 * PLOT_W) / 3 - 8}
+            y={H - 4}
+            fontSize={9}
+            fontFamily="monospace"
+            fill="var(--muted-foreground)"
+          >
             S3
           </text>
-          <text x={LABEL_W + PLOT_W - 24} y={H - 4} fontSize={9} fontFamily="monospace" fill="var(--muted-foreground)">
+          <text
+            x={LABEL_W + PLOT_W - 24}
+            y={H - 4}
+            fontSize={9}
+            fontFamily="monospace"
+            fill="var(--muted-foreground)"
+          >
             Finish
           </text>
         </svg>

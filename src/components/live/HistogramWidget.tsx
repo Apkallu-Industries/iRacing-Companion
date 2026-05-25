@@ -8,7 +8,10 @@ interface HistogramWidgetProps {
   selectedChannelKey?: string;
 }
 
-export function HistogramWidget({ samples, selectedChannelKey = "throttle" }: HistogramWidgetProps) {
+export function HistogramWidget({
+  samples,
+  selectedChannelKey = "throttle",
+}: HistogramWidgetProps) {
   const [binCount, setBinCount] = useState(15);
   const [hoveredBin, setHoveredBin] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -164,36 +167,12 @@ export function HistogramWidget({ samples, selectedChannelKey = "throttle" }: Hi
 
       {/* Stats Footer */}
       <div className="px-3 py-2 border-t border-zinc-800 bg-zinc-925 flex-shrink-0 grid grid-cols-3 gap-2 text-[10px]">
-        <StatRow
-          label="Mean"
-          value={histogram.stats.mean}
-          unit={unit}
-        />
-        <StatRow
-          label="Median"
-          value={histogram.stats.median}
-          unit={unit}
-        />
-        <StatRow
-          label="Std Dev"
-          value={histogram.stats.stdDev}
-          unit={unit}
-        />
-        <StatRow
-          label="Min"
-          value={histogram.stats.min}
-          unit={unit}
-        />
-        <StatRow
-          label="Max"
-          value={histogram.stats.max}
-          unit={unit}
-        />
-        <StatRow
-          label="Samples"
-          value={histogram.stats.count}
-          unit=""
-        />
+        <StatRow label="Mean" value={histogram.stats.mean} unit={unit} />
+        <StatRow label="Median" value={histogram.stats.median} unit={unit} />
+        <StatRow label="Std Dev" value={histogram.stats.stdDev} unit={unit} />
+        <StatRow label="Min" value={histogram.stats.min} unit={unit} />
+        <StatRow label="Max" value={histogram.stats.max} unit={unit} />
+        <StatRow label="Samples" value={histogram.stats.count} unit="" />
       </div>
     </div>
   );

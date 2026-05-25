@@ -1,7 +1,15 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
-import { Fingerprint, FolderUp, Trash2, Download, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  Fingerprint,
+  FolderUp,
+  Trash2,
+  Download,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   selectLapfiles,
@@ -18,7 +26,13 @@ import { useAuth } from "@/lib/auth";
 
 import { formatLapTime } from "@/lib/lapfile/parser";
 import { classifyCar, type CarClass } from "@/lib/fingerprint/carClass";
-import { loadTargets, saveTargets, pairKey, parseLapInput, type TargetMap } from "@/lib/fingerprint/targets";
+import {
+  loadTargets,
+  saveTargets,
+  pairKey,
+  parseLapInput,
+  type TargetMap,
+} from "@/lib/fingerprint/targets";
 
 export const Route = createFileRoute("/fingerprint")({
   head: () => ({
@@ -44,7 +58,9 @@ function trendIcon(t: TrackCarFingerprint["trend"]) {
 function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="hairline rounded-md bg-panel p-3">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 font-mono text-2xl tabular-nums">{value}</div>
       {sub && <div className="font-mono text-[10px] text-muted-foreground">{sub}</div>}
     </div>
@@ -79,8 +95,12 @@ function ClassScoreCard({
   return (
     <div className="hairline rounded-md bg-rail/30 p-3">
       <div className="flex items-baseline justify-between">
-        <div className="font-mono text-[12px] uppercase tracking-wider text-foreground">{c.cls}</div>
-        <div className={`font-mono text-2xl tabular-nums ${scoreColor(c.score)}`}>{c.score.toFixed(0)}</div>
+        <div className="font-mono text-[12px] uppercase tracking-wider text-foreground">
+          {c.cls}
+        </div>
+        <div className={`font-mono text-2xl tabular-nums ${scoreColor(c.score)}`}>
+          {c.score.toFixed(0)}
+        </div>
       </div>
       <div className="mt-1 h-1 w-full overflow-hidden rounded-sm bg-rail">
         <div
@@ -122,7 +142,17 @@ function ClassScoreCard({
         <span className="text-muted-foreground/70">vs Target</span>
         <span className="tabular-nums">
           {c.wrPct != null ? (
-            <span className={c.wrPct >= 99 ? "text-emerald-400" : c.wrPct >= 97 ? "text-lime-400" : c.wrPct >= 94 ? "text-amber-400" : "text-rose-400"}>
+            <span
+              className={
+                c.wrPct >= 99
+                  ? "text-emerald-400"
+                  : c.wrPct >= 97
+                    ? "text-lime-400"
+                    : c.wrPct >= 94
+                      ? "text-amber-400"
+                      : "text-rose-400"
+              }
+            >
               {c.wrPct.toFixed(1)}%
               <span className="ml-1 text-muted-foreground">({c.targetsSet} set)</span>
             </span>
@@ -142,7 +172,9 @@ function FingerprintPage() {
   const { user } = useAuth();
   const [fp, setFp] = useState<DriverFingerprint | null>(() => loadFingerprint());
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [targets, setTargets] = useState<TargetMap>(() => loadTargets());
 
@@ -164,7 +196,9 @@ function FingerprintPage() {
     try {
       const { selected, totalScanned } = selectLapfiles(files);
       if (selected.length === 0) {
-        toast.error(`Scanned ${totalScanned} files but found no .olap/.blap files. Did you pick your iRacing 'lapfiles' folder?`);
+        toast.error(
+          `Scanned ${totalScanned} files but found no .olap/.blap files. Did you pick your iRacing 'lapfiles' folder?`,
+        );
         return;
       }
       setProgress({ done: 0, total: selected.length, failed: 0 });
@@ -219,7 +253,11 @@ function FingerprintPage() {
             earliestBuildDate: p.earliestBuildDate,
             trend: p.trend,
           }));
-          const r = (await upsertFingerprint({ data: { pairs } })) as { ok: boolean; count?: number; error?: string };
+          const r = (await upsertFingerprint({ data: { pairs } })) as {
+            ok: boolean;
+            count?: number;
+            error?: string;
+          };
           if (r.ok) toast.success(`Synced ${r.count ?? pairs.length} pairs to your account.`);
           else toast.error(`Sync failed: ${r.error}`);
         } catch (e) {
@@ -254,9 +292,7 @@ function FingerprintPage() {
   const sortedPairs = useMemo(
     () =>
       fp
-        ? [...fp.pairs].sort(
-            (a, b) => a.track.localeCompare(b.track) || a.car.localeCompare(b.car),
-          )
+        ? [...fp.pairs].sort((a, b) => a.track.localeCompare(b.track) || a.car.localeCompare(b.car))
         : [],
     [fp],
   );
@@ -298,7 +334,9 @@ function FingerprintPage() {
         : null;
       const wrScore = wrPct != null ? wrPct : 50; // unknown → neutral
       // 40% WR-gap, 25% peak, 20% consistency, 15% variety
-      const score = +(0.4 * wrScore + 0.25 * impScore + 0.2 * conScore + 0.15 * varScore).toFixed(1);
+      const score = +(0.4 * wrScore + 0.25 * impScore + 0.2 * conScore + 0.15 * varScore).toFixed(
+        1,
+      );
       const bestPair = [...ps].sort((a, b) => a.bestEverS - b.bestEverS)[0];
       return {
         cls,
@@ -322,7 +360,9 @@ function FingerprintPage() {
       <AppHeader>
         <Fingerprint className="h-3.5 w-3.5" />
         <span className="font-mono uppercase tracking-wider">Driver Fingerprint</span>
-        <Link to="/sessions" className="ml-auto hover:text-foreground">← Sessions</Link>
+        <Link to="/sessions" className="ml-auto hover:text-foreground">
+          ← Sessions
+        </Link>
       </AppHeader>
 
       <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 p-4">
@@ -337,8 +377,8 @@ function FingerprintPage() {
                 </code>{" "}
                 folder. We recursively scan every track sub-folder, parse all{" "}
                 <code className="font-mono text-[11px]">.olap</code> /{" "}
-                <code className="font-mono text-[11px]">.blap</code> files in your browser, and build
-                a per-track baseline. Nothing is uploaded.
+                <code className="font-mono text-[11px]">.blap</code> files in your browser, and
+                build a per-track baseline. Nothing is uploaded.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -420,7 +460,11 @@ function FingerprintPage() {
               />
               <StatTile
                 label="Self-improvement"
-                value={fp.indices.selfImprovementIndex != null ? fp.indices.selfImprovementIndex.toFixed(4) : "—"}
+                value={
+                  fp.indices.selfImprovementIndex != null
+                    ? fp.indices.selfImprovementIndex.toFixed(4)
+                    : "—"
+                }
                 sub="best ÷ typical (1 = always at peak)"
               />
               <StatTile
@@ -471,8 +515,9 @@ function FingerprintPage() {
                   ))}
                 </div>
                 <div className="hairline-t px-3 py-2 font-mono text-[10px] text-muted-foreground">
-                  Score = 40 % WR-gap (target ÷ your best) · 25 % closeness-to-peak · 20 % consistency · 15 % variety.
-                  Set targets in the table below — paste from iRacing forums, friends' best laps, or league records.
+                  Score = 40 % WR-gap (target ÷ your best) · 25 % closeness-to-peak · 20 %
+                  consistency · 15 % variety. Set targets in the table below — paste from iRacing
+                  forums, friends' best laps, or league records.
                 </div>
               </div>
             )}
@@ -510,15 +555,25 @@ function FingerprintPage() {
                           <td className="px-2 py-1 text-right tabular-nums">{p.fileCount}</td>
                           <td className="px-2 py-1 text-right tabular-nums text-muted-foreground">
                             {p.trackLengthM > 0 ? (
-                              <span title={p.trackLengthKnown ? "Verified iRacing length" : "Approx — parsed from lapfile"}>
+                              <span
+                                title={
+                                  p.trackLengthKnown
+                                    ? "Verified iRacing length"
+                                    : "Approx — parsed from lapfile"
+                                }
+                              >
                                 {(p.trackLengthM / 1000).toFixed(2)} km
-                                {!p.trackLengthKnown && <span className="ml-0.5 text-amber-400">~</span>}
+                                {!p.trackLengthKnown && (
+                                  <span className="ml-0.5 text-amber-400">~</span>
+                                )}
                               </span>
                             ) : (
                               "—"
                             )}
                           </td>
-                          <td className="px-2 py-1 text-right tabular-nums">{formatLapTime(p.bestEverS)}</td>
+                          <td className="px-2 py-1 text-right tabular-nums">
+                            {formatLapTime(p.bestEverS)}
+                          </td>
                           <td className="px-2 py-1 text-right tabular-nums text-muted-foreground">
                             {formatLapTime(p.medianBestS)}
                           </td>
@@ -570,7 +625,8 @@ function FingerprintPage() {
             </div>
 
             <div className="text-[10px] text-muted-foreground">
-              Generated {new Date(fp.generatedAt).toLocaleString()} · stored locally in your browser.
+              Generated {new Date(fp.generatedAt).toLocaleString()} · stored locally in your
+              browser.
             </div>
           </>
         )}

@@ -80,7 +80,8 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
     if (now - lastSyncRef.current < 15_000) return;
     lastSyncRef.current = now;
     const ratios: Record<string, { ratio: number; samples: number }> = {};
-    for (const [g, v] of Object.entries(ratiosRef.current)) ratios[g] = { ratio: v.ratio, samples: v.samples };
+    for (const [g, v] of Object.entries(ratiosRef.current))
+      ratios[g] = { ratio: v.ratio, samples: v.samples };
     upsertCloud({ data: { car: carKey, ratios } }).catch(() => {});
   }, [carKey, upsertCloud, session]);
 
@@ -170,7 +171,8 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
     if (!carKey || carKey === "unknown") return;
     // Make sure cloud has the latest before flipping the flag.
     const ratios: Record<string, { ratio: number; samples: number }> = {};
-    for (const [g, v] of Object.entries(ratiosRef.current)) ratios[g] = { ratio: v.ratio, samples: v.samples };
+    for (const [g, v] of Object.entries(ratiosRef.current))
+      ratios[g] = { ratio: v.ratio, samples: v.samples };
     if (Object.keys(ratios).length === 0) {
       toast.error("No learned ratios to publish yet — drive a few laps first.");
       return;
@@ -184,7 +186,8 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
   const onImport = (row: CommunityRow) => {
     const incoming = row.payload as Record<string, { ratio: number; samples: number }>;
     const next: RatioCache = {};
-    for (const [g, v] of Object.entries(incoming)) next[Number(g)] = { ratio: v.ratio, samples: v.samples };
+    for (const [g, v] of Object.entries(incoming))
+      next[Number(g)] = { ratio: v.ratio, samples: v.samples };
     ratiosRef.current = next;
     cacheRef.current = { ...cacheRef.current, [carKey]: next };
     saveCache(cacheRef.current);
@@ -305,10 +308,7 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
             {advice.rpmAfterUp ? `${Math.round(advice.rpmAfterUp)} rpm` : "—"}
           </div>
           <div className="text-[9px] text-zinc-600">
-            drop{" "}
-            {advice.rpmAfterUp
-              ? `${Math.round(advice.rpm - advice.rpmAfterUp)}`
-              : "—"}
+            drop {advice.rpmAfterUp ? `${Math.round(advice.rpm - advice.rpmAfterUp)}` : "—"}
           </div>
         </div>
         <div className="bg-zinc-950 p-2">
@@ -317,34 +317,25 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
             {advice.rpmAfterDown ? `${Math.round(advice.rpmAfterDown)} rpm` : "—"}
           </div>
           <div className="text-[9px] text-zinc-600">
-            rise{" "}
-            {advice.rpmAfterDown
-              ? `+${Math.round(advice.rpmAfterDown - advice.rpm)}`
-              : "—"}
+            rise {advice.rpmAfterDown ? `+${Math.round(advice.rpmAfterDown - advice.rpm)}` : "—"}
           </div>
         </div>
       </div>
 
       {advice.gaps.length > 0 && (
         <div className="border-t border-zinc-900 px-2 py-1.5">
-          <div className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1">
-            Ratio Gaps
-          </div>
+          <div className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1">Ratio Gaps</div>
           <div className="grid grid-cols-1 gap-0.5 text-[10px] tabular-nums">
             {advice.gaps.map((g) => {
-              const tag =
-                g.pct < 12 ? "tight" : g.pct > 28 ? "wide" : "ok";
+              const tag = g.pct < 12 ? "tight" : g.pct > 28 ? "wide" : "ok";
               const tagColor =
                 tag === "tight"
                   ? "text-sky-400"
                   : tag === "wide"
-                  ? "text-rose-400"
-                  : "text-emerald-400";
+                    ? "text-rose-400"
+                    : "text-emerald-400";
               return (
-                <div
-                  key={`${g.from}-${g.to}`}
-                  className="flex items-baseline justify-between"
-                >
+                <div key={`${g.from}-${g.to}`} className="flex items-baseline justify-between">
                   <span className="text-zinc-500">
                     G{g.from}→G{g.to}
                   </span>

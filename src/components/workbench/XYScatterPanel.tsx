@@ -10,14 +10,14 @@ export function XYScatterPanel() {
 
   const availableChannels = useMemo(() => {
     if (!parsed) return [];
-    return [...parsed.channelNames, ...mathExpressions.map(e => e.name)].sort();
+    return [...parsed.channelNames, ...mathExpressions.map((e) => e.name)].sort();
   }, [parsed, mathExpressions]);
 
   const xData = useMemo(() => {
     if (!parsed) return null;
     let ch = parsed.channels[xChannel];
     if (ch) return ch.data;
-    const expr = mathExpressions.find(e => e.name === xChannel);
+    const expr = mathExpressions.find((e) => e.name === xChannel);
     if (expr && expr.compiled) return evaluateMathExpressionForIbt(expr.compiled, parsed);
     return null;
   }, [parsed, xChannel, mathExpressions]);
@@ -26,7 +26,7 @@ export function XYScatterPanel() {
     if (!parsed) return null;
     let ch = parsed.channels[yChannel];
     if (ch) return ch.data;
-    const expr = mathExpressions.find(e => e.name === yChannel);
+    const expr = mathExpressions.find((e) => e.name === yChannel);
     if (expr && expr.compiled) return evaluateMathExpressionForIbt(expr.compiled, parsed);
     return null;
   }, [parsed, yChannel, mathExpressions]);
@@ -34,7 +34,7 @@ export function XYScatterPanel() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !parsed || !xData || !yData) return;
-    
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -50,7 +50,7 @@ export function XYScatterPanel() {
     let from = 0;
     let to = xData.length - 1;
     if (refLap != null) {
-      const refLapObj = parsed.laps.find(l => l.lap === refLap);
+      const refLapObj = parsed.laps.find((l) => l.lap === refLap);
       if (refLapObj) {
         from = refLapObj.startTick;
         to = refLapObj.endTick;
@@ -58,8 +58,10 @@ export function XYScatterPanel() {
     }
 
     // Find bounds
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      maxX = -Infinity;
+    let minY = Infinity,
+      maxY = -Infinity;
     for (let i = from; i <= to; i++) {
       const x = xData[i];
       const y = yData[i];
@@ -76,8 +78,10 @@ export function XYScatterPanel() {
     // Add padding
     const padX = (maxX - minX) * 0.05 || 1;
     const padY = (maxY - minY) * 0.05 || 1;
-    minX -= padX; maxX += padX;
-    minY -= padY; maxY += padY;
+    minX -= padX;
+    maxX += padX;
+    minY -= padY;
+    maxY += padY;
 
     const rangeX = maxX - minX;
     const rangeY = maxY - minY;
@@ -86,22 +90,25 @@ export function XYScatterPanel() {
     ctx.strokeStyle = "rgba(120,130,140,0.2)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    
+
     // Y axis at X=0 if within range
     if (0 >= minX && 0 <= maxX) {
       const zx = ((0 - minX) / rangeX) * rect.width;
-      ctx.moveTo(zx, 0); ctx.lineTo(zx, rect.height);
+      ctx.moveTo(zx, 0);
+      ctx.lineTo(zx, rect.height);
     }
     // X axis at Y=0 if within range
     if (0 >= minY && 0 <= maxY) {
       const zy = rect.height - ((0 - minY) / rangeY) * rect.height;
-      ctx.moveTo(0, zy); ctx.lineTo(rect.width, zy);
+      ctx.moveTo(0, zy);
+      ctx.lineTo(rect.width, zy);
     }
     ctx.stroke();
 
     // Draw points
     ctx.fillStyle = "rgba(var(--primary-rgb), 0.3)"; // using theme primary with opacity
-    const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim() || "255, 60, 0";
+    const primaryColor =
+      getComputedStyle(document.body).getPropertyValue("--primary").trim() || "255, 60, 0";
     // We can just use a hardcoded fallback color
     ctx.fillStyle = "rgba(255, 100, 0, 0.2)";
 
@@ -121,7 +128,6 @@ export function XYScatterPanel() {
     ctx.fillText(`${minX.toFixed(1)}`, 2, rect.height - 2);
     ctx.fillText(`${maxX.toFixed(1)}`, rect.width - 30, rect.height - 2);
     ctx.fillText(`${maxY.toFixed(1)}`, 2, 10);
-
   }, [parsed, xData, yData, refLap]);
 
   if (!parsed) return null;
@@ -132,20 +138,28 @@ export function XYScatterPanel() {
         <h3 className="font-mono text-sm uppercase tracking-wider">XY Scatter</h3>
         <div className="flex gap-2 items-center">
           <label className="text-[10px] uppercase font-mono text-muted-foreground">X:</label>
-          <select 
-            value={xChannel} 
-            onChange={e => setXChannel(e.target.value)}
+          <select
+            value={xChannel}
+            onChange={(e) => setXChannel(e.target.value)}
             className="rounded-sm border border-border bg-rail p-1 text-xs outline-none max-w-[100px]"
           >
-            {availableChannels.map(c => <option key={`x-${c}`} value={c}>{c}</option>)}
+            {availableChannels.map((c) => (
+              <option key={`x-${c}`} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
           <label className="text-[10px] uppercase font-mono text-muted-foreground ml-2">Y:</label>
-          <select 
-            value={yChannel} 
-            onChange={e => setYChannel(e.target.value)}
+          <select
+            value={yChannel}
+            onChange={(e) => setYChannel(e.target.value)}
             className="rounded-sm border border-border bg-rail p-1 text-xs outline-none max-w-[100px]"
           >
-            {availableChannels.map(c => <option key={`y-${c}`} value={c}>{c}</option>)}
+            {availableChannels.map((c) => (
+              <option key={`y-${c}`} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
         </div>
       </div>

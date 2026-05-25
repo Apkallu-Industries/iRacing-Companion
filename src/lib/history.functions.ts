@@ -4,9 +4,7 @@ import { connectToLocalDb } from "@/lib/db.local";
 
 export const fetchTrackCarHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { track: string; car: string; excludeSessionId?: string }) => data,
-  )
+  .inputValidator((data: { track: string; car: string; excludeSessionId?: string }) => data)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
@@ -19,7 +17,8 @@ export const fetchTrackCarHistory = createServerFn({ method: "POST" })
     try {
       const db = await connectToLocalDb();
 
-      const sessDocs = await db.collection("telemetry_sessions")
+      const sessDocs = await db
+        .collection("telemetry_sessions")
         .find({ track: data.track, car: data.car, best_lap_s: { $ne: null } })
         .sort({ recorded_at: -1 })
         .limit(40)
@@ -29,7 +28,8 @@ export const fetchTrackCarHistory = createServerFn({ method: "POST" })
         .map((d: any) => ({ ...d, id: d._id.toString() }))
         .filter((r: any) => r.id !== data.excludeSessionId);
 
-      const pbDocs = await db.collection("live_lap_records")
+      const pbDocs = await db
+        .collection("live_lap_records")
         .find({ track: data.track, car: data.car, is_valid: true })
         .sort({ lap_time_s: 1 })
         .limit(1)
@@ -45,9 +45,7 @@ export const fetchTrackCarHistory = createServerFn({ method: "POST" })
     if (!usedLocal) {
       const q = supabase
         .from("telemetry_sessions")
-        .select(
-          "id,name,track,car,recorded_at,best_lap_s,lap_count,duration_s,created_at",
-        )
+        .select("id,name,track,car,recorded_at,best_lap_s,lap_count,duration_s,created_at")
         .eq("track", data.track)
         .eq("car", data.car)
         .not("best_lap_s", "is", null)
@@ -105,10 +103,16 @@ export const fetchTrackCarHistory = createServerFn({ method: "POST" })
     if (sortedAsc.length >= 4) {
       const half = Math.floor(sortedAsc.length / 2);
       const earlyBest = Math.min(
-        ...sortedAsc.slice(0, half).map((s) => Number(s.best_lap_s)).filter(Number.isFinite),
+        ...sortedAsc
+          .slice(0, half)
+          .map((s) => Number(s.best_lap_s))
+          .filter(Number.isFinite),
       );
       const lateBest = Math.min(
-        ...sortedAsc.slice(half).map((s) => Number(s.best_lap_s)).filter(Number.isFinite),
+        ...sortedAsc
+          .slice(half)
+          .map((s) => Number(s.best_lap_s))
+          .filter(Number.isFinite),
       );
       const delta = earlyBest - lateBest;
       if (Math.abs(delta) < 0.05) trend = "flat";
@@ -155,39 +159,40 @@ export const fetchTrackCarHistory = createServerFn({ method: "POST" })
         livePbS: livePbS != null ? +livePbS.toFixed(3) : null,
       },
     } as const;
-  }); export const recordTelemetrySessionMeta = createServerFn({ method: "POST" })
-    .middleware([requireSupabaseAuth])
-    .inputValidator((data: any) => data)
-    .handler(async ({ data, context }) => {
-      let localId = null;
+  });
+export const recordTelemetrySessionMeta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: any) => data)
+  .handler(async ({ data, context }) => {
+    let localId = null;
 
-      // 1. Write to Local DB first
-      try {
-        const db = await connectToLocalDb();
-        const res = await db.collection("telemetry_sessions").insertOne({
-          ...data,
+    // 1. Write to Local DB first
+    try {
+      const db = await connectToLocalDb();
+      const res = await db.collection("telemetry_sessions").insertOne({
+        ...data,
+        user_id: context.userId,
+      });
+      localId = res.insertedId.toString();
+    } catch (e) {
+      console.warn("[LocalDB] Session meta record failed:", e);
+    }
+
+    // 2. Sync to Cloud Supabase
+    try {
+      const { data: row, error } = await context.supabase
+        .from("telemetry_sessions")
+        .insert({
           user_id: context.userId,
-        });
-        localId = res.insertedId.toString();
-      } catch (e) {
-        console.warn("[LocalDB] Session meta record failed:", e);
-      }
+          ...data,
+        })
+        .select("id")
+        .single();
 
-      // 2. Sync to Cloud Supabase
-      try {
-        const { data: row, error } = await context.supabase
-          .from("telemetry_sessions")
-          .insert({
-            user_id: context.userId,
-            ...data
-          })
-          .select("id")
-          .single();
-
-        if (error && !localId) throw error;
-        return { ok: true, id: row?.id ?? localId };
-      } catch (e) {
-        if (localId) return { ok: true, id: localId };
-        return { ok: false, error: String((e as Error).message || e) };
-      }
-    });
+      if (error && !localId) throw error;
+      return { ok: true, id: row?.id ?? localId };
+    } catch (e) {
+      if (localId) return { ok: true, id: localId };
+      return { ok: false, error: String((e as Error).message || e) };
+    }
+  });

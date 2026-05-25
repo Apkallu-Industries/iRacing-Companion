@@ -45,7 +45,9 @@ function SessionsPage() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>(null);
+  const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>(
+    null,
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
   const [fpCount, setFpCount] = useState<number | null>(null);
@@ -97,8 +99,9 @@ function SessionsPage() {
     if (redirected.current) return;
     if (!user || !sessionsLoaded || busy) return;
     if (sessions.length > 0) return;
-    const stay = typeof window !== "undefined"
-      && new URLSearchParams(window.location.search).get("stay") === "1";
+    const stay =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("stay") === "1";
     if (stay) return;
     redirected.current = true;
     navigate({ to: "/live" });
@@ -115,14 +118,18 @@ function SessionsPage() {
       return;
     }
     if (!user) {
-      toast.message("Open the Lab to analyze this file as a guest, or sign in to save it to your library.");
+      toast.message(
+        "Open the Lab to analyze this file as a guest, or sign in to save it to your library.",
+      );
       navigate({ to: "/lab/lapfile" });
       return;
     }
     setBusy(true);
     setProgress({ phase: "read", pct: 0 });
     try {
-      const res = await uploadAndIndexIbt(file, user.id, (phase, pct, msg) => setProgress({ phase, pct, msg }));
+      const res = await uploadAndIndexIbt(file, user.id, (phase, pct, msg) =>
+        setProgress({ phase, pct, msg }),
+      );
       toast.success("Telemetry indexed");
       navigate({ to: "/sessions/$id", params: { id: res.sessionId } });
     } catch (e) {
@@ -171,9 +178,9 @@ function SessionsPage() {
             <div>
               <div className="font-mono text-sm">You're browsing as a guest</div>
               <p className="mt-1 text-[12px] text-muted-foreground">
-                Drop an <code className="font-mono text-[11px]">.ibt</code> file to analyze it locally in the Lab,
-                or open the live dashboard — nothing is saved.
-                Sign in to keep your sessions, fingerprint and personal bests across devices.
+                Drop an <code className="font-mono text-[11px]">.ibt</code> file to analyze it
+                locally in the Lab, or open the live dashboard — nothing is saved. Sign in to keep
+                your sessions, fingerprint and personal bests across devices.
               </p>
             </div>
             <div className="flex gap-2">
@@ -202,9 +209,14 @@ function SessionsPage() {
               <div>
                 <div className="font-mono text-sm">Build your driver fingerprint</div>
                 <p className="mt-1 text-[12px] text-muted-foreground">
-                  Point us at your <code className="rounded-sm bg-rail px-1 font-mono text-[11px]">Documents/iRacing/lapfiles</code> folder.
-                  We'll parse every <code className="font-mono text-[11px]">.olap</code> / <code className="font-mono text-[11px]">.plap</code> in your browser,
-                  store your PB per track + car, and use it to coach you live + compare every .ibt you upload from then on.
+                  Point us at your{" "}
+                  <code className="rounded-sm bg-rail px-1 font-mono text-[11px]">
+                    Documents/iRacing/lapfiles
+                  </code>{" "}
+                  folder. We'll parse every <code className="font-mono text-[11px]">.olap</code> /{" "}
+                  <code className="font-mono text-[11px]">.plap</code> in your browser, store your
+                  PB per track + car, and use it to coach you live + compare every .ibt you upload
+                  from then on.
                 </p>
               </div>
             </div>
@@ -219,7 +231,10 @@ function SessionsPage() {
 
         {/* Upload zone */}
         <div
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => {
             e.preventDefault();
@@ -237,18 +252,24 @@ function SessionsPage() {
                 {progress?.phase} · {progress?.pct}% {progress?.msg ? `· ${progress.msg}` : ""}
               </span>
             ) : (
-              <>Drop an <span className="font-mono text-primary">.ibt</span> or <span className="font-mono text-primary">.pwlap</span> file or click to browse</>
+              <>
+                Drop an <span className="font-mono text-primary">.ibt</span> or{" "}
+                <span className="font-mono text-primary">.pwlap</span> file or click to browse
+              </>
             )}
           </p>
           {busy && progress && (
             <div className="mt-3 h-1 w-72 overflow-hidden rounded-full bg-rail">
-              <div className="h-full bg-primary transition-all" style={{ width: `${progress.pct}%` }} />
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progress.pct}%` }}
+              />
             </div>
           )}
           {busy && progress && progress.pct >= 90 && (
             <p className="mt-2 max-w-sm text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
-              Large .ibt files can sit at ~95% for a while while uploading and
-              indexing. This is normal — don't close this tab.
+              Large .ibt files can sit at ~95% for a while while uploading and indexing. This is
+              normal — don't close this tab.
             </p>
           )}
           <input
@@ -269,12 +290,16 @@ function SessionsPage() {
           user ? (
             <div className="hairline rounded-sm bg-panel p-8">
               <div className="text-center">
-                <h2 className="font-mono text-sm uppercase tracking-wider">No .ibt yet — that's fine</h2>
+                <h2 className="font-mono text-sm uppercase tracking-wider">
+                  No .ibt yet — that's fine
+                </h2>
                 <p className="mx-auto mt-2 max-w-xl text-[12px] text-muted-foreground">
-                  You don't need an <code className="font-mono text-[11px]">.ibt</code> file to use Pit Wall.
-                  Jump on the live dashboard while you drive, try the Lab with a sample lap,
-                  or seed your driver fingerprint from your iRacing <code className="font-mono text-[11px]">lapfiles</code> folder.
-                  Saved sessions will appear here once you upload an <code className="font-mono text-[11px]">.ibt</code>.
+                  You don't need an <code className="font-mono text-[11px]">.ibt</code> file to use
+                  Pit Wall. Jump on the live dashboard while you drive, try the Lab with a sample
+                  lap, or seed your driver fingerprint from your iRacing{" "}
+                  <code className="font-mono text-[11px]">lapfiles</code> folder. Saved sessions
+                  will appear here once you upload an{" "}
+                  <code className="font-mono text-[11px]">.ibt</code>.
                 </p>
               </div>
               <div className="mx-auto mt-6 grid max-w-3xl gap-3 sm:grid-cols-3">
@@ -293,7 +318,8 @@ function SessionsPage() {
                 >
                   <div className="font-mono text-sm">Lapfile Lab →</div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Drop a <code className="font-mono text-[10px]">.olap</code> / <code className="font-mono text-[10px]">.plap</code> to inspect.
+                    Drop a <code className="font-mono text-[10px]">.olap</code> /{" "}
+                    <code className="font-mono text-[10px]">.plap</code> to inspect.
                   </p>
                 </Link>
                 <Link
@@ -309,18 +335,24 @@ function SessionsPage() {
             </div>
           ) : (
             <div className="hairline rounded-sm bg-panel p-12 text-center text-sm text-muted-foreground">
-              Saved sessions appear here once you sign in. Guests can still analyze files in the Lab.
+              Saved sessions appear here once you sign in. Guests can still analyze files in the
+              Lab.
             </div>
           )
         ) : (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {sessions.map((s) => (
-              <div key={s.id} className="hairline group relative rounded-sm bg-panel p-4 hover:border-primary">
+              <div
+                key={s.id}
+                className="hairline group relative rounded-sm bg-panel p-4 hover:border-primary"
+              >
                 <Link to="/sessions/$id" params={{ id: s.id }} className="block">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="truncate text-sm font-medium">{s.track ?? "Unknown track"}</h3>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">{s.car ?? "—"}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {s.car ?? "—"}
+                      </p>
                     </div>
                     {s.name?.toLowerCase().endsWith(".pwlap") ? (
                       <div className="rounded-sm bg-racing-red/20 px-2 py-0.5 font-mono text-[10px] uppercase text-racing-red">
@@ -346,7 +378,9 @@ function SessionsPage() {
                       <MapPin className="h-3 w-3" /> {fmtLap(s.best_lap_s)}
                     </div>
                   </div>
-                  <div className="mt-3 truncate text-[11px] text-muted-foreground">{s.name} · {fmtSize(s.file_size)}</div>
+                  <div className="mt-3 truncate text-[11px] text-muted-foreground">
+                    {s.name} · {fmtSize(s.file_size)}
+                  </div>
                 </Link>
                 <button
                   onClick={() => handleDelete(s)}

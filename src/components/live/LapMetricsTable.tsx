@@ -127,9 +127,7 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
     <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded overflow-hidden">
       {/* Header */}
       <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-925 flex-shrink-0">
-        <div className="text-[11px] uppercase tracking-wider text-zinc-400 mb-2">
-          Lap Metrics
-        </div>
+        <div className="text-[11px] uppercase tracking-wider text-zinc-400 mb-2">Lap Metrics</div>
         <div className="flex gap-2 text-[10px]">
           <label className="text-zinc-500">Status:</label>
           <select
@@ -149,14 +147,54 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
         <table className="w-full text-[10px] border-collapse">
           <thead className="sticky top-0 bg-zinc-925 border-b border-zinc-800">
             <tr>
-              <HeaderCell label="Lap" onSort={() => handleSort("lapNumber")} active={sortBy === "lapNumber"} order={sortOrder} />
-              <HeaderCell label="Time" onSort={() => handleSort("lapTime")} active={sortBy === "lapTime"} order={sortOrder} />
-              <HeaderCell label="S1" onSort={() => handleSort("sector1")} active={sortBy === "sector1"} order={sortOrder} />
-              <HeaderCell label="S2" onSort={() => handleSort("sector2")} active={sortBy === "sector2"} order={sortOrder} />
-              <HeaderCell label="S3" onSort={() => handleSort("sector3")} active={sortBy === "sector3"} order={sortOrder} />
-              <HeaderCell label="Avg Spd" onSort={() => handleSort("avgSpeed")} active={sortBy === "avgSpeed"} order={sortOrder} />
-              <HeaderCell label="Max G Lat" onSort={() => handleSort("maxGLat")} active={sortBy === "maxGLat"} order={sortOrder} />
-              <HeaderCell label="Max G Lon" onSort={() => handleSort("maxGLon")} active={sortBy === "maxGLon"} order={sortOrder} />
+              <HeaderCell
+                label="Lap"
+                onSort={() => handleSort("lapNumber")}
+                active={sortBy === "lapNumber"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="Time"
+                onSort={() => handleSort("lapTime")}
+                active={sortBy === "lapTime"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="S1"
+                onSort={() => handleSort("sector1")}
+                active={sortBy === "sector1"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="S2"
+                onSort={() => handleSort("sector2")}
+                active={sortBy === "sector2"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="S3"
+                onSort={() => handleSort("sector3")}
+                active={sortBy === "sector3"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="Avg Spd"
+                onSort={() => handleSort("avgSpeed")}
+                active={sortBy === "avgSpeed"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="Max G Lat"
+                onSort={() => handleSort("maxGLat")}
+                active={sortBy === "maxGLat"}
+                order={sortOrder}
+              />
+              <HeaderCell
+                label="Max G Lon"
+                onSort={() => handleSort("maxGLon")}
+                active={sortBy === "maxGLon"}
+                order={sortOrder}
+              />
             </tr>
           </thead>
           <tbody>
@@ -178,9 +216,7 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="p-4 text-center text-zinc-500 text-[10px]">
-            No laps yet
-          </div>
+          <div className="p-4 text-center text-zinc-500 text-[10px]">No laps yet</div>
         )}
       </div>
     </div>

@@ -43,7 +43,10 @@ export function ThemeCard({
       >
         <div className="mb-1.5 text-[11px] font-medium truncate">{card.name}</div>
         {card.description && (
-          <div className="mb-2 text-[10px] opacity-70 line-clamp-2" style={{ color: get("muted-foreground") }}>
+          <div
+            className="mb-2 text-[10px] opacity-70 line-clamp-2"
+            style={{ color: get("muted-foreground") }}
+          >
             {card.description}
           </div>
         )}

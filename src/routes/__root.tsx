@@ -111,16 +111,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Pit Wall — Live iRacing Telemetry & Lap Analysis" },
       {
         property: "og:description",
-        content:
-          "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing.",
+        content: "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Pit Wall — Live iRacing Telemetry & Lap Analysis" },
       {
         name: "twitter:description",
-        content:
-          "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing.",
+        content: "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing.",
       },
       { name: "theme-color", content: "#1a1d21" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
@@ -164,7 +162,9 @@ function RootComponent() {
   const t = useTelemetry();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
       router.invalidate();
       queryClient.invalidateQueries();
     });

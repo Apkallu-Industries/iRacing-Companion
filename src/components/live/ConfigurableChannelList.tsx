@@ -36,14 +36,63 @@ const MATH_PRESETS: Array<{
   precision?: number;
   color?: string;
 }> = [
-    { name: "Brake-Throttle Overlap", key: "brake_throttle_overlap", expression: "min(brake,throttle)*100", unit: "%", precision: 1, color: "#f97316" },
-    { name: "Steering Smoothness", key: "steering_smoothness", expression: "abs(steeringDeg)/max(speedKph,1)", unit: "deg/kmh", precision: 3, color: "#22d3ee" },
-    { name: "Tyre Temp Spread Front", key: "tyre_temp_spread_front", expression: "abs(tires.fl.tempC-tires.fr.tempC)", unit: "C", precision: 1, color: "#fb923c" },
-    { name: "Tyre Temp Spread Rear", key: "tyre_temp_spread_rear", expression: "abs(tires.rl.tempC-tires.rr.tempC)", unit: "C", precision: 1, color: "#f59e0b" },
-    { name: "Tyre Press Spread Front", key: "tyre_press_spread_front", expression: "abs(tires.fl.pressureBar-tires.fr.pressureBar)", unit: "bar", precision: 3, color: "#a78bfa" },
-    { name: "Tyre Press Spread Rear", key: "tyre_press_spread_rear", expression: "abs(tires.rl.pressureBar-tires.rr.pressureBar)", unit: "bar", precision: 3, color: "#8b5cf6" },
-    { name: "Fuel Burn Proxy", key: "fuel_burn_proxy", expression: "max(0,100-lapsEstimated)", unit: "", precision: 2, color: "#34d399" },
-  ];
+  {
+    name: "Brake-Throttle Overlap",
+    key: "brake_throttle_overlap",
+    expression: "min(brake,throttle)*100",
+    unit: "%",
+    precision: 1,
+    color: "#f97316",
+  },
+  {
+    name: "Steering Smoothness",
+    key: "steering_smoothness",
+    expression: "abs(steeringDeg)/max(speedKph,1)",
+    unit: "deg/kmh",
+    precision: 3,
+    color: "#22d3ee",
+  },
+  {
+    name: "Tyre Temp Spread Front",
+    key: "tyre_temp_spread_front",
+    expression: "abs(tires.fl.tempC-tires.fr.tempC)",
+    unit: "C",
+    precision: 1,
+    color: "#fb923c",
+  },
+  {
+    name: "Tyre Temp Spread Rear",
+    key: "tyre_temp_spread_rear",
+    expression: "abs(tires.rl.tempC-tires.rr.tempC)",
+    unit: "C",
+    precision: 1,
+    color: "#f59e0b",
+  },
+  {
+    name: "Tyre Press Spread Front",
+    key: "tyre_press_spread_front",
+    expression: "abs(tires.fl.pressureBar-tires.fr.pressureBar)",
+    unit: "bar",
+    precision: 3,
+    color: "#a78bfa",
+  },
+  {
+    name: "Tyre Press Spread Rear",
+    key: "tyre_press_spread_rear",
+    expression: "abs(tires.rl.pressureBar-tires.rr.pressureBar)",
+    unit: "bar",
+    precision: 3,
+    color: "#8b5cf6",
+  },
+  {
+    name: "Fuel Burn Proxy",
+    key: "fuel_burn_proxy",
+    expression: "max(0,100-lapsEstimated)",
+    unit: "",
+    precision: 2,
+    color: "#34d399",
+  },
+];
 
 /**
  * MoTeC-style configurable Channel List.
@@ -101,13 +150,17 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
               text: m.speechAlertText,
               apiKey: elevenLabsApiKey,
               voiceId: elevenLabsVoiceId,
-            }
-          }).then((resp) => {
-            if (resp && resp.audioBase64) {
-              const audio = new Audio(`data:${resp.mime ?? "audio/mpeg"};base64,${resp.audioBase64}`);
-              audio.play().catch(() => {});
-            }
-          }).catch(() => {});
+            },
+          })
+            .then((resp) => {
+              if (resp && resp.audioBase64) {
+                const audio = new Audio(
+                  `data:${resp.mime ?? "audio/mpeg"};base64,${resp.audioBase64}`,
+                );
+                audio.play().catch(() => {});
+              }
+            })
+            .catch(() => {});
         }
       }
     }
@@ -168,7 +221,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     const prefs = loadChannelPrefs();
     setVisibleKeys(prefs.visible);
     setModeByKey(prefs.modeByKey ?? {});
-    setMathExpressions((prefs.mathExpressions ?? []).filter((m) => MathExpressionSchema.safeParse(m).success));
+    setMathExpressions(
+      (prefs.mathExpressions ?? []).filter((m) => MathExpressionSchema.safeParse(m).success),
+    );
     setHydrated(true);
   }, []);
 
@@ -180,7 +235,7 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     const id = setTimeout(() => {
       upsertCloud({
         data: { name: "default", layout: { visible: visibleKeys, modeByKey, mathExpressions } },
-      }).catch(() => { });
+      }).catch(() => {});
     }, 1500);
     return () => clearTimeout(id);
   }, [visibleKeys, modeByKey, mathExpressions, hydrated, upsertCloud, session]);
@@ -214,7 +269,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
     if (!Array.isArray(layout?.visible)) return;
     setVisibleKeys(layout.visible);
     setModeByKey(layout.modeByKey ?? {});
-    setMathExpressions((layout.mathExpressions ?? []).filter((m) => MathExpressionSchema.safeParse(m).success));
+    setMathExpressions(
+      (layout.mathExpressions ?? []).filter((m) => MathExpressionSchema.safeParse(m).success),
+    );
     setBrowseOpen(false);
     toast.success(`Imported layout with ${layout.visible.length} channels.`);
   };
@@ -276,17 +333,22 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
             onClick={publish}
             disabled={!session || publishing}
             className="rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-emerald-300 hover:bg-emerald-500/30"
-            title={session ? "Publish your channel layout to the community" : "Sign in to publish workspace"}
+            title={
+              session
+                ? "Publish your channel layout to the community"
+                : "Sign in to publish workspace"
+            }
           >
             {publishing ? "publishing..." : "publish workspace"}
           </button>
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className={`rounded-sm px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${editing
+            className={`rounded-sm px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
+              editing
                 ? "bg-amber-500/20 text-amber-300"
                 : "bg-zinc-900 text-zinc-400 hover:text-zinc-200"
-              }`}
+            }`}
           >
             {editing ? "Done" : "Edit"}
           </button>
@@ -308,18 +370,25 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
                   className="size-1.5 rounded-full ring-1 ring-transparent group-hover:ring-current transition-all"
                   style={{ background: c.color, color: c.color }}
                 />
-                <span className="w-24 truncate text-zinc-500 group-hover:text-zinc-400 transition-colors" title={c.key}>
+                <span
+                  className="w-24 truncate text-zinc-500 group-hover:text-zinc-400 transition-colors"
+                  title={c.key}
+                >
                   {c.label}
                 </span>
                 {isTrace ? (
                   <span className="ml-auto flex items-center gap-1.5">
                     <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
-                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">trc</span>
+                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                      trc
+                    </span>
                   </span>
                 ) : (
                   <span className="ml-auto flex items-center gap-1.5">
                     <span className="truncate tabular-nums text-zinc-100">{c.read(t)}</span>
-                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">raw</span>
+                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                      raw
+                    </span>
                   </span>
                 )}
                 <span className="w-8 text-right text-[9px] text-zinc-600">{c.unit}</span>
@@ -399,7 +468,10 @@ function EditPanel({
   };
   const addExpression = () => {
     const now = new Date().toISOString();
-    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`;
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}`;
     onSetMathExpressions([
       ...mathExpressions,
       {
@@ -424,34 +496,32 @@ function EditPanel({
   const addPresets = () => {
     const now = new Date().toISOString();
     const existing = new Set(mathExpressions.map((m) => m.key));
-    const additions = MATH_PRESETS
-      .filter((p) => !existing.has(p.key))
-      .map((p) => ({
-        id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${p.key}`,
-        name: p.name,
-        key: p.key,
-        expression: p.expression,
-        unit: p.unit ?? "",
-        precision: p.precision ?? 2,
-        color: p.color ?? "#22d3ee",
-        enabled: true,
-        scope: "both" as const,
-        speechAlertEnabled: false,
-        speechAlertThreshold: 0.5,
-        speechAlertText: "",
-        speechAlertDebounceS: 15,
-        created_at: now,
-        updated_at: now,
-      }));
+    const additions = MATH_PRESETS.filter((p) => !existing.has(p.key)).map((p) => ({
+      id:
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${p.key}`,
+      name: p.name,
+      key: p.key,
+      expression: p.expression,
+      unit: p.unit ?? "",
+      precision: p.precision ?? 2,
+      color: p.color ?? "#22d3ee",
+      enabled: true,
+      scope: "both" as const,
+      speechAlertEnabled: false,
+      speechAlertThreshold: 0.5,
+      speechAlertText: "",
+      speechAlertDebounceS: 15,
+      created_at: now,
+      updated_at: now,
+    }));
     if (additions.length === 0) {
       toast.message("Math presets already installed.");
       return;
     }
     onSetMathExpressions([...mathExpressions, ...additions]);
-    onChange([
-      ...visibleKeys,
-      ...additions.map((m) => `math.${m.key}`),
-    ]);
+    onChange([...visibleKeys, ...additions.map((m) => `math.${m.key}`)]);
     toast.success(`Added ${additions.length} math presets.`);
   };
   const updateExpression = (id: string, patch: Partial<MathExpression>) => {
@@ -464,7 +534,9 @@ function EditPanel({
     const target = mathExpressions.find((m) => m.id === id);
     onSetMathExpressions(mathExpressions.filter((m) => m.id !== id));
     if (!target) return;
-    onChange(visibleKeys.filter((k) => k !== `math.${target.key}` && !k.startsWith(`math.${target.key}_`)));
+    onChange(
+      visibleKeys.filter((k) => k !== `math.${target.key}` && !k.startsWith(`math.${target.key}_`)),
+    );
   };
 
   return (
@@ -535,7 +607,10 @@ function EditPanel({
             <ul className="divide-y divide-zinc-900">
               {inactive.map((c) => (
                 <li key={c.key} className="flex items-center gap-2 px-2 py-1 text-[11px]">
-                  <span className="size-1.5 rounded-full opacity-60" style={{ background: c.color }} />
+                  <span
+                    className="size-1.5 rounded-full opacity-60"
+                    style={{ background: c.color }}
+                  />
                   <span className="truncate text-zinc-400" title={c.key}>
                     {c.label}
                   </span>
@@ -608,41 +683,63 @@ function EditPanel({
                   <input
                     type="checkbox"
                     checked={m.speechAlertEnabled ?? false}
-                    onChange={(e) => updateExpression(m.id, { speechAlertEnabled: e.target.checked })}
+                    onChange={(e) =>
+                      updateExpression(m.id, { speechAlertEnabled: e.target.checked })
+                    }
                     className="accent-cyan-500 h-3.5 w-3.5"
                   />
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400">Vocal Alert Enable</span>
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400">
+                    Vocal Alert Enable
+                  </span>
                 </label>
                 {(m.speechAlertEnabled ?? false) && (
                   <div className="grid grid-cols-2 gap-1 bg-zinc-900/20 p-1.5 rounded-sm border border-zinc-900/50">
                     <div className="col-span-2 space-y-1">
-                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">Alert Speech Text</span>
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">
+                        Alert Speech Text
+                      </span>
                       <input
                         value={m.speechAlertText ?? ""}
-                        onChange={(e) => updateExpression(m.id, { speechAlertText: e.target.value })}
+                        onChange={(e) =>
+                          updateExpression(m.id, { speechAlertText: e.target.value })
+                        }
                         className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
                         placeholder="e.g. Stop overlapping brake and throttle!"
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">Trigger Threshold</span>
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">
+                        Trigger Threshold
+                      </span>
                       <input
                         type="number"
                         step="any"
                         value={m.speechAlertThreshold ?? ""}
-                        onChange={(e) => updateExpression(m.id, { speechAlertThreshold: e.target.value === "" ? undefined : parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          updateExpression(m.id, {
+                            speechAlertThreshold:
+                              e.target.value === "" ? undefined : parseFloat(e.target.value),
+                          })
+                        }
                         className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
                         placeholder="e.g. 1.2"
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">Cooldown (sec)</span>
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">
+                        Cooldown (sec)
+                      </span>
                       <input
                         type="number"
                         min="1"
                         max="3600"
                         value={m.speechAlertDebounceS ?? ""}
-                        onChange={(e) => updateExpression(m.id, { speechAlertDebounceS: e.target.value === "" ? undefined : parseInt(e.target.value, 10) })}
+                        onChange={(e) =>
+                          updateExpression(m.id, {
+                            speechAlertDebounceS:
+                              e.target.value === "" ? undefined : parseInt(e.target.value, 10),
+                          })
+                        }
                         className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
                         placeholder="e.g. 15"
                       />
@@ -651,7 +748,9 @@ function EditPanel({
                 )}
               </div>
               <div className="mt-1 text-[9px] text-zinc-500">
-                {valid ? "Valid expression." : (syntax.error ?? (!compiled.ok ? compiled.error : "Invalid expression."))}
+                {valid
+                  ? "Valid expression."
+                  : (syntax.error ?? (!compiled.ok ? compiled.error : "Invalid expression."))}
               </div>
             </div>
           );

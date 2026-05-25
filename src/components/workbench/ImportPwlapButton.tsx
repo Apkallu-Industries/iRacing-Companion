@@ -25,24 +25,25 @@ export function ImportPwlapButton() {
     setBusy(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
-      
+
       // Decrypt/decompress
       const pwlapFile = await deserializePwlap(arrayBuffer); // Prompts for password if encrypted? Let's just try without password first. If it fails due to password, we'd need a prompt.
-      
+
       if (!pwlapFile.valid) throw new Error("Invalid .pwlap file");
 
       // We need to upload this session as a regular session!
       // But we can't fully recreate the .ibt file on the server.
       // So we just save the metadata and store the .pwlap file instead of .ibt.
-      
+
       // 1. Upload .pwlap file to 'telemetry' bucket (or pwlap_exports, but telemetry bucket is what sessions.$id expects)
       const storagePath = `${user.id}/${crypto.randomUUID()}_imported.pwlap`;
-      
+
       const { error: uploadErr } = await supabase.storage
         .from("telemetry")
         .upload(storagePath, file);
-        
-      if (uploadErr) throw new Error("Failed to upload .pwlap file to storage: " + uploadErr.message);
+
+      if (uploadErr)
+        throw new Error("Failed to upload .pwlap file to storage: " + uploadErr.message);
 
       // 2. Create session record
       const { data: newSession, error: createErr } = await supabase
@@ -64,12 +65,13 @@ export function ImportPwlapButton() {
         .single();
 
       if (createErr || !newSession) {
-        throw new Error("Failed to create session record: " + (createErr?.message || "Unknown error"));
+        throw new Error(
+          "Failed to create session record: " + (createErr?.message || "Unknown error"),
+        );
       }
 
       toast.success("Successfully imported .pwlap session.");
       navigate({ to: "/sessions/$id", params: { id: newSession.id } });
-
     } catch (e: any) {
       toast.error(`Import failed: ${e.message}`);
     } finally {
@@ -80,7 +82,7 @@ export function ImportPwlapButton() {
 
   return (
     <>
-      <button 
+      <button
         onClick={() => fileRef.current?.click()}
         disabled={busy}
         className="flex items-center gap-2 rounded-sm border border-border bg-rail px-4 py-2 font-mono text-sm uppercase tracking-wider text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"

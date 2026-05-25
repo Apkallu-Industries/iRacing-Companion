@@ -9,7 +9,10 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
   const { selectedChannels, toggleChannel, setChannels, cursorTick } = useWorkbench();
   const [q, setQ] = useState("");
   const [essentialsOnly, setEssentialsOnly] = useState(false);
-  const [open, setOpen] = useState<Record<string, boolean>>({ "Driver Inputs": true, Vehicle: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({
+    "Driver Inputs": true,
+    Vehicle: true,
+  });
   const [traceMode, setTraceMode] = useState<Record<string, boolean>>({});
 
   const windowFrames = useMemo(() => {
@@ -71,7 +74,9 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
           />
         </div>
         <div className="mt-1.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-          <span>{totalShown} shown · {selectedChannels.length} on</span>
+          <span>
+            {totalShown} shown · {selectedChannels.length} on
+          </span>
           <button
             onClick={() => setEssentialsOnly((v) => !v)}
             className={`flex items-center gap-1 rounded-sm border px-1.5 py-0.5 ${
@@ -98,7 +103,11 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
                   className="flex flex-1 items-center gap-1 text-left"
                   title={GROUP_DESCRIPTIONS[g] ?? g}
                 >
-                  {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  {isOpen ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
                   {g}
                   <span className="ml-1 text-[10px] normal-case tracking-normal text-muted-foreground/70">
                     {onCount > 0 ? `${onCount}/${items.length}` : items.length}
@@ -133,35 +142,53 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
                         >
                           <span
                             className="inline-block h-2 w-2 rounded-full"
-                            style={{ background: sel ? colorForChannel(name) : "transparent", outline: "1px solid var(--border-strong)" }}
+                            style={{
+                              background: sel ? colorForChannel(name) : "transparent",
+                              outline: "1px solid var(--border-strong)",
+                            }}
                           />
-                          <span className="truncate group-hover/btn:text-zinc-300 transition-colors">{name}</span>
+                          <span className="truncate group-hover/btn:text-zinc-300 transition-colors">
+                            {name}
+                          </span>
                         </button>
-                        
+
                         {/* Value / Trace toggle area */}
-                        <div 
+                        <div
                           className="ml-auto flex items-center shrink-0 cursor-pointer pl-2 hover:bg-zinc-800/50 rounded transition-colors group/val"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setTraceMode(m => ({ ...m, [name]: !m[name] }));
+                            setTraceMode((m) => ({ ...m, [name]: !m[name] }));
                           }}
                           title={`Click to show ${traceMode[name] ? "RAW" : "TRACE"}`}
                         >
                           {traceMode[name] ? (
                             <span className="flex items-center gap-1.5">
-                              <MiniTrace 
-                                values={Array.from(ch.data.slice(Math.max(0, cursorTick - windowFrames), cursorTick + 1))} 
-                                color={colorForChannel(name)} 
+                              <MiniTrace
+                                values={Array.from(
+                                  ch.data.slice(
+                                    Math.max(0, cursorTick - windowFrames),
+                                    cursorTick + 1,
+                                  ),
+                                )}
+                                color={colorForChannel(name)}
                               />
-                              <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none">trc</span>
+                              <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none">
+                                trc
+                              </span>
                             </span>
                           ) : (
                             <span className="flex items-center gap-1.5">
                               <span className="tabular-nums text-muted-foreground w-16 text-right">
                                 {Number.isFinite(v) ? v.toFixed(2) : "—"}
-                                {ch.unit ? <span className="text-[9px] text-zinc-600 ml-0.5">{ch.unit}</span> : ""}
+                                {ch.unit ? (
+                                  <span className="text-[9px] text-zinc-600 ml-0.5">{ch.unit}</span>
+                                ) : (
+                                  ""
+                                )}
                               </span>
-                              <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none w-4">raw</span>
+                              <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover/val:opacity-100 transition-opacity select-none w-4">
+                                raw
+                              </span>
                             </span>
                           )}
                         </div>

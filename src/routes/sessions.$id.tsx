@@ -59,13 +59,42 @@ function WorkbenchPage() {
   const { id } = Route.useParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { parsed, setParsed, refLap, cmpLap, setRefLap, setCmpLap, pendingLocalBlob, setPendingLocalBlob, setMathExpressions } = useWorkbench();
+  const {
+    parsed,
+    setParsed,
+    refLap,
+    cmpLap,
+    setRefLap,
+    setCmpLap,
+    pendingLocalBlob,
+    setPendingLocalBlob,
+    setMathExpressions,
+  } = useWorkbench();
   const [sess, setSess] = useState<Tables<"telemetry_sessions"> | null>(null);
   const [showExport, setShowExport] = useState(false);
-  const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>({ phase: "fetch", pct: 0 });
+  const [progress, setProgress] = useState<{ phase: string; pct: number; msg?: string } | null>({
+    phase: "fetch",
+    pct: 0,
+  });
   const [err, setErr] = useState<string | null>(null);
   const [bottomTab, setBottomTab] = useState<
-    "cinema" | "readout" | "laps" | "gg" | "histogram" | "scatter" | "optimal" | "whatif" | "brake" | "slip" | "replay3d" | "piano" | "spider" | "setup" | "setupdiff" | "apex" | "waterfall"
+    | "cinema"
+    | "readout"
+    | "laps"
+    | "gg"
+    | "histogram"
+    | "scatter"
+    | "optimal"
+    | "whatif"
+    | "brake"
+    | "slip"
+    | "replay3d"
+    | "piano"
+    | "spider"
+    | "setup"
+    | "setupdiff"
+    | "apex"
+    | "waterfall"
   >("cinema");
 
   // Guests can't load cloud sessions — show a friendly prompt instead of redirecting.
@@ -162,8 +191,8 @@ function WorkbenchPage() {
         <div className="max-w-md text-center">
           <h1 className="text-xl font-semibold">Saved sessions are sign-in only</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This workbench loads telemetry stored in your account. As a guest you can still
-            analyze .ibt files locally in the Lab, or open the live dashboard.
+            This workbench loads telemetry stored in your account. As a guest you can still analyze
+            .ibt files locally in the Lab, or open the live dashboard.
           </p>
           <div className="mt-5 flex justify-center gap-2">
             <button
@@ -215,9 +244,7 @@ function WorkbenchPage() {
                       {i === 0 ? " (best)" : ""}
                     </option>
                   ))}
-                  {invalid.length > 0 && (
-                    <option disabled>──────────</option>
-                  )}
+                  {invalid.length > 0 && <option disabled>──────────</option>}
                   {invalid.map((l) => (
                     <option key={`i${l.lap}`} value={l.lap}>
                       Lap {l.lap} · in/out
@@ -276,14 +303,19 @@ function WorkbenchPage() {
           <div className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
             {progress?.phase ?? "loading"} · {progress?.pct ?? 0}%
           </div>
-          {progress?.msg && <div className="font-mono text-[11px] text-muted-foreground">{progress.msg}</div>}
+          {progress?.msg && (
+            <div className="font-mono text-[11px] text-muted-foreground">{progress.msg}</div>
+          )}
           <div className="h-1 w-72 overflow-hidden rounded-full bg-rail">
-            <div className="h-full bg-primary transition-all" style={{ width: `${progress?.pct ?? 0}%` }} />
+            <div
+              className="h-full bg-primary transition-all"
+              style={{ width: `${progress?.pct ?? 0}%` }}
+            />
           </div>
           {(progress?.pct ?? 0) >= 90 && (
             <div className="max-w-sm text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground/80">
-              Large .ibt files can sit at ~95% for a while as channels are
-              indexed. This is normal — keep this tab open.
+              Large .ibt files can sit at ~95% for a while as channels are indexed. This is normal —
+              keep this tab open.
             </div>
           )}
         </div>
@@ -310,14 +342,35 @@ function WorkbenchPage() {
                 </div>
                 <div className="flex flex-1 flex-col bg-panel">
                   <div className="hairline-b flex items-center gap-px bg-border font-mono text-[11px] uppercase tracking-wider">
-                    {(["cinema", "readout", "laps", "gg", "histogram", "scatter", "optimal", "whatif", "apex", "waterfall", "brake", "slip", "replay3d", "piano", "spider", "setup", "setupdiff"] as const).map((t) => (
+                    {(
+                      [
+                        "cinema",
+                        "readout",
+                        "laps",
+                        "gg",
+                        "histogram",
+                        "scatter",
+                        "optimal",
+                        "whatif",
+                        "apex",
+                        "waterfall",
+                        "brake",
+                        "slip",
+                        "replay3d",
+                        "piano",
+                        "spider",
+                        "setup",
+                        "setupdiff",
+                      ] as const
+                    ).map((t) => (
                       <button
                         key={t}
                         onClick={() => setBottomTab(t)}
-                        className={`flex-1 px-3 py-1.5 text-left ${bottomTab === t
-                          ? "bg-panel text-foreground"
-                          : "bg-rail text-muted-foreground hover:text-foreground"
-                          }`}
+                        className={`flex-1 px-3 py-1.5 text-left ${
+                          bottomTab === t
+                            ? "bg-panel text-foreground"
+                            : "bg-rail text-muted-foreground hover:text-foreground"
+                        }`}
                       >
                         {t === "cinema"
                           ? "Cinema"
@@ -353,7 +406,11 @@ function WorkbenchPage() {
                   </div>
                   <div className="min-h-0 flex-1">
                     {bottomTab === "cinema" && (
-                      <Suspense fallback={<div className="p-3 text-xs text-muted-foreground">Loading cinema...</div>}>
+                      <Suspense
+                        fallback={
+                          <div className="p-3 text-xs text-muted-foreground">Loading cinema...</div>
+                        }
+                      >
                         <LazyCinemaPlayback parsed={parsed} />
                       </Suspense>
                     )}
@@ -369,7 +426,13 @@ function WorkbenchPage() {
                     {bottomTab === "brake" && <BrakeBias parsed={parsed} />}
                     {bottomTab === "slip" && <SlipAngle parsed={parsed} />}
                     {bottomTab === "replay3d" && (
-                      <Suspense fallback={<div className="p-3 text-xs text-muted-foreground">Loading 3D replay...</div>}>
+                      <Suspense
+                        fallback={
+                          <div className="p-3 text-xs text-muted-foreground">
+                            Loading 3D replay...
+                          </div>
+                        }
+                      >
                         <LazyReplayThree parsed={parsed} />
                       </Suspense>
                     )}
@@ -377,7 +440,12 @@ function WorkbenchPage() {
                     {bottomTab === "spider" && <SectorSpider parsed={parsed} />}
                     {bottomTab === "setup" && <SetupSheet parsed={parsed} />}
                     {bottomTab === "setupdiff" && (
-                      <SetupDiff parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
+                      <SetupDiff
+                        parsed={parsed}
+                        track={sess?.track}
+                        car={sess?.car}
+                        sessionId={id}
+                      />
                     )}
                   </div>
                 </div>
@@ -402,11 +470,7 @@ function WorkbenchPage() {
           </div>
         </>
       )}
-      {showExport && (
-        <ExportPwlapDialog sessionId={id} onClose={() => setShowExport(false)} />
-      )}
+      {showExport && <ExportPwlapDialog sessionId={id} onClose={() => setShowExport(false)} />}
     </div>
   );
 }
-
-

@@ -16,7 +16,13 @@ export interface LapSummary {
   gear?: number[];
   steer?: number[]; // rad
   // Derived events
-  brakeZones: { startPct: number; endPct: number; peakBrake: number; minSpeed: number; entrySpeed: number }[];
+  brakeZones: {
+    startPct: number;
+    endPct: number;
+    peakBrake: number;
+    minSpeed: number;
+    entrySpeed: number;
+  }[];
   fullThrottlePct: number; // % of lap at >95% throttle
   coastingPct: number; // % of lap at <5% throttle and <5% brake
   overlapPct: number; // % of lap with both throttle > 10% and brake > 10%
@@ -137,7 +143,12 @@ function summarizeLap(parsed: IbtParsed, lap: IbtLap): LapSummary | null {
   if (!speedRaw || !throttle || !brake) return null;
   const rpm = resampleByDist(parsed.channels["RPM"]?.data, lapDistPct, lap, NUM_BINS);
   const gear = resampleByDist(parsed.channels["Gear"]?.data, lapDistPct, lap, NUM_BINS);
-  const steer = resampleByDist(parsed.channels["SteeringWheelAngle"]?.data, lapDistPct, lap, NUM_BINS);
+  const steer = resampleByDist(
+    parsed.channels["SteeringWheelAngle"]?.data,
+    lapDistPct,
+    lap,
+    NUM_BINS,
+  );
 
   const fullThrottle = throttle.filter((v) => v > 0.95).length / throttle.length;
   const coasting = throttle.filter((v, i) => v < 0.05 && brake[i] < 0.05).length / throttle.length;
@@ -244,9 +255,7 @@ export function buildCoachPayload(
   if (mode === "compare") {
     const a = summary.laps.find((l) => l.lap === refLap) ?? summary.laps[0];
     const b =
-      summary.laps.find((l) => l.lap === cmpLap) ??
-      summary.laps.find((l) => l.lap !== a?.lap) ??
-      a;
+      summary.laps.find((l) => l.lap === cmpLap) ?? summary.laps.find((l) => l.lap !== a?.lap) ?? a;
     return {
       mode,
       detailed,
@@ -261,10 +270,7 @@ export function buildCoachPayload(
     };
   }
   // session: send slim per-lap stats only (no per-bin arrays) plus best lap full data
-  const best = summary.laps.reduce(
-    (b, l) => (l.timeS < b.timeS ? l : b),
-    summary.laps[0],
-  );
+  const best = summary.laps.reduce((b, l) => (l.timeS < b.timeS ? l : b), summary.laps[0]);
   const slim = summary.laps.map((l) => ({
     lap: l.lap,
     timeS: l.timeS,

@@ -53,8 +53,12 @@ export function LiveReference({ t }: { t: Telemetry }) {
     (async () => {
       try {
         const [fpR, sessR] = await Promise.all([
-          getFingerprintForPair({ data: { track: t.track, car: t.car } }) as Promise<{ fp: typeof fp }>,
-          getLastSessionForPair({ data: { track: t.track, car: t.car } }) as Promise<{ session: typeof lastSess }>,
+          getFingerprintForPair({ data: { track: t.track, car: t.car } }) as Promise<{
+            fp: typeof fp;
+          }>,
+          getLastSessionForPair({ data: { track: t.track, car: t.car } }) as Promise<{
+            session: typeof lastSess;
+          }>,
         ]);
         if (cancelled) return;
         setFp(fpR.fp);
@@ -85,7 +89,9 @@ export function LiveReference({ t }: { t: Telemetry }) {
           Reference Pace
         </h2>
         {!user && (
-          <span className="ml-auto text-[10px] font-mono text-racing-orange">Sign in to use baseline</span>
+          <span className="ml-auto text-[10px] font-mono text-racing-orange">
+            Sign in to use baseline
+          </span>
         )}
         {user && !fp && !loading && (
           <Link
@@ -105,12 +111,7 @@ export function LiveReference({ t }: { t: Telemetry }) {
           delta={dPb}
           sub={fp ? "fingerprint" : loading ? "…" : "—"}
         />
-        <RefCell
-          label="Optimal"
-          value={fmtLap(opt)}
-          delta={dOpt}
-          sub={fp ? "theoretical" : "—"}
-        />
+        <RefCell label="Optimal" value={fmtLap(opt)} delta={dOpt} sub={fp ? "theoretical" : "—"} />
         <RefCell
           label="Last session"
           value={fmtLap(last)}
@@ -157,9 +158,13 @@ function RefCell({
   const inner = (
     <div className="rounded-sm bg-zinc-900/60 px-2 py-1.5">
       <div className="text-[9px] uppercase tracking-widest text-zinc-500">{label}</div>
-      <div className={`tabular-nums ${highlight ? "text-racing-cyan" : "text-zinc-100"}`}>{value}</div>
+      <div className={`tabular-nums ${highlight ? "text-racing-cyan" : "text-zinc-100"}`}>
+        {value}
+      </div>
       <div className={`text-[10px] tabular-nums ${dColor}`}>{dStr || (sub ?? "\u00a0")}</div>
-      {dStr && sub && <div className="text-[9px] uppercase tracking-widest text-zinc-600">{sub}</div>}
+      {dStr && sub && (
+        <div className="text-[9px] uppercase tracking-widest text-zinc-600">{sub}</div>
+      )}
     </div>
   );
   return link ? (

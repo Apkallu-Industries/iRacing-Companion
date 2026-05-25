@@ -23,11 +23,11 @@ Examples:
 ```ts
 type MathExpression = {
   id: string;
-  name: string;              // display label
-  key: string;               // stable channel key
-  expression: string;        // infix expression entered by user
+  name: string; // display label
+  key: string; // stable channel key
+  expression: string; // infix expression entered by user
   unit?: string;
-  precision?: number;        // display decimals
+  precision?: number; // display decimals
   color?: string;
   enabled: boolean;
   scope: "live" | "workbench" | "both";

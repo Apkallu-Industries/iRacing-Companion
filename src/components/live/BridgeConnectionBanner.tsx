@@ -10,8 +10,8 @@ const DISMISS_KEY = "pit-wall:bridge-banner-dismissed";
  */
 export function BridgeConnectionBanner({ t }: { t: Telemetry }) {
   const [show, setShow] = useState(false);
-  const [dismissed, setDismissed] = useState(() =>
-    typeof sessionStorage !== "undefined" && sessionStorage.getItem(DISMISS_KEY) === "1",
+  const [dismissed, setDismissed] = useState(
+    () => typeof sessionStorage !== "undefined" && sessionStorage.getItem(DISMISS_KEY) === "1",
   );
   const bridge = useBridgeConnection(t.connected);
 
@@ -38,18 +38,27 @@ export function BridgeConnectionBanner({ t }: { t: Telemetry }) {
         <p className="font-semibold text-zinc-100">Still no telemetry after 60 seconds</p>
         {portBlocked ? (
           <p className="text-zinc-400 leading-relaxed">
-            Port <code className="rounded bg-zinc-900 px-1 font-mono text-[11px] text-primary">3001</code> is not
-            reachable. Start the bridge below, then allow Node.js through Windows Firewall if prompted.
+            Port{" "}
+            <code className="rounded bg-zinc-900 px-1 font-mono text-[11px] text-primary">
+              3001
+            </code>{" "}
+            is not reachable. Start the bridge below, then allow Node.js through Windows Firewall if
+            prompted.
           </p>
         ) : (
           <p className="text-zinc-400 leading-relaxed">
-            The bridge looks up, but iRacing is not sending data yet. Launch iRacing, get in a car, and start a practice
-            or race session.
+            The bridge looks up, but iRacing is not sending data yet. Launch iRacing, get in a car,
+            and start a practice or race session.
           </p>
         )}
         <p className="font-mono text-[10px] text-zinc-500">
           Test in browser:{" "}
-          <a href="http://localhost:3001" className="text-primary hover:underline" target="_blank" rel="noreferrer">
+          <a
+            href="http://localhost:3001"
+            className="text-primary hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
             http://localhost:3001
           </a>
         </p>

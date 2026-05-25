@@ -47,26 +47,26 @@ Legend:
 - `Partial` = basic version exists, not engineering-grade yet
 - `Missing` = not available
 
-| Capability group | Pit Wall status | Priority |
-| --- | --- | --- |
-| Time-series trace stacks with synced cursor | Done | Maintain |
-| Track map with cursor replay | Done | Maintain |
-| G-G and core vehicle dynamics views | Done | Maintain |
-| Sector/corner comparative summaries | Done | Maintain |
-| Multi-lap batch/stint analytics dashboards | Partial | High |
-| Advanced scatter/XY tooling (configurable axes, density/heat) | Done | High |
-| Histograms/distribution panels per channel | Done | High |
-| Event-latched channels and event windows | Missing | High |
-| User-built derived channels (formula editor) | Done | Critical |
-| Constants library + reusable formulas | Done | Critical |
-| Trigger/event engine (if/then, thresholds, state) | Missing | Critical |
-| Workspace templates / role-based presets | Partial | High |
-| Multi-window / linked panes / saved layouts | Partial | High |
-| Report builder (session KPI PDFs/exports) | Missing | Medium |
-| Annotation timeline + comments | Missing | Medium |
-| Comparative overlays across sessions at scale | Partial | High |
-| Data quality diagnostics (dropouts, timestamps, jitter) | Missing | High |
-| Performance diagnostics (FPS, stream Hz, lag) | Partial | High |
+| Capability group                                              | Pit Wall status | Priority |
+| ------------------------------------------------------------- | --------------- | -------- |
+| Time-series trace stacks with synced cursor                   | Done            | Maintain |
+| Track map with cursor replay                                  | Done            | Maintain |
+| G-G and core vehicle dynamics views                           | Done            | Maintain |
+| Sector/corner comparative summaries                           | Done            | Maintain |
+| Multi-lap batch/stint analytics dashboards                    | Partial         | High     |
+| Advanced scatter/XY tooling (configurable axes, density/heat) | Done            | High     |
+| Histograms/distribution panels per channel                    | Done            | High     |
+| Event-latched channels and event windows                      | Missing         | High     |
+| User-built derived channels (formula editor)                  | Done            | Critical |
+| Constants library + reusable formulas                         | Done            | Critical |
+| Trigger/event engine (if/then, thresholds, state)             | Missing         | Critical |
+| Workspace templates / role-based presets                      | Partial         | High     |
+| Multi-window / linked panes / saved layouts                   | Partial         | High     |
+| Report builder (session KPI PDFs/exports)                     | Missing         | Medium   |
+| Annotation timeline + comments                                | Missing         | Medium   |
+| Comparative overlays across sessions at scale                 | Partial         | High     |
+| Data quality diagnostics (dropouts, timestamps, jitter)       | Missing         | High     |
+| Performance diagnostics (FPS, stream Hz, lag)                 | Partial         | High     |
 
 ---
 

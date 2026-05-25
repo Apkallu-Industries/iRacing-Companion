@@ -103,8 +103,7 @@ export function calculateScatterMetrics(points: ScatterPoint[]): ScatterMetrics 
     sumSqY += dy * dy;
   }
 
-  const correlation =
-    sumSqX * sumSqY > 0 ? numerator / Math.sqrt(sumSqX * sumSqY) : 0;
+  const correlation = sumSqX * sumSqY > 0 ? numerator / Math.sqrt(sumSqX * sumSqY) : 0;
 
   return {
     correlation: Math.max(-1, Math.min(1, correlation)),

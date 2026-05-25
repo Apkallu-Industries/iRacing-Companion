@@ -42,7 +42,8 @@ function SettingsPage() {
             <div>
               <h1 className="font-mono text-sm uppercase tracking-wider">System Settings</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage your local AI provider and verify MongoDB connectivity for offline telemetry storage.
+                Manage your local AI provider and verify MongoDB connectivity for offline telemetry
+                storage.
               </p>
             </div>
           </div>
@@ -93,7 +94,8 @@ function SettingsPage() {
                 <Cpu className="h-3.5 w-3.5" /> Live Performance
               </div>
               <p className="mb-3 text-xs text-muted-foreground">
-                Choose bridge streaming profile. Stable uses 30Hz UI updates; Balanced uses 60Hz with adaptive fallback.
+                Choose bridge streaming profile. Stable uses 30Hz UI updates; Balanced uses 60Hz
+                with adaptive fallback.
               </p>
               <BridgePerformanceSettings />
             </div>

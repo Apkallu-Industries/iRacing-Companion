@@ -33,9 +33,20 @@ export function DesktopLapSync() {
       try {
         const res = await fetch(`${BRIDGE_BASE}/api/laps?limit=500`, { cache: "no-store" });
         if (!res.ok) return;
-        const body = (await res.json()) as { laps: Array<{ ts: number; car?: string; track?: string; lapTimeS?: number; fuel?: number; sof?: number }> };
+        const body = (await res.json()) as {
+          laps: Array<{
+            ts: number;
+            car?: string;
+            track?: string;
+            lapTimeS?: number;
+            fuel?: number;
+            sof?: number;
+          }>;
+        };
         const synced = loadSynced();
-        const fresh = body.laps.filter((l) => l.ts && !synced.has(l.ts) && l.lapTimeS && l.lapTimeS > 0 && l.car && l.track);
+        const fresh = body.laps.filter(
+          (l) => l.ts && !synced.has(l.ts) && l.lapTimeS && l.lapTimeS > 0 && l.car && l.track,
+        );
         if (fresh.length === 0) {
           setStatus(`cached ${body.laps.length} · synced ${synced.size}`);
           setTotal(body.laps.length);

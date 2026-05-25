@@ -14,11 +14,41 @@ import { useWorkbench } from "@/lib/store";
 import { testLLMConnection } from "@/lib/llm";
 
 const PROVIDERS = [
-  { id: "cloud", name: "Cloud (Lovable/Default)", icon: Server, url: "", desc: "Route requests securely through the Lovable AI Gateway." },
-  { id: "lmstudio", name: "LM Studio", icon: Laptop, url: "http://localhost:1234/v1", desc: "lmstudio-native." },
-  { id: "ollama", name: "Ollama", icon: Cpu, url: "http://localhost:11434/v1", desc: "Local inference via Ollama." },
-  { id: "huggingface", name: "HuggingFace TGI", icon: Server, url: "http://localhost:8080/v1", desc: "Local TGI container backend." },
-  { id: "lemonade", name: "LlamaEdge / Lemonade", icon: Laptop, url: "http://localhost:8080/v1", desc: "Wasm edge inference." },
+  {
+    id: "cloud",
+    name: "Cloud (Lovable/Default)",
+    icon: Server,
+    url: "",
+    desc: "Route requests securely through the Lovable AI Gateway.",
+  },
+  {
+    id: "lmstudio",
+    name: "LM Studio",
+    icon: Laptop,
+    url: "http://localhost:1234/v1",
+    desc: "lmstudio-native.",
+  },
+  {
+    id: "ollama",
+    name: "Ollama",
+    icon: Cpu,
+    url: "http://localhost:11434/v1",
+    desc: "Local inference via Ollama.",
+  },
+  {
+    id: "huggingface",
+    name: "HuggingFace TGI",
+    icon: Server,
+    url: "http://localhost:8080/v1",
+    desc: "Local TGI container backend.",
+  },
+  {
+    id: "lemonade",
+    name: "LlamaEdge / Lemonade",
+    icon: Laptop,
+    url: "http://localhost:8080/v1",
+    desc: "Wasm edge inference.",
+  },
 ] as const;
 
 export function LLMSettings({ inline }: { inline?: boolean }) {
@@ -38,7 +68,7 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
 
   const activeProviderInfo = PROVIDERS.find((p) => p.id === llmProvider);
 
-  const applyDefaults = (providerId: typeof PROVIDERS[number]["id"]) => {
+  const applyDefaults = (providerId: (typeof PROVIDERS)[number]["id"]) => {
     const p = PROVIDERS.find((x) => x.id === providerId);
     if (!p) return;
     setLlmProvider(p.id);
@@ -54,7 +84,7 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
       const res = await testLLMConnection(
         llmBaseUrl || activeProviderInfo?.url || "",
         llmModelId,
-        llmApiKey
+        llmApiKey,
       );
       setTestResult(res);
     } catch (e) {
@@ -221,9 +251,14 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
           AI Engine
         </button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[380px] sm:w-[440px] flex flex-col p-0 bg-background text-foreground border-l border-border/60">
+      <SheetContent
+        side="right"
+        className="w-[380px] sm:w-[440px] flex flex-col p-0 bg-background text-foreground border-l border-border/60"
+      >
         <SheetHeader className="px-4 pt-4">
-          <SheetTitle className="font-mono text-sm tracking-wider">AI ENGINE CONFIGURATION</SheetTitle>
+          <SheetTitle className="font-mono text-sm tracking-wider">
+            AI ENGINE CONFIGURATION
+          </SheetTitle>
           <SheetDescription className="text-xs">
             Choose where rendering and AI analysis compute takes place.
           </SheetDescription>
@@ -341,7 +376,9 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
                     <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
                       {testResult.success ? "✓ Connection OK" : "✗ Connection Failed"}
                     </div>
-                    <div className="whitespace-pre-line leading-relaxed font-sans">{testResult.message}</div>
+                    <div className="whitespace-pre-line leading-relaxed font-sans">
+                      {testResult.message}
+                    </div>
                   </div>
                 )}
               </div>
@@ -367,4 +404,3 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
     </Sheet>
   );
 }
-

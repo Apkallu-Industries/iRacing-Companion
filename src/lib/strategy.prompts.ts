@@ -21,7 +21,8 @@ export const STRATEGY_SCHEMA = {
     properties: {
       alert: {
         type: "boolean",
-        description: "True ONLY if there is an urgent or high-value strategic opportunity (like an undercut) or pit window opening.",
+        description:
+          "True ONLY if there is an urgent or high-value strategic opportunity (like an undercut) or pit window opening.",
       },
       headline: {
         type: "string",
@@ -42,15 +43,23 @@ export const STRATEGY_SCHEMA = {
 };
 
 export function buildStrategyUserMessage(player: any, competitors: any[]): string {
-  return JSON.stringify({
-    player: {
-      position: player.position,
-      lastLapTime: player.lapTimeS,
-      fuelRemainingL: player.fuelRemainingL,
-      fuelLapsEstimated: player.fuelLapsEstimated,
-      tires: player.tires,
+  return JSON.stringify(
+    {
+      player: {
+        position: player.position,
+        lastLapTime: player.lapTimeS,
+        fuelRemainingL: player.fuelRemainingL,
+        fuelLapsEstimated: player.fuelLapsEstimated,
+        tires: player.tires,
+      },
+      competitorsAhead: competitors.filter(
+        (c) => c.pos < player.position && c.pos >= player.position - 3,
+      ),
+      competitorsBehind: competitors.filter(
+        (c) => c.pos > player.position && c.pos <= player.position + 3,
+      ),
     },
-    competitorsAhead: competitors.filter(c => c.pos < player.position && c.pos >= player.position - 3),
-    competitorsBehind: competitors.filter(c => c.pos > player.position && c.pos <= player.position + 3),
-  }, null, 2);
+    null,
+    2,
+  );
 }

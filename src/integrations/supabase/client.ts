@@ -1,12 +1,17 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
-import { getLocalSessions, getLocalSessionById, insertLocalSession, deleteLocalSession } from '../../lib/localDb.functions';
-import { localTelemetryStore } from '../../lib/localTelemetryStore';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
+import {
+  getLocalSessions,
+  getLocalSessionById,
+  insertLocalSession,
+  deleteLocalSession,
+} from "../../lib/localDb.functions";
+import { localTelemetryStore } from "../../lib/localTelemetryStore";
 
 // Dummy client helper for offline/mock scenarios
 const dummyClient = new Proxy({} as any, {
   get(target, prop) {
-    if (prop === 'auth') {
+    if (prop === "auth") {
       return {
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
         getSession: async () => ({ data: { session: null } }),
@@ -16,30 +21,34 @@ const dummyClient = new Proxy({} as any, {
     return () => {
       const chain = new Proxy({} as any, {
         get(t, p) {
-          if (p === 'then') {
+          if (p === "then") {
             return (resolve: any) => resolve({ data: null, error: null });
           }
           return () => chain;
-        }
+        },
       });
       return chain;
     };
-  }
+  },
 });
 
 function getProxiedClient() {
   let realClient: any;
   try {
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined);
-    const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (typeof process !== 'undefined' ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
+    const SUPABASE_URL =
+      import.meta.env.VITE_SUPABASE_URL ||
+      (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined);
+    const SUPABASE_PUBLISHABLE_KEY =
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
 
     if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
       realClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: {
-          storage: typeof window !== 'undefined' ? localStorage : undefined,
+          storage: typeof window !== "undefined" ? localStorage : undefined,
           persistSession: true,
           autoRefreshToken: true,
-        }
+        },
       });
     } else {
       console.warn("[Supabase] Credentials missing. Running in local-only mock mode.");
@@ -54,10 +63,12 @@ function getProxiedClient() {
   return new Proxy(realClient, {
     get(target, prop, receiver) {
       // 1. Intercept 'from'
-      if (prop === 'from') {
+      if (prop === "from") {
         return (tableName: string) => {
-          const isLocal = typeof window !== 'undefined' && (localStorage.getItem("apex_local_session") || !import.meta.env.VITE_SUPABASE_URL);
-          if (isLocal && tableName === 'telemetry_sessions') {
+          const isLocal =
+            typeof window !== "undefined" &&
+            (localStorage.getItem("apex_local_session") || !import.meta.env.VITE_SUPABASE_URL);
+          if (isLocal && tableName === "telemetry_sessions") {
             const builder = {
               select: () => builder,
               order: () => builder,
@@ -92,7 +103,7 @@ function getProxiedClient() {
                 } catch (err: any) {
                   resolve({ data: null, error: { message: err.message } });
                 }
-              }
+              },
             };
             return builder;
           }
@@ -101,12 +112,14 @@ function getProxiedClient() {
       }
 
       // 2. Intercept 'storage'
-      if (prop === 'storage') {
-        const isLocal = typeof window !== 'undefined' && (localStorage.getItem("apex_local_session") || !import.meta.env.VITE_SUPABASE_URL);
+      if (prop === "storage") {
+        const isLocal =
+          typeof window !== "undefined" &&
+          (localStorage.getItem("apex_local_session") || !import.meta.env.VITE_SUPABASE_URL);
         if (isLocal) {
           return {
             from: (bucketName: string) => {
-              if (bucketName === 'telemetry') {
+              if (bucketName === "telemetry") {
                 return {
                   upload: async (path: string, blob: Blob) => {
                     try {
@@ -134,18 +147,18 @@ function getProxiedClient() {
                     } catch (e: any) {
                       return { data: null, error: e };
                     }
-                  }
+                  },
                 };
               }
               // Fallback to real storage client if bucket is different
               return target.storage.from(bucketName);
-            }
+            },
           };
         }
       }
 
       return Reflect.get(target, prop, receiver);
-    }
+    },
   });
 }
 
@@ -157,4 +170,3 @@ export const supabase = new Proxy({} as ReturnType<typeof getProxiedClient>, {
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-

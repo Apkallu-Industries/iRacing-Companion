@@ -58,9 +58,7 @@ export const createShareLink = createServerFn({ method: "POST" })
 /** Owner-only: revoke a share token. The link 404s immediately. */
 export const revokeShareLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ token: z.string().min(8).max(64) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ token: z.string().min(8).max(64) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { error } = await supabase
@@ -73,9 +71,7 @@ export const revokeShareLink = createServerFn({ method: "POST" })
 
 /** Public: fetch a fresh signed URL for the underlying .ibt file. */
 export const refreshSharedSignedUrl = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({ token: z.string().min(8).max(64) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ token: z.string().min(8).max(64) }).parse(input))
   .handler(async ({ data }) => {
     const { data: share } = await supabaseAdmin
       .from("shared_laps")
@@ -111,9 +107,7 @@ function signTtlSeconds(expiresAtIso: string | null): number {
 
 /** Public: resolve a share token to session metadata + signed file URL. */
 export const getSharedLap = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) =>
-    z.object({ token: z.string().min(8).max(64) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ token: z.string().min(8).max(64) }).parse(input))
   .handler(async ({ data }) => {
     // Use service role: there is no anon SELECT policy on shared_laps,
     // and we want a single trusted read path that increments view_count.

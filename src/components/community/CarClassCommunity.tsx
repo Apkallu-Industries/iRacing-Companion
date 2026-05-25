@@ -43,7 +43,8 @@ export function useCarClassResolver() {
     list({ data: {} })
       .then((r) => {
         const map: Record<string, string> = {};
-        for (const row of (r as { rows: Mapping[] }).rows || []) if (!map[row.car]) map[row.car] = row.car_class;
+        for (const row of (r as { rows: Mapping[] }).rows || [])
+          if (!map[row.car]) map[row.car] = row.car_class;
         setCommunity(map);
       })
       .catch(() => {});

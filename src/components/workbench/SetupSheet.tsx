@@ -10,7 +10,16 @@ function isNumeric(v: string): boolean {
 }
 
 function groupOrder(name: string): number {
-  const order = ["Chassis", "TiresAero", "Tires", "Aero", "Drivetrain", "Brakes", "Dampers", "InCarDials"];
+  const order = [
+    "Chassis",
+    "TiresAero",
+    "Tires",
+    "Aero",
+    "Drivetrain",
+    "Brakes",
+    "Dampers",
+    "InCarDials",
+  ];
   const i = order.indexOf(name);
   return i < 0 ? 99 : i;
 }
@@ -48,7 +57,7 @@ function Group({
   };
   const visible = entries.filter(([k, v]) => matches(k, v));
   if (visible.length === 0) return null;
-  const isOpen = open || (filter.length > 0);
+  const isOpen = open || filter.length > 0;
   return (
     <div className={depth === 0 ? "hairline-b" : ""}>
       <button
@@ -68,7 +77,14 @@ function Group({
             typeof v === "string" ? (
               <Row key={k} k={k} v={v} />
             ) : (
-              <Group key={k} name={k} node={v} depth={depth + 1} filter={filter} defaultOpen={depth < 1} />
+              <Group
+                key={k}
+                name={k}
+                node={v}
+                depth={depth + 1}
+                filter={filter}
+                defaultOpen={depth < 1}
+              />
             ),
           )}
         </div>
@@ -92,16 +108,14 @@ export function SetupSheet({ parsed }: { parsed: IbtParsed }) {
           No setup data in this .ibt
         </div>
         <p className="max-w-sm font-mono text-[11px] text-muted-foreground/80">
-          iRacing only embeds car setup when telemetry is recorded from the garage/in-car.
-          Re-record after exiting the garage and the CarSetup block will appear here.
+          iRacing only embeds car setup when telemetry is recorded from the garage/in-car. Re-record
+          after exiting the garage and the CarSetup block will appear here.
         </p>
       </div>
     );
   }
 
-  const groups = Object.entries(setup.tree).sort(
-    ([a], [b]) => groupOrder(a) - groupOrder(b),
-  );
+  const groups = Object.entries(setup.tree).sort(([a], [b]) => groupOrder(a) - groupOrder(b));
   const f = filter.trim().toLowerCase();
   const totalParams = Object.keys(setup.flat).length;
 

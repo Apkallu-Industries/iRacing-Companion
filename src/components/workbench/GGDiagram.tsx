@@ -141,8 +141,10 @@ export function GGDiagram({ parsed }: { parsed: IbtParsed }) {
     // Cross-hairs.
     ctx.strokeStyle = "rgba(120,130,140,0.25)";
     ctx.beginPath();
-    ctx.moveTo(0, cy); ctx.lineTo(size.w, cy);
-    ctx.moveTo(cx, 0); ctx.lineTo(cx, size.h);
+    ctx.moveTo(0, cy);
+    ctx.lineTo(size.w, cy);
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, size.h);
     ctx.stroke();
 
     // Quadrant labels.
@@ -219,21 +221,35 @@ export function GGDiagram({ parsed }: { parsed: IbtParsed }) {
       <div className="hairline-b flex items-center justify-between gap-3 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>Friction circle{refLap != null ? ` · L${refLap}` : " · all laps"}</span>
         <span className="flex items-center gap-3">
-          <span><span className="text-foreground">{peakLat.toFixed(2)}g</span> lat</span>
-          <span><span className="text-foreground">{peakAccel.toFixed(2)}g</span> accel</span>
-          <span><span className="text-foreground">{peakBrake.toFixed(2)}g</span> brake</span>
-          <span><span className="text-foreground">{combined.toFixed(2)}g</span> combined</span>
+          <span>
+            <span className="text-foreground">{peakLat.toFixed(2)}g</span> lat
+          </span>
+          <span>
+            <span className="text-foreground">{peakAccel.toFixed(2)}g</span> accel
+          </span>
+          <span>
+            <span className="text-foreground">{peakBrake.toFixed(2)}g</span> brake
+          </span>
+          <span>
+            <span className="text-foreground">{combined.toFixed(2)}g</span> combined
+          </span>
         </span>
       </div>
       <div ref={wrapRef} className="flex min-h-0 flex-1 items-center justify-center">
         <canvas ref={canvasRef} style={{ width: size.w, height: size.h }} />
       </div>
       <div className="hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sky-400" /> Ref</span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-sky-400" /> Ref
+        </span>
         {cmpLap != null && (
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-white/40" /> Cmp L{cmpLap}</span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-white/40" /> Cmp L{cmpLap}
+          </span>
         )}
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-pink-400" /> Grip envelope</span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-pink-400" /> Grip envelope
+        </span>
       </div>
     </div>
   );

@@ -16,24 +16,37 @@ function inferGroup(name: string): string {
   const n = name.toLowerCase();
   if (/(throttle|brake|clutch|steer|handbrake|driver)/.test(n)) return "Driver Inputs";
   if (/(speed|velocity|accel|yaw|pitch|roll|gear|rpm|enginerpm|track)/.test(n)) return "Vehicle";
-  if (/(fuel|engine|oil|water|coolant|mgu|battery|kers|drs|boost|manifold)/.test(n)) return "Engine";
-  if (/(tire|tyre|temp|press|carcass|tread|wear|cf|cm|cl|lf|rf|lr|rr)/.test(n) && /(temp|press|wear|tread|cold|carcass)/.test(n)) return "Tires";
+  if (/(fuel|engine|oil|water|coolant|mgu|battery|kers|drs|boost|manifold)/.test(n))
+    return "Engine";
+  if (
+    /(tire|tyre|temp|press|carcass|tread|wear|cf|cm|cl|lf|rf|lr|rr)/.test(n) &&
+    /(temp|press|wear|tread|cold|carcass)/.test(n)
+  )
+    return "Tires";
   if (/(shock|spring|ride|damper|susp|arb|height|defl)/.test(n)) return "Suspension";
   if (/(session|lap|race|incident|flag|pit|track|surface|sector)/.test(n)) return "Session";
-  if (/(weather|wind|air|track(temp|surface|wetness|usage)|humidity|skies|fog|precip)/.test(n)) return "Environment";
+  if (/(weather|wind|air|track(temp|surface|wetness|usage)|humidity|skies|fog|precip)/.test(n))
+    return "Environment";
   if (/(cpu|fps|frame|gpu|mem|latency|ping)/.test(n)) return "System";
   return "Other";
 }
 
 function readValueAsFloat(view: DataView, abs: number, type: number): number {
   switch (type) {
-    case IBT_TYPE.Char: return view.getUint8(abs);
-    case IBT_TYPE.Bool: return view.getUint8(abs);
-    case IBT_TYPE.Int: return view.getInt32(abs, true);
-    case IBT_TYPE.Bitfield: return view.getUint32(abs, true);
-    case IBT_TYPE.Float: return view.getFloat32(abs, true);
-    case IBT_TYPE.Double: return view.getFloat64(abs, true);
-    default: return 0;
+    case IBT_TYPE.Char:
+      return view.getUint8(abs);
+    case IBT_TYPE.Bool:
+      return view.getUint8(abs);
+    case IBT_TYPE.Int:
+      return view.getInt32(abs, true);
+    case IBT_TYPE.Bitfield:
+      return view.getUint32(abs, true);
+    case IBT_TYPE.Float:
+      return view.getFloat32(abs, true);
+    case IBT_TYPE.Double:
+      return view.getFloat64(abs, true);
+    default:
+      return 0;
   }
 }
 
@@ -128,7 +141,11 @@ export function parseIbt(buffer: ArrayBuffer, onProgress?: ProgressCb): IbtParse
   // Session info YAML
   onProgress?.("yaml", 10);
   let yaml = "";
-  if (sessionInfoLen > 0 && sessionInfoOffset > 0 && sessionInfoOffset + sessionInfoLen <= buffer.byteLength) {
+  if (
+    sessionInfoLen > 0 &&
+    sessionInfoOffset > 0 &&
+    sessionInfoOffset + sessionInfoLen <= buffer.byteLength
+  ) {
     yaml = readCStr(view, sessionInfoOffset, sessionInfoLen);
   }
   const yamlMeta = parseSessionYaml(yaml);
@@ -237,31 +254,39 @@ export function parseIbt(buffer: ArrayBuffer, onProgress?: ProgressCb): IbtParse
   if (vxCh && vyCh && yawCh && numTicks > 1) {
     const x = new Float32Array(numTicks);
     const y = new Float32Array(numTicks);
-    let px = 0, py = 0;
+    let px = 0,
+      py = 0;
     const dt = 1 / Math.max(1, tickRate);
-    let minX = 0, maxX = 0, minY = 0, maxY = 0;
+    let minX = 0,
+      maxX = 0,
+      minY = 0,
+      maxY = 0;
     for (let t = 0; t < numTicks; t++) {
       const yaw = yawCh.data[t];
       // car-local Vx forward, Vy lateral; rotate by yaw to world frame
       const vx = vxCh.data[t];
       const vy = vyCh.data[t];
-      const cs = Math.cos(yaw), sn = Math.sin(yaw);
+      const cs = Math.cos(yaw),
+        sn = Math.sin(yaw);
       const wx = vx * cs - vy * sn;
       const wy = vx * sn + vy * cs;
       px += wx * dt;
       py += wy * dt;
       x[t] = px;
       y[t] = py;
-      if (px < minX) minX = px; else if (px > maxX) maxX = px;
-      if (py < minY) minY = py; else if (py > maxY) maxY = py;
+      if (px < minX) minX = px;
+      else if (px > maxX) maxX = px;
+      if (py < minY) minY = py;
+      else if (py > maxY) maxY = py;
     }
     trackXY = { x, y, minX, maxX, minY, maxY };
   }
 
   const sessionTime = sessionTimeCh?.data;
-  const durationS = sessionTime && sessionTime.length > 1
-    ? sessionTime[sessionTime.length - 1] - sessionTime[0]
-    : numTicks / Math.max(1, tickRate);
+  const durationS =
+    sessionTime && sessionTime.length > 1
+      ? sessionTime[sessionTime.length - 1] - sessionTime[0]
+      : numTicks / Math.max(1, tickRate);
 
   onProgress?.("done", 100);
 

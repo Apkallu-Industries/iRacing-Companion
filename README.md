@@ -55,19 +55,19 @@ Everything is account‑scoped via row‑level security — your laps are yours.
 
 ## Feature map
 
-| Area | Route | Highlights |
-| --- | --- | --- |
-| Marketing / landing | `/` | Hero, feature overview, schema.org metadata |
-| How it works | `/how-it-works` | Parsing pipeline diagram, `.ibt` format breakdown |
-| Auth | `/auth` | Email + password, Google OAuth |
-| Live dashboard | `/live` | Real‑time telemetry, gauges, AI coach, bridge install |
-| Settings | `/settings` | AI provider, Voice (ElevenLabs), Local DB diagnostics, Appearance |
-| Workbench | `/sessions/$id` | Lap analysis for an uploaded `.ibt` |
-| Sessions list | `/sessions` | All uploaded laps, fingerprint deltas |
-| Car fingerprint | `/fingerprint` | Tire / brake / aero fingerprint vs reference |
-| Shared lap | `/share/$token` | Public read‑only view of a lap |
-| Lab | `/lab/lapfile` | Diagnostic parser playground |
-| Sitemap | `/sitemap.xml` | SEO sitemap |
+| Area                | Route           | Highlights                                                        |
+| ------------------- | --------------- | ----------------------------------------------------------------- |
+| Marketing / landing | `/`             | Hero, feature overview, schema.org metadata                       |
+| How it works        | `/how-it-works` | Parsing pipeline diagram, `.ibt` format breakdown                 |
+| Auth                | `/auth`         | Email + password, Google OAuth                                    |
+| Live dashboard      | `/live`         | Real‑time telemetry, gauges, AI coach, bridge install             |
+| Settings            | `/settings`     | AI provider, Voice (ElevenLabs), Local DB diagnostics, Appearance |
+| Workbench           | `/sessions/$id` | Lap analysis for an uploaded `.ibt`                               |
+| Sessions list       | `/sessions`     | All uploaded laps, fingerprint deltas                             |
+| Car fingerprint     | `/fingerprint`  | Tire / brake / aero fingerprint vs reference                      |
+| Shared lap          | `/share/$token` | Public read‑only view of a lap                                    |
+| Lab                 | `/lab/lapfile`  | Diagnostic parser playground                                      |
+| Sitemap             | `/sitemap.xml`  | SEO sitemap                                                       |
 
 A global fixed **Back** button (`src/components/BackButton.tsx`) is pinned top‑left on every non‑landing page so you’re never trapped.
 
@@ -89,7 +89,7 @@ Route: **`/live`** · Components: `src/components/live/*`
 
 ### Dashboard widgets
 
-- **`ConfigurableChannelList.tsx`** + **`ChannelRegistry.ts`** — Pick any of the 250+ live IRSDK channels and lay them out as compact readouts. Layout is persisted per user via `preferences.functions.ts` and shareable as a *community channel layout* (votes, security‑definer RPC for vote counts).
+- **`ConfigurableChannelList.tsx`** + **`ChannelRegistry.ts`** — Pick any of the 250+ live IRSDK channels and lay them out as compact readouts. Layout is persisted per user via `preferences.functions.ts` and shareable as a _community channel layout_ (votes, security‑definer RPC for vote counts).
 - **`DerivedMetrics.tsx`** — Computed channels (delta to ref, brake bias %, slip estimates, ideal gear).
 - **`MotecPanels.tsx`** — MoTeC‑style multi‑panel gauges.
 - **`RecordingControls.tsx`** — Start / stop a local recording buffer (`liveRecorder.ts`) — useful when you want to capture a stint without waiting for iRacing’s own .ibt write.
@@ -117,27 +117,27 @@ Route: **`/sessions/$id`** · Components: `src/components/workbench/*`
 
 ### Panes
 
-| Component | What it does |
-| --- | --- |
-| `ChannelBrowser.tsx` | All 250+ channels grouped (Driver Inputs · Vehicle · Engine · Tires · Suspension · Session · Environment), searchable, click‑to‑plot |
-| `StackedTraces.tsx` | Synchronized uPlot panels with min/max/avg readout per channel |
-| `TrackMap.tsx` | Reconstructed XY outline, live cursor dot, optional sector overlay |
-| `Timeline.tsx` + `LapList.tsx` | Pick reference lap + compare lap (dashed overlay on every trace) |
-| `SectorSpider.tsx` | Per‑sector deltas vs reference as a radar chart |
-| `TimeLossWaterfall.tsx` | Where you lost / gained time across a lap, per micro‑sector |
-| `GGDiagram.tsx` | Longitudinal × lateral G scatter with envelope |
-| `MinCornerSpeed.tsx` | Apex speed per corner, deltas vs reference |
-| `BrakeBias.tsx` | Brake‑bias analysis over a stint |
-| `SlipAngle.tsx` | Slip angle estimate (front/rear) from IMU + steering |
-| `OptimalLap.tsx` | Theoretical best lap stitched from your fastest sectors |
-| `PianoRoll.tsx` | Throttle/brake/gear roll for pattern spotting |
-| `SetupSheet.tsx` + `SetupDiff.tsx` | Parsed setup YAML; diff two setups side by side |
-| `ReplayThree.tsx` + `CinemaPlayback.tsx` | 3D car‑on‑track playback driven by telemetry |
-| `LiveReadout.tsx` | HUD‑style readout you can pop out (`HudSettings.tsx`) |
-| `FingerprintDelta.tsx` | Compare lap’s fingerprint vs your baseline |
-| `Counterfactuals.tsx` | “What if you’d braked 5m later into T3?” — AI counterfactual analysis |
-| `AICoach.tsx` | Per‑lap natural‑language critique |
-| `ExportButton.tsx` / `ShareButton.tsx` | CSV export + create a public share link |
+| Component                                | What it does                                                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `ChannelBrowser.tsx`                     | All 250+ channels grouped (Driver Inputs · Vehicle · Engine · Tires · Suspension · Session · Environment), searchable, click‑to‑plot |
+| `StackedTraces.tsx`                      | Synchronized uPlot panels with min/max/avg readout per channel                                                                       |
+| `TrackMap.tsx`                           | Reconstructed XY outline, live cursor dot, optional sector overlay                                                                   |
+| `Timeline.tsx` + `LapList.tsx`           | Pick reference lap + compare lap (dashed overlay on every trace)                                                                     |
+| `SectorSpider.tsx`                       | Per‑sector deltas vs reference as a radar chart                                                                                      |
+| `TimeLossWaterfall.tsx`                  | Where you lost / gained time across a lap, per micro‑sector                                                                          |
+| `GGDiagram.tsx`                          | Longitudinal × lateral G scatter with envelope                                                                                       |
+| `MinCornerSpeed.tsx`                     | Apex speed per corner, deltas vs reference                                                                                           |
+| `BrakeBias.tsx`                          | Brake‑bias analysis over a stint                                                                                                     |
+| `SlipAngle.tsx`                          | Slip angle estimate (front/rear) from IMU + steering                                                                                 |
+| `OptimalLap.tsx`                         | Theoretical best lap stitched from your fastest sectors                                                                              |
+| `PianoRoll.tsx`                          | Throttle/brake/gear roll for pattern spotting                                                                                        |
+| `SetupSheet.tsx` + `SetupDiff.tsx`       | Parsed setup YAML; diff two setups side by side                                                                                      |
+| `ReplayThree.tsx` + `CinemaPlayback.tsx` | 3D car‑on‑track playback driven by telemetry                                                                                         |
+| `LiveReadout.tsx`                        | HUD‑style readout you can pop out (`HudSettings.tsx`)                                                                                |
+| `FingerprintDelta.tsx`                   | Compare lap’s fingerprint vs your baseline                                                                                           |
+| `Counterfactuals.tsx`                    | “What if you’d braked 5m later into T3?” — AI counterfactual analysis                                                                |
+| `AICoach.tsx`                            | Per‑lap natural‑language critique                                                                                                    |
+| `ExportButton.tsx` / `ShareButton.tsx`   | CSV export + create a public share link                                                                                              |
 
 ---
 
@@ -148,7 +148,7 @@ Powered by **Lovable AI Gateway** (no API key needed):
 - `src/lib/coach.functions.ts` + `src/lib/coach/summarize.ts` — Server functions that build a compact lap summary (driver inputs, corner phases, sector times, deltas) and call an LLM to produce a critique + actionable suggestions.
 - `src/lib/coach/physics.ts` — Lightweight vehicle physics features fed to the LLM (load transfer estimates, slip ratios).
 - `src/lib/advisor.functions.ts` + `src/lib/advisor.knowledge.ts` — Setup advisor that combines a curated knowledge base (springs, dampers, bars, aero, brake bias) with lap telemetry to recommend setup nudges.
-- `src/lib/tts.functions.ts` — Server‑side TTS so the live coach can *speak* call‑outs while you drive.
+- `src/lib/tts.functions.ts` — Server‑side TTS so the live coach can _speak_ call‑outs while you drive.
 - `src/components/VoiceSettings.tsx` — Per-user ElevenLabs API key + Voice ID configuration from Settings.
 
 All AI calls go through authenticated server functions (`requireSupabaseAuth`) so user context and rate limits are honored.

@@ -10,11 +10,11 @@ import { useWorkbench } from "@/lib/store";
  * Mount this once at the app root scope.
  */
 export function LiveBridgeSync({ t }: { t: Telemetry }) {
-    const setLiveContext = useWorkbench((s) => s.setLiveContext);
+  const setLiveContext = useWorkbench((s) => s.setLiveContext);
 
-    useEffect(() => {
-        setLiveContext(t.track, t.car, t.connected);
-    }, [t.track, t.car, t.connected, setLiveContext]);
+  useEffect(() => {
+    setLiveContext(t.track, t.car, t.connected);
+  }, [t.track, t.car, t.connected, setLiveContext]);
 
-    return null;
+  return null;
 }

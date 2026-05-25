@@ -30,9 +30,12 @@ function lapSectorMetrics(parsed: IbtParsed, lapNum: number): SectorMetrics[] | 
   for (let s = 0; s < NUM_SECTORS; s++) {
     const lo = s / NUM_SECTORS;
     const hi = (s + 1) / NUM_SECTORS;
-    let entry = NaN, exit = NaN, vmin = Infinity;
+    let entry = NaN,
+      exit = NaN,
+      vmin = Infinity;
     let peakBrakeG = 0;
-    let thrOn = 0, thrTotal = 0;
+    let thrOn = 0,
+      thrTotal = 0;
     const steerVals: number[] = [];
     for (let t = lap.startTick; t <= lap.endTick; t++) {
       const p = pct[t];
@@ -87,7 +90,11 @@ const AXES = [
 ] as const;
 
 /** Normalize each axis using max across reference + compare metrics. */
-function normalize(value: number, axis: typeof AXES[number]["key"], scale: Record<string, number>) {
+function normalize(
+  value: number,
+  axis: (typeof AXES)[number]["key"],
+  scale: Record<string, number>,
+) {
   return scale[axis] > 0 ? Math.max(0, Math.min(1, value / scale[axis])) : 0;
 }
 
@@ -132,7 +139,7 @@ export function SectorSpider({ parsed }: { parsed: IbtParsed }) {
   const polygonForSector = (m: SectorMetrics) => {
     return AXES.map((a, i) => {
       const v = normalize(m[a.key], a.key, scale);
-      const ang = (-Math.PI / 2) + (i * 2 * Math.PI) / AXES.length;
+      const ang = -Math.PI / 2 + (i * 2 * Math.PI) / AXES.length;
       return [cx + Math.cos(ang) * R * v, cy + Math.sin(ang) * R * v];
     });
   };
@@ -178,7 +185,7 @@ export function SectorSpider({ parsed }: { parsed: IbtParsed }) {
                     <polygon
                       key={r}
                       points={AXES.map((_, i) => {
-                        const ang = (-Math.PI / 2) + (i * 2 * Math.PI) / AXES.length;
+                        const ang = -Math.PI / 2 + (i * 2 * Math.PI) / AXES.length;
                         return `${cx + Math.cos(ang) * R * r},${cy + Math.sin(ang) * R * r}`;
                       }).join(" ")}
                       fill="none"
@@ -189,7 +196,7 @@ export function SectorSpider({ parsed }: { parsed: IbtParsed }) {
                   ))}
                   {/* axes + labels */}
                   {AXES.map((a, i) => {
-                    const ang = (-Math.PI / 2) + (i * 2 * Math.PI) / AXES.length;
+                    const ang = -Math.PI / 2 + (i * 2 * Math.PI) / AXES.length;
                     const lx = cx + Math.cos(ang) * (R + 14);
                     const ly = cy + Math.sin(ang) * (R + 14);
                     return (

@@ -71,10 +71,7 @@ export function AICoach({
     () => buildSessionSummary(parsed, track ?? undefined, car ?? undefined),
     [parsed, track, car],
   );
-  const physics = useMemo(
-    () => buildPhysicsSummary(parsed, refLap),
-    [parsed, refLap],
-  );
+  const physics = useMemo(() => buildPhysicsSummary(parsed, refLap), [parsed, refLap]);
 
   // Probe how many prior sessions exist for this track + car so we can show count.
   useEffect(() => {
@@ -93,7 +90,9 @@ export function AICoach({
         if (!cancelled) setHistoryMatches(0);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [track, car, sessionId]);
 
   const canRun = summary.laps.length > 0 && (mode !== "compare" || summary.laps.length >= 2);
@@ -149,7 +148,9 @@ export function AICoach({
       const text = resultDetailed
         ? renderDetailedForSpeech(result as DetailedResult)
         : renderConciseForSpeech(result as ConciseResult);
-      const resp = await speakText({ data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId } });
+      const resp = await speakText({
+        data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId },
+      });
       const r = resp as { error?: string; audioBase64?: string; mime?: string };
       if (r.error || !r.audioBase64) {
         setTtsError(r.error ?? "Voice unavailable");
@@ -157,7 +158,10 @@ export function AICoach({
       }
       const audio = new Audio(`data:${r.mime ?? "audio/mpeg"};base64,${r.audioBase64}`);
       audio.onended = () => setSpeaking(false);
-      audio.onerror = () => { setTtsError("Playback failed"); setSpeaking(false); };
+      audio.onerror = () => {
+        setTtsError("Playback failed");
+        setSpeaking(false);
+      };
       await audio.play();
     } catch (e) {
       setTtsError(e instanceof Error ? e.message : "TTS failed");
@@ -186,10 +190,11 @@ export function AICoach({
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`px-2 py-1 ${mode === m
+                  className={`px-2 py-1 ${
+                    mode === m
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                    }`}
+                  }`}
                 >
                   {m === "single" ? "Single Lap" : m === "compare" ? "Compare" : "Session"}
                 </button>
@@ -210,7 +215,10 @@ export function AICoach({
             {historyMatches != null && historyMatches > 0 && (
               <>
                 <span className="text-muted-foreground">·</span>
-                <label className="flex cursor-pointer items-center gap-1.5" title="Compare against your prior sessions on the same track + car">
+                <label
+                  className="flex cursor-pointer items-center gap-1.5"
+                  title="Compare against your prior sessions on the same track + car"
+                >
                   <input
                     type="checkbox"
                     checked={useHistory}
@@ -218,9 +226,7 @@ export function AICoach({
                     className="h-3 w-3 accent-primary"
                   />
                   <History className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    History ({historyMatches})
-                  </span>
+                  <span className="text-muted-foreground">History ({historyMatches})</span>
                 </label>
               </>
             )}
@@ -232,9 +238,7 @@ export function AICoach({
                 </span>
               )}
               {mode === "single" && (
-                <span className="text-muted-foreground">
-                  Lap {refLap ?? "best"}
-                </span>
+                <span className="text-muted-foreground">Lap {refLap ?? "best"}</span>
               )}
               {result && (
                 <button
@@ -243,7 +247,11 @@ export function AICoach({
                   title="Read tips aloud"
                   className="flex items-center gap-1 rounded-sm bg-rail px-2 py-1 text-[11px] uppercase tracking-wider text-foreground hover:bg-accent disabled:opacity-40"
                 >
-                  {speaking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Volume2 className="h-3 w-3" />}
+                  {speaking ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-3 w-3" />
+                  )}
                   {speaking ? "Speaking" : "Speak"}
                 </button>
               )}
@@ -310,7 +318,8 @@ export function AICoach({
           )}
           {result && fallback && (
             <div className="mt-2 rounded-sm border border-amber-500/30 bg-amber-500/5 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-amber-300/80">
-              AI gateway gave no useful reply — these tips were generated locally from your physics + counterfactual zones. Click Analyze again to retry the live model.
+              AI gateway gave no useful reply — these tips were generated locally from your physics
+              + counterfactual zones. Click Analyze again to retry the live model.
             </div>
           )}
         </div>
@@ -350,10 +359,7 @@ function ConciseView({ data }: { data: ConciseResult }) {
       <div className="text-sm font-medium text-foreground">{data.headline}</div>
       <ul className="space-y-1.5">
         {data.tips.map((t, i) => (
-          <li
-            key={i}
-            className="hairline rounded-sm bg-rail/40 p-2 text-xs"
-          >
+          <li key={i} className="hairline rounded-sm bg-rail/40 p-2 text-xs">
             <div className="flex items-center gap-2">
               <span
                 className={`rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${priorityClass(t.priority)}`}

@@ -85,7 +85,10 @@ export function DerivedMetrics({
             </span>
           </div>
           <div className="mt-1 grid grid-cols-3 gap-x-2 gap-y-0.5 tabular-nums text-zinc-300">
-            <Row k="Spd" v={`${(cursor.smoothed["speed:0"] ?? cursor.sample.speed).toFixed(1)} km/h`} />
+            <Row
+              k="Spd"
+              v={`${(cursor.smoothed["speed:0"] ?? cursor.sample.speed).toFixed(1)} km/h`}
+            />
             <Row k="Rpm" v={Math.round(cursor.smoothed["rpm:0"] ?? cursor.sample.rpm).toString()} />
             <Row k="Gear" v="—" />
             <Row
@@ -102,7 +105,10 @@ export function DerivedMetrics({
             />
             <Row k="gLat" v={(cursor.smoothed["g:0"] ?? cursor.sample.gLat).toFixed(2)} />
             <Row k="gLon" v={(cursor.smoothed["g:1"] ?? cursor.sample.gLon).toFixed(2)} />
-            <Row k="Δt" v={`-${((samples[samples.length - 1]?.t ?? 0) - cursor.sample.t) / 1000}s`} />
+            <Row
+              k="Δt"
+              v={`-${((samples[samples.length - 1]?.t ?? 0) - cursor.sample.t) / 1000}s`}
+            />
           </div>
         </div>
       )}
@@ -217,15 +223,19 @@ function computeMetrics(samples: Sample[], t: Telemetry): Computed {
     Math.abs(last.gLat) < 0.05 ? 1 : Math.min(3, expectedG / Math.max(0.05, Math.abs(last.gLat)));
   // Rear: when oversteering, |gLat| grows faster than steering → low ratio.
   // Use sign agreement: if steering and gLat have opposite signs, treat as oversteer.
-  const opposite = Math.sign(last.steering) !== 0 && Math.sign(last.steering) === -Math.sign(last.gLat);
-  const rearSlip = opposite ? 1.4 + Math.min(0.8, Math.abs(last.gLat) / 3) : 0.9 + Math.abs(last.gLat) / 6;
+  const opposite =
+    Math.sign(last.steering) !== 0 && Math.sign(last.steering) === -Math.sign(last.gLat);
+  const rearSlip = opposite
+    ? 1.4 + Math.min(0.8, Math.abs(last.gLat) / 3)
+    : 0.9 + Math.abs(last.gLat) / 6;
 
   return {
     windowSec: (last.t - win[0].t) / 1000,
     accelRate: Math.max(0, accelRate),
     brakeRate: Math.abs(brakeRate),
     jerk,
-    brakeEffortBiasPct: brakeWeightTotal > 0 ? (brakeWeightFront / brakeWeightTotal) * 100 : t.brakeBias,
+    brakeEffortBiasPct:
+      brakeWeightTotal > 0 ? (brakeWeightFront / brakeWeightTotal) * 100 : t.brakeBias,
     frontSlip,
     rearSlip,
   };

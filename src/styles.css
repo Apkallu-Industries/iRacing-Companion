@@ -65,10 +65,10 @@
   /* MoTeC i2 Pro dark workspace tokens (single dark theme) */
   --radius: 0.25rem;
 
-  --background: oklch(0.18 0.005 250);     /* #1a1d21 */
+  --background: oklch(0.18 0.005 250); /* #1a1d21 */
   --foreground: oklch(0.92 0.005 250);
 
-  --panel: oklch(0.21 0.006 250);          /* #22262b */
+  --panel: oklch(0.21 0.006 250); /* #22262b */
   --panel-2: oklch(0.235 0.006 250);
   --rail: oklch(0.16 0.005 250);
 
@@ -77,7 +77,7 @@
   --popover: var(--panel-2);
   --popover-foreground: var(--foreground);
 
-  --primary: oklch(0.78 0.16 195);         /* cyan accent */
+  --primary: oklch(0.78 0.16 195); /* cyan accent */
   --primary-foreground: oklch(0.15 0.01 250);
 
   --secondary: oklch(0.27 0.008 250);
@@ -92,21 +92,21 @@
   --destructive: oklch(0.65 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.28 0.006 250);          /* #2f343a */
+  --border: oklch(0.28 0.006 250); /* #2f343a */
   --border-strong: oklch(0.36 0.008 250);
   --input: oklch(0.28 0.006 250);
   --ring: oklch(0.78 0.16 195);
 
   /* Channel trace colors (MoTeC convention) */
-  --ch-speed:    oklch(0.78 0.16 195);     /* cyan   */
-  --ch-throttle: oklch(0.78 0.20 145);     /* green  */
-  --ch-brake:    oklch(0.66 0.24 28);      /* red    */
-  --ch-rpm:      oklch(0.86 0.18 95);      /* amber  */
-  --ch-gear:     oklch(0.92 0.005 250);    /* white  */
-  --ch-steer:    oklch(0.7  0.22 320);     /* magenta*/
-  --ch-glat:     oklch(0.76 0.18 50);      /* orange */
-  --ch-glong:    oklch(0.72 0.18 260);     /* blue   */
-  --ch-default:  oklch(0.72 0.05 250);
+  --ch-speed: oklch(0.78 0.16 195); /* cyan   */
+  --ch-throttle: oklch(0.78 0.2 145); /* green  */
+  --ch-brake: oklch(0.66 0.24 28); /* red    */
+  --ch-rpm: oklch(0.86 0.18 95); /* amber  */
+  --ch-gear: oklch(0.92 0.005 250); /* white  */
+  --ch-steer: oklch(0.7 0.22 320); /* magenta*/
+  --ch-glat: oklch(0.76 0.18 50); /* orange */
+  --ch-glong: oklch(0.72 0.18 260); /* blue   */
+  --ch-default: oklch(0.72 0.05 250);
 
   --grid-major: oklch(0.32 0.006 250);
   --grid-minor: oklch(0.24 0.006 250);
@@ -148,18 +148,40 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  html { color-scheme: dark; }
+  html {
+    color-scheme: dark;
+  }
 
-  .font-mono, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .font-mono,
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
 
-  .panel       { background-color: var(--panel); }
-  .panel-2     { background-color: var(--panel-2); }
-  .rail        { background-color: var(--rail); }
-  .hairline    { border: 1px solid var(--border); }
-  .hairline-b  { border-bottom: 1px solid var(--border); }
-  .hairline-t  { border-top: 1px solid var(--border); }
-  .hairline-r  { border-right: 1px solid var(--border); }
-  .hairline-l  { border-left: 1px solid var(--border); }
+  .panel {
+    background-color: var(--panel);
+  }
+  .panel-2 {
+    background-color: var(--panel-2);
+  }
+  .rail {
+    background-color: var(--rail);
+  }
+  .hairline {
+    border: 1px solid var(--border);
+  }
+  .hairline-b {
+    border-bottom: 1px solid var(--border);
+  }
+  .hairline-t {
+    border-top: 1px solid var(--border);
+  }
+  .hairline-r {
+    border-right: 1px solid var(--border);
+  }
+  .hairline-l {
+    border-left: 1px solid var(--border);
+  }
 }
 
 @theme inline {

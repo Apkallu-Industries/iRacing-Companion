@@ -1,9 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "@tanstack/react-router";
 import {
-  Settings, Database, Cloud, Cpu, Keyboard,
-  RefreshCw, Trash2, CheckCircle2, AlertCircle, RotateCcw,
-  Server, Laptop, Terminal, Copy, Check
+  Settings,
+  Database,
+  Cloud,
+  Cpu,
+  Keyboard,
+  RefreshCw,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  RotateCcw,
+  Server,
+  Laptop,
+  Terminal,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -21,11 +33,41 @@ import { testLocalDbConnection, getDbConfig, saveDbConfig } from "@/lib/localDb.
 import { toast } from "sonner";
 
 const LLM_PROVIDERS = [
-  { id: "cloud", name: "Cloud (Lovable/Default)", icon: Server, url: "", desc: "Route requests securely through the Lovable AI Gateway." },
-  { id: "lmstudio", name: "LM Studio", icon: Laptop, url: "http://localhost:1234/api/v1", desc: "lmstudio-native." },
-  { id: "ollama", name: "Ollama", icon: Cpu, url: "http://localhost:11434/v1", desc: "Local inference via Ollama." },
-  { id: "huggingface", name: "HuggingFace TGI", icon: Server, url: "http://localhost:8080/v1", desc: "Local TGI container backend." },
-  { id: "lemonade", name: "LlamaEdge / Lemonade", icon: Laptop, url: "http://localhost:8080/v1", desc: "Wasm edge inference." },
+  {
+    id: "cloud",
+    name: "Cloud (Lovable/Default)",
+    icon: Server,
+    url: "",
+    desc: "Route requests securely through the Lovable AI Gateway.",
+  },
+  {
+    id: "lmstudio",
+    name: "LM Studio",
+    icon: Laptop,
+    url: "http://localhost:1234/api/v1",
+    desc: "lmstudio-native.",
+  },
+  {
+    id: "ollama",
+    name: "Ollama",
+    icon: Cpu,
+    url: "http://localhost:11434/v1",
+    desc: "Local inference via Ollama.",
+  },
+  {
+    id: "huggingface",
+    name: "HuggingFace TGI",
+    icon: Server,
+    url: "http://localhost:8080/v1",
+    desc: "Local TGI container backend.",
+  },
+  {
+    id: "lemonade",
+    name: "LlamaEdge / Lemonade",
+    icon: Laptop,
+    url: "http://localhost:8080/v1",
+    desc: "Wasm edge inference.",
+  },
 ] as const;
 
 export function GlobalSettingsDialog() {
@@ -38,17 +80,27 @@ export function GlobalSettingsDialog() {
   const [cloudUri, setCloudUri] = useState("");
   const [dbTesting, setDbTesting] = useState(false);
   const [dbStatus, setDbStatus] = useState<"unchecked" | "connected" | "failed">("unchecked");
-  const [dbTestResult, setDbTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [dbTestResult, setDbTestResult] = useState<{ success: boolean; message: string } | null>(
+    null,
+  );
   const [savingDb, setSavingDb] = useState(false);
   const [idbUsage, setIdbUsage] = useState("Calculating...");
 
   // AI Engine state
   const {
-    llmProvider, llmBaseUrl, llmModelId, llmApiKey,
-    setLlmProvider, setLlmBaseUrl, setLlmModelId, setLlmApiKey
+    llmProvider,
+    llmBaseUrl,
+    llmModelId,
+    llmApiKey,
+    setLlmProvider,
+    setLlmBaseUrl,
+    setLlmModelId,
+    setLlmApiKey,
   } = useWorkbench();
   const [aiTesting, setAiTesting] = useState(false);
-  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string } | null>(
+    null,
+  );
 
   // Copy clip helpers
   const [copiedDocker, setCopiedDocker] = useState(false);
@@ -78,7 +130,7 @@ export function GlobalSettingsDialog() {
     } catch (e: any) {
       setDbTestResult({
         success: false,
-        message: `Connection failed: ${e.message || String(e)}`
+        message: `Connection failed: ${e.message || String(e)}`,
       });
       setDbStatus("failed");
     } finally {
@@ -109,7 +161,9 @@ export function GlobalSettingsDialog() {
       try {
         const estimate = await navigator.storage.estimate();
         const used = estimate.usage ? (estimate.usage / (1024 * 1024)).toFixed(1) : "0";
-        const total = estimate.quota ? (estimate.quota / (1024 * 1024 * 1024)).toFixed(1) : "unknown";
+        const total = estimate.quota
+          ? (estimate.quota / (1024 * 1024 * 1024)).toFixed(1)
+          : "unknown";
         setIdbUsage(`${used} MB used of ${total} GB quota`);
       } catch {
         setIdbUsage("Available");
@@ -120,7 +174,11 @@ export function GlobalSettingsDialog() {
   };
 
   const clearIndexedDb = async () => {
-    if (!confirm("Are you sure you want to clear your local IndexedDB file cache? This will delete downloaded telemetry files from this browser. Telemetry session records in MongoDB will remain.")) {
+    if (
+      !confirm(
+        "Are you sure you want to clear your local IndexedDB file cache? This will delete downloaded telemetry files from this browser. Telemetry session records in MongoDB will remain.",
+      )
+    ) {
       return;
     }
     try {
@@ -138,9 +196,9 @@ export function GlobalSettingsDialog() {
   };
 
   // AI Connection Test
-  const activeProviderInfo = LLM_PROVIDERS.find(p => p.id === llmProvider);
+  const activeProviderInfo = LLM_PROVIDERS.find((p) => p.id === llmProvider);
 
-  const applyAiDefaults = (providerId: typeof LLM_PROVIDERS[number]["id"]) => {
+  const applyAiDefaults = (providerId: (typeof LLM_PROVIDERS)[number]["id"]) => {
     const p = LLM_PROVIDERS.find((x) => x.id === providerId);
     if (!p) return;
     setLlmProvider(p.id);
@@ -153,12 +211,16 @@ export function GlobalSettingsDialog() {
     setAiTesting(true);
     setAiTestResult(null);
     try {
-      const res = await testLLMConnection(llmBaseUrl || activeProviderInfo?.url || "", llmModelId, llmApiKey);
+      const res = await testLLMConnection(
+        llmBaseUrl || activeProviderInfo?.url || "",
+        llmModelId,
+        llmApiKey,
+      );
       setAiTestResult(res);
     } catch (e) {
       setAiTestResult({
         success: false,
-        message: e instanceof Error ? e.message : "An unexpected error occurred."
+        message: e instanceof Error ? e.message : "An unexpected error occurred.",
       });
     } finally {
       setAiTesting(false);
@@ -182,7 +244,12 @@ export function GlobalSettingsDialog() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Disable while typing in inputs
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.getAttribute("contenteditable") === "true")) {
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === ",") {
@@ -234,32 +301,53 @@ export function GlobalSettingsDialog() {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="flex-1 flex flex-col min-h-0"
+          >
             <TabsList className="grid grid-cols-4 bg-panel border-b border-border/60 p-1 shrink-0 rounded-none h-11">
-              <TabsTrigger value="db" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer">
+              <TabsTrigger
+                value="db"
+                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
+              >
                 <Database className="h-3.5 w-3.5" />
                 Local DB
               </TabsTrigger>
-              <TabsTrigger value="cloud" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer">
+              <TabsTrigger
+                value="cloud"
+                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
+              >
                 <Cloud className="h-3.5 w-3.5" />
                 Cloud Area
               </TabsTrigger>
-              <TabsTrigger value="ai" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer">
+              <TabsTrigger
+                value="ai"
+                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
+              >
                 <Cpu className="h-3.5 w-3.5" />
                 AI Engine
               </TabsTrigger>
-              <TabsTrigger value="shortcuts" className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer">
+              <TabsTrigger
+                value="shortcuts"
+                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
+              >
                 <Keyboard className="h-3.5 w-3.5" />
                 Shortcuts
               </TabsTrigger>
             </TabsList>
 
             {/* TAB: Local DB */}
-            <TabsContent value="db" className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0 focus:outline-none">
+            <TabsContent
+              value="db"
+              className="flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0 focus:outline-none"
+            >
               {/* Database status and summary */}
               <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
                 <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">MongoDB Server Status</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    MongoDB Server Status
+                  </span>
                   {dbTesting ? (
                     <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
                       <RefreshCw className="h-3 w-3 animate-spin" /> Testing...
@@ -275,7 +363,9 @@ export function GlobalSettingsDialog() {
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Local Cache Size</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    Local Cache Size
+                  </span>
                   <span className="text-xs font-mono text-muted-foreground">{idbUsage}</span>
                 </div>
               </div>
@@ -308,7 +398,11 @@ export function GlobalSettingsDialog() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    Default connection URI for standard installation is <code className="font-mono bg-rail px-1 rounded text-primary">mongodb://127.0.0.1:27017/</code>.
+                    Default connection URI for standard installation is{" "}
+                    <code className="font-mono bg-rail px-1 rounded text-primary">
+                      mongodb://127.0.0.1:27017/
+                    </code>
+                    .
                   </p>
                 </div>
 
@@ -327,9 +421,13 @@ export function GlobalSettingsDialog() {
                 </div>
 
                 {dbTestResult && (
-                  <div className={`rounded-lg p-3 border text-xs whitespace-pre-line leading-relaxed font-sans ${dbTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`}>
+                  <div
+                    className={`rounded-lg p-3 border text-xs whitespace-pre-line leading-relaxed font-sans ${dbTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`}
+                  >
                     <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
-                      {dbTestResult.success ? "✓ MongoDB Connection Successful" : "✗ Connection Failed"}
+                      {dbTestResult.success
+                        ? "✓ MongoDB Connection Successful"
+                        : "✗ Connection Failed"}
                     </div>
                     <div className="font-mono text-[10px]">{dbTestResult.message}</div>
                   </div>
@@ -342,7 +440,8 @@ export function GlobalSettingsDialog() {
                   MongoDB Community Server Setup Guide
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  If you do not have a MongoDB Community Server running locally, select one of the methods below to set it up:
+                  If you do not have a MongoDB Community Server running locally, select one of the
+                  methods below to set it up:
                 </p>
                 <div className="space-y-3">
                   <div className="rounded-lg border border-border bg-rail p-3 space-y-1.5">
@@ -352,11 +451,17 @@ export function GlobalSettingsDialog() {
                         Method A: Windows Package Manager (Winget)
                       </span>
                       <button
-                        onClick={() => copyToClipboard("winget install MongoDB.Community.Server", "winget")}
+                        onClick={() =>
+                          copyToClipboard("winget install MongoDB.Community.Server", "winget")
+                        }
                         className="text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer"
                         title="Copy command"
                       >
-                        {copiedWinget ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        {copiedWinget ? (
+                          <Check className="h-3 w-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
                       </button>
                     </div>
                     <code className="block text-[10px] bg-background/50 p-2 rounded font-mono text-zinc-300">
@@ -371,11 +476,20 @@ export function GlobalSettingsDialog() {
                         Method B: Docker Container
                       </span>
                       <button
-                        onClick={() => copyToClipboard("docker run -d -p 27017:27017 --name iracing-mongo mongo:latest", "docker")}
+                        onClick={() =>
+                          copyToClipboard(
+                            "docker run -d -p 27017:27017 --name iracing-mongo mongo:latest",
+                            "docker",
+                          )
+                        }
                         className="text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer"
                         title="Copy command"
                       >
-                        {copiedDocker ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        {copiedDocker ? (
+                          <Check className="h-3 w-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
                       </button>
                     </div>
                     <code className="block text-[10px] bg-background/50 p-2 rounded font-mono text-zinc-300 leading-normal">
@@ -407,17 +521,23 @@ export function GlobalSettingsDialog() {
             </TabsContent>
 
             {/* TAB: Cloud DB */}
-            <TabsContent value="cloud" className="flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none">
+            <TabsContent
+              value="cloud"
+              className="flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none"
+            >
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
                 <h3 className="text-xs font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1.5">
                   <Cloud className="h-4 w-4" />
                   Cloud Sync Replicator
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  We are currently sorting our master Cloud database hosting layout. When fully active, cloud databases will auto-sync with users' local telemetry records and telemetry profiles.
+                  We are currently sorting our master Cloud database hosting layout. When fully
+                  active, cloud databases will auto-sync with users' local telemetry records and
+                  telemetry profiles.
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  For early developer testing, you can input a manual MongoDB Atlas or custom cloud server URI below to replicate local records.
+                  For early developer testing, you can input a manual MongoDB Atlas or custom cloud
+                  server URI below to replicate local records.
                 </p>
               </div>
 
@@ -445,21 +565,30 @@ export function GlobalSettingsDialog() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    This setting will replicate local telemetry sessions to your specified cloud Mongo instance. Keep empty if you only want local storage.
+                    This setting will replicate local telemetry sessions to your specified cloud
+                    Mongo instance. Keep empty if you only want local storage.
                   </p>
                 </div>
 
                 <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Cloud Sync Engine</span>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                      Cloud Sync Engine
+                    </span>
                     <span className="text-[10px] text-amber-500 uppercase font-mono tracking-wider font-semibold">
                       Testing Mode
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Active Connection Target</span>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                      Active Connection Target
+                    </span>
                     <span className="text-xs font-mono text-muted-foreground truncate max-w-[300px]">
-                      {cloudUri ? (cloudUri.startsWith("mongodb") ? "Manual Connection String Configured" : "Configured") : "None (Local Only)"}
+                      {cloudUri
+                        ? cloudUri.startsWith("mongodb")
+                          ? "Manual Connection String Configured"
+                          : "Configured"
+                        : "None (Local Only)"}
                     </span>
                   </div>
                 </div>
@@ -467,7 +596,10 @@ export function GlobalSettingsDialog() {
             </TabsContent>
 
             {/* TAB: AI Engine */}
-            <TabsContent value="ai" className="flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none">
+            <TabsContent
+              value="ai"
+              className="flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none"
+            >
               <div>
                 <div className="mb-2.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                   AI Provider Software
@@ -490,7 +622,9 @@ export function GlobalSettingsDialog() {
                           <p.icon className="h-3.5 w-3.5 shrink-0 text-primary" />
                           {p.name}
                         </div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">{p.desc}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">
+                          {p.desc}
+                        </div>
                       </div>
                     </label>
                   ))}
@@ -548,7 +682,8 @@ export function GlobalSettingsDialog() {
                       className="font-mono text-xs"
                     />
                     <p className="text-[9px] text-muted-foreground mt-1">
-                      Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).
+                      Required if your local server uses token authentication (e.g. LM Studio
+                      0.4.0+).
                     </p>
                   </div>
 
@@ -565,11 +700,17 @@ export function GlobalSettingsDialog() {
                       {aiTesting ? "Testing Connection..." : "Test Local Host Software Connection"}
                     </Button>
                     {aiTestResult && (
-                      <div className={`mt-3 rounded-lg p-3 border text-xs ${aiTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`}>
+                      <div
+                        className={`mt-3 rounded-lg p-3 border text-xs ${aiTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`}
+                      >
                         <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
-                          {aiTestResult.success ? "✓ AI Connection Successful" : "✗ Connection Failed"}
+                          {aiTestResult.success
+                            ? "✓ AI Connection Successful"
+                            : "✗ Connection Failed"}
                         </div>
-                        <div className="whitespace-pre-line leading-relaxed font-mono text-[10px]">{aiTestResult.message}</div>
+                        <div className="whitespace-pre-line leading-relaxed font-mono text-[10px]">
+                          {aiTestResult.message}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -578,24 +719,32 @@ export function GlobalSettingsDialog() {
             </TabsContent>
 
             {/* TAB: Shortcuts */}
-            <TabsContent value="shortcuts" className="flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none">
+            <TabsContent
+              value="shortcuts"
+              className="flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none"
+            >
               <div className="space-y-3">
                 <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1">
                   Global Keyboard Shortcuts
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  These shortcuts are active globally across all workspaces. They are disabled while editing a form or input field.
+                  These shortcuts are active globally across all workspaces. They are disabled while
+                  editing a form or input field.
                 </p>
 
                 <div className="rounded-lg border border-border bg-rail p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="text-xs font-mono text-foreground font-medium">Toggle Shortcuts Help</span>
+                    <span className="text-xs font-mono text-foreground font-medium">
+                      Toggle Shortcuts Help
+                    </span>
                     <span className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold">
                       ?
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="text-xs font-mono text-foreground font-medium">Toggle Settings Panel</span>
+                    <span className="text-xs font-mono text-foreground font-medium">
+                      Toggle Settings Panel
+                    </span>
                     <div className="flex gap-1.5 items-center">
                       <span className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold">
                         Ctrl
@@ -607,19 +756,25 @@ export function GlobalSettingsDialog() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="text-xs font-mono text-foreground font-medium">Go Home (Dashboard)</span>
+                    <span className="text-xs font-mono text-foreground font-medium">
+                      Go Home (Dashboard)
+                    </span>
                     <div className="flex gap-1 items-center">
                       <span className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold">
                         g
                       </span>
-                      <span className="text-xs text-muted-foreground text-[10px] font-mono">then</span>
+                      <span className="text-xs text-muted-foreground text-[10px] font-mono">
+                        then
+                      </span>
                       <span className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold">
                         h
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-foreground font-medium">Go Back (or Home)</span>
+                    <span className="text-xs font-mono text-foreground font-medium">
+                      Go Back (or Home)
+                    </span>
                     <span className="rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold">
                       Esc
                     </span>
@@ -629,21 +784,31 @@ export function GlobalSettingsDialog() {
 
               <div className="rounded-lg border border-border bg-panel p-3.5 text-xs text-muted-foreground">
                 <h4 className="font-semibold text-foreground mb-1">💡 Quick Tip</h4>
-                Pressing <kbd className="font-mono text-primary font-bold">Esc</kbd> inside settings dialogs or guides will immediately close them.
+                Pressing <kbd className="font-mono text-primary font-bold">Esc</kbd> inside settings
+                dialogs or guides will immediately close them.
               </div>
             </TabsContent>
           </Tabs>
 
           <div className="hairline-t flex items-center justify-between px-6 py-4 bg-panel shrink-0 border-t border-border/60">
             {activeTab === "ai" ? (
-              <Button variant="outline" size="sm" onClick={() => applyAiDefaults("cloud")} className="gap-1.5 font-mono text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => applyAiDefaults("cloud")}
+                className="gap-1.5 font-mono text-xs"
+              >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reset AI
               </Button>
             ) : (
               <div />
             )}
-            <Button size="sm" onClick={() => setOpen(false)} className="font-mono text-xs cursor-pointer">
+            <Button
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="font-mono text-xs cursor-pointer"
+            >
               Done
             </Button>
           </div>

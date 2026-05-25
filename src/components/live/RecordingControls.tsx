@@ -20,7 +20,8 @@ function fmtElapsed(s: number) {
  * later.
  */
 export function RecordingControls({ t }: { t: Telemetry }) {
-  const { state, sampleCount, elapsed, channelCount, save, start, stop, reset } = useLiveRecorder(t);
+  const { state, sampleCount, elapsed, channelCount, save, start, stop, reset } =
+    useLiveRecorder(t);
   const { user } = useAuth();
   const navigate = useNavigate();
   const setPendingLocalBlob = useWorkbench((s) => s.setPendingLocalBlob);
@@ -60,8 +61,9 @@ export function RecordingControls({ t }: { t: Telemetry }) {
         </h2>
         <div className="flex items-center gap-2">
           <span
-            className={`size-2 rounded-full ${state === "recording" ? "bg-racing-red animate-pulse" : "bg-zinc-700"
-              } ${pulse ? "scale-150 transition-transform" : ""}`}
+            className={`size-2 rounded-full ${
+              state === "recording" ? "bg-racing-red animate-pulse" : "bg-zinc-700"
+            } ${pulse ? "scale-150 transition-transform" : ""}`}
           />
           <span className="text-[10px] font-mono uppercase text-zinc-300">
             {state === "recording"
@@ -125,7 +127,8 @@ export function RecordingControls({ t }: { t: Telemetry }) {
 
       {!user && sampleCount > 0 && (
         <p className="mt-3 text-[10px] text-zinc-400">
-          Signed-out recordings download as <code className="font-mono">.pwlap</code> files only. Sign in to save them to your library.
+          Signed-out recordings download as <code className="font-mono">.pwlap</code> files only.
+          Sign in to save them to your library.
         </p>
       )}
     </div>

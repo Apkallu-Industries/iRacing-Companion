@@ -51,9 +51,18 @@ export interface RecordingDocV2 {
 
 /* ────────────────────────────────────────────────────── back-compat v1 */
 export interface RecordingSampleV1 {
-  t: number; spd: number; rpm: number; gear: number;
-  thr: number; brk: number; clu: number; str: number;
-  gLat: number; gLon: number; fuel: number; delta: number;
+  t: number;
+  spd: number;
+  rpm: number;
+  gear: number;
+  thr: number;
+  brk: number;
+  clu: number;
+  str: number;
+  gLat: number;
+  gLon: number;
+  fuel: number;
+  delta: number;
 }
 export interface RecordingDocV1 {
   version: 1;
@@ -77,47 +86,57 @@ export type RecorderState = "idle" | "recording" | "saving";
 /* ─────────────────────────────────────────────────── channel definitions */
 
 type Pick = (t: Telemetry) => number;
-interface ChannelDef { name: string; unit: string; group: string; pick: Pick; }
+interface ChannelDef {
+  name: string;
+  unit: string;
+  group: string;
+  pick: Pick;
+}
 
 const STATIC_CHANNELS: ChannelDef[] = [
   // Engine / velocity
-  { name: "Speed", unit: "m/s", group: "Velocity", pick: t => t.speedKph / 3.6 },
-  { name: "SpeedKph", unit: "kph", group: "Velocity", pick: t => t.speedKph },
-  { name: "RPM", unit: "rpm", group: "Engine", pick: t => t.rpm },
-  { name: "Gear", unit: "", group: "Engine", pick: t => t.gear },
+  { name: "Speed", unit: "m/s", group: "Velocity", pick: (t) => t.speedKph / 3.6 },
+  { name: "SpeedKph", unit: "kph", group: "Velocity", pick: (t) => t.speedKph },
+  { name: "RPM", unit: "rpm", group: "Engine", pick: (t) => t.rpm },
+  { name: "Gear", unit: "", group: "Engine", pick: (t) => t.gear },
   // Driver
-  { name: "Throttle", unit: "%", group: "Driver", pick: t => t.throttle },
-  { name: "Brake", unit: "%", group: "Driver", pick: t => t.brake },
-  { name: "Clutch", unit: "%", group: "Driver", pick: t => t.clutch },
-  { name: "SteeringWheelAngle", unit: "rad", group: "Driver", pick: t => (t.steeringDeg * Math.PI) / 180 },
-  { name: "SteeringDeg", unit: "deg", group: "Driver", pick: t => t.steeringDeg },
+  { name: "Throttle", unit: "%", group: "Driver", pick: (t) => t.throttle },
+  { name: "Brake", unit: "%", group: "Driver", pick: (t) => t.brake },
+  { name: "Clutch", unit: "%", group: "Driver", pick: (t) => t.clutch },
+  {
+    name: "SteeringWheelAngle",
+    unit: "rad",
+    group: "Driver",
+    pick: (t) => (t.steeringDeg * Math.PI) / 180,
+  },
+  { name: "SteeringDeg", unit: "deg", group: "Driver", pick: (t) => t.steeringDeg },
   // Forces
-  { name: "LatAccel", unit: "m/s^2", group: "Forces", pick: t => t.gLat * 9.81 },
-  { name: "LongAccel", unit: "m/s^2", group: "Forces", pick: t => t.gLon * 9.81 },
+  { name: "LatAccel", unit: "m/s^2", group: "Forces", pick: (t) => t.gLat * 9.81 },
+  { name: "LongAccel", unit: "m/s^2", group: "Forces", pick: (t) => t.gLon * 9.81 },
   // Fuel
-  { name: "FuelLevel", unit: "L", group: "Fuel", pick: t => t.fuelRemainingL },
-  { name: "FuelLapsRemaining", unit: "", group: "Fuel", pick: t => t.lapsEstimated },
+  { name: "FuelLevel", unit: "L", group: "Fuel", pick: (t) => t.fuelRemainingL },
+  { name: "FuelLapsRemaining", unit: "", group: "Fuel", pick: (t) => t.lapsEstimated },
   // Timing
-  { name: "LapDelta", unit: "s", group: "Timing", pick: t => t.deltaSec },
+  { name: "LapDelta", unit: "s", group: "Timing", pick: (t) => t.deltaSec },
   // Tires — temps, pressures, wear
-  { name: "LFTempCM", unit: "C", group: "Tires", pick: t => t.tires.fl.tempC },
-  { name: "RFTempCM", unit: "C", group: "Tires", pick: t => t.tires.fr.tempC },
-  { name: "LRTempCM", unit: "C", group: "Tires", pick: t => t.tires.rl.tempC },
-  { name: "RRTempCM", unit: "C", group: "Tires", pick: t => t.tires.rr.tempC },
-  { name: "LFpressure", unit: "bar", group: "Tires", pick: t => t.tires.fl.pressureBar },
-  { name: "RFpressure", unit: "bar", group: "Tires", pick: t => t.tires.fr.pressureBar },
-  { name: "LRpressure", unit: "bar", group: "Tires", pick: t => t.tires.rl.pressureBar },
-  { name: "RRpressure", unit: "bar", group: "Tires", pick: t => t.tires.rr.pressureBar },
-  { name: "LFwearPct", unit: "%", group: "Tires", pick: t => t.tires.fl.wearPct },
-  { name: "RFwearPct", unit: "%", group: "Tires", pick: t => t.tires.fr.wearPct },
-  { name: "LRwearPct", unit: "%", group: "Tires", pick: t => t.tires.rl.wearPct },
-  { name: "RRwearPct", unit: "%", group: "Tires", pick: t => t.tires.rr.wearPct },
+  { name: "LFTempCM", unit: "C", group: "Tires", pick: (t) => t.tires.fl.tempC },
+  { name: "RFTempCM", unit: "C", group: "Tires", pick: (t) => t.tires.fr.tempC },
+  { name: "LRTempCM", unit: "C", group: "Tires", pick: (t) => t.tires.rl.tempC },
+  { name: "RRTempCM", unit: "C", group: "Tires", pick: (t) => t.tires.rr.tempC },
+  { name: "LFpressure", unit: "bar", group: "Tires", pick: (t) => t.tires.fl.pressureBar },
+  { name: "RFpressure", unit: "bar", group: "Tires", pick: (t) => t.tires.fr.pressureBar },
+  { name: "LRpressure", unit: "bar", group: "Tires", pick: (t) => t.tires.rl.pressureBar },
+  { name: "RRpressure", unit: "bar", group: "Tires", pick: (t) => t.tires.rr.pressureBar },
+  { name: "LFwearPct", unit: "%", group: "Tires", pick: (t) => t.tires.fl.wearPct },
+  { name: "RFwearPct", unit: "%", group: "Tires", pick: (t) => t.tires.fr.wearPct },
+  { name: "LRwearPct", unit: "%", group: "Tires", pick: (t) => t.tires.rl.wearPct },
+  { name: "RRwearPct", unit: "%", group: "Tires", pick: (t) => t.tires.rr.wearPct },
   // Weather / car setup live
-  { name: "AirTemp", unit: "C", group: "Weather", pick: t => t.airTempC },
-  { name: "TrackTempCrew", unit: "C", group: "Weather", pick: t => t.trackTempC },
-  { name: "dcBrakeBias", unit: "%", group: "Setup", pick: t => t.brakeBias },
+  { name: "AirTemp", unit: "C", group: "Weather", pick: (t) => t.airTempC },
+  { name: "TrackTempCrew", unit: "C", group: "Weather", pick: (t) => t.trackTempC },
+  { name: "dcBrakeBias", unit: "%", group: "Setup", pick: (t) => t.brakeBias },
   // Network
-  { name: "Latency", unit: "ms", group: "Network", pick: t => t.latencyMs },
+  { name: "Latency", unit: "ms", group: "Network", pick: (t) => t.latencyMs },
 ];
 
 function emptyStore(): Record<string, ChannelColumn> {
@@ -142,7 +161,7 @@ function pushSample(
   if (snap.extras) {
     for (const [k, v] of Object.entries(snap.extras)) {
       if (typeof v !== "number" || !isFinite(v)) continue;
-      
+
       // Skip if this channel is already captured as a static channel
       if (STATIC_CHANNELS.some((d) => d.name === k)) continue;
 
@@ -171,7 +190,9 @@ export function useLiveRecorder(t: Telemetry) {
   const lastSample = useRef<number>(0);
 
   const tRef = useRef(t);
-  useEffect(() => { tRef.current = t; }, [t]);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   useEffect(() => {
     if (state !== "recording") return;
@@ -264,7 +285,7 @@ export function useLiveRecorder(t: Telemetry) {
             best_lap_s: doc.bestLapS,
             storage_path: path,
             recorded_at: doc.startedAt,
-          }
+          },
         });
 
         if (!res.ok) throw new Error(res.error || "Failed inserting session metadata");
@@ -276,7 +297,16 @@ export function useLiveRecorder(t: Telemetry) {
     [elapsed],
   );
 
-  return { state, sampleCount, elapsed, channelCount: Object.keys(channels.current).length, start, stop, reset, save };
+  return {
+    state,
+    sampleCount,
+    elapsed,
+    channelCount: Object.keys(channels.current).length,
+    start,
+    stop,
+    reset,
+    save,
+  };
 }
 
 function parseLap(s: string | undefined | null): number | null {

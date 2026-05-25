@@ -65,13 +65,20 @@ function markSynced(timestamps) {
     const out = lines.map((l) => {
       try {
         const o = JSON.parse(l);
-        if (set.has(o.ts) && !o.synced) { o.synced = true; changed++; }
+        if (set.has(o.ts) && !o.synced) {
+          o.synced = true;
+          changed++;
+        }
         return JSON.stringify(o);
-      } catch { return l; }
+      } catch {
+        return l;
+      }
     });
     if (changed > 0) fs.writeFileSync(FILE, out.join("\n") + "\n", "utf8");
     return changed;
-  } catch { return 0; }
+  } catch {
+    return 0;
+  }
 }
 
 module.exports = { recordLap, readLaps, markSynced, FILE };

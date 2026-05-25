@@ -22,7 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check if there is a local mock session first
-    const localSess = typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
+    const localSess =
+      typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
     if (localSess) {
       try {
         setSession(JSON.parse(localSess));
@@ -38,7 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s) {
         setSession(s);
       } else {
-        const ls = typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
+        const ls =
+          typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
         if (ls) {
           try {
             setSession(JSON.parse(ls));

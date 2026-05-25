@@ -6,14 +6,14 @@ This is the active delivery tracker for the roadmap in [PI_PARITY_ROADMAP.md](PI
 
 ## 1. Workstreams
 
-| Workstream | Scope | Status |
-| --- | --- | --- |
-| WS1 Math engine | Derived channels + formulas + constants | In progress |
-| WS2 Display expansion | Histogram, XY scatter, lap table | Planned |
-| WS3 Workspace system | Saved workspaces + presets | Planned |
-| WS4 Reliability diagnostics | FPS, stream Hz, reconnects, dropouts | Planned |
-| WS5 Event engine | Trigger rules + event markers | Planned |
-| WS6 Collaboration/reporting | Annotations + report export | Planned |
+| Workstream                  | Scope                                   | Status      |
+| --------------------------- | --------------------------------------- | ----------- |
+| WS1 Math engine             | Derived channels + formulas + constants | In progress |
+| WS2 Display expansion       | Histogram, XY scatter, lap table        | Planned     |
+| WS3 Workspace system        | Saved workspaces + presets              | Planned     |
+| WS4 Reliability diagnostics | FPS, stream Hz, reconnects, dropouts    | Planned     |
+| WS5 Event engine            | Trigger rules + event markers           | Planned     |
+| WS6 Collaboration/reporting | Annotations + report export             | Planned     |
 
 ## 2. Sprint 1 (Days 0-14)
 

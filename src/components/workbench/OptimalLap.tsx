@@ -63,7 +63,9 @@ export function OptimalLap({ parsed }: { parsed: IbtParsed }) {
     if (perLap.length === 0) return null;
 
     // Best per segment.
-    const bestSeg: ({ time: number; lap: number; startTick: number } | null)[] = new Array(NUM_SEGMENTS).fill(null);
+    const bestSeg: ({ time: number; lap: number; startTick: number } | null)[] = new Array(
+      NUM_SEGMENTS,
+    ).fill(null);
     for (const row of perLap) {
       const lap = parsed.laps.find((x) => x.lap === row.lap)!;
       for (let s = 0; s < NUM_SEGMENTS; s++) {
@@ -81,9 +83,7 @@ export function OptimalLap({ parsed }: { parsed: IbtParsed }) {
     const bestActualLap = perLap.find((p) => p.total === bestActual)!.lap;
 
     const allCovered = bestSeg.every((b) => b != null);
-    const optimal = allCovered
-      ? bestSeg.reduce((a, b) => a + b!.time, 0)
-      : null;
+    const optimal = allCovered ? bestSeg.reduce((a, b) => a + b!.time, 0) : null;
     const gap = optimal != null ? bestActual - optimal : null;
 
     return { perLap, bestSeg, bestActual, bestActualLap, optimal, gap };
@@ -119,14 +119,12 @@ export function OptimalLap({ parsed }: { parsed: IbtParsed }) {
         <span className="flex items-center gap-3">
           <span className="flex items-center gap-1">
             <Trophy className="h-3 w-3 text-primary" />
-            Best L{bestActualLap}{" "}
-            <span className="text-foreground">{fmt(bestActual)}</span>
+            Best L{bestActualLap} <span className="text-foreground">{fmt(bestActual)}</span>
           </span>
           {optimal != null && (
             <span className="flex items-center gap-1">
               <Zap className="h-3 w-3 text-fuchsia-400" />
-              Optimal{" "}
-              <span className="text-foreground">{fmt(optimal)}</span>
+              Optimal <span className="text-foreground">{fmt(optimal)}</span>
             </span>
           )}
           {gap != null && (
@@ -194,13 +192,13 @@ export function OptimalLap({ parsed }: { parsed: IbtParsed }) {
                   onClick={() => b && (setRefLap(b.lap), setCursorTick(b.startTick))}
                 >
                   <td className="px-2 py-1 text-left text-muted-foreground">{i + 1}</td>
-                  <td className="px-2 py-1 text-left text-muted-foreground">{lo}–{hi}%</td>
+                  <td className="px-2 py-1 text-left text-muted-foreground">
+                    {lo}–{hi}%
+                  </td>
                   <td className="px-2 py-1 text-right tabular-nums">
                     {b ? b.time.toFixed(3) : "—"}
                   </td>
-                  <td className="px-2 py-1 text-center tabular-nums">
-                    {b ? `L${b.lap}` : "—"}
-                  </td>
+                  <td className="px-2 py-1 text-center tabular-nums">{b ? `L${b.lap}` : "—"}</td>
                 </tr>
               );
             })}
@@ -209,7 +207,9 @@ export function OptimalLap({ parsed }: { parsed: IbtParsed }) {
       </div>
 
       <div className="hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-        <span>{contributors.size} of {perLap.length} laps contribute</span>
+        <span>
+          {contributors.size} of {perLap.length} laps contribute
+        </span>
         <span className="text-[9px] normal-case tracking-normal">
           Click any segment to jump the cursor and set that lap as reference.
         </span>

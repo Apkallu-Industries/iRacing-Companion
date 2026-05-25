@@ -7,26 +7,26 @@ async function createObjectId(id: string) {
   return new ObjectId(id);
 }
 
-export const getLocalSessions = createServerFn({ method: "GET" })
-  .handler(async () => {
-    try {
-      const db = await connectToLocalDb();
-      const sessions = await db.collection("telemetry_sessions")
-        .find({})
-        .sort({ recorded_at: -1 })
-        .toArray();
-      return {
-        data: sessions.map((s: any) => {
-          const { _id, ...rest } = s;
-          return { ...rest, id: _id.toString() };
-        }),
-        error: null
-      };
-    } catch (e: any) {
-      console.error("[MongoDB] getLocalSessions failed:", e);
-      return { data: [], error: { message: e.message } };
-    }
-  });
+export const getLocalSessions = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const db = await connectToLocalDb();
+    const sessions = await db
+      .collection("telemetry_sessions")
+      .find({})
+      .sort({ recorded_at: -1 })
+      .toArray();
+    return {
+      data: sessions.map((s: any) => {
+        const { _id, ...rest } = s;
+        return { ...rest, id: _id.toString() };
+      }),
+      error: null,
+    };
+  } catch (e: any) {
+    console.error("[MongoDB] getLocalSessions failed:", e);
+    return { data: [], error: { message: e.message } };
+  }
+});
 
 export const getLocalSessionById = createServerFn({ method: "POST" })
   .inputValidator((id: unknown) => String(id))
@@ -41,7 +41,7 @@ export const getLocalSessionById = createServerFn({ method: "POST" })
       const { _id, ...rest } = session;
       return {
         data: { ...rest, id: _id.toString() },
-        error: null
+        error: null,
       };
     } catch (e: any) {
       console.error("[MongoDB] getLocalSessionById failed:", e);
@@ -57,13 +57,13 @@ export const insertLocalSession = createServerFn({ method: "POST" })
       const doc = {
         ...data,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
       const res = await db.collection("telemetry_sessions").insertOne(doc);
       const { _id, ...rest } = doc as any;
       return {
         data: { ...rest, id: res.insertedId.toString() },
-        error: null
+        error: null,
       };
     } catch (e: any) {
       console.error("[MongoDB] insertLocalSession failed:", e);
@@ -85,38 +85,39 @@ export const deleteLocalSession = createServerFn({ method: "POST" })
     }
   });
 
-export const testLocalDbConnection = createServerFn({ method: "POST" })
-  .handler(async () => {
-    try {
-      const db = await connectToLocalDb();
-      // Run a simple command to verify connection works
-      await db.command({ ping: 1 });
+export const testLocalDbConnection = createServerFn({ method: "POST" }).handler(async () => {
+  try {
+    const db = await connectToLocalDb();
+    // Run a simple command to verify connection works
+    await db.command({ ping: 1 });
 
-      // Fetch some collection stats to confirm access
-      const colls = await db.listCollections().toArray();
-      const names = colls.map(c => c.name);
+    // Fetch some collection stats to confirm access
+    const colls = await db.listCollections().toArray();
+    const names = colls.map((c) => c.name);
 
-      return {
-        success: true,
-        message: `Successfully connected to MongoDB at 127.0.0.1:27017.\nDatabase 'iracing' is active.\nActive collections: ${names.join(", ") || "none"}`
-      };
-    } catch (e: any) {
-      return {
-        success: false,
-        message: `Connection failed.\nError: ${e.message || String(e)}\n\nSuggestions:\n1. Ensure MongoDB is installed and running on port 27017.\n2. If using Docker, run: docker run -d -p 27017:27017 mongo\n3. On Windows, check if the 'MongoDB Server' service is started in task manager.`
-      };
-    }
-  });
+    return {
+      success: true,
+      message: `Successfully connected to MongoDB at 127.0.0.1:27017.\nDatabase 'iracing' is active.\nActive collections: ${names.join(", ") || "none"}`,
+    };
+  } catch (e: any) {
+    return {
+      success: false,
+      message: `Connection failed.\nError: ${e.message || String(e)}\n\nSuggestions:\n1. Ensure MongoDB is installed and running on port 27017.\n2. If using Docker, run: docker run -d -p 27017:27017 mongo\n3. On Windows, check if the 'MongoDB Server' service is started in task manager.`,
+    };
+  }
+});
 
-export const getDbConfig = createServerFn({ method: "GET" })
-  .handler(async () => {
-    try {
-      const config = await readDbConfig();
-      return { data: config, error: null };
-    } catch (e: any) {
-      return { data: { localUri: "mongodb://127.0.0.1:27017/", cloudUri: "" }, error: { message: e.message } };
-    }
-  });
+export const getDbConfig = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const config = await readDbConfig();
+    return { data: config, error: null };
+  } catch (e: any) {
+    return {
+      data: { localUri: "mongodb://127.0.0.1:27017/", cloudUri: "" },
+      error: { message: e.message },
+    };
+  }
+});
 
 export const saveDbConfig = createServerFn({ method: "POST" })
   .inputValidator((config: any) => config)

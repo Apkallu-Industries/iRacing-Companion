@@ -38,12 +38,7 @@ export function DiagnosticsPanel({ diagnostics }: DiagnosticsPanelProps) {
 
       {/* Content */}
       <div className="space-y-0.5 p-2">
-        <MetricRow
-          label="FPS"
-          value={diagnostics.clientFps}
-          unit="/ 60"
-          status={fpsStatus}
-        />
+        <MetricRow label="FPS" value={diagnostics.clientFps} unit="/ 60" status={fpsStatus} />
         <MetricRow
           label="Stream"
           value={`${diagnostics.streamHzActual.toFixed(1)} / ${diagnostics.streamHzTarget}`}

@@ -41,10 +41,12 @@ function ColorSwatch({ hex }: { hex: string }) {
 }
 
 function ChannelSpark({ values, color }: { values: Float32Array; color: string }) {
-  const W = 360, H = 36;
+  const W = 360,
+    H = 36;
   const path = useMemo(() => {
     if (values.length === 0) return "";
-    let mn = Infinity, mx = -Infinity;
+    let mn = Infinity,
+      mx = -Infinity;
     for (let i = 0; i < values.length; i++) {
       const v = values[i];
       if (Number.isFinite(v)) {
@@ -102,7 +104,8 @@ function LapfileCard({ file }: { file: LoadedFile }) {
         <div className="min-w-0">
           <div className="truncate font-mono text-xs">{file.name}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            {parsed.header.magic} v{parsed.header.version} · {parsed.header.trackName} · {parsed.header.carShortName}
+            {parsed.header.magic} v{parsed.header.version} · {parsed.header.trackName} ·{" "}
+            {parsed.header.carShortName}
           </div>
         </div>
         <button
@@ -125,16 +128,24 @@ function LapfileCard({ file }: { file: LoadedFile }) {
               ghost: {parsed.header.ghostDriverName}
             </div>
           )}
-          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">Season / week</div>
-          <div className="font-mono text-xs">S{parsed.header.season} W{parsed.header.weekOrSeries}</div>
-          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">Build dates</div>
+          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Season / week
+          </div>
+          <div className="font-mono text-xs">
+            S{parsed.header.season} W{parsed.header.weekOrSeries}
+          </div>
+          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Build dates
+          </div>
           <div className="font-mono text-[10px] text-muted-foreground">
             {parsed.header.buildDates.join(" · ") || "—"}
           </div>
         </div>
         <div className="space-y-1.5">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Best lap</div>
-          <div className="font-mono text-2xl tabular-nums">{formatLapTime(parsed.summary.bestLapS)}</div>
+          <div className="font-mono text-2xl tabular-nums">
+            {formatLapTime(parsed.summary.bestLapS)}
+          </div>
           {parsed.summary.sectorTimesS.length > 0 && (
             <div className="flex gap-2 font-mono text-[10px] text-muted-foreground">
               {parsed.summary.sectorTimesS.map((t, i) => (
@@ -144,28 +155,40 @@ function LapfileCard({ file }: { file: LoadedFile }) {
               ))}
             </div>
           )}
-          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">Track</div>
+          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Track
+          </div>
           <div className="font-mono text-xs">
             {parsed.header.trackName}
             <span className="ml-2 text-muted-foreground">
               {parsed.summary.trackLengthM.toFixed(1)} m
             </span>
           </div>
-          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">Channels</div>
+          <div className="pt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+            Channels
+          </div>
           <div className="font-mono text-xs">
             {parsed.summary.numChannels} × {parsed.summary.numBins} bins
           </div>
         </div>
         <div className="sm:col-span-2">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Livery colors</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Livery colors
+          </div>
           <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <ColorSwatch hex={colors.license} />
-            {colors.helmet.map((h, i) => <ColorSwatch key={`h${i}`} hex={h} />)}
-            {colors.suit.map((h, i) => <ColorSwatch key={`s${i}`} hex={h} />)}
+            {colors.helmet.map((h, i) => (
+              <ColorSwatch key={`h${i}`} hex={h} />
+            ))}
+            {colors.suit.map((h, i) => (
+              <ColorSwatch key={`s${i}`} hex={h} />
+            ))}
           </div>
         </div>
         <div className="sm:col-span-2">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Channel traces</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Channel traces
+          </div>
           <div className="mt-1 grid gap-2">
             {parsed.channels.map((c, i) => (
               <div key={i} className="hairline rounded-sm bg-bg p-1.5">
@@ -209,26 +232,31 @@ function LapfileLab() {
       }
     }
     if (next.length) {
-      setFiles(prev => [...next, ...prev]);
+      setFiles((prev) => [...next, ...prev]);
       toast.success(`Loaded ${next.length} file${next.length === 1 ? "" : "s"}`);
     }
   }, []);
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    void handleFiles(e.dataTransfer.files);
-  }, [handleFiles]);
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      void handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles],
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <AppHeader>
         <FileText className="h-3.5 w-3.5" />
         <span className="font-mono uppercase tracking-wider">Lapfile Lab</span>
-        <Link to="/sessions" className="ml-auto hover:text-foreground">← Sessions</Link>
+        <Link to="/sessions" className="ml-auto hover:text-foreground">
+          ← Sessions
+        </Link>
       </AppHeader>
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 p-4">
         <div
-          onDragOver={e => e.preventDefault()}
+          onDragOver={(e) => e.preventDefault()}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
           className="hairline cursor-pointer rounded-md border-dashed bg-panel p-8 text-center transition-colors hover:bg-accent"
@@ -246,7 +274,7 @@ function LapfileLab() {
             multiple
             accept=".olap,.blap,.olapta,.blapta"
             className="hidden"
-            onChange={e => void handleFiles(e.target.files)}
+            onChange={(e) => void handleFiles(e.target.files)}
           />
         </div>
         {files.length > 0 && (

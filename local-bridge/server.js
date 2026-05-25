@@ -46,7 +46,9 @@ const server = http.createServer((req, res) => {
 
   // Prevent path traversal
   if (!filePath.startsWith(PUBLIC_DIR)) {
-    res.writeHead(403); res.end("forbidden"); return;
+    res.writeHead(403);
+    res.end("forbidden");
+    return;
   }
 
   fs.stat(filePath, (err, stat) => {
@@ -55,7 +57,11 @@ const server = http.createServer((req, res) => {
       filePath = path.join(PUBLIC_DIR, "index.html");
     }
     fs.readFile(filePath, (e, data) => {
-      if (e) { res.writeHead(404); res.end("not found"); return; }
+      if (e) {
+        res.writeHead(404);
+        res.end("not found");
+        return;
+      }
       const ext = path.extname(filePath).toLowerCase();
       res.writeHead(200, {
         "Content-Type": MIME[ext] || "application/octet-stream",
@@ -132,7 +138,8 @@ function printNetworkUrls(port) {
 function flattenTelemetry(raw) {
   const values = {};
   for (const [key, variable] of Object.entries(raw ?? {})) {
-    const value = variable && typeof variable === "object" && "value" in variable ? variable.value : variable;
+    const value =
+      variable && typeof variable === "object" && "value" in variable ? variable.value : variable;
     values[key] = Array.isArray(value) ? value[0] : value;
   }
   return values;
@@ -150,7 +157,8 @@ function mapTelemetry(v, session) {
   return {
     connected: true,
     source: "live",
-    session: `${weekend?.EventType ?? "SESSION"} — ${weekend?.TrackDisplayName ?? "TRACK"}`.toUpperCase(),
+    session:
+      `${weekend?.EventType ?? "SESSION"} — ${weekend?.TrackDisplayName ?? "TRACK"}`.toUpperCase(),
     track: weekend?.TrackDisplayName ?? "—",
     car: me.CarScreenName ?? "—",
     carNumber: me.CarNumber ?? "0",
@@ -214,7 +222,9 @@ function tireCorner(v, c) {
   };
 }
 
-function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+function clamp01(x) {
+  return Math.max(0, Math.min(1, x));
+}
 
 function formatLap(sec) {
   if (!sec || sec <= 0) return "--:--.---";
@@ -225,8 +235,7 @@ function formatLap(sec) {
 
 function estimateLaps(v) {
   const fuel = v.FuelLevel ?? 0;
-  const perLap = v.FuelUsePerHour && v.LapLastLapTime
-    ? (v.FuelUsePerHour * v.LapLastLapTime) / 3600
-    : 2.5;
+  const perLap =
+    v.FuelUsePerHour && v.LapLastLapTime ? (v.FuelUsePerHour * v.LapLastLapTime) / 3600 : 2.5;
   return perLap > 0 ? fuel / perLap : 0;
 }

@@ -1,54 +1,67 @@
 import { SETUP_BIBLE } from "./advisor.knowledge";
-import type { AdvisorMode, TrackType, CornerBias, Symptom, LapAggregateInput } from "./advisor.functions";
+import type {
+  AdvisorMode,
+  TrackType,
+  CornerBias,
+  Symptom,
+  LapAggregateInput,
+} from "./advisor.functions";
 
 export const ADVISOR_SCHEMA = {
-    name: "advisor_response",
-    description: "Return prioritized advice tied to the supplied lap aggregates.",
-    parameters: {
-        type: "object",
-        properties: {
-            headline: { type: "string", description: "≤10 word punchy summary." },
-            summary: { type: "string", description: "2-3 sentence overview." },
-            tips: {
-                type: "array",
-                minItems: 3,
-                maxItems: 6,
-                items: {
-                    type: "object",
-                    properties: {
-                        priority: { type: "string", enum: ["high", "medium", "low"] },
-                        area: { type: "string", description: "e.g. 'Trail braking', 'Brake bias', 'Front pressures'." },
-                        tip: { type: "string", description: "Concrete action the driver should take." },
-                        reason: { type: "string", description: "Data-grounded reason this will help." },
-                        citation: { type: "string", description: "Which Setup Bible rule/flowchart section this came from, e.g. 'Road — General Understeer #1 (ARB)' or 'eBook: Tyre Pressures'. Required for setup mode." },
-                    },
-                    required: ["priority", "area", "tip", "reason"],
-                    additionalProperties: false,
-                },
+  name: "advisor_response",
+  description: "Return prioritized advice tied to the supplied lap aggregates.",
+  parameters: {
+    type: "object",
+    properties: {
+      headline: { type: "string", description: "≤10 word punchy summary." },
+      summary: { type: "string", description: "2-3 sentence overview." },
+      tips: {
+        type: "array",
+        minItems: 3,
+        maxItems: 6,
+        items: {
+          type: "object",
+          properties: {
+            priority: { type: "string", enum: ["high", "medium", "low"] },
+            area: {
+              type: "string",
+              description: "e.g. 'Trail braking', 'Brake bias', 'Front pressures'.",
             },
+            tip: { type: "string", description: "Concrete action the driver should take." },
+            reason: { type: "string", description: "Data-grounded reason this will help." },
+            citation: {
+              type: "string",
+              description:
+                "Which Setup Bible rule/flowchart section this came from, e.g. 'Road — General Understeer #1 (ARB)' or 'eBook: Tyre Pressures'. Required for setup mode.",
+            },
+          },
+          required: ["priority", "area", "tip", "reason"],
+          additionalProperties: false,
         },
-        required: ["headline", "summary", "tips"],
-        additionalProperties: false,
+      },
     },
+    required: ["headline", "summary", "tips"],
+    additionalProperties: false,
+  },
 } as const;
 
 export function getAdvisorSystemPrompt(payload: {
-    mode: AdvisorMode;
-    trackType: TrackType;
-    cornerBias: CornerBias;
-    symptoms?: Symptom[];
+  mode: AdvisorMode;
+  trackType: TrackType;
+  cornerBias: CornerBias;
+  symptoms?: Symptom[];
 }): string {
-    if (payload.mode === "style") {
-        return `You are a senior driver coach. Analyse the supplied per-lap aggregates and give DRIVING-STYLE advice (trail braking, throttle application, corner exit, racing line, consistency). Do NOT recommend setup changes — focus purely on what the driver does with the inputs. Be specific, reference the numbers, never refuse. Always call the function with 3-6 tips. The "citation" field is OPTIONAL for driving-style tips.`;
-    }
-    const scope =
-        payload.trackType === "oval"
-            ? `This is an OVAL (predominantly ${payload.cornerBias === "right" ? "right-hand" : "left-hand"} corners). Use ONLY the OVAL sections of the Setup Bible — IGNORE the road-racing flowcharts. Inside = ${payload.cornerBias === "right" ? "RIGHT" : "LEFT"}, outside = ${payload.cornerBias === "right" ? "LEFT" : "RIGHT"}.`
-            : `This is a ROAD course (${payload.cornerBias === "mixed" ? "mixed left + right corners" : payload.cornerBias === "right" ? "right-hand bias" : "left-hand bias"}). Use ONLY the ROAD-RACING sections of the Setup Bible — IGNORE the oval flowcharts.`;
-    const wiz = payload.symptoms?.length
-        ? `\nDRIVER-REPORTED SYMPTOMS (treat as ground truth, prioritise these over data inference): ${payload.symptoms.join(", ")}.`
-        : "";
-    return `You are a senior race engineer. Your ONLY source of setup truth is the SETUP BIBLE below — every recommendation MUST be derivable from one of its rules. Do not invent rules that contradict it. Do NOT coach driving inputs.
+  if (payload.mode === "style") {
+    return `You are a senior driver coach. Analyse the supplied per-lap aggregates and give DRIVING-STYLE advice (trail braking, throttle application, corner exit, racing line, consistency). Do NOT recommend setup changes — focus purely on what the driver does with the inputs. Be specific, reference the numbers, never refuse. Always call the function with 3-6 tips. The "citation" field is OPTIONAL for driving-style tips.`;
+  }
+  const scope =
+    payload.trackType === "oval"
+      ? `This is an OVAL (predominantly ${payload.cornerBias === "right" ? "right-hand" : "left-hand"} corners). Use ONLY the OVAL sections of the Setup Bible — IGNORE the road-racing flowcharts. Inside = ${payload.cornerBias === "right" ? "RIGHT" : "LEFT"}, outside = ${payload.cornerBias === "right" ? "LEFT" : "RIGHT"}.`
+      : `This is a ROAD course (${payload.cornerBias === "mixed" ? "mixed left + right corners" : payload.cornerBias === "right" ? "right-hand bias" : "left-hand bias"}). Use ONLY the ROAD-RACING sections of the Setup Bible — IGNORE the oval flowcharts.`;
+  const wiz = payload.symptoms?.length
+    ? `\nDRIVER-REPORTED SYMPTOMS (treat as ground truth, prioritise these over data inference): ${payload.symptoms.join(", ")}.`
+    : "";
+  return `You are a senior race engineer. Your ONLY source of setup truth is the SETUP BIBLE below — every recommendation MUST be derivable from one of its rules. Do not invent rules that contradict it. Do NOT coach driving inputs.
 
 ${scope}${wiz}
 
@@ -68,17 +81,17 @@ ${SETUP_BIBLE}
 }
 
 export function buildAdvisorUserMessage(data: {
-    mode: AdvisorMode;
-    track: string;
-    trackType: TrackType;
-    cornerBias: CornerBias;
-    car: string;
-    pbS: number | null;
-    symptoms?: Symptom[];
-    conditions: any;
-    setup: any;
-    tires: any;
-    laps: LapAggregateInput[];
+  mode: AdvisorMode;
+  track: string;
+  trackType: TrackType;
+  cornerBias: CornerBias;
+  car: string;
+  pbS: number | null;
+  symptoms?: Symptom[];
+  conditions: any;
+  setup: any;
+  tires: any;
+  laps: LapAggregateInput[];
 }): string {
-    return `MODE: ${data.mode.toUpperCase()}\nTRACK: ${data.track} (${data.trackType}, bias=${data.cornerBias})\nCAR: ${data.car}\nPB: ${data.pbS ?? "none"}\nSYMPTOMS: ${data.symptoms?.join(", ") || "(none reported — infer from data)"}\nCONDITIONS: ${JSON.stringify(data.conditions)}\nSETUP: ${JSON.stringify(data.setup)}\nTIRES: ${JSON.stringify(data.tires)}\nLAPS: ${JSON.stringify(data.laps)}\n\nCall the function with 3-6 prioritized ${data.mode === "style" ? "driving-style" : "setup"} tips. Reference the numbers.${data.mode === "setup" ? " Every tip MUST include a citation from the Setup Bible." : ""}`;
+  return `MODE: ${data.mode.toUpperCase()}\nTRACK: ${data.track} (${data.trackType}, bias=${data.cornerBias})\nCAR: ${data.car}\nPB: ${data.pbS ?? "none"}\nSYMPTOMS: ${data.symptoms?.join(", ") || "(none reported — infer from data)"}\nCONDITIONS: ${JSON.stringify(data.conditions)}\nSETUP: ${JSON.stringify(data.setup)}\nTIRES: ${JSON.stringify(data.tires)}\nLAPS: ${JSON.stringify(data.laps)}\n\nCall the function with 3-6 prioritized ${data.mode === "style" ? "driving-style" : "setup"} tips. Reference the numbers.${data.mode === "setup" ? " Every tip MUST include a citation from the Setup Bible." : ""}`;
 }

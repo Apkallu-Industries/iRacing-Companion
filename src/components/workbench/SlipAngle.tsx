@@ -51,13 +51,23 @@ export function SlipAngle({ parsed }: { parsed: IbtParsed }) {
         if (Math.abs(b1) > peakBeta) peakBeta = Math.abs(b1);
         n++;
       }
-      return { beta: beta.subarray(0, n), ay: ay.subarray(0, n), steer: steerArr ? steerArr.subarray(0, n) : null, peakBeta, n };
+      return {
+        beta: beta.subarray(0, n),
+        ay: ay.subarray(0, n),
+        steer: steerArr ? steerArr.subarray(0, n) : null,
+        peakBeta,
+        n,
+      };
     }
 
-    let r0 = 0, r1 = vx.length;
+    let r0 = 0,
+      r1 = vx.length;
     if (refLap != null) {
       const l = parsed.laps.find((x) => x.lap === refLap);
-      if (l) { r0 = l.startTick; r1 = l.endTick; }
+      if (l) {
+        r0 = l.startTick;
+        r1 = l.endTick;
+      }
     }
     const ref = buildRange(r0, r1);
     let cmp: ReturnType<typeof buildRange> | null = null;
@@ -67,11 +77,19 @@ export function SlipAngle({ parsed }: { parsed: IbtParsed }) {
     }
 
     // Balance signature: average β at high-|ay| (>0.6g) per side.
-    let leftSum = 0, leftN = 0, rightSum = 0, rightN = 0;
+    let leftSum = 0,
+      leftN = 0,
+      rightSum = 0,
+      rightN = 0;
     for (let i = 0; i < ref.n; i++) {
       const a = ref.ay[i];
-      if (a > 0.6) { leftSum += ref.beta[i]; leftN++; }
-      else if (a < -0.6) { rightSum += ref.beta[i]; rightN++; }
+      if (a > 0.6) {
+        leftSum += ref.beta[i];
+        leftN++;
+      } else if (a < -0.6) {
+        rightSum += ref.beta[i];
+        rightN++;
+      }
     }
     const leftBeta = leftN ? leftSum / leftN : 0;
     const rightBeta = rightN ? rightSum / rightN : 0;
@@ -101,14 +119,22 @@ export function SlipAngle({ parsed }: { parsed: IbtParsed }) {
     const c = canvasRef.current;
     if (!c || !result) return;
     const dpr = window.devicePixelRatio || 1;
-    c.width = size.w * dpr; c.height = size.h * dpr;
+    c.width = size.w * dpr;
+    c.height = size.h * dpr;
     const ctx = c.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
-    const padL = 36, padR = 12, padT = 10, padB = 22;
-    const W = size.w - padL - padR, H = size.h - padT - padB;
+    const padL = 36,
+      padR = 12,
+      padT = 10,
+      padB = 22;
+    const W = size.w - padL - padR,
+      H = size.h - padT - padB;
 
-    const peak = Math.max(2, Math.ceil(Math.max(result.ref.peakBeta, result.cmp?.peakBeta ?? 0) + 0.5));
+    const peak = Math.max(
+      2,
+      Math.ceil(Math.max(result.ref.peakBeta, result.cmp?.peakBeta ?? 0) + 0.5),
+    );
     const ayMax = 3;
     const xToPx = (ay: number) => padL + ((ay + ayMax) / (2 * ayMax)) * W;
     const yToPx = (beta: number) => padT + H - ((beta + peak) / (2 * peak)) * H;
@@ -119,20 +145,28 @@ export function SlipAngle({ parsed }: { parsed: IbtParsed }) {
     ctx.font = "10px JetBrains Mono, monospace";
     for (let g = -ayMax; g <= ayMax; g++) {
       const x = xToPx(g);
-      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + H); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, padT + H);
+      ctx.stroke();
       if (g !== 0) ctx.fillText(`${g}g`, x - 6, size.h - 6);
     }
     const step = peak <= 4 ? 1 : 2;
     for (let b = -peak; b <= peak; b += step) {
       const y = yToPx(b);
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + W, y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + W, y);
+      ctx.stroke();
       ctx.fillText(`${b}°`, 4, y + 3);
     }
     // axes
     ctx.strokeStyle = "rgba(120,130,140,0.45)";
     ctx.beginPath();
-    ctx.moveTo(xToPx(0), padT); ctx.lineTo(xToPx(0), padT + H);
-    ctx.moveTo(padL, yToPx(0)); ctx.lineTo(padL + W, yToPx(0));
+    ctx.moveTo(xToPx(0), padT);
+    ctx.lineTo(xToPx(0), padT + H);
+    ctx.moveTo(padL, yToPx(0));
+    ctx.lineTo(padL + W, yToPx(0));
     ctx.stroke();
 
     // cmp cloud
@@ -151,26 +185,41 @@ export function SlipAngle({ parsed }: { parsed: IbtParsed }) {
     // balance markers
     if (result.balanceLeft != null) {
       ctx.fillStyle = "rgba(244,114,182,0.95)";
-      const x = xToPx(0.8); const y = yToPx(result.balanceLeft);
-      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+      const x = xToPx(0.8);
+      const y = yToPx(result.balanceLeft);
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
     }
     if (result.balanceRight != null) {
       ctx.fillStyle = "rgba(244,114,182,0.95)";
-      const x = xToPx(-0.8); const y = yToPx(-result.balanceRight);
-      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+      const x = xToPx(-0.8);
+      const y = yToPx(-result.balanceRight);
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
     }
   }, [result, size]);
 
   if (!vx || !vy || !lat) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
-        <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Slip angle unavailable</div>
-        <div className="text-[11px] text-muted-foreground">Need <span className="font-mono">VelocityX</span>, <span className="font-mono">VelocityY</span>, <span className="font-mono">LatAccel</span>.</div>
+        <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          Slip angle unavailable
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          Need <span className="font-mono">VelocityX</span>,{" "}
+          <span className="font-mono">VelocityY</span>, <span className="font-mono">LatAccel</span>.
+        </div>
       </div>
     );
   }
   if (!result || result.ref.n < 30) {
-    return <div className="flex h-full items-center justify-center font-mono text-[11px] text-muted-foreground">Not enough cornering samples.</div>;
+    return (
+      <div className="flex h-full items-center justify-center font-mono text-[11px] text-muted-foreground">
+        Not enough cornering samples.
+      </div>
+    );
   }
 
   const balanceWord =
@@ -185,17 +234,31 @@ export function SlipAngle({ parsed }: { parsed: IbtParsed }) {
       <div className="hairline-b flex items-center justify-between gap-3 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>Body slip β · atan2(Vy, Vx){refLap != null ? ` · L${refLap}` : ""}</span>
         <span className="flex items-center gap-3">
-          <span>Peak <span className="text-foreground">{result.ref.peakBeta.toFixed(1)}°</span></span>
-          {result.balanceLeft != null && <span>L: <span className="text-foreground">{result.balanceLeft.toFixed(2)}°</span></span>}
-          {result.balanceRight != null && <span>R: <span className="text-foreground">{(-result.balanceRight).toFixed(2)}°</span></span>}
-          <span>Balance <span className="text-foreground">{balanceWord}</span></span>
+          <span>
+            Peak <span className="text-foreground">{result.ref.peakBeta.toFixed(1)}°</span>
+          </span>
+          {result.balanceLeft != null && (
+            <span>
+              L: <span className="text-foreground">{result.balanceLeft.toFixed(2)}°</span>
+            </span>
+          )}
+          {result.balanceRight != null && (
+            <span>
+              R: <span className="text-foreground">{(-result.balanceRight).toFixed(2)}°</span>
+            </span>
+          )}
+          <span>
+            Balance <span className="text-foreground">{balanceWord}</span>
+          </span>
         </span>
       </div>
       <div ref={wrapRef} className="min-h-0 flex-1">
         <canvas ref={canvasRef} style={{ width: size.w, height: size.h }} />
       </div>
       <div className="hairline-t px-3 py-1 font-mono text-[10px] text-muted-foreground">
-        <span className="uppercase tracking-wider">X: LatAccel · Y: body slip β · pink dot = mean β at &gt;0.6g</span>
+        <span className="uppercase tracking-wider">
+          X: LatAccel · Y: body slip β · pink dot = mean β at &gt;0.6g
+        </span>
       </div>
     </div>
   );

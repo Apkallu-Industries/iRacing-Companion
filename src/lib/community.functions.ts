@@ -17,12 +17,15 @@ export const upsertMyGearRatios = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("shared_gear_ratios")
-      .upsert(
-        { user_id: userId, car: data.car, ratios: data.ratios, updated_at: new Date().toISOString() },
-        { onConflict: "user_id,car" },
-      );
+    const { error } = await supabase.from("shared_gear_ratios").upsert(
+      {
+        user_id: userId,
+        car: data.car,
+        ratios: data.ratios,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,car" },
+    );
     if (error) return { ok: false, error: error.message } as const;
     return { ok: true } as const;
   });
@@ -44,7 +47,13 @@ export const getMyGearRatios = createServerFn({ method: "GET" })
 export const publishMyGearRatios = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ car: z.string().min(1).max(255), name: z.string().max(120).optional(), published: z.boolean() }).parse(input),
+    z
+      .object({
+        car: z.string().min(1).max(255),
+        name: z.string().max(120).optional(),
+        published: z.boolean(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -110,7 +119,9 @@ export const upsertMyChannelLayout = createServerFn({ method: "POST" })
 
 export const getMyChannelLayout = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ name: z.string().min(1).max(120).default("default") }).parse(input))
+  .inputValidator((input) =>
+    z.object({ name: z.string().min(1).max(120).default("default") }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: row } = await supabase
@@ -168,19 +179,17 @@ export const upsertMyCarClass = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("shared_car_classes")
-      .upsert(
-        {
-          user_id: userId,
-          car: data.car,
-          car_class: data.car_class,
-          confidence: data.confidence ?? null,
-          published: data.published ?? false,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,car" },
-      );
+    const { error } = await supabase.from("shared_car_classes").upsert(
+      {
+        user_id: userId,
+        car: data.car,
+        car_class: data.car_class,
+        confidence: data.confidence ?? null,
+        published: data.published ?? false,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,car" },
+    );
     if (error) return { ok: false, error: error.message } as const;
     return { ok: true } as const;
   });
@@ -213,7 +222,9 @@ const tableForKind = {
 
 export const voteCommunityItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ target_id: z.string().uuid(), kind: VoteKind }).parse(input))
+  .inputValidator((input) =>
+    z.object({ target_id: z.string().uuid(), kind: VoteKind }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     // Toggle: if vote exists, remove it; else add it. Then recount.

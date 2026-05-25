@@ -22,7 +22,12 @@ export const recordLiveLap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: LiveLapInput) => {
     if (!data?.track || !data?.car) throw new Error("track and car required");
-    if (typeof data.lapTimeS !== "number" || !isFinite(data.lapTimeS) || data.lapTimeS <= 5 || data.lapTimeS > 1800) {
+    if (
+      typeof data.lapTimeS !== "number" ||
+      !isFinite(data.lapTimeS) ||
+      data.lapTimeS <= 5 ||
+      data.lapTimeS > 1800
+    ) {
       throw new Error("lapTimeS out of range");
     }
     return data;
@@ -80,7 +85,8 @@ export const getPersonalBest = createServerFn({ method: "POST" })
     // 1. Attempt to fetch instantly from Local DB
     try {
       const db = await connectToLocalDb();
-      rows = await db.collection("live_lap_records")
+      rows = await db
+        .collection("live_lap_records")
         .find({ track: data.track, car: data.car, is_valid: true })
         .sort({ lap_time_s: 1 })
         .limit(50)

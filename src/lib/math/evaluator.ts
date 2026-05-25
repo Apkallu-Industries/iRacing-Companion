@@ -29,9 +29,7 @@ export type CompileResult =
   | { ok: true; compiled: CompiledMathExpression }
   | { ok: false; error: string };
 
-export type EvalResult =
-  | { ok: true; value: number }
-  | { ok: false; error: string };
+export type EvalResult = { ok: true; value: number } | { ok: false; error: string };
 
 export function compileMathExpression(input: string): CompileResult {
   try {
@@ -61,7 +59,8 @@ export function evaluateCompiledMathExpression(
       opCount += 1;
       if (opCount > 512) throw new Error("Expression exceeded operation budget.");
     });
-    if (!Number.isFinite(value)) return { ok: false, error: "Expression evaluated to a non-finite value." };
+    if (!Number.isFinite(value))
+      return { ok: false, error: "Expression evaluated to a non-finite value." };
     return { ok: true, value };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Evaluation failed." };
@@ -78,9 +77,21 @@ function tokenize(input: string): Token[] {
       i += 1;
       continue;
     }
-    if (ch === "(") { out.push({ type: "lparen" }); i += 1; continue; }
-    if (ch === ")") { out.push({ type: "rparen" }); i += 1; continue; }
-    if (ch === ",") { out.push({ type: "comma" }); i += 1; continue; }
+    if (ch === "(") {
+      out.push({ type: "lparen" });
+      i += 1;
+      continue;
+    }
+    if (ch === ")") {
+      out.push({ type: "rparen" });
+      i += 1;
+      continue;
+    }
+    if (ch === ",") {
+      out.push({ type: "comma" });
+      i += 1;
+      continue;
+    }
     if (ch === "+" || ch === "-" || ch === "*" || ch === "/") {
       out.push({ type: "op", value: ch });
       i += 1;
@@ -209,7 +220,8 @@ class Parser {
 
 function assertArgCount(fn: string, count: number) {
   if (fn === "abs" && count !== 1) throw new Error("abs() expects exactly 1 argument.");
-  if ((fn === "min" || fn === "max") && count !== 2) throw new Error(`${fn}() expects exactly 2 arguments.`);
+  if ((fn === "min" || fn === "max") && count !== 2)
+    throw new Error(`${fn}() expects exactly 2 arguments.`);
   if (fn === "clamp" && count !== 3) throw new Error("clamp() expects exactly 3 arguments.");
 }
 
@@ -267,7 +279,7 @@ function countNodes(node: Node): number {
 
 export function evaluateMathExpressionForIbt(
   compiled: CompiledMathExpression,
-  parsed: IbtParsed
+  parsed: IbtParsed,
 ): Float32Array | null {
   for (const id of compiled.identifiers) {
     if (!(id in parsed.channels)) {
@@ -304,4 +316,3 @@ export function evaluateMathExpressionForIbt(
   }
   return out;
 }
-

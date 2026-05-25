@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Activity, LogOut, Settings } from "lucide-react";
+import { Activity, LogOut, Settings, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeEditor } from "@/components/ThemeEditor";
 import { LLMSettings } from "@/components/LLMSettings";
@@ -13,6 +13,8 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const settingsActive = pathname === "/settings" || pathname.startsWith("/settings/");
+  const teamActive = pathname === "/team";
+
   return (
     <header className="hairline-b flex h-12 items-center bg-panel px-4">
       <BackButton />
@@ -26,7 +28,18 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
       <HeaderBreadcrumbs />
       <div className="mx-3 h-4 w-px bg-border hidden sm:block" />
       <div className="flex flex-1 items-center gap-3 text-xs text-muted-foreground">{children}</div>
-      <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
+        <Link
+          to="/team"
+          className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-all group ${
+            teamActive
+              ? "bg-primary/15 text-primary ring-1 ring-primary/40 font-semibold"
+              : "hover:bg-accent hover:text-foreground text-muted-foreground"
+          }`}
+        >
+          <Users className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary" />
+          <span>Team</span>
+        </Link>
         <Link
           to="/settings"
           className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-all group ${
@@ -35,7 +48,9 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
               : "hover:bg-accent hover:text-foreground text-muted-foreground"
           }`}
         >
-          <Settings className={`h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90 ${settingsActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
+          <Settings
+            className={`h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90 ${settingsActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}
+          />
           <span>Settings</span>
         </Link>
         {user ? (

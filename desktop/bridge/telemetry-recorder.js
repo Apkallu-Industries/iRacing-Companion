@@ -197,7 +197,9 @@ class TelemetryRecorder {
       const sampleCount = await this.db
         .collection("telemetry_samples")
         .countDocuments({ session_id: this.sessionId });
-      const lapCount = await this.db.collection("laps").countDocuments({ session_id: this.sessionId });
+      const lapCount = await this.db
+        .collection("laps")
+        .countDocuments({ session_id: this.sessionId });
 
       await this.db.collection("telemetry_sessions").updateOne(
         { _id: this.sessionId },

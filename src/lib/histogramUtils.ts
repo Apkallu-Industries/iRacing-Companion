@@ -75,8 +75,7 @@ export function computeHistogram(values: number[], binCount: number): HistogramD
 
   // Calculate stats
   const mean = filtered.reduce((a, b) => a + b, 0) / filtered.length;
-  const variance =
-    filtered.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / filtered.length;
+  const variance = filtered.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / filtered.length;
   const stdDev = Math.sqrt(variance);
   const median = sorted[Math.floor(sorted.length / 2)];
   const q1 = sorted[Math.floor(sorted.length * 0.25)];

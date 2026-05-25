@@ -29,7 +29,13 @@ function fmtTime(s: number): string {
 function WidgetInfo({
   items,
 }: {
-  items: { label: string; channel: string | undefined; value: number | undefined; unit?: string; fmt?: (v: number) => string }[];
+  items: {
+    label: string;
+    channel: string | undefined;
+    value: number | undefined;
+    unit?: string;
+    fmt?: (v: number) => string;
+  }[];
 }) {
   return (
     <div className="pointer-events-none absolute right-1.5 top-1.5 z-10 min-w-[160px] rounded-sm border border-border bg-panel/95 p-1.5 font-mono text-[10px] opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-100 group-hover:opacity-100">
@@ -40,11 +46,10 @@ function WidgetInfo({
             <span className="tabular-nums text-foreground">
               {it.value == null || !isFinite(it.value)
                 ? "—"
-                : (it.fmt ? it.fmt(it.value) : it.value.toFixed(2)) + (it.unit ? ` ${it.unit}` : "")}
+                : (it.fmt ? it.fmt(it.value) : it.value.toFixed(2)) +
+                  (it.unit ? ` ${it.unit}` : "")}
             </span>
-            <span className="text-[9px] text-muted-foreground/80">
-              {it.channel || "—"}
-            </span>
+            <span className="text-[9px] text-muted-foreground/80">{it.channel || "—"}</span>
           </span>
         </div>
       ))}
@@ -53,15 +58,8 @@ function WidgetInfo({
 }
 
 export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
-  const {
-    cursorTick,
-    setCursorTick,
-    playing,
-    setPlaying,
-    speed,
-    setSpeed,
-    refLap,
-  } = useWorkbench();
+  const { cursorTick, setCursorTick, playing, setPlaying, speed, setSpeed, refLap } =
+    useWorkbench();
   const [prefs] = useHudPrefs();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -82,8 +80,7 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
   const cfg = prefs.config;
 
   const speedRaw = v(cfg.speed) ?? 0;
-  const speedFactor =
-    prefs.speedUnit === "kmh" ? 3.6 : prefs.speedUnit === "mph" ? 2.23694 : 1;
+  const speedFactor = prefs.speedUnit === "kmh" ? 3.6 : prefs.speedUnit === "mph" ? 2.23694 : 1;
   const speedDisplay = speedRaw * speedFactor;
   const speedUnitLabel =
     prefs.speedUnit === "kmh" ? "KM/H" : prefs.speedUnit === "mph" ? "MPH" : "M/S";
@@ -94,16 +91,14 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
   const brake = clamp01(v(cfg.brake) ?? 0);
   const clutch = clamp01(v(cfg.clutch) ?? 0);
   const steerRad = v(cfg.steer) ?? 0;
-  const steerMax =
-    v(cfg.steerMax) ?? Math.max(Math.PI, ch[cfg.steer]?.max ?? Math.PI);
+  const steerMax = v(cfg.steerMax) ?? Math.max(Math.PI, ch[cfg.steer]?.max ?? Math.PI);
   const latG = (v(cfg.latG) ?? 0) / 9.81;
   const longG = (v(cfg.longG) ?? 0) / 9.81;
   const lapTime = v(cfg.lapTime) ?? 0;
   const lapPct = clamp01(v(cfg.lapPct) ?? 0);
   const fuelL = v(cfg.fuel);
   const lapNum = currentLap?.lap ?? 0;
-  const unitOf = (slot: string | undefined) =>
-    slot && ch[slot] ? ch[slot].unit : undefined;
+  const unitOf = (slot: string | undefined) => (slot && ch[slot] ? ch[slot].unit : undefined);
 
   // RPM arc (0–270°, sweeping clockwise from south-west).
   const rpmFrac = clamp01(rpm / Math.max(1, rpmMax));
@@ -133,10 +128,7 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
   // iRacing's SteeringWheelAngle is positive for LEFT turns. A CSS rotate
   // with a positive angle rotates clockwise (i.e. to the right) — so the
   // raw value must be negated for the wheel to mirror the driver's input.
-  const steerDeg = -Math.max(
-    -360,
-    Math.min(360, (steerRad / Math.max(0.1, steerMax)) * 180),
-  );
+  const steerDeg = -Math.max(-360, Math.min(360, (steerRad / Math.max(0.1, steerMax)) * 180));
 
   // Lap progress arc.
   const progPath = (() => {
@@ -172,7 +164,10 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
   return (
     <div className="flex h-full flex-col bg-[radial-gradient(ellipse_at_center,_color-mix(in_oklab,var(--panel)_92%,var(--primary))_0%,var(--panel)_70%)]">
       <div className="hairline-b flex items-center justify-between gap-3 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span>Cinema · L{lapNum}{refLap === lapNum ? " · ref" : ""}</span>
+        <span>
+          Cinema · L{lapNum}
+          {refLap === lapNum ? " · ref" : ""}
+        </span>
         <div className="flex items-center gap-2">
           <span className="tabular-nums">{fmtTime(lapTime)}</span>
           <button
@@ -190,13 +185,31 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
         <div className="group relative flex items-center justify-center bg-panel">
           <WidgetInfo
             items={[
-              { label: "Speed", channel: cfg.speed, value: speedDisplay, unit: speedUnitLabel.toLowerCase(), fmt: (x) => x.toFixed(1) },
+              {
+                label: "Speed",
+                channel: cfg.speed,
+                value: speedDisplay,
+                unit: speedUnitLabel.toLowerCase(),
+                fmt: (x) => x.toFixed(1),
+              },
               { label: "RPM", channel: cfg.rpm, value: rpm, unit: "rpm", fmt: (x) => x.toFixed(0) },
-              { label: "Gear", channel: cfg.gear, value: gear, fmt: (x) => (x === 0 ? "N" : x === -1 ? "R" : String(x)) },
+              {
+                label: "Gear",
+                channel: cfg.gear,
+                value: gear,
+                fmt: (x) => (x === 0 ? "N" : x === -1 ? "R" : String(x)),
+              },
             ]}
           />
           <svg viewBox="0 0 200 200" className="h-full w-full max-h-[280px] p-2">
-            <path d={arcBgPath} fill="none" stroke="var(--border-strong)" strokeWidth={6} strokeLinecap="round" opacity={0.5} />
+            <path
+              d={arcBgPath}
+              fill="none"
+              stroke="var(--border-strong)"
+              strokeWidth={6}
+              strokeLinecap="round"
+              opacity={0.5}
+            />
             <path
               d={arcPath}
               fill="none"
@@ -225,16 +238,48 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
               );
             })}
             {/* Center text: gear + speed */}
-            <text x={100} y={88} textAnchor="middle" fontSize={56} fontFamily="monospace" fontWeight={700} fill="var(--foreground)">
+            <text
+              x={100}
+              y={88}
+              textAnchor="middle"
+              fontSize={56}
+              fontFamily="monospace"
+              fontWeight={700}
+              fill="var(--foreground)"
+            >
               {gear === 0 ? "N" : gear === -1 ? "R" : gear}
             </text>
-            <text x={100} y={120} textAnchor="middle" fontSize={36} fontFamily="monospace" fontWeight={700} fill="var(--foreground)" className="tabular-nums">
+            <text
+              x={100}
+              y={120}
+              textAnchor="middle"
+              fontSize={36}
+              fontFamily="monospace"
+              fontWeight={700}
+              fill="var(--foreground)"
+              className="tabular-nums"
+            >
               {speedDisplay.toFixed(0)}
             </text>
-            <text x={100} y={138} textAnchor="middle" fontSize={10} fontFamily="monospace" fill="var(--muted-foreground)">
+            <text
+              x={100}
+              y={138}
+              textAnchor="middle"
+              fontSize={10}
+              fontFamily="monospace"
+              fill="var(--muted-foreground)"
+            >
               {speedUnitLabel}
             </text>
-            <text x={100} y={172} textAnchor="middle" fontSize={11} fontFamily="monospace" fill="var(--muted-foreground)" className="tabular-nums">
+            <text
+              x={100}
+              y={172}
+              textAnchor="middle"
+              fontSize={11}
+              fontFamily="monospace"
+              fill="var(--muted-foreground)"
+              className="tabular-nums"
+            >
               {Math.round(rpm)} RPM
             </text>
           </svg>
@@ -244,20 +289,81 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
         <div className="group relative flex flex-col items-center justify-center gap-3 bg-panel p-3">
           <WidgetInfo
             items={[
-              { label: "Steer", channel: cfg.steer, value: (steerRad * 180) / Math.PI, unit: "°", fmt: (x) => x.toFixed(0) },
-              { label: "Throttle", channel: cfg.throttle, value: throttle * 100, unit: "%", fmt: (x) => x.toFixed(0) },
-              { label: "Brake", channel: cfg.brake, value: brake * 100, unit: "%", fmt: (x) => x.toFixed(0) },
-              { label: "Clutch", channel: cfg.clutch, value: clutch * 100, unit: "%", fmt: (x) => x.toFixed(0) },
+              {
+                label: "Steer",
+                channel: cfg.steer,
+                value: (steerRad * 180) / Math.PI,
+                unit: "°",
+                fmt: (x) => x.toFixed(0),
+              },
+              {
+                label: "Throttle",
+                channel: cfg.throttle,
+                value: throttle * 100,
+                unit: "%",
+                fmt: (x) => x.toFixed(0),
+              },
+              {
+                label: "Brake",
+                channel: cfg.brake,
+                value: brake * 100,
+                unit: "%",
+                fmt: (x) => x.toFixed(0),
+              },
+              {
+                label: "Clutch",
+                channel: cfg.clutch,
+                value: clutch * 100,
+                unit: "%",
+                fmt: (x) => x.toFixed(0),
+              },
             ]}
           />
           <svg viewBox="0 0 120 120" className="h-32 w-32">
-            <g style={{ transform: `rotate(${steerDeg}deg)`, transformOrigin: "60px 60px", transition: "transform 50ms linear" }}>
-              <circle cx={60} cy={60} r={48} fill="none" stroke="var(--border-strong)" strokeWidth={3} />
+            <g
+              style={{
+                transform: `rotate(${steerDeg}deg)`,
+                transformOrigin: "60px 60px",
+                transition: "transform 50ms linear",
+              }}
+            >
+              <circle
+                cx={60}
+                cy={60}
+                r={48}
+                fill="none"
+                stroke="var(--border-strong)"
+                strokeWidth={3}
+              />
               <circle cx={60} cy={60} r={8} fill="var(--primary)" />
-              <line x1={60} y1={12} x2={60} y2={28} stroke="var(--primary)" strokeWidth={3} strokeLinecap="round" />
-              <line x1={12} y1={60} x2={108} y2={60} stroke="var(--primary)" strokeWidth={3} strokeLinecap="round" />
+              <line
+                x1={60}
+                y1={12}
+                x2={60}
+                y2={28}
+                stroke="var(--primary)"
+                strokeWidth={3}
+                strokeLinecap="round"
+              />
+              <line
+                x1={12}
+                y1={60}
+                x2={108}
+                y2={60}
+                stroke="var(--primary)"
+                strokeWidth={3}
+                strokeLinecap="round"
+              />
             </g>
-            <text x={60} y={114} textAnchor="middle" fontSize={9} fontFamily="monospace" fill="var(--muted-foreground)" className="tabular-nums">
+            <text
+              x={60}
+              y={114}
+              textAnchor="middle"
+              fontSize={9}
+              fontFamily="monospace"
+              fill="var(--muted-foreground)"
+              className="tabular-nums"
+            >
               {((steerRad * 180) / Math.PI).toFixed(0)}°
             </text>
           </svg>
@@ -271,11 +377,17 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
                 <div className="relative h-24 w-5 overflow-hidden rounded-sm bg-rail">
                   <div
                     className="absolute inset-x-0 bottom-0"
-                    style={{ height: `${p.v * 100}%`, background: p.color, transition: "height 50ms linear" }}
+                    style={{
+                      height: `${p.v * 100}%`,
+                      background: p.color,
+                      transition: "height 50ms linear",
+                    }}
                   />
                 </div>
                 <span className="font-mono text-[10px] text-muted-foreground">{p.k}</span>
-                <span className="font-mono text-[10px] tabular-nums text-foreground">{Math.round(p.v * 100)}</span>
+                <span className="font-mono text-[10px] tabular-nums text-foreground">
+                  {Math.round(p.v * 100)}
+                </span>
               </div>
             ))}
           </div>
@@ -285,34 +397,110 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
         <div className="group relative flex flex-col items-center justify-center gap-2 bg-panel p-3">
           <WidgetInfo
             items={[
-              { label: "Lat G", channel: cfg.latG, value: latG, unit: "g", fmt: (x) => (x >= 0 ? "+" : "") + x.toFixed(2) },
-              { label: "Long G", channel: cfg.longG, value: longG, unit: "g", fmt: (x) => (x >= 0 ? "+" : "") + x.toFixed(2) },
-              { label: "Lap %", channel: cfg.lapPct, value: lapPct * 100, unit: "%", fmt: (x) => x.toFixed(1) },
-              { label: "Fuel", channel: cfg.fuel, value: fuelL, unit: unitOf(cfg.fuel) || "L", fmt: (x) => x.toFixed(2) },
-              { label: "Lap time", channel: cfg.lapTime, value: lapTime, unit: "s", fmt: (x) => fmtTime(x) },
+              {
+                label: "Lat G",
+                channel: cfg.latG,
+                value: latG,
+                unit: "g",
+                fmt: (x) => (x >= 0 ? "+" : "") + x.toFixed(2),
+              },
+              {
+                label: "Long G",
+                channel: cfg.longG,
+                value: longG,
+                unit: "g",
+                fmt: (x) => (x >= 0 ? "+" : "") + x.toFixed(2),
+              },
+              {
+                label: "Lap %",
+                channel: cfg.lapPct,
+                value: lapPct * 100,
+                unit: "%",
+                fmt: (x) => x.toFixed(1),
+              },
+              {
+                label: "Fuel",
+                channel: cfg.fuel,
+                value: fuelL,
+                unit: unitOf(cfg.fuel) || "L",
+                fmt: (x) => x.toFixed(2),
+              },
+              {
+                label: "Lap time",
+                channel: cfg.lapTime,
+                value: lapTime,
+                unit: "s",
+                fmt: (x) => fmtTime(x),
+              },
             ]}
           />
           <div className="relative">
             <svg viewBox="0 0 100 100" className="h-32 w-32">
-              <circle cx={50} cy={50} r={48} fill="none" stroke="var(--border-strong)" strokeWidth={1} />
+              <circle
+                cx={50}
+                cy={50}
+                r={48}
+                fill="none"
+                stroke="var(--border-strong)"
+                strokeWidth={1}
+              />
               {[0.5, 1, 1.5, 2].map((g) => (
-                <circle key={g} cx={50} cy={50} r={(g / G_RANGE) * 50} fill="none" stroke="var(--border)" strokeWidth={0.4} opacity={0.7} />
+                <circle
+                  key={g}
+                  cx={50}
+                  cy={50}
+                  r={(g / G_RANGE) * 50}
+                  fill="none"
+                  stroke="var(--border)"
+                  strokeWidth={0.4}
+                  opacity={0.7}
+                />
               ))}
               <line x1={50} y1={2} x2={50} y2={98} stroke="var(--border)" strokeWidth={0.4} />
               <line x1={2} y1={50} x2={98} y2={50} stroke="var(--border)" strokeWidth={0.4} />
-              <circle cx={gDotX} cy={gDotY} r={3.5} fill="var(--primary)" style={{ transition: "all 60ms linear" }} />
-              <text x={50} y={10} textAnchor="middle" fontSize={6} fontFamily="monospace" fill="var(--muted-foreground)">ACCEL</text>
-              <text x={50} y={96} textAnchor="middle" fontSize={6} fontFamily="monospace" fill="var(--muted-foreground)">BRAKE</text>
+              <circle
+                cx={gDotX}
+                cy={gDotY}
+                r={3.5}
+                fill="var(--primary)"
+                style={{ transition: "all 60ms linear" }}
+              />
+              <text
+                x={50}
+                y={10}
+                textAnchor="middle"
+                fontSize={6}
+                fontFamily="monospace"
+                fill="var(--muted-foreground)"
+              >
+                ACCEL
+              </text>
+              <text
+                x={50}
+                y={96}
+                textAnchor="middle"
+                fontSize={6}
+                fontFamily="monospace"
+                fill="var(--muted-foreground)"
+              >
+                BRAKE
+              </text>
             </svg>
           </div>
           <div className="grid w-full grid-cols-2 gap-2 font-mono text-[10px]">
             <div className="flex items-center justify-between rounded-sm bg-rail px-2 py-1">
               <span className="text-muted-foreground">LAT</span>
-              <span className="tabular-nums">{latG >= 0 ? "+" : ""}{latG.toFixed(2)}g</span>
+              <span className="tabular-nums">
+                {latG >= 0 ? "+" : ""}
+                {latG.toFixed(2)}g
+              </span>
             </div>
             <div className="flex items-center justify-between rounded-sm bg-rail px-2 py-1">
               <span className="text-muted-foreground">LONG</span>
-              <span className="tabular-nums">{longG >= 0 ? "+" : ""}{longG.toFixed(2)}g</span>
+              <span className="tabular-nums">
+                {longG >= 0 ? "+" : ""}
+                {longG.toFixed(2)}g
+              </span>
             </div>
             <div className="flex items-center justify-between rounded-sm bg-rail px-2 py-1">
               <span className="text-muted-foreground">PCT</span>
@@ -325,11 +513,32 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
           </div>
           {/* Lap progress arc */}
           <svg viewBox="0 0 100 100" className="h-12 w-12">
-            <circle cx={50} cy={50} r={46} fill="none" stroke="var(--border-strong)" strokeWidth={3} />
+            <circle
+              cx={50}
+              cy={50}
+              r={46}
+              fill="none"
+              stroke="var(--border-strong)"
+              strokeWidth={3}
+            />
             {progPath && (
-              <path d={progPath} fill="none" stroke="var(--primary)" strokeWidth={4} strokeLinecap="round" />
+              <path
+                d={progPath}
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth={4}
+                strokeLinecap="round"
+              />
             )}
-            <text x={50} y={56} textAnchor="middle" fontSize={20} fontFamily="monospace" fontWeight={700} fill="var(--foreground)">
+            <text
+              x={50}
+              y={56}
+              textAnchor="middle"
+              fontSize={20}
+              fontFamily="monospace"
+              fontWeight={700}
+              fill="var(--foreground)"
+            >
               {Math.round(lapPct * 100)}
             </text>
           </svg>
@@ -379,7 +588,9 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
           title="Playback speed"
         >
           {[0.25, 0.5, 1, 2, 4, 8].map((s) => (
-            <option key={s} value={s}>{s}×</option>
+            <option key={s} value={s}>
+              {s}×
+            </option>
           ))}
         </select>
         <input
@@ -391,12 +602,11 @@ export function CinemaPlayback({ parsed }: { parsed: IbtParsed }) {
           className="flex-1 accent-[color:var(--primary)]"
         />
         <div className="font-mono text-[10px] tabular-nums text-muted-foreground">
-          {fmtTime(cursorTick / parsed.meta.tickRate)} / {fmtTime((total - 1) / parsed.meta.tickRate)}
+          {fmtTime(cursorTick / parsed.meta.tickRate)} /{" "}
+          {fmtTime((total - 1) / parsed.meta.tickRate)}
         </div>
       </div>
-      {settingsOpen && (
-        <HudSettings parsed={parsed} onClose={() => setSettingsOpen(false)} />
-      )}
+      {settingsOpen && <HudSettings parsed={parsed} onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

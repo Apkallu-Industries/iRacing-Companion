@@ -53,7 +53,11 @@ export function validateMathExpressionSyntax(input: string): MathExpressionValid
   const expression = input.trim();
   if (!expression) return { ok: false, identifiers: [], error: "Expression is empty." };
   if (expression.length > MATH_V1_MAX_EXPRESSION_LEN) {
-    return { ok: false, identifiers: [], error: `Expression too long (max ${MATH_V1_MAX_EXPRESSION_LEN}).` };
+    return {
+      ok: false,
+      identifiers: [],
+      error: `Expression too long (max ${MATH_V1_MAX_EXPRESSION_LEN}).`,
+    };
   }
 
   const tokens: string[] = [];
@@ -86,7 +90,8 @@ export function validateMathExpressionSyntax(input: string): MathExpressionValid
       continue;
     }
     if (["+", "-", "*", "/", ","].includes(t)) {
-      if (t === "," && depth === 0) return { ok: false, identifiers: [], error: "Unexpected comma." };
+      if (t === "," && depth === 0)
+        return { ok: false, identifiers: [], error: "Unexpected comma." };
       expectValue = t !== ")";
       continue;
     }
@@ -103,7 +108,11 @@ export function validateMathExpressionSyntax(input: string): MathExpressionValid
       } else {
         identifiers.add(t);
         if (identifiers.size > MATH_V1_MAX_IDENTIFIERS) {
-          return { ok: false, identifiers: [], error: `Too many identifiers (max ${MATH_V1_MAX_IDENTIFIERS}).` };
+          return {
+            ok: false,
+            identifiers: [],
+            error: `Too many identifiers (max ${MATH_V1_MAX_IDENTIFIERS}).`,
+          };
         }
       }
       expectValue = false;
@@ -113,6 +122,7 @@ export function validateMathExpressionSyntax(input: string): MathExpressionValid
   }
 
   if (depth !== 0) return { ok: false, identifiers: [], error: "Unbalanced parentheses." };
-  if (expectValue) return { ok: false, identifiers: [], error: "Expression cannot end with an operator." };
+  if (expectValue)
+    return { ok: false, identifiers: [], error: "Expression cannot end with an operator." };
   return { ok: true, identifiers: [...identifiers] };
 }

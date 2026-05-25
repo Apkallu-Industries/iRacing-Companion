@@ -21,69 +21,82 @@ ABSOLUTE RULES — read carefully:
 Tone: confident, direct, ~1-2 sentences per field. No hedging, no preamble, no meta-commentary about the data quality.`;
 
 export const COACH_SCHEMA_CONCISE = {
-    name: "coach_concise",
-    description: "Return 3-6 prioritized, actionable coaching tips. NEVER return fewer than 3 tips.",
-    parameters: {
-        type: "object",
-        properties: {
-            headline: { type: "string", description: "One-sentence summary of the biggest opportunity." },
-            tips: {
-                type: "array",
-                minItems: 3,
-                maxItems: 6,
-                items: {
-                    type: "object",
-                    properties: {
-                        priority: { type: "string", enum: ["high", "medium", "low"] },
-                        location: { type: "string", description: "Where on the lap, e.g. 'T4 entry, ~35% lap'." },
-                        tip: { type: "string", description: "Concrete action the driver should take." },
-                        reason: { type: "string", description: "Data-grounded reason this will help." },
-                        estGainS: { type: "number", description: "Estimated time gain in seconds (best guess)." },
-                    },
-                    required: ["priority", "location", "tip", "reason", "estGainS"],
-                    additionalProperties: false,
-                },
+  name: "coach_concise",
+  description: "Return 3-6 prioritized, actionable coaching tips. NEVER return fewer than 3 tips.",
+  parameters: {
+    type: "object",
+    properties: {
+      headline: { type: "string", description: "One-sentence summary of the biggest opportunity." },
+      tips: {
+        type: "array",
+        minItems: 3,
+        maxItems: 6,
+        items: {
+          type: "object",
+          properties: {
+            priority: { type: "string", enum: ["high", "medium", "low"] },
+            location: {
+              type: "string",
+              description: "Where on the lap, e.g. 'T4 entry, ~35% lap'.",
             },
+            tip: { type: "string", description: "Concrete action the driver should take." },
+            reason: { type: "string", description: "Data-grounded reason this will help." },
+            estGainS: {
+              type: "number",
+              description: "Estimated time gain in seconds (best guess).",
+            },
+          },
+          required: ["priority", "location", "tip", "reason", "estGainS"],
+          additionalProperties: false,
         },
-        required: ["headline", "tips"],
-        additionalProperties: false,
+      },
     },
+    required: ["headline", "tips"],
+    additionalProperties: false,
+  },
 } as const;
 
 export const COACH_SCHEMA_DETAILED = {
-    name: "coach_detailed",
-    description: "Return a per-corner breakdown of the lap with entry/mid/exit notes. NEVER return fewer than 2 corners.",
-    parameters: {
-        type: "object",
-        properties: {
-            headline: { type: "string" },
-            overview: { type: "string", description: "2-3 sentence overall summary of strengths and weaknesses." },
-            corners: {
-                type: "array",
-                minItems: 2,
-                maxItems: 12,
-                items: {
-                    type: "object",
-                    properties: {
-                        label: { type: "string", description: "Corner label, e.g. 'T4' or 'Sector 2 hairpin'." },
-                        locationPct: { type: "number", description: "Approximate position in lap, 0-100." },
-                        entry: { type: "string" },
-                        mid: { type: "string" },
-                        exit: { type: "string" },
-                        estGainS: { type: "number" },
-                    },
-                    required: ["label", "locationPct", "entry", "mid", "exit", "estGainS"],
-                    additionalProperties: false,
-                },
+  name: "coach_detailed",
+  description:
+    "Return a per-corner breakdown of the lap with entry/mid/exit notes. NEVER return fewer than 2 corners.",
+  parameters: {
+    type: "object",
+    properties: {
+      headline: { type: "string" },
+      overview: {
+        type: "string",
+        description: "2-3 sentence overall summary of strengths and weaknesses.",
+      },
+      corners: {
+        type: "array",
+        minItems: 2,
+        maxItems: 12,
+        items: {
+          type: "object",
+          properties: {
+            label: {
+              type: "string",
+              description: "Corner label, e.g. 'T4' or 'Sector 2 hairpin'.",
             },
+            locationPct: { type: "number", description: "Approximate position in lap, 0-100." },
+            entry: { type: "string" },
+            mid: { type: "string" },
+            exit: { type: "string" },
+            estGainS: { type: "number" },
+          },
+          required: ["label", "locationPct", "entry", "mid", "exit", "estGainS"],
+          additionalProperties: false,
         },
-        required: ["headline", "overview", "corners"],
-        additionalProperties: false,
+      },
     },
+    required: ["headline", "overview", "corners"],
+    additionalProperties: false,
+  },
 } as const;
 
 export function buildCoachUserMessage(detailed: boolean, payload: any): string {
-    return `Analyze this telemetry and give ${detailed ? "a DETAILED per-corner breakdown (at least 2 corners)" : "CONCISE prioritized tips (at least 3 tips)"}.\nYou MUST call the function. Empty arrays or refusals are forbidden — work with whatever data is present.\n\nDATA:\n${JSON.stringify(payload)}`;
+  return `Analyze this telemetry and give ${detailed ? "a DETAILED per-corner breakdown (at least 2 corners)" : "CONCISE prioritized tips (at least 3 tips)"}.\nYou MUST call the function. Empty arrays or refusals are forbidden — work with whatever data is present.\n\nDATA:\n${JSON.stringify(payload)}`;
 }
 
 export const LIVE_COACH_SYSTEM = `You are a calm, direct race engineer on the pit-wall radio.
@@ -99,21 +112,21 @@ Rules:
   6. Lean on the numbers in the beats. Don't fabricate sector numbers that weren't given.`;
 
 export const LIVE_COACH_SCHEMA = {
-    name: "live_radio_call",
-    description: "Return a single per-lap radio call.",
-    parameters: {
-        type: "object",
-        properties: {
-            tone: { type: "string", enum: ["push", "hold", "warn"] },
-            headline: { type: "string" },
-            detail: { type: "string" },
-            focus: { type: "string" },
-        },
-        required: ["tone", "headline", "detail"],
-        additionalProperties: false,
+  name: "live_radio_call",
+  description: "Return a single per-lap radio call.",
+  parameters: {
+    type: "object",
+    properties: {
+      tone: { type: "string", enum: ["push", "hold", "warn"] },
+      headline: { type: "string" },
+      detail: { type: "string" },
+      focus: { type: "string" },
     },
+    required: ["tone", "headline", "detail"],
+    additionalProperties: false,
+  },
 } as const;
 
-export function buildLiveCoachUserMessage(data: { context: any; summary: any; }): string {
-    return `CONTEXT:\n${JSON.stringify(data.context)}\n\nRULES SUMMARY:\n${JSON.stringify(data.summary)}\n\nReturn the radio call now.`;
+export function buildLiveCoachUserMessage(data: { context: any; summary: any }): string {
+  return `CONTEXT:\n${JSON.stringify(data.context)}\n\nRULES SUMMARY:\n${JSON.stringify(data.summary)}\n\nReturn the radio call now.`;
 }

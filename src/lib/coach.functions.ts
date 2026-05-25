@@ -1,13 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { COACH_SYSTEM_PROMPT, COACH_SCHEMA_CONCISE, COACH_SCHEMA_DETAILED, buildCoachUserMessage, LIVE_COACH_SYSTEM, LIVE_COACH_SCHEMA, buildLiveCoachUserMessage } from "./coach.prompts";
+import {
+  COACH_SYSTEM_PROMPT,
+  COACH_SCHEMA_CONCISE,
+  COACH_SCHEMA_DETAILED,
+  buildCoachUserMessage,
+  LIVE_COACH_SYSTEM,
+  LIVE_COACH_SCHEMA,
+  buildLiveCoachUserMessage,
+} from "./coach.prompts";
 
 // Prompts extracted to coach.prompts.ts
 
 const MODEL_PRIMARY = "google/gemini-2.5-pro";
 const MODEL_FALLBACK = "openai/gpt-5-mini";
 
-async function callGateway(apiKey: string, model: string, system: string, user: string, schema: typeof COACH_SCHEMA_CONCISE | typeof COACH_SCHEMA_DETAILED) {
+async function callGateway(
+  apiKey: string,
+  model: string,
+  system: string,
+  user: string,
+  schema: typeof COACH_SCHEMA_CONCISE | typeof COACH_SCHEMA_DETAILED,
+) {
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -31,7 +45,13 @@ async function callGateway(apiKey: string, model: string, system: string, user: 
 function localFallbackConcise(payload: unknown, detailed: boolean) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const p = (payload ?? {}) as any;
-  const tips: Array<{ priority: "high" | "medium" | "low"; location: string; tip: string; reason: string; estGainS: number }> = [];
+  const tips: Array<{
+    priority: "high" | "medium" | "low";
+    location: string;
+    tip: string;
+    reason: string;
+    estGainS: number;
+  }> = [];
   const phys = p.physics ?? {};
   const cf = phys.counterfactual;
   if (cf?.zones?.length) {
@@ -91,21 +111,24 @@ function localFallbackConcise(payload: unknown, detailed: boolean) {
       priority: "low",
       location: "Corner exits",
       tip: "Unwind the wheel before flooring the throttle — open the steering as the car rotates, then commit.",
-      reason: "Generic best practice: any unwind-while-loading-throttle window costs exit speed down the next straight.",
+      reason:
+        "Generic best practice: any unwind-while-loading-throttle window costs exit speed down the next straight.",
       estGainS: 0.05,
     },
     {
       priority: "low",
       location: "Braking points",
       tip: "Walk brake markers 2–3 m later one zone at a time until you start missing the apex, then back off one step.",
-      reason: "Iterative brake-point pruning is the cheapest lap-time you can find without changing setup.",
+      reason:
+        "Iterative brake-point pruning is the cheapest lap-time you can find without changing setup.",
       estGainS: 0.1,
     },
     {
       priority: "low",
       location: "Tyre + fuel management",
       tip: "Hold a steady minimum corner speed across consecutive laps — consistency unlocks setup signal.",
-      reason: "Run-to-run variation hides real gains; consistent inputs surface the actual limit of the car.",
+      reason:
+        "Run-to-run variation hides real gains; consistent inputs surface the actual limit of the car.",
       estGainS: 0.05,
     },
   ];
@@ -116,7 +139,8 @@ function localFallbackConcise(payload: unknown, detailed: boolean) {
   if (detailed) {
     return {
       headline: "Local analysis (AI fallback) — measured time on the table",
-      overview: "AI gateway returned no structured response, so this breakdown is built directly from your physics + counterfactual zones.",
+      overview:
+        "AI gateway returned no structured response, so this breakdown is built directly from your physics + counterfactual zones.",
       corners: tips.slice(0, 4).map((t, i) => ({
         label: `Zone ${i + 1}`,
         locationPct: 10 + i * 20,
@@ -156,7 +180,9 @@ export const analyzeTelemetry = createServerFn({ method: "POST" })
     const userMsg = buildCoachUserMessage(data.detailed, data.payload);
 
     const tryModel = async (model: string, extraNudge?: string) => {
-      const sys = extraNudge ? `${COACH_SYSTEM_PROMPT}\n\nADDITIONAL: ${extraNudge}` : COACH_SYSTEM_PROMPT;
+      const sys = extraNudge
+        ? `${COACH_SYSTEM_PROMPT}\n\nADDITIONAL: ${extraNudge}`
+        : COACH_SYSTEM_PROMPT;
       const resp = await callGateway(apiKey, model, sys, userMsg, schema);
       if (!resp.ok) {
         if (resp.status === 429) return { kind: "rate" as const };
@@ -173,7 +199,8 @@ export const analyzeTelemetry = createServerFn({ method: "POST" })
         const obj = JSON.parse(argsStr);
         // Validate non-empty tips/corners.
         if (data.detailed) {
-          if (!Array.isArray(obj?.corners) || obj.corners.length === 0) return { kind: "empty" as const };
+          if (!Array.isArray(obj?.corners) || obj.corners.length === 0)
+            return { kind: "empty" as const };
         } else {
           if (!Array.isArray(obj?.tips) || obj.tips.length === 0) return { kind: "empty" as const };
         }
@@ -266,7 +293,13 @@ export const liveCoach = createServerFn({ method: "POST" })
         flags: Record<string, boolean>;
         beats: string[];
       };
-      context: { track: string; car: string; lapTimeS: number; pbS: number | null; pbStreak: number };
+      context: {
+        track: string;
+        car: string;
+        lapTimeS: number;
+        pbS: number | null;
+        pbStreak: number;
+      };
     }) => data,
   )
   .handler(async ({ data }) => {

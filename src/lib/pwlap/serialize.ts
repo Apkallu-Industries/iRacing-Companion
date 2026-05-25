@@ -29,7 +29,7 @@ import type { PwlapContent, PwlapHeader, PwlapExportOptions, PwlapFile } from ".
  */
 export async function serializePwlap(
   content: PwlapContent,
-  options: PwlapExportOptions
+  options: PwlapExportOptions,
 ): Promise<ArrayBuffer> {
   // Encode content to JSON
   let contentBytes: any = new TextEncoder().encode(JSON.stringify(content));
@@ -100,7 +100,7 @@ export async function serializePwlap(
 export async function deserializePwlap(
   buffer: ArrayBuffer,
   password?: string,
-  publicKey?: Uint8Array
+  publicKey?: Uint8Array,
 ): Promise<PwlapFile> {
   if (buffer.byteLength < PWLAP_HEADER_SIZE) {
     throw new Error("File too small for header");

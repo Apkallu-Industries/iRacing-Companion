@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
@@ -24,6 +25,11 @@ import { Route as SessionsIdRouteImport } from './routes/sessions.$id'
 import { Route as LabLapfileRouteImport } from './routes/lab.lapfile'
 import { Route as ApiPublicOgShareTokenRouteImport } from './routes/api/public/og/share.$token'
 
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/roadmap': typeof RoadmapRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/team': typeof TeamRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/share/$token': typeof ShareTokenRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/roadmap': typeof RoadmapRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/team': typeof TeamRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/share/$token': typeof ShareTokenRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/roadmap': typeof RoadmapRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/team': typeof TeamRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/share/$token': typeof ShareTokenRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/settings'
     | '/sitemap.xml'
+    | '/team'
     | '/lab/lapfile'
     | '/sessions/$id'
     | '/share/$token'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/settings'
     | '/sitemap.xml'
+    | '/team'
     | '/lab/lapfile'
     | '/sessions/$id'
     | '/share/$token'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/settings'
     | '/sitemap.xml'
+    | '/team'
     | '/lab/lapfile'
     | '/sessions/$id'
     | '/share/$token'
@@ -205,6 +217,7 @@ export interface RootRouteChildren {
   RoadmapRoute: typeof RoadmapRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TeamRoute: typeof TeamRoute
   LabLapfileRoute: typeof LabLapfileRoute
   SessionsIdRoute: typeof SessionsIdRoute
   ShareTokenRoute: typeof ShareTokenRoute
@@ -214,6 +227,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoadmapRoute: RoadmapRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TeamRoute: TeamRoute,
   LabLapfileRoute: LabLapfileRoute,
   SessionsIdRoute: SessionsIdRoute,
   ShareTokenRoute: ShareTokenRoute,

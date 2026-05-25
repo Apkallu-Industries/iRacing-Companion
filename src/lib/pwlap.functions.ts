@@ -224,7 +224,7 @@ async function buildPwlapContent(
   sessionId: string,
   sessionRow: any,
   granularity: PwlapGranularity,
-  supabase: any
+  supabase: any,
 ): Promise<PwlapContent> {
   const content: PwlapContent = {
     version: 1,

@@ -125,13 +125,8 @@ export function ScatterWidget({
 
     for (let i = 0; i < scatterData.length; i++) {
       const point = scatterData[i];
-      const px =
-        padding +
-        ((point.x - metrics.minX) / rangeX) * graphW;
-      const py =
-        padding +
-        graphH -
-        ((point.y - metrics.minY) / rangeY) * graphH;
+      const px = padding + ((point.x - metrics.minX) / rangeX) * graphW;
+      const py = padding + graphH - ((point.y - metrics.minY) / rangeY) * graphH;
 
       // Fade older points
       const alpha = 0.3 + (point.age || 0) * 0.7;
@@ -144,13 +139,8 @@ export function ScatterWidget({
     // Highlight latest point
     if (scatterData.length > 0) {
       const latest = scatterData[scatterData.length - 1];
-      const px =
-        padding +
-        ((latest.x - metrics.minX) / rangeX) * graphW;
-      const py =
-        padding +
-        graphH -
-        ((latest.y - metrics.minY) / rangeY) * graphH;
+      const px = padding + ((latest.x - metrics.minX) / rangeX) * graphW;
+      const py = padding + graphH - ((latest.y - metrics.minY) / rangeY) * graphH;
 
       ctx.strokeStyle = "#22d3ee";
       ctx.lineWidth = 2;

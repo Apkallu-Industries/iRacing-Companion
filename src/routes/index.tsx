@@ -1,5 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, Gauge, LineChart, ArrowRight, Download, Terminal, Wifi, Cpu, Settings } from "lucide-react";
+import {
+  Activity,
+  Gauge,
+  LineChart,
+  ArrowRight,
+  Download,
+  Terminal,
+  Wifi,
+  Cpu,
+  Settings,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -49,11 +59,21 @@ function LandingPage() {
           <span className="font-mono text-xs tracking-wider">PIT WALL</span>
         </div>
         <div className="ml-auto flex items-center gap-4 text-xs">
-          <Link to="/live" className="hover:text-primary">Live</Link>
-          <Link to="/lab/lapfile" className="hover:text-primary">Lab</Link>
-          <Link to="/sessions" className="hover:text-primary">Sessions</Link>
-          <Link to="/how-it-works" className="hover:text-primary">How it works</Link>
-          <Link to="/roadmap" className="hover:text-primary">Roadmap</Link>
+          <Link to="/live" className="hover:text-primary">
+            Live
+          </Link>
+          <Link to="/lab/lapfile" className="hover:text-primary">
+            Lab
+          </Link>
+          <Link to="/sessions" className="hover:text-primary">
+            Sessions
+          </Link>
+          <Link to="/how-it-works" className="hover:text-primary">
+            How it works
+          </Link>
+          <Link to="/roadmap" className="hover:text-primary">
+            Roadmap
+          </Link>
           <Link
             to="/settings"
             className="flex items-center gap-1.5 hover:text-primary transition-all group text-muted-foreground"
@@ -76,13 +96,14 @@ function LandingPage() {
           iRacing telemetry, end to end
         </p>
         <h1 className="text-5xl font-semibold tracking-tight md:text-6xl">
-          Live data on track.<br />
+          Live data on track.
+          <br />
           <span className="text-primary">Deep analysis off track.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground">
-          Pit Wall streams real-time telemetry from a tiny local bridge while you drive, and
-          opens your saved <span className="font-mono">.ibt</span> files in a MoTeC-style
-          workbench with traces, track map, sector analysis and an AI coach.
+          Pit Wall streams real-time telemetry from a tiny local bridge while you drive, and opens
+          your saved <span className="font-mono">.ibt</span> files in a MoTeC-style workbench with
+          traces, track map, sector analysis and an AI coach.
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -106,7 +127,9 @@ function LandingPage() {
           </Link>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          <a href="#install" className="underline hover:text-primary">Jump to install instructions</a>
+          <a href="#install" className="underline hover:text-primary">
+            Jump to install instructions
+          </a>
         </p>
       </section>
 
@@ -117,8 +140,8 @@ function LandingPage() {
             <h2 className="font-semibold">Live Telemetry</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            Run the local bridge on your sim PC and watch gear, RPM, lap delta, tire temps,
-            fuel and G-force update in real time. Available in-browser and as a PWA.
+            Run the local bridge on your sim PC and watch gear, RPM, lap delta, tire temps, fuel and
+            G-force update in real time. Available in-browser and as a PWA.
           </p>
           <Link to="/live" className="mt-4 inline-flex items-center gap-1 text-sm text-primary">
             Open the dashboard <ArrowRight className="h-3.5 w-3.5" />
@@ -134,7 +157,10 @@ function LandingPage() {
             Upload <span className="font-mono">.ibt</span> files for stacked traces, GG diagram,
             track map, sector spider, optimal lap, brake bias and AI coaching insights.
           </p>
-          <Link to="/lab/lapfile" className="mt-4 inline-flex items-center gap-1 text-sm text-primary">
+          <Link
+            to="/lab/lapfile"
+            className="mt-4 inline-flex items-center gap-1 text-sm text-primary"
+          >
             Open the workbench <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </article>
@@ -160,7 +186,17 @@ function LandingPage() {
             <ul className="space-y-1 text-muted-foreground">
               <li>• Windows 10 / 11</li>
               <li>• iRacing installed</li>
-              <li>• <a className="text-primary underline" href="https://nodejs.org/" target="_blank" rel="noreferrer">Node.js 20 LTS+</a></li>
+              <li>
+                •{" "}
+                <a
+                  className="text-primary underline"
+                  href="https://nodejs.org/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Node.js 20 LTS+
+                </a>
+              </li>
             </ul>
           </div>
           <div className="hairline rounded-md bg-panel p-4">
@@ -168,8 +204,9 @@ function LandingPage() {
               <Wifi className="h-3.5 w-3.5" /> What it does
             </div>
             <p className="text-muted-foreground">
-              Reads telemetry locally and serves it on <span className="font-mono">ws://&lt;your-pc&gt;:3001</span>.
-              No cloud, no account, nothing leaves your network.
+              Reads telemetry locally and serves it on{" "}
+              <span className="font-mono">ws://&lt;your-pc&gt;:3001</span>. No cloud, no account,
+              nothing leaves your network.
             </p>
           </div>
           <div className="hairline rounded-md bg-panel p-4">
@@ -177,8 +214,8 @@ function LandingPage() {
               <Terminal className="h-3.5 w-3.5" /> One command
             </div>
             <p className="text-muted-foreground">
-              Unzip → <span className="font-mono">npm install</span> → <span className="font-mono">npm start</span>.
-              That's it.
+              Unzip → <span className="font-mono">npm install</span> →{" "}
+              <span className="font-mono">npm start</span>. That's it.
             </p>
           </div>
         </div>
@@ -186,7 +223,9 @@ function LandingPage() {
         <ol className="space-y-4">
           <li className="hairline rounded-md bg-panel p-5">
             <div className="mb-2 flex items-center gap-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-mono text-primary-foreground">1</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-mono text-primary-foreground">
+                1
+              </span>
               <h3 className="font-semibold">Download &amp; unzip</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
@@ -203,12 +242,14 @@ function LandingPage() {
 
           <li className="hairline rounded-md bg-panel p-5">
             <div className="mb-2 flex items-center gap-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-mono text-primary-foreground">2</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-mono text-primary-foreground">
+                2
+              </span>
               <h3 className="font-semibold">Install dependencies &amp; start it</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
-              Open <span className="font-mono">PowerShell</span> in the unzipped folder
-              (Shift + Right-click → "Open PowerShell window here") and run:
+              Open <span className="font-mono">PowerShell</span> in the unzipped folder (Shift +
+              Right-click → "Open PowerShell window here") and run:
             </p>
             <pre className="overflow-x-auto rounded-md border border-border bg-background p-3 font-mono text-xs leading-relaxed">
               {`cd C:\\PitWall\\bridge
@@ -223,22 +264,34 @@ npm start`}
 
           <li className="hairline rounded-md bg-panel p-5">
             <div className="mb-2 flex items-center gap-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-mono text-primary-foreground">3</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-mono text-primary-foreground">
+                3
+              </span>
               <h3 className="font-semibold">Open the dashboard</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
               Launch iRacing and get in a car. Then open Pit Wall:
             </p>
             <ul className="mb-3 space-y-1 text-sm text-muted-foreground">
-              <li>• On the sim PC: <span className="font-mono">http://localhost:3001</span></li>
-              <li>• On phone / tablet / second screen: <span className="font-mono">http://&lt;your-pc-ip&gt;:3001</span> (the bridge prints the URLs on startup)</li>
-              <li>• Or use the hosted dashboard here — it auto-connects to <span className="font-mono">ws://localhost:3001</span> when opened on the sim PC.</li>
+              <li>
+                • On the sim PC: <span className="font-mono">http://localhost:3001</span>
+              </li>
+              <li>
+                • On phone / tablet / second screen:{" "}
+                <span className="font-mono">http://&lt;your-pc-ip&gt;:3001</span> (the bridge prints
+                the URLs on startup)
+              </li>
+              <li>
+                • Or use the hosted dashboard here — it auto-connects to{" "}
+                <span className="font-mono">ws://localhost:3001</span> when opened on the sim PC.
+              </li>
             </ul>
             <Link
               to="/live"
               className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
             >
-              <Gauge className="h-4 w-4" /> Open Live Dashboard <ArrowRight className="h-3.5 w-3.5" />
+              <Gauge className="h-4 w-4" /> Open Live Dashboard{" "}
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </li>
         </ol>
@@ -255,7 +308,9 @@ npm start`}
             </li>
             <li>
               <strong className="text-foreground">npm install fails with C++ errors:</strong> delete
-              <span className="font-mono"> node_modules </span> and <span className="font-mono">package-lock.json</span>, then re-run <span className="font-mono">npm install</span>.
+              <span className="font-mono"> node_modules </span> and{" "}
+              <span className="font-mono">package-lock.json</span>, then re-run{" "}
+              <span className="font-mono">npm install</span>.
             </li>
             <li>
               <strong className="text-foreground">Dashboard says "Disconnected":</strong> make sure
@@ -273,8 +328,8 @@ npm start`}
           <Link to="/lab/lapfile" className="hairline rounded-md bg-panel p-5 hover:bg-accent">
             <h3 className="mb-1 font-semibold">No sim PC handy?</h3>
             <p className="text-muted-foreground">
-              Upload a saved <span className="font-mono">.ibt</span> lap file to the Lab and
-              analyze it without the bridge.
+              Upload a saved <span className="font-mono">.ibt</span> lap file to the Lab and analyze
+              it without the bridge.
             </p>
           </Link>
           <Link to="/how-it-works" className="hairline rounded-md bg-panel p-5 hover:bg-accent">
@@ -285,7 +340,6 @@ npm start`}
           </Link>
         </div>
       </section>
-
     </main>
   );
 }

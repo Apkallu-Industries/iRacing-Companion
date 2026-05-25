@@ -141,9 +141,7 @@ export function TraceStack({
     const out: Record<string, number[]> = {};
     for (const trace of TRACES) {
       for (let si = 0; si < trace.fields.length; si++) {
-        const raw = samples.map((s) =>
-          getRawValue(s, trace.fields[si], trace.scale?.[si]),
-        );
+        const raw = samples.map((s) => getRawValue(s, trace.fields[si], trace.scale?.[si]));
         out[`${trace.key}:${si}`] = smoothSeries(raw, smoothing, smoothWindow);
       }
     }
@@ -280,7 +278,8 @@ export function TraceStack({
       }
 
       // Right-edge readout — value at cursor (or live if no cursor)
-      const idx = cursorIndex >= 0 && cursorIndex < samples.length ? cursorIndex : samples.length - 1;
+      const idx =
+        cursorIndex >= 0 && cursorIndex < samples.length ? cursorIndex : samples.length - 1;
       if (idx >= 0) {
         ctx.textAlign = "right";
         for (let si = 0; si < trace.fields.length; si++) {

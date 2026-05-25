@@ -7,13 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  applyTheme,
-  DARK_THEME,
-  loadLocalTheme,
-  saveLocalTheme,
-  type ThemeMap,
-} from "./theme";
+import { applyTheme, DARK_THEME, loadLocalTheme, saveLocalTheme, type ThemeMap } from "./theme";
 import { useAuth } from "./auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -118,9 +112,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  return (
-    <Ctx.Provider value={{ theme, setToken, setTheme, reset }}>{children}</Ctx.Provider>
-  );
+  return <Ctx.Provider value={{ theme, setToken, setTheme, reset }}>{children}</Ctx.Provider>;
 }
 
 export const useTheme = () => useContext(Ctx);

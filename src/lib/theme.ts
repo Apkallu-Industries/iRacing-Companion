@@ -103,9 +103,7 @@ export function migrateThemeFile(raw: unknown): MigrationResult {
 
   // Normalize: ensure `theme` map exists at the top level.
   const theme =
-    cur && typeof cur === "object" && cur.theme && typeof cur.theme === "object"
-      ? cur.theme
-      : cur;
+    cur && typeof cur === "object" && cur.theme && typeof cur.theme === "object" ? cur.theme : cur;
 
   return {
     file: {

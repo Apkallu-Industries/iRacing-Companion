@@ -113,9 +113,7 @@ export const hasAnyFingerprint = createServerFn({ method: "GET" })
 
 export const updateSessionFingerprintDelta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { sessionId: string; delta: Record<string, unknown> | null }) => data,
-  )
+  .inputValidator((data: { sessionId: string; delta: Record<string, unknown> | null }) => data)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { error } = await supabase

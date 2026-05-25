@@ -22,9 +22,14 @@ export function LiveReadout({ parsed }: { parsed: IbtParsed }) {
                 <span style={{ color: colorForChannel(name) }}>{name}</span>
                 <span>{ch.unit}</span>
               </div>
-              <div className="mt-1 font-mono text-2xl tabular-nums">{Number.isFinite(v) ? v.toFixed(2) : "—"}</div>
+              <div className="mt-1 font-mono text-2xl tabular-nums">
+                {Number.isFinite(v) ? v.toFixed(2) : "—"}
+              </div>
               <div className="mt-1 h-1 overflow-hidden rounded-full bg-rail">
-                <div className="h-full" style={{ width: `${pct}%`, background: colorForChannel(name) }} />
+                <div
+                  className="h-full"
+                  style={{ width: `${pct}%`, background: colorForChannel(name) }}
+                />
               </div>
             </div>
           );

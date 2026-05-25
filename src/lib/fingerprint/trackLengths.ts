@@ -110,7 +110,10 @@ const TRACKS: { match: RegExp; m: number; label?: string }[] = [
 ];
 
 /** Return the canonical track length (m) for a folder/trackName match, or null. */
-export function knownTrackLength(folder: string, trackName?: string): { m: number; label?: string } | null {
+export function knownTrackLength(
+  folder: string,
+  trackName?: string,
+): { m: number; label?: string } | null {
   const key = `${folder} ${trackName ?? ""}`.toLowerCase().replace(/\\/g, "/");
   for (const t of TRACKS) {
     if (t.match.test(key)) return { m: t.m, label: t.label };

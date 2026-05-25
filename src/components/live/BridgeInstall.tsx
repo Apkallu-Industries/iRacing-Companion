@@ -33,16 +33,24 @@ function StepRow({
   return (
     <div
       className={`flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors ${
-        active ? "bg-zinc-800/80 ring-1 ring-racing-orange/30" : done ? "bg-zinc-900/40" : "bg-zinc-900/20"
+        active
+          ? "bg-zinc-800/80 ring-1 ring-racing-orange/30"
+          : done
+            ? "bg-zinc-900/40"
+            : "bg-zinc-900/20"
       }`}
     >
       {done ? (
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
       ) : (
-        <Circle className={`mt-0.5 h-4 w-4 shrink-0 ${active ? "text-racing-orange" : "text-zinc-600"}`} />
+        <Circle
+          className={`mt-0.5 h-4 w-4 shrink-0 ${active ? "text-racing-orange" : "text-zinc-600"}`}
+        />
       )}
       <div>
-        <div className={`text-[11px] font-mono uppercase tracking-wider ${done ? "text-emerald-400" : "text-zinc-300"}`}>
+        <div
+          className={`text-[11px] font-mono uppercase tracking-wider ${done ? "text-emerald-400" : "text-zinc-300"}`}
+        >
           {label}
         </div>
         <p className="mt-0.5 text-[11px] text-zinc-400 leading-relaxed">{detail}</p>
@@ -65,7 +73,9 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
       const mode = getBridgePerformanceMode();
       const res = await startBridge({ data: { mode } });
       if (res.success) {
-        toast.success(`${res.message || "Bridge started."} Mode: ${mode === "stable30" ? "Stable 30Hz" : "Balanced 60Hz"}`);
+        toast.success(
+          `${res.message || "Bridge started."} Mode: ${mode === "stable30" ? "Stable 30Hz" : "Balanced 60Hz"}`,
+        );
         bridge.refresh();
       } else {
         toast.error(res.error || "Failed to start local bridge.");
@@ -83,7 +93,11 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
         <div className="flex items-center gap-2">
           <Wifi className={`h-4 w-4 ${step3 ? "text-emerald-400" : "text-racing-orange"}`} />
           <h2 className="text-[11px] uppercase tracking-[0.2em] font-medium font-mono text-zinc-300">
-            {step3 ? "Live — iRacing connected" : step1 ? "Bridge ready — waiting for iRacing" : "Connect telemetry"}
+            {step3
+              ? "Live — iRacing connected"
+              : step1
+                ? "Bridge ready — waiting for iRacing"
+                : "Connect telemetry"}
           </h2>
         </div>
         <button

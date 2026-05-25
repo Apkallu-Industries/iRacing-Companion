@@ -47,7 +47,9 @@ export function Timeline({ parsed }: { parsed: IbtParsed }) {
         className="rounded-sm border border-border bg-rail px-2 py-1 font-mono text-xs"
       >
         {[0.25, 0.5, 1, 2, 4, 8].map((s) => (
-          <option key={s} value={s}>{s}×</option>
+          <option key={s} value={s}>
+            {s}×
+          </option>
         ))}
       </select>
       <div className="relative flex-1">
@@ -80,8 +82,12 @@ export function Timeline({ parsed }: { parsed: IbtParsed }) {
           return (
             <>
               {lap ? `L${lap.lap} · ` : ""}
-              <span className="text-foreground">{m}:{s}</span>
-              <span className="ml-2 opacity-60">{cursorTick}/{total - 1}</span>
+              <span className="text-foreground">
+                {m}:{s}
+              </span>
+              <span className="ml-2 opacity-60">
+                {cursorTick}/{total - 1}
+              </span>
             </>
           );
         })()}

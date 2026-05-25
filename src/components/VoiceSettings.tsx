@@ -17,12 +17,8 @@ import { toast } from "sonner";
 const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
 
 export function VoiceSettings({ inline }: { inline?: boolean }) {
-  const {
-    elevenLabsApiKey,
-    elevenLabsVoiceId,
-    setElevenLabsApiKey,
-    setElevenLabsVoiceId,
-  } = useWorkbench();
+  const { elevenLabsApiKey, elevenLabsVoiceId, setElevenLabsApiKey, setElevenLabsVoiceId } =
+    useWorkbench();
   const [open, setOpen] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
@@ -135,7 +131,9 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
             <div className="rounded border border-rose-500/30 bg-rose-500/5 p-2.5 text-[10px] text-rose-400 font-mono flex items-start gap-1.5 leading-normal animate-in fade-in">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               <div>
-                <span className="font-semibold uppercase tracking-wider text-[9px] block mb-0.5">Test Error:</span>
+                <span className="font-semibold uppercase tracking-wider text-[9px] block mb-0.5">
+                  Test Error:
+                </span>
                 {testError}
               </div>
             </div>
@@ -156,7 +154,10 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
           Voice
         </button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[380px] sm:w-[440px] flex flex-col p-0 bg-background text-foreground">
+      <SheetContent
+        side="right"
+        className="w-[380px] sm:w-[440px] flex flex-col p-0 bg-background text-foreground"
+      >
         <SheetHeader className="px-4 pt-4">
           <SheetTitle className="font-mono text-sm tracking-wider">VOICE CONFIGURATION</SheetTitle>
           <SheetDescription className="text-xs">
@@ -190,7 +191,8 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
               className="font-mono text-xs"
             />
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Use a valid ElevenLabs voice ID from your account (typically 20 alphanumeric characters).
+              Use a valid ElevenLabs voice ID from your account (typically 20 alphanumeric
+              characters).
             </p>
           </div>
 
@@ -223,7 +225,12 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
         </div>
 
         <div className="hairline-t flex items-center justify-between gap-2 px-4 py-3">
-          <Button variant="outline" size="sm" onClick={resetDefaults} className="gap-1.5 cursor-pointer">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetDefaults}
+            className="gap-1.5 cursor-pointer"
+          >
             <RotateCcw className="h-3.5 w-3.5" />
             Reset Defaults
           </Button>

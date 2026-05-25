@@ -119,7 +119,7 @@ function readCString(view: DataView, offset: number, maxLen: number): string {
 }
 
 function isPrintableCsvByte(b: number): boolean {
-  return (b >= 0x20 && b < 0x7f);
+  return b >= 0x20 && b < 0x7f;
 }
 
 function readLiveryRecords(view: DataView, start: number, count: number, stride = 32): string[] {
@@ -127,13 +127,18 @@ function readLiveryRecords(view: DataView, start: number, count: number, stride 
   for (let i = 0; i < count; i++) {
     out.push(readCString(view, start + i * stride, stride));
   }
-  return out.filter(s => s.length > 0);
+  return out.filter((s) => s.length > 0);
 }
 
 const MAGICS: ReadonlyArray<LapfileMagic> = ["OLAP", "BLAP", "OLTA", "BLTA"];
 
 function decodeMagic(view: DataView): LapfileMagic {
-  const m = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+  const m = String.fromCharCode(
+    view.getUint8(0),
+    view.getUint8(1),
+    view.getUint8(2),
+    view.getUint8(3),
+  );
   if (!MAGICS.includes(m as LapfileMagic)) {
     throw new Error(`Not a lapfile: bad magic "${m}"`);
   }
@@ -141,7 +146,10 @@ function decodeMagic(view: DataView): LapfileMagic {
 }
 
 function statsOf(values: Float32Array): { min: number; max: number; mean: number } {
-  let mn = Infinity, mx = -Infinity, sum = 0, n = 0;
+  let mn = Infinity,
+    mx = -Infinity,
+    sum = 0,
+    n = 0;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (!Number.isFinite(v)) continue;
@@ -202,7 +210,10 @@ function guessChannel(values: Float32Array): { label: string; unit: string } {
  * scanning forward from the end of the metadata strings for a contiguous
  * span of length-divisible-by-numBins float32 data with finite values.
  */
-function decodeChannelTable(view: DataView, raw: Uint8Array): {
+function decodeChannelTable(
+  view: DataView,
+  raw: Uint8Array,
+): {
   bestLapS: number;
   trackLengthM: number;
   sectorTimesS: number[];
@@ -242,7 +253,13 @@ function decodeChannelTable(view: DataView, raw: Uint8Array): {
   return { bestLapS, trackLengthM, sectorTimesS, numBins, numChannels, bodyOffset };
 }
 
-function readChannels(view: DataView, bodyOffset: number, numBins: number, numChannels: number, raw: Uint8Array): LapfileChannel[] {
+function readChannels(
+  view: DataView,
+  bodyOffset: number,
+  numBins: number,
+  numChannels: number,
+  raw: Uint8Array,
+): LapfileChannel[] {
   const channels: LapfileChannel[] = [];
   if (numBins <= 0 || numChannels <= 0) return channels;
   const channelByteLen = numBins * 4;
@@ -256,22 +273,22 @@ function readChannels(view: DataView, bodyOffset: number, numBins: number, numCh
   // Trailer = 52 bytes after channels (sector-times block, 3 sectors).
   const totalChannels = Math.floor((raw.byteLength - bodyOffset) / channelByteLen);
   const PAIRED_LABELS = [
-    "distance",        // 0
-    "best.t.seg1",     // 1
-    "best.t.seg2",     // 2
-    "best.t.seg3",     // 3
-    "best.t.seg4",     // 4
-    "best.t.seg5",     // 5
-    "best.t.seg6",     // 6
-    "opt.t.seg6.dup",  // 7  (mirror of best/opt seg6 — confirmed)
-    "opt.t.seg1",      // 8
-    "opt.t.seg2",      // 9
-    "opt.t.seg3",      // 10
-    "opt.t.seg4",      // 11
-    "opt.t.seg5",      // 12
-    "opt.t.seg6",      // 13
+    "distance", // 0
+    "best.t.seg1", // 1
+    "best.t.seg2", // 2
+    "best.t.seg3", // 3
+    "best.t.seg4", // 4
+    "best.t.seg5", // 5
+    "best.t.seg6", // 6
+    "opt.t.seg6.dup", // 7  (mirror of best/opt seg6 — confirmed)
+    "opt.t.seg1", // 8
+    "opt.t.seg2", // 9
+    "opt.t.seg3", // 10
+    "opt.t.seg4", // 11
+    "opt.t.seg5", // 12
+    "opt.t.seg6", // 13
   ];
-  const PAIRED_UNITS = ["m","s","s","s","s","s","s","s","s","s","s","s","s","s"];
+  const PAIRED_UNITS = ["m", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s"];
   for (let c = 0; c < totalChannels; c++) {
     const off = bodyOffset + c * channelByteLen;
     if (off + channelByteLen > raw.byteLength) break;
@@ -290,7 +307,8 @@ function readChannels(view: DataView, bodyOffset: number, numBins: number, numCh
     }
     const s = statsOf(values);
     if (s.min === 0 && s.max === 0) continue;
-    const label = c < PAIRED_LABELS.length ? PAIRED_LABELS[c] : guessChannel(values).label + `#${c + 1}`;
+    const label =
+      c < PAIRED_LABELS.length ? PAIRED_LABELS[c] : guessChannel(values).label + `#${c + 1}`;
     const unit = c < PAIRED_UNITS.length ? PAIRED_UNITS[c] : guessChannel(values).unit;
     channels.push({
       label,
@@ -327,9 +345,8 @@ export function parseLapfile(buffer: ArrayBuffer): ParsedLapfile {
   const trackName = readCString(view, 0x53e, 64);
 
   const liveryCount = view.getUint32(0x0d0, true);
-  const liveryRecords = liveryCount > 0 && liveryCount < 16
-    ? readLiveryRecords(view, 0x0d4, liveryCount)
-    : [];
+  const liveryRecords =
+    liveryCount > 0 && liveryCount < 16 ? readLiveryRecords(view, 0x0d4, liveryCount) : [];
 
   const ghostName = readCString(view, 0x28c, 64);
   const ghostDriverName = ghostName && ghostName !== driverName ? ghostName : undefined;
@@ -338,10 +355,16 @@ export function parseLapfile(buffer: ArrayBuffer): ParsedLapfile {
     readCString(view, 0x57e, 16),
     readCString(view, 0x58e, 16),
     readCString(view, 0x59e, 16),
-  ].filter(s => /^\d{4}\.\d{2}\.\d{2}/.test(s));
+  ].filter((s) => /^\d{4}\.\d{2}\.\d{2}/.test(s));
 
   const tableInfo = decodeChannelTable(view, raw);
-  const channels = readChannels(view, tableInfo.bodyOffset, tableInfo.numBins, tableInfo.numChannels, raw);
+  const channels = readChannels(
+    view,
+    tableInfo.bodyOffset,
+    tableInfo.numBins,
+    tableInfo.numChannels,
+    raw,
+  );
 
   const header: LapfileHeader = {
     magic,
@@ -377,14 +400,14 @@ export function lapfileToJSON(parsed: ParsedLapfile) {
   return {
     header: parsed.header,
     summary: parsed.summary,
-    channels: parsed.channels.map(c => ({
+    channels: parsed.channels.map((c) => ({
       label: c.label,
       unit: c.unit,
       min: c.min,
       max: c.max,
       mean: c.mean,
       byteOffset: c.byteOffset,
-      values: Array.from(c.values).map(v => Number.isFinite(v) ? Number(v.toFixed(4)) : null),
+      values: Array.from(c.values).map((v) => (Number.isFinite(v) ? Number(v.toFixed(4)) : null)),
     })),
   };
 }
@@ -398,7 +421,11 @@ export function formatLapTime(s: number): string {
 }
 
 /** First livery record is conventionally `<licenseColor>` (single hex). */
-export function liveryColors(parsed: ParsedLapfile): { license: string; helmet: string[]; suit: string[] } {
+export function liveryColors(parsed: ParsedLapfile): {
+  license: string;
+  helmet: string[];
+  suit: string[];
+} {
   const recs = parsed.header.liveryRecords;
   const license = recs[0] ?? "";
   const helmet = (recs[1] ?? "").split(",").slice(1).filter(Boolean);

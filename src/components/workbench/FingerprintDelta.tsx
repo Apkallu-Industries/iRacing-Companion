@@ -94,8 +94,20 @@ export function FingerprintDelta({ track, car, thisLapS, thisSectors }: Props) {
       ) : (
         <div className="grid grid-cols-4 gap-2 font-mono text-[11px]">
           <Cell label="This best" value={fmtLap(thisLapS ?? null)} />
-          <Cell label="All-time PB" value={fmtLap(pb)} sub={dPb != null ? fmtDelta(dPb) : undefined} subClass={deltaColor(dPb)} icon={dPb} />
-          <Cell label="Optimal" value={fmtLap(opt)} sub={dOpt != null ? fmtDelta(dOpt) : undefined} subClass={deltaColor(dOpt)} icon={dOpt} />
+          <Cell
+            label="All-time PB"
+            value={fmtLap(pb)}
+            sub={dPb != null ? fmtDelta(dPb) : undefined}
+            subClass={deltaColor(dPb)}
+            icon={dPb}
+          />
+          <Cell
+            label="Optimal"
+            value={fmtLap(opt)}
+            sub={dOpt != null ? fmtDelta(dOpt) : undefined}
+            subClass={deltaColor(dOpt)}
+            icon={dOpt}
+          />
           <Cell
             label="Sectors vs best"
             value={
@@ -129,7 +141,8 @@ function Cell({
   subClass?: string;
   icon?: number | null;
 }) {
-  const Icon = icon == null ? Minus : icon < -0.05 ? TrendingDown : icon > 0.05 ? TrendingUp : Minus;
+  const Icon =
+    icon == null ? Minus : icon < -0.05 ? TrendingDown : icon > 0.05 ? TrendingUp : Minus;
   return (
     <div className="rounded-sm bg-rail px-2 py-1.5">
       <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</div>

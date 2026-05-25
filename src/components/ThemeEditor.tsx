@@ -27,26 +27,24 @@ import {
 } from "@/lib/theme";
 import { ThemeCard, type ThemeCardData } from "@/components/ThemeCard";
 import { useAuth } from "@/lib/auth";
-import {
-  listSharedThemes,
-  publishTheme,
-  deleteSharedTheme,
-} from "@/lib/themes.functions";
+import { listSharedThemes, publishTheme, deleteSharedTheme } from "@/lib/themes.functions";
 import { toast } from "sonner";
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const TOKEN_KEYS = Object.keys(DARK_THEME) as ThemeTokenKey[];
 
-const themeTokensSchema = z.object(
-  Object.fromEntries(
-    TOKEN_KEYS.map((k) => [
-      k,
-      z
-        .string({ message: `"${k}" must be a string` })
-        .regex(HEX_RE, `"${k}" must be a hex color like #rrggbb`),
-    ]),
-  ) as Record<ThemeTokenKey, z.ZodString>,
-).strict();
+const themeTokensSchema = z
+  .object(
+    Object.fromEntries(
+      TOKEN_KEYS.map((k) => [
+        k,
+        z
+          .string({ message: `"${k}" must be a string` })
+          .regex(HEX_RE, `"${k}" must be a hex color like #rrggbb`),
+      ]),
+    ) as Record<ThemeTokenKey, z.ZodString>,
+  )
+  .strict();
 
 const themeFileSchema = z.union([
   z
@@ -188,9 +186,7 @@ export function ThemeEditor() {
       return;
     }
 
-    const data = result.data as
-      | { theme: Required<ThemeMap>; name?: string }
-      | Required<ThemeMap>;
+    const data = result.data as { theme: Required<ThemeMap>; name?: string } | Required<ThemeMap>;
     const tokens = "theme" in data ? data.theme : (data as Required<ThemeMap>);
     const name = "theme" in data ? data.name : undefined;
 
@@ -265,68 +261,74 @@ export function ThemeEditor() {
 
         <Tabs value={tab} onValueChange={setTab} className="flex flex-1 flex-col overflow-hidden">
           <TabsList className="mx-4 mt-3 grid grid-cols-3">
-            <TabsTrigger value="editor" className="text-xs">Editor</TabsTrigger>
-            <TabsTrigger value="share" className="text-xs">Share</TabsTrigger>
-            <TabsTrigger value="gallery" className="text-xs">Gallery</TabsTrigger>
+            <TabsTrigger value="editor" className="text-xs">
+              Editor
+            </TabsTrigger>
+            <TabsTrigger value="share" className="text-xs">
+              Share
+            </TabsTrigger>
+            <TabsTrigger value="gallery" className="text-xs">
+              Gallery
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="editor" className="mt-0 flex flex-1 flex-col overflow-hidden">
             <div className="px-4 pt-3">
-          <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-            Presets
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {PRESETS.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setTheme(p.theme)}
-                className="flex items-center gap-2 rounded-sm border border-border bg-panel-2 px-2 py-1.5 text-left text-xs hover:border-primary"
-              >
-                <span className="flex h-4 w-4 overflow-hidden rounded-sm border border-border">
-                  <span className="flex-1" style={{ background: p.theme.background }} />
-                  <span className="flex-1" style={{ background: p.theme.primary }} />
-                </span>
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <ScrollArea className="mt-2 flex-1 px-4">
-          <div className="space-y-4 pb-6">
-            {THEME_GROUPS.map((group) => (
-              <div key={group.label}>
-                <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {group.label}
-                </div>
-                <div className="space-y-1">
-                  {group.tokens.map((t) => (
-                    <label
-                      key={t.key}
-                      className="flex items-center justify-between gap-2 rounded-sm px-1 py-1 text-xs hover:bg-accent/40"
-                    >
-                      <span>{t.label}</span>
-                      <span className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={value(t.key)}
-                          onChange={(e) => setToken(t.key, e.target.value)}
-                          className="h-6 w-8 cursor-pointer rounded-sm border border-border bg-transparent"
-                        />
-                        <input
-                          type="text"
-                          value={value(t.key)}
-                          onChange={(e) => setToken(t.key, e.target.value)}
-                          className="w-20 rounded-sm border border-border bg-panel-2 px-1.5 py-0.5 font-mono text-[10px]"
-                        />
-                      </span>
-                    </label>
-                  ))}
-                </div>
+              <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+                Presets
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+              <div className="grid grid-cols-2 gap-2">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setTheme(p.theme)}
+                    className="flex items-center gap-2 rounded-sm border border-border bg-panel-2 px-2 py-1.5 text-left text-xs hover:border-primary"
+                  >
+                    <span className="flex h-4 w-4 overflow-hidden rounded-sm border border-border">
+                      <span className="flex-1" style={{ background: p.theme.background }} />
+                      <span className="flex-1" style={{ background: p.theme.primary }} />
+                    </span>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <ScrollArea className="mt-2 flex-1 px-4">
+              <div className="space-y-4 pb-6">
+                {THEME_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {group.label}
+                    </div>
+                    <div className="space-y-1">
+                      {group.tokens.map((t) => (
+                        <label
+                          key={t.key}
+                          className="flex items-center justify-between gap-2 rounded-sm px-1 py-1 text-xs hover:bg-accent/40"
+                        >
+                          <span>{t.label}</span>
+                          <span className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={value(t.key)}
+                              onChange={(e) => setToken(t.key, e.target.value)}
+                              className="h-6 w-8 cursor-pointer rounded-sm border border-border bg-transparent"
+                            />
+                            <input
+                              type="text"
+                              value={value(t.key)}
+                              onChange={(e) => setToken(t.key, e.target.value)}
+                              className="w-20 rounded-sm border border-border bg-panel-2 px-1.5 py-0.5 font-mono text-[10px]"
+                            />
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="share" className="mt-0 flex flex-1 flex-col overflow-hidden">
@@ -337,10 +339,20 @@ export function ThemeEditor() {
                     Import / Export
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => fileRef.current?.click()}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5"
+                      onClick={() => fileRef.current?.click()}
+                    >
                       <Upload className="h-3.5 w-3.5" /> Import JSON
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={exportTheme}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5"
+                      onClick={exportTheme}
+                    >
                       <Download className="h-3.5 w-3.5" /> Export JSON
                     </Button>
                     <input
@@ -376,8 +388,17 @@ export function ThemeEditor() {
                       className="min-h-16 text-xs"
                       maxLength={280}
                     />
-                    <Button size="sm" onClick={handlePublish} disabled={publishing} className="w-full gap-1.5">
-                      {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Share2 className="h-3.5 w-3.5" />}
+                    <Button
+                      size="sm"
+                      onClick={handlePublish}
+                      disabled={publishing}
+                      className="w-full gap-1.5"
+                    >
+                      {publishing ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Share2 className="h-3.5 w-3.5" />
+                      )}
                       Publish current theme
                     </Button>
                   </div>

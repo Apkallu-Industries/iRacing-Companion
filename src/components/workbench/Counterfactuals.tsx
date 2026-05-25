@@ -34,11 +34,7 @@ interface BandStats {
   spanPct: number; // actual pct span covered by samples
 }
 
-function findBrakeZones(
-  brake: Float32Array,
-  lapDistPct: Float32Array,
-  lap: IbtLap,
-): BrakeZone[] {
+function findBrakeZones(brake: Float32Array, lapDistPct: Float32Array, lap: IbtLap): BrakeZone[] {
   const out: BrakeZone[] = [];
   let inZone = false;
   let startPct = 0;
@@ -258,11 +254,12 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
       <div className="hairline-b flex items-center justify-between gap-3 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>
           What-if · Ref L{ref.lap} · {items.length} zones
-          {hidden > 0 && <span className="ml-1 text-amber-400/70">(+{hidden} hidden, low confidence)</span>}
+          {hidden > 0 && (
+            <span className="ml-1 text-amber-400/70">(+{hidden} hidden, low confidence)</span>
+          )}
         </span>
         <span>
-          Realisable gain{" "}
-          <span className="text-fuchsia-400">−{totalGain.toFixed(3)}s</span>
+          Realisable gain <span className="text-fuchsia-400">−{totalGain.toFixed(3)}s</span>
         </span>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -274,12 +271,10 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
           items.map((it) => {
             const refRel = it.refStats.brakeReleasePct;
             const bestRel = it.best.brakeReleasePct;
-            const releaseDeltaPct =
-              refRel != null && bestRel != null ? bestRel - refRel : null;
+            const releaseDeltaPct = refRel != null && bestRel != null ? bestRel - refRel : null;
             const refTOn = it.refStats.throttleOnPct;
             const bestTOn = it.best.throttleOnPct;
-            const throttleDeltaPct =
-              refTOn != null && bestTOn != null ? bestTOn - refTOn : null;
+            const throttleDeltaPct = refTOn != null && bestTOn != null ? bestTOn - refTOn : null;
             const speedDelta = it.best.apexMinSpeed - it.refStats.apexMinSpeed;
             const exitDelta = it.best.exitSpeed - it.refStats.exitSpeed;
             const slower = it.gainS > 0.005;
@@ -298,8 +293,7 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
                     <MapPin className="h-3 w-3 text-muted-foreground" />
                     Zone {it.idx + 1} ·{" "}
                     <span className="text-muted-foreground">
-                      {(it.zone.startPct * 100).toFixed(1)}–
-                      {(it.zone.endPct * 100).toFixed(1)}%
+                      {(it.zone.startPct * 100).toFixed(1)}–{(it.zone.endPct * 100).toFixed(1)}%
                     </span>
                     <span
                       title={
@@ -331,7 +325,9 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
                     ) : (
                       <TrendingUp className="h-3 w-3" />
                     )}
-                    {slower ? `−${it.gainS.toFixed(3)}s vs L${it.best.lap}` : "Already optimal here"}
+                    {slower
+                      ? `−${it.gainS.toFixed(3)}s vs L${it.best.lap}`
+                      : "Already optimal here"}
                   </span>
                 </div>
                 {lowConf && it.reasons.length > 0 && (
@@ -344,7 +340,9 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
                     {releaseDeltaPct != null && (
                       <div>
                         Brake release{" "}
-                        <span className={releaseDeltaPct > 0 ? "text-foreground" : "text-amber-400"}>
+                        <span
+                          className={releaseDeltaPct > 0 ? "text-foreground" : "text-amber-400"}
+                        >
                           {fmtMeters(releaseDeltaPct, trackLengthKm)}
                         </span>{" "}
                         {releaseDeltaPct > 0 ? "later" : "earlier"}
@@ -353,7 +351,9 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
                     {throttleDeltaPct != null && (
                       <div>
                         Throttle on{" "}
-                        <span className={throttleDeltaPct < 0 ? "text-foreground" : "text-amber-400"}>
+                        <span
+                          className={throttleDeltaPct < 0 ? "text-foreground" : "text-amber-400"}
+                        >
                           {fmtMeters(-throttleDeltaPct, trackLengthKm)}
                         </span>{" "}
                         {throttleDeltaPct < 0 ? "earlier" : "later"}
@@ -376,7 +376,8 @@ export function Counterfactuals({ parsed }: { parsed: IbtParsed }) {
                     <div>
                       Peak brake{" "}
                       <span className="text-foreground">
-                        {(it.refStats.brakePeak * 100).toFixed(0)}% → {(it.best.brakePeak * 100).toFixed(0)}%
+                        {(it.refStats.brakePeak * 100).toFixed(0)}% →{" "}
+                        {(it.best.brakePeak * 100).toFixed(0)}%
                       </span>
                     </div>
                     <div>

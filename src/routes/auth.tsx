@@ -1,6 +1,15 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Activity, CheckCircle2, Circle, LogOut, Mail, Chrome, Apple, KeyRound } from "lucide-react";
+import {
+  Activity,
+  CheckCircle2,
+  Circle,
+  LogOut,
+  Mail,
+  Chrome,
+  Apple,
+  KeyRound,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth";
@@ -73,7 +82,7 @@ function AuthPage() {
         aud: "authenticated",
         role: "authenticated",
         created_at: new Date().toISOString(),
-      }
+      },
     };
     localStorage.setItem("apex_local_session", JSON.stringify(mockSession));
     window.location.href = "/sessions";
@@ -112,11 +121,7 @@ function AuthPage() {
             </span>
             <span
               className={`flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider ${
-                loading
-                  ? "text-muted-foreground"
-                  : user
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                loading ? "text-muted-foreground" : user ? "text-primary" : "text-muted-foreground"
               }`}
             >
               {loading ? (
@@ -161,16 +166,10 @@ function AuthPage() {
                 }
               />
               {identities.length > 1 && (
-                <Row
-                  label="Linked"
-                  value={`${identities.length} identities`}
-                />
+                <Row label="Linked" value={`${identities.length} identities`} />
               )}
               {lastSignInAt && (
-                <Row
-                  label="Last sign-in"
-                  value={new Date(lastSignInAt).toLocaleString()}
-                />
+                <Row label="Last sign-in" value={new Date(lastSignInAt).toLocaleString()} />
               )}
               {session?.expires_at && (
                 <Row
@@ -205,7 +204,9 @@ function AuthPage() {
         </div>
 
         <div className="hairline rounded-sm bg-panel p-6">
-          <h1 className="text-xl font-semibold">{mode === "signin" ? "Sign in" : "Create account"}</h1>
+          <h1 className="text-xl font-semibold">
+            {mode === "signin" ? "Sign in" : "Create account"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "signin" ? "Open your telemetry library." : "Start uploading .ibt files."}
           </p>
@@ -245,7 +246,9 @@ function AuthPage() {
 
           <form onSubmit={submit} className="space-y-3">
             <label className="block">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Email</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                Email
+              </span>
               <input
                 type="email"
                 required
@@ -256,7 +259,9 @@ function AuthPage() {
               />
             </label>
             <label className="block">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Password</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                Password
+              </span>
               <input
                 type="password"
                 required

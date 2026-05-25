@@ -12,9 +12,7 @@ function buildTrackGeometry(parsed: IbtParsed) {
   const xy = parsed.trackXY;
   if (!xy) return null;
   const altCh =
-    parsed.channels["Alt"] ??
-    parsed.channels["Altitude"] ??
-    parsed.channels["LapDistAlt"];
+    parsed.channels["Alt"] ?? parsed.channels["Altitude"] ?? parsed.channels["LapDistAlt"];
   const alt = altCh?.data;
 
   const cx = (xy.minX + xy.maxX) / 2;
@@ -26,7 +24,8 @@ function buildTrackGeometry(parsed: IbtParsed) {
   const n = xy.x.length;
   const step = Math.max(1, Math.floor(n / 4000));
   const positions: number[] = [];
-  let altMin = Infinity, altMax = -Infinity;
+  let altMin = Infinity,
+    altMax = -Infinity;
   if (alt) {
     for (let i = 0; i < n; i += step) {
       const a = alt[i];
@@ -36,7 +35,10 @@ function buildTrackGeometry(parsed: IbtParsed) {
       }
     }
   }
-  if (!isFinite(altMin)) { altMin = 0; altMax = 1; }
+  if (!isFinite(altMin)) {
+    altMin = 0;
+    altMax = 1;
+  }
   const altRange = Math.max(0.5, altMax - altMin);
   const altScale = 12 / altRange; // exaggerate elevation for readability
 
@@ -46,7 +48,16 @@ function buildTrackGeometry(parsed: IbtParsed) {
     const y = alt ? (alt[i] - altMin) * altScale : 0;
     positions.push(x, y, z);
   }
-  return { positions: new Float32Array(positions), step, scale, cx, cy, altMin, altScale, hasAlt: !!alt };
+  return {
+    positions: new Float32Array(positions),
+    step,
+    scale,
+    cx,
+    cy,
+    altMin,
+    altScale,
+    hasAlt: !!alt,
+  };
 }
 
 function carPosition(
@@ -57,9 +68,7 @@ function carPosition(
   if (!geom || !parsed.trackXY) return [0, 0, 0];
   const xy = parsed.trackXY;
   const altCh =
-    parsed.channels["Alt"] ??
-    parsed.channels["Altitude"] ??
-    parsed.channels["LapDistAlt"];
+    parsed.channels["Alt"] ?? parsed.channels["Altitude"] ?? parsed.channels["LapDistAlt"];
   const alt = altCh?.data;
   const i = Math.max(0, Math.min(xy.x.length - 1, tick));
   const x = (xy.x[i] - geom.cx) * geom.scale;
@@ -87,10 +96,7 @@ function TrackLine({ positions, color }: { positions: Float32Array; color: strin
     g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     return g;
   }, [positions]);
-  const material = useMemo(
-    () => new THREE.LineBasicMaterial({ color }),
-    [color],
-  );
+  const material = useMemo(() => new THREE.LineBasicMaterial({ color }), [color]);
   const lineObj = useMemo(() => new THREE.Line(geom, material), [geom, material]);
   return <primitive object={lineObj} />;
 }
@@ -109,7 +115,10 @@ function lapTickAt(parsed: IbtParsed, lapNum: number | null, cursorTick: number)
   let bestD = Infinity;
   for (let t = lap.startTick; t <= lap.endTick; t += 4) {
     const d = Math.abs(pct[t] - cursorPct);
-    if (d < bestD) { bestD = d; bestT = t; }
+    if (d < bestD) {
+      bestD = d;
+      bestT = t;
+    }
   }
   return bestT;
 }
@@ -155,7 +164,9 @@ export function ReplayThree({ parsed }: { parsed: IbtParsed }) {
             <button
               onClick={() => setShowGhost((g) => !g)}
               className={`flex h-5 items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase ${
-                showGhost ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"
+                showGhost
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-rail text-muted-foreground hover:text-foreground"
               }`}
               title="Toggle ghost (compare lap)"
             >
@@ -172,7 +183,11 @@ export function ReplayThree({ parsed }: { parsed: IbtParsed }) {
         </div>
       </div>
       <div ref={containerRef} className="min-h-0 flex-1">
-        <Canvas camera={{ position: [70, 50, 70], fov: 45 }} dpr={[1, 1.5]} gl={{ preserveDrawingBuffer: true }}>
+        <Canvas
+          camera={{ position: [70, 50, 70], fov: 45 }}
+          dpr={[1, 1.5]}
+          gl={{ preserveDrawingBuffer: true }}
+        >
           <Suspense fallback={null}>
             <color attach="background" args={["#16191d"]} />
             <fog attach="fog" args={["#16191d", 120, 260]} />
@@ -197,7 +212,9 @@ export function ReplayThree({ parsed }: { parsed: IbtParsed }) {
           className="flex-1 accent-primary"
         />
         <span className="w-24 text-right tabular-nums">
-          {refLapObj ? `${(((sliderVal - sliderMin) / Math.max(1, sliderMax - sliderMin)) * 100).toFixed(0)}%` : `t=${sliderVal}`}
+          {refLapObj
+            ? `${(((sliderVal - sliderMin) / Math.max(1, sliderMax - sliderMin)) * 100).toFixed(0)}%`
+            : `t=${sliderVal}`}
         </span>
       </div>
     </div>

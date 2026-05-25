@@ -221,9 +221,15 @@ export function LapList({ parsed }: { parsed: IbtParsed }) {
         </table>
       </div>
       <div className="hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/40" /> Best lap</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-fuchsia-400" /> Best sector</span>
-        <span className="flex items-center gap-1"><Flag className="h-3 w-3" /> In/out lap</span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-primary/40" /> Best lap
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-fuchsia-400" /> Best sector
+        </span>
+        <span className="flex items-center gap-1">
+          <Flag className="h-3 w-3" /> In/out lap
+        </span>
       </div>
     </div>
   );

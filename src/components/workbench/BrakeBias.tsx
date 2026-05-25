@@ -32,7 +32,10 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
     let r1 = brake.length;
     if (refLap != null) {
       const l = parsed.laps.find((x) => x.lap === refLap);
-      if (l) { r0 = l.startTick; r1 = l.endTick; }
+      if (l) {
+        r0 = l.startTick;
+        r1 = l.endTick;
+      }
     }
     const buckets: number[][] = Array.from({ length: BINS }, () => []);
     let peak = 0;
@@ -54,8 +57,12 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
     });
     // Linear fit y = m*x + c through bin midpoints (x = (i+0.5)/BINS).
     const pts: { x: number; y: number }[] = [];
-    medians.forEach((m, i) => { if (m != null) pts.push({ x: (i + 0.5) / BINS, y: m }); });
-    let slope = 0; let intercept = 0; let r2 = 0;
+    medians.forEach((m, i) => {
+      if (m != null) pts.push({ x: (i + 0.5) / BINS, y: m });
+    });
+    let slope = 0;
+    let intercept = 0;
+    let r2 = 0;
     if (pts.length >= 3) {
       const n = pts.length;
       const sx = pts.reduce((a, p) => a + p.x, 0);
@@ -65,7 +72,8 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
       slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
       intercept = (sy - slope * sx) / n;
       const ymean = sy / n;
-      let ssr = 0; let sst = 0;
+      let ssr = 0;
+      let sst = 0;
       for (const p of pts) {
         const yhat = slope * p.x + intercept;
         ssr += (p.y - yhat) ** 2;
@@ -75,15 +83,31 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
     }
     let bias: { min: number; max: number; avg: number; cur: number } | null = null;
     if (biasCh) {
-      let mn = Infinity, mx = -Infinity, sm = 0, c = 0;
+      let mn = Infinity,
+        mx = -Infinity,
+        sm = 0,
+        c = 0;
       for (let t = r0; t < r1; t++) {
         const v = biasCh[t];
         if (!isFinite(v)) continue;
-        if (v < mn) mn = v; if (v > mx) mx = v; sm += v; c++;
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+        sm += v;
+        c++;
       }
-      if (c > 0) bias = { min: mn, max: mx, avg: sm / c, cur: biasCh[Math.min(biasCh.length - 1, r0)] };
+      if (c > 0)
+        bias = { min: mn, max: mx, avg: sm / c, cur: biasCh[Math.min(biasCh.length - 1, r0)] };
     }
-    return { medians, counts: buckets.map((b) => b.length), peak, nBraking, slope, intercept, r2, bias };
+    return {
+      medians,
+      counts: buckets.map((b) => b.length),
+      peak,
+      nBraking,
+      slope,
+      intercept,
+      r2,
+      bias,
+    };
   }, [brake, lon, biasCh, parsed.laps, refLap]);
 
   useEffect(() => {
@@ -100,12 +124,17 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
     const c = canvasRef.current;
     if (!c || !result) return;
     const dpr = window.devicePixelRatio || 1;
-    c.width = size.w * dpr; c.height = size.h * dpr;
+    c.width = size.w * dpr;
+    c.height = size.h * dpr;
     const ctx = c.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
-    const padL = 36, padR = 12, padT = 10, padB = 22;
-    const W = size.w - padL - padR, H = size.h - padT - padB;
+    const padL = 36,
+      padR = 12,
+      padT = 10,
+      padB = 22;
+    const W = size.w - padL - padR,
+      H = size.h - padT - padB;
     const yMax = Math.max(1.5, Math.ceil((result.peak || 1) + 0.25));
     // grid
     ctx.strokeStyle = "rgba(120,130,140,0.18)";
@@ -113,12 +142,18 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
     ctx.font = "10px JetBrains Mono, monospace";
     for (let g = 0; g <= yMax; g += 0.5) {
       const y = padT + H - (g / yMax) * H;
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + W, y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + W, y);
+      ctx.stroke();
       ctx.fillText(`${g.toFixed(1)}g`, 4, y + 3);
     }
     for (let i = 0; i <= BINS; i++) {
       const x = padL + (i / BINS) * W;
-      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + H); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, padT + H);
+      ctx.stroke();
     }
     ctx.fillText("0%", padL, size.h - 6);
     ctx.fillText("100%", padL + W - 26, size.h - 6);
@@ -136,7 +171,8 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
       ctx.strokeStyle = "rgba(244,114,182,0.9)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      const y0 = result.intercept; const y1 = result.slope * 1 + result.intercept;
+      const y0 = result.intercept;
+      const y1 = result.slope * 1 + result.intercept;
       ctx.moveTo(padL, padT + H - (Math.max(0, Math.min(yMax, y0)) / yMax) * H);
       ctx.lineTo(padL + W, padT + H - (Math.max(0, Math.min(yMax, y1)) / yMax) * H);
       ctx.stroke();
@@ -146,13 +182,22 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
   if (!brake || !lon) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
-        <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Brake analysis unavailable</div>
-        <div className="text-[11px] text-muted-foreground">Need <span className="font-mono">Brake</span> + <span className="font-mono">LongAccel</span> channels.</div>
+        <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          Brake analysis unavailable
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          Need <span className="font-mono">Brake</span> +{" "}
+          <span className="font-mono">LongAccel</span> channels.
+        </div>
       </div>
     );
   }
   if (!result || result.nBraking < 30) {
-    return <div className="flex h-full items-center justify-center font-mono text-[11px] text-muted-foreground">Not enough braking samples in this lap.</div>;
+    return (
+      <div className="flex h-full items-center justify-center font-mono text-[11px] text-muted-foreground">
+        Not enough braking samples in this lap.
+      </div>
+    );
   }
 
   const linearityLabel = result.r2 >= 0.9 ? "linear" : result.r2 >= 0.7 ? "fair" : "noisy";
@@ -162,11 +207,21 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
       <div className="hairline-b flex items-center justify-between gap-3 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>Brake response{refLap != null ? ` · L${refLap}` : " · all laps"}</span>
         <span className="flex items-center gap-3">
-          <span><span className="text-foreground">{result.peak.toFixed(2)}g</span> peak</span>
-          <span><span className="text-foreground">{result.slope.toFixed(2)}</span> g/100%</span>
-          <span>R²&nbsp;<span className="text-foreground">{result.r2.toFixed(2)}</span> · {linearityLabel}</span>
+          <span>
+            <span className="text-foreground">{result.peak.toFixed(2)}g</span> peak
+          </span>
+          <span>
+            <span className="text-foreground">{result.slope.toFixed(2)}</span> g/100%
+          </span>
+          <span>
+            R²&nbsp;<span className="text-foreground">{result.r2.toFixed(2)}</span> ·{" "}
+            {linearityLabel}
+          </span>
           {result.bias && (
-            <span>Bias&nbsp;<span className="text-foreground">{(result.bias.avg * 100).toFixed(1)}%F</span></span>
+            <span>
+              Bias&nbsp;
+              <span className="text-foreground">{(result.bias.avg * 100).toFixed(1)}%F</span>
+            </span>
           )}
         </span>
       </div>
@@ -174,9 +229,14 @@ export function BrakeBias({ parsed }: { parsed: IbtParsed }) {
         <canvas ref={canvasRef} style={{ width: size.w, height: size.h }} />
       </div>
       <div className="hairline-t px-3 py-1 font-mono text-[10px] text-muted-foreground">
-        <span className="uppercase tracking-wider">X: brake pedal · Y: deceleration (g, median per 10% bin)</span>
+        <span className="uppercase tracking-wider">
+          X: brake pedal · Y: deceleration (g, median per 10% bin)
+        </span>
         {result.bias && (
-          <span className="ml-3">dcBrakeBias range {(result.bias.min * 100).toFixed(1)}–{(result.bias.max * 100).toFixed(1)}% front</span>
+          <span className="ml-3">
+            dcBrakeBias range {(result.bias.min * 100).toFixed(1)}–
+            {(result.bias.max * 100).toFixed(1)}% front
+          </span>
         )}
       </div>
     </div>
