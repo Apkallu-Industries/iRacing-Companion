@@ -76,7 +76,7 @@ export function useTelemetry(): Telemetry {
     };
   }, []);
 
-  // Simulator (only when not live) — 30Hz updates
+  // Simulator (only when not live) — 60Hz updates
   useEffect(() => {
     const id = setInterval(() => {
       if (liveRef.current) return;
@@ -109,7 +109,7 @@ export function useTelemetry(): Telemetry {
           },
         };
       });
-    }, 1000 / 30);
+    }, 1000 / 60);
     return () => clearInterval(id);
   }, []);
 

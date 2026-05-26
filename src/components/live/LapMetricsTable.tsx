@@ -32,7 +32,7 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
     if (samples.length === 0) return [];
 
     // Simulate laps by dividing samples into chunks
-    const lapsCount = Math.max(1, Math.floor(samples.length / 120)); // ~120 samples per lap at 30Hz = ~4s
+    const lapsCount = Math.max(1, Math.floor(samples.length / 240)); // ~240 samples per lap at 60Hz = ~4s
     const laps: LapMetric[] = [];
 
     for (let lap = 0; lap < lapsCount; lap++) {

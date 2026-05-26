@@ -204,7 +204,7 @@ export const useWorkbench = create<WorkbenchState>()(
         const config = WORKSPACES[w];
         set((s) => ({
           activeWorkspace: w,
-          selectedChannels: s.parsed ? config.defaultChannels.filter((c) => c in s.parsed.channels) : config.defaultChannels,
+          selectedChannels: s.parsed ? config.defaultChannels.filter((c) => c in s.parsed!.channels) : config.defaultChannels,
           mathExpressions: config.mathExpressions,
         }));
       },

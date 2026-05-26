@@ -440,7 +440,7 @@ function evalNode(node: Node, context: MathContext, tick: () => void): number {
         case "choose":
           return args[0] > 0 ? args[1] : args[2];
         default:
-          throw new Error(`Unhandled function "${node.name}".`);
+          throw new Error(`Unhandled function "${(node as any).name}".`);
       }
     }
   }

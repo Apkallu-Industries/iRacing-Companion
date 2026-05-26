@@ -1,4 +1,5 @@
 import { useWorkbench } from "./store";
+import { WORKSPACES } from "./workspaces";
 import { advisorCall } from "./advisor.functions";
 import { analyzeTelemetry, liveCoach } from "./coach.functions";
 import { strategyCopilot, type StrategyCallResult } from "./strategy.functions";
@@ -17,6 +18,32 @@ import {
   LIVE_COACH_SYSTEM,
   buildLiveCoachUserMessage,
 } from "./coach.prompts";
+
+/**
+ * Builds a compact workspace context string for injection into AI system prompts.
+ * Tells the model which workspace tier is active and which derived math channels exist.
+ */
+function buildWorkspaceContext(): string {
+  const { activeWorkspace, mathExpressions } = useWorkbench.getState();
+  const ws = WORKSPACES[activeWorkspace];
+  if (!ws) return "";
+
+  const enabledMath = mathExpressions
+    .filter((m) => m.enabled)
+    .map((m) => `${m.name} (${m.unit}): ${m.expression}`)
+    .join("\n  - ");
+
+  return [
+    `\n\n--- ACTIVE WORKSPACE CONTEXT ---`,
+    `Workspace Tier: ${ws.name} (${ws.tier})`,
+    `Default Channels: ${ws.defaultChannels.join(", ")}`,
+    enabledMath
+      ? `Enabled Math Channels (derived, pre-computed per sample):\n  - ${enabledMath}`
+      : `No additional math channels active.`,
+    `--- END WORKSPACE CONTEXT ---`,
+  ].join("\n");
+}
+
 
 /**
  * Executes a Local LLM call using the OpenAI /v1/chat/completions format.
@@ -91,13 +118,14 @@ async function callLocalOpenAI(system: string, user: string, schema: any): Promi
 /** Wrapper for Advisor calls that checks if we should route to Local LLM or Cloud */
 export async function dispatchAdvisorCall(data: any): Promise<any> {
   const { llmProvider } = useWorkbench.getState();
+  const wsCtx = buildWorkspaceContext();
 
   if (llmProvider === "cloud") {
     return advisorCall({ data });
   }
 
   try {
-    const system = getAdvisorSystemPrompt(data);
+    const system = getAdvisorSystemPrompt(data) + wsCtx;
     const user = buildAdvisorUserMessage(data);
     const resultObj = await callLocalOpenAI(system, user, ADVISOR_SCHEMA);
 
@@ -123,6 +151,7 @@ export async function dispatchAnalyzeTelemetry(data: {
   detailed: boolean;
 }): Promise<any> {
   const { llmProvider } = useWorkbench.getState();
+  const wsCtx = buildWorkspaceContext();
 
   if (llmProvider === "cloud") {
     return analyzeTelemetry({ data });
@@ -132,7 +161,7 @@ export async function dispatchAnalyzeTelemetry(data: {
     const schema = data.detailed ? COACH_SCHEMA_DETAILED : COACH_SCHEMA_CONCISE;
     const user = buildCoachUserMessage(data.detailed, data.payload);
 
-    const resultObj = await callLocalOpenAI(COACH_SYSTEM_PROMPT, user, schema);
+    const resultObj = await callLocalOpenAI(COACH_SYSTEM_PROMPT + wsCtx, user, schema);
 
     if (data.detailed && !Array.isArray(resultObj.corners))
       throw new Error("Missing corners from local LLM");
@@ -153,6 +182,7 @@ export async function dispatchAnalyzeTelemetry(data: {
 /** Wrapper for Live Coach radio calls */
 export async function dispatchLiveCoach(data: any): Promise<any> {
   const { llmProvider } = useWorkbench.getState();
+  const wsCtx = buildWorkspaceContext();
 
   if (llmProvider === "cloud") {
     return liveCoach({ data }); // Cloud fallback via Lovable
@@ -160,7 +190,7 @@ export async function dispatchLiveCoach(data: any): Promise<any> {
 
   try {
     const user = buildLiveCoachUserMessage(data);
-    const resultObj = await callLocalOpenAI(LIVE_COACH_SYSTEM, user, LIVE_COACH_SCHEMA);
+    const resultObj = await callLocalOpenAI(LIVE_COACH_SYSTEM + wsCtx, user, LIVE_COACH_SCHEMA);
 
     // Force tone to match the rules layer (model can drift).
     resultObj.tone = data.summary?.tone || resultObj.tone;

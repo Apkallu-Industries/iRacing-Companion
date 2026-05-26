@@ -53,7 +53,7 @@ export function AICoach({
   car?: string | null;
   sessionId?: string;
 }) {
-  const { refLap, cmpLap, elevenLabsApiKey, elevenLabsVoiceId } = useWorkbench();
+  const { refLap, cmpLap, elevenLabsApiKey, elevenLabsVoiceId, activeWorkspace, mathExpressions } = useWorkbench();
   const [mode, setMode] = useState<CoachMode>("single");
   const [detailed, setDetailed] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
@@ -113,6 +113,10 @@ export function AICoach({
           history = null;
         }
       }
+      const enabledMathChannels = mathExpressions
+        .filter((m) => m.enabled)
+        .map((m) => ({ name: m.name, unit: m.unit, expression: m.expression }));
+
       const payload = buildCoachPayload(
         summary,
         mode,
@@ -122,7 +126,16 @@ export function AICoach({
         physics,
         history as never,
       );
-      const resp = await dispatchAnalyzeTelemetry({ payload, detailed });
+
+      // Augment the payload with workspace context so the AI knows
+      // which channels and math expressions are active.
+      const augmentedPayload = {
+        ...payload,
+        activeWorkspace,
+        enabledMathChannels,
+      };
+
+      const resp = await dispatchAnalyzeTelemetry({ payload: augmentedPayload, detailed });
       const r = resp as { error?: string; result?: unknown; detailed?: boolean; fallback?: string };
       if (r.error) {
         setError(r.error);

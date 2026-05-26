@@ -52,7 +52,7 @@ export const Route = createFileRoute("/live")({
 
 function Dashboard() {
   const t = useTelemetry();
-  const samples = useTelemetryBuffer(t, 30_000, 30);
+  const samples = useTelemetryBuffer(t, 30_000, 60);
   const diagnostics = useBridgeDiagnostics(t, t.connected);
   const [smoothing, setSmoothing] = useState<SmoothingMode>("none");
   const [smoothWindow, setSmoothWindow] = useState<number>(5);
@@ -107,7 +107,7 @@ function Dashboard() {
             <PanelHeader
               title="Time Trace"
               right={
-                cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 30Hz"
+                cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 60Hz"
               }
             />
             <FilterControls

@@ -69,7 +69,7 @@ function broadcastLicenseStatus() {
 }
 
 const PORT = 3001;
-const TICK_HZ = 30;
+const TICK_HZ = 60; // iRacing SDK polls at 60Hz natively
 const PUBLIC_DIR = path.join(__dirname, "public");
 
 const MIME = {

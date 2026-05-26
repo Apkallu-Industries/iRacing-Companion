@@ -1,10 +1,10 @@
 /**
  * Pit Wall telemetry recorder for MongoDB.
- * Captures live IRSDK telemetry at 30Hz and stores to MongoDB with full channel fidelity.
+ * Captures live IRSDK telemetry at 60Hz and stores to MongoDB with full channel fidelity.
  *
  * Collections:
  *   - sessions: one per bridge session
- *   - telemetry_samples: per-second aggregated samples (30 samples → min/max/avg)
+ *   - telemetry_samples: per-second aggregated samples (60 samples → min/max/avg)
  *   - laps: per-completed lap metadata
  */
 
@@ -82,7 +82,7 @@ class TelemetryRecorder {
   }
 
   /**
-   * Record a single telemetry sample (called at 30Hz).
+   * Record a single telemetry sample (called at 60Hz).
    * Buffer samples, flush every second with aggregated min/max/avg.
    */
   recordSample(telemetryData, lapNumber) {
@@ -109,7 +109,7 @@ class TelemetryRecorder {
     if (!this.db) return;
 
     try {
-      // Aggregate 30 samples into min/max/avg per channel
+      // Aggregate 60 samples into min/max/avg per channel
       const aggregated = this.aggregateSamples(this.sampleBuffer);
 
       this.db

@@ -96,7 +96,25 @@ export const COACH_SCHEMA_DETAILED = {
 } as const;
 
 export function buildCoachUserMessage(detailed: boolean, payload: any): string {
-  return `Analyze this telemetry and give ${detailed ? "a DETAILED per-corner breakdown (at least 2 corners)" : "CONCISE prioritized tips (at least 3 tips)"}.\nYou MUST call the function. Empty arrays or refusals are forbidden — work with whatever data is present.\n\nDATA:\n${JSON.stringify(payload)}`;
+  // Extract workspace context from augmented payload (if present) for the AI.
+  const wsSection =
+    payload?.activeWorkspace || payload?.enabledMathChannels?.length
+      ? [
+          `\nWORKSPACE: ${payload.activeWorkspace ?? "lite"}`,
+          payload?.enabledMathChannels?.length
+            ? `DERIVED MATH CHANNELS AVAILABLE:\n${(payload.enabledMathChannels as Array<{ name: string; unit: string; expression: string }>)
+                .map((m) => `  - ${m.name} (${m.unit}): ${m.expression}`)
+                .join("\n")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "";
+
+  // Strip workspace metadata from the data payload before serializing to keep tokens lean.
+  const { activeWorkspace: _aw, enabledMathChannels: _em, ...corePayload } = payload ?? {};
+
+  return `Analyze this telemetry and give ${detailed ? "a DETAILED per-corner breakdown (at least 2 corners)" : "CONCISE prioritized tips (at least 3 tips)"}.\nYou MUST call the function. Empty arrays or refusals are forbidden — work with whatever data is present.${wsSection}\n\nDATA:\n${JSON.stringify(corePayload)}`;
 }
 
 export const LIVE_COACH_SYSTEM = `You are a calm, direct race engineer on the pit-wall radio.

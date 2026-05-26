@@ -14,9 +14,9 @@ export interface Sample {
 
 /**
  * Rolling buffer of telemetry samples, MoTeC i2-style.
- * Keeps the last `windowMs` of frames at ~30Hz for trace + scatter rendering.
+ * Keeps the last `windowMs` of frames at ~60Hz for trace + scatter rendering.
  */
-export function useTelemetryBuffer(t: Telemetry, windowMs = 30_000, hz = 30): Sample[] {
+export function useTelemetryBuffer(t: Telemetry, windowMs = 30_000, hz = 60): Sample[] {
   const bufRef = useRef<Sample[]>([]);
   const t0Ref = useRef<number | null>(null);
   const lastPushRef = useRef<number>(0);
