@@ -1,464 +1,440 @@
-# Team Command — Multi-Driver Live Telemetry Guide
-
-> **Who this guide is for:** Anyone setting up the Team Command page for a multi-driver race. You do not need any prior technical knowledge. Everything is explained from scratch, including what Supabase is, why you need it, and exactly how to set it up.
+﻿# Team Command — Setup & Role Guide
 
 ---
 
-## Table of Contents
+## Who Should Read What
 
-1. [What the Team Command Page Does](#1-what-the-team-command-page-does)
-2. [Why You Need Supabase](#2-why-you-need-supabase)
-3. [Step 1 — Create a Free Supabase Account](#step-1--create-a-free-supabase-account)
-4. [Step 2 — Create a New Project](#step-2--create-a-new-project)
-5. [Step 3 — Set Up the Database](#step-3--set-up-the-database)
-6. [Step 4 — Get Your API Keys](#step-4--get-your-api-keys)
-7. [Step 5 — Configure Each Driver's Bridge](#step-5--configure-each-drivers-bridge)
-8. [Step 6 — Generate a Team Code in the App](#step-6--generate-a-team-code-in-the-app)
-9. [Step 7 — Share the Code With Your Drivers](#step-7--share-the-code-with-your-drivers)
-10. [Race Day Checklist](#race-day-checklist)
-11. [What the Team Wall Shows](#what-the-team-wall-shows)
-12. [Troubleshooting](#troubleshooting)
-13. [Frequently Asked Questions](#frequently-asked-questions)
+> Find your role below and **only read that section**. You do not need to read the full document.
+
+| Role | What you do | Jump to |
+|---|---|---|
+| 🏆 **Team Owner** | Sets up the database, generates the Team Code, controls who has access | [→ Team Owner Guide](#team-owner-guide) |
+| 🏎️ **Driver** | Receives a pre-filled config file from the Team Owner, starts the bridge, drives | [→ Driver Guide](#driver-guide) |
+| 🎧 **Pit Crew** | Receives a Team Code from the Team Owner, opens the app in a browser | [→ Pit Crew Guide](#pit-crew-guide) |
 
 ---
 
-## 1. What the Team Command Page Does
+## Team Owner Guide
 
-The **Team Command** page (`/team`) is your pit-wall operations centre. It shows:
+> **You are here because:** You are responsible for setting up the team system. You control who joins, distribute the credentials to your drivers, and give your pit crew the Team Code. This section is the most technical — but it is fully explained step by step.
 
-- A **Race Timeline** — Gantt chart of all driver stints, weather windows, and incidents
-- A **Fuel & Stint Calculator** — exact fuel requirements per stint
-- An **Endurance Planner** — 24hr fuel load, pit stop count, driver fatigue tracker
-- A **Paddock Live HUD** — real-time telemetry cards for every car in your team
+### What You Need to Do (Summary)
 
-Without the multi-driver setup described in this guide, the Paddock HUD can only show **your own car** — the one running iRacing on the same PC as the bridge. Every other car card will be empty.
-
-After following this guide, **every driver's car appears automatically** on the team wall, each updated twice per second with their live fuel level, tyre temperatures, last lap time, and tyre wear.
-
----
-
-## 2. Why You Need Supabase
-
-### The core problem
-
-iRacing's data is locked to each PC. When Driver A is in Car #44, their PC can see Car #44's data — but not Car #10's. Driver B's PC can see Car #10's data, but not Car #44's. There is no direct way to connect two iRacing sessions on different computers.
-
-### The solution: a central relay
-
-We need a **central online service** that sits between all the drivers. Each driver's bridge sends its data up to this service, and the team wall pulls all of it down simultaneously.
-
-```
-Driver A (Car #44)  ──publishes──►  Central Relay  ◄──subscribes──  Team Wall Screen
-Driver B (Car #10)  ──publishes──►  (Supabase)
-Driver C (Car #44)  ──publishes──►  (co-driver)
-```
-
-### What is Supabase?
-
-**Supabase is a free online database and messaging service.** Think of it like a group WhatsApp, but for your iRacing telemetry data. Each driver's PC sends its data to Supabase, and any browser subscribed to the same "channel" receives those updates instantly.
-
-You do not need to write any code for Supabase — this guide walks through every click. The free tier is more than enough for a 24-hour race.
-
-**Supabase free tier limits:**
-- ✅ 200 concurrent connections (you'll have ~6 max)
-- ✅ 2 million messages per month (a 24hr race at 6 drivers ≈ 1 million)
-- ✅ No credit card required
-
-> **💡 For Le Mans 24hr:** You are close to the free message limit. If you want peace of mind, upgrade to the **Pro plan at $25/month** before race day. You can cancel the day after.
+1. Create a free Supabase account (one-time setup, ~10 minutes)
+2. Run a one-time database setup inside Supabase
+3. Copy two keys from Supabase
+4. Generate a Team Code inside the app
+5. Send drivers a pre-filled `.env` file
+6. Send pit crew the Team Code and app URL
 
 ---
 
-## Step 1 — Create a Free Supabase Account
+### Step 1 — Create a Free Supabase Account
 
-**Only one person on the team needs to do this** — usually the team manager or whoever runs the team wall screen.
+**Supabase is a free online relay service.** Think of it like a group radio channel — each driver's PC transmits their car's data to it, and your pit wall browser receives all of them simultaneously. You do not need to understand databases to use it.
 
-1. Open your browser and go to **[https://supabase.com](https://supabase.com)**
-2. Click the green **"Start your project"** button
-3. Sign up with **GitHub** (recommended — it's the fastest) or with your email address
+1. Go to **[https://supabase.com](https://supabase.com)**
+2. Click **"Start your project"**
+3. Sign up with **GitHub** (fastest) or email address
 4. Verify your email if prompted
 
-You now have a Supabase account. It's free and you do not need to enter payment details.
+✅ Free account. No credit card required.
+
+> **💡 Le Mans 24hr note:** A 24hr race with 6 drivers sends roughly 1 million messages — right at the free tier limit (2M/month). If you want peace of mind, upgrade to **Pro ($25/month)** before race day and cancel after.
 
 ---
 
-## Step 2 — Create a New Project
+### Step 2 — Create a New Project
 
-After logging in, you will see your **Supabase dashboard**.
-
-1. Click **"New project"**
-2. Fill in the form:
-   - **Name:** `iRacing-Team` (or anything you like)
-   - **Database Password:** Type a strong password and **save it somewhere** — you may need it later
-   - **Region:** Pick the one closest to you geographically (e.g. `West EU (Ireland)` for Europe, `US East` for North America)
+1. In your Supabase dashboard, click **"New project"**
+2. Fill in:
+   - **Name:** `iRacing-Team` (anything you like)
+   - **Database Password:** Choose something strong and save it somewhere safe
+   - **Region:** Closest to your location (e.g. `West EU (Ireland)` for Europe)
 3. Click **"Create new project"**
 
-> ⏳ Supabase takes about **1–2 minutes** to create the project. A progress spinner will show. Wait for it to finish before moving on.
-
-When the spinner disappears and you see the project dashboard, you are ready for Step 3.
+> ⏳ Wait 1–2 minutes for the spinner to finish before moving on.
 
 ---
 
-## Step 3 — Set Up the Database
+### Step 3 — Set Up the Database
 
-This step creates a special table in your Supabase database that the app needs. You will paste a block of code into Supabase's built-in editor — no SQL knowledge is required.
+This creates the table the app needs. You paste one file into Supabase — no database knowledge required.
 
-1. In the left sidebar of your Supabase project, click **"SQL Editor"** (it looks like a `>_` terminal icon)
-2. Click **"New query"** (or you may see a blank editor already)
-3. **Delete any existing text** in the editor
-4. Open the file `supabase/migrations/20260526_team_sessions.sql` from your iRacing-Companion project folder
-5. **Copy the entire contents** of that file and **paste it** into the Supabase SQL editor
-6. Click the green **"Run"** button (or press `Ctrl+Enter` / `Cmd+Enter`)
+1. In the left sidebar, click **"SQL Editor"** (the `>_` icon)
+2. Click **"New query"** and delete any existing text
+3. Open `supabase/migrations/20260526_team_sessions.sql` from your iRacing-Companion folder
+4. Copy the **entire contents** of that file
+5. Paste it into the Supabase SQL editor
+6. Click the green **"Run"** button
 
-You should see a green message at the bottom saying **"Success. No rows returned."** That means it worked.
+You should see: **"Success. No rows returned."** ✅
 
-> **What did that just do?** It created a `team_sessions` table — a list where your app can store team codes. It also set up security rules so only your team can access your data.
-
-If you see a red error message:
-- Check that you copied the **entire** file contents including the first and last lines
-- Try clicking "Run" again
-- If the error says "already exists" — that's fine, it just means it ran before. Move on.
+If it says "already exists" — ignore it, it ran before. Move on.
 
 ---
 
-## Step 4 — Get Your API Keys
+### Step 4 — Get Your Two API Keys
 
-Your API keys are like passwords that let the bridge software talk to your Supabase project. You need two keys.
+These are the credentials you will share with your drivers. Pit crew do **not** need these.
 
-1. In the left sidebar, click **"Project Settings"** (the cog icon at the very bottom)
-2. Click **"API"** in the Settings sub-menu
-3. You will see a page with two important values:
+1. In the left sidebar, click **"Project Settings"** (cog icon at the bottom)
+2. Click **"API"**
+3. Find and copy these two values:
 
-**Key 1 — Project URL:**
+**Project URL** — looks like:
 ```
 https://abcdefghijklm.supabase.co
 ```
-It starts with `https://` and ends with `.supabase.co`. Copy this entire URL.
 
-**Key 2 — Project API Keys → `anon` `public` key:**
+**Anon Public Key** — a very long string starting with `eyJ`:
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp...
 ```
-It's a very long string of letters and numbers starting with `eyJ`. Copy this entire key.
 
-> ⚠️ **Do not copy the `service_role` key.** Only copy the `anon public` key. The service role key has full database access and should never be shared or put in the bridge config.
-
-Keep these two values somewhere safe — you'll need them in the next step.
+> ⚠️ **Only copy the `anon public` key — never the `service_role` key.** The service role has full database admin access and must never be shared.
 
 ---
 
-## Step 5 — Configure Each Driver's Bridge
+### Step 5 — Generate the Team Code
 
-**Every driver on the team** (including the team manager's PC running the wall) needs to do this step. Each driver does it on their own computer.
+1. Open iRacing-Companion in your browser and go to the **Team** page
+2. In the **Paddock Live HUD** section, click **"+ Join Team"** (top-right of the HUD)
+3. Click **"✦ Generate New Code"**
+4. A code like `PITWALL-A1B2` appears — click **"Copy"**
 
-### 5a — Create the `.env` file
+This is your **Team Code**. It links all drivers and pit crew to the same live data feed.
 
-1. Open the `local-bridge` folder inside your iRacing-Companion project
-2. Find the file called **`.env.example`**
-3. **Copy** that file and **rename the copy** to **`.env`** (just `.env` — no `.example` at the end)
+---
 
-> **Windows tip:** Windows may try to name it `.env.txt` and hide the `.txt` part. To fix this:
-> - Open the `local-bridge` folder in File Explorer
-> - Click the **View** tab at the top
-> - Tick the box that says **"File name extensions"**
-> - Now you can see and edit the full filename including `.txt`
-> - Rename the file to `.env` (remove `.example` and `.txt`)
+### Step 6 — Distribute Credentials to Your Team
 
-### 5b — Edit the `.env` file
+You now have three pieces of information to share:
 
-Open **`.env`** in Notepad (right-click → Open with → Notepad).
-
-You will see this:
-
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-TEAM_CODE=
-DRIVER_NAME=
-```
-
-Fill in the values:
-
-| Setting | What to put here |
+| Who gets what | Items to send |
 |---|---|
-| `SUPABASE_URL` | Your Project URL from Step 4 (replace `https://your-project.supabase.co`) |
-| `SUPABASE_ANON_KEY` | Your `anon public` key from Step 4 (replace `your-anon-key-here`) |
-| `TEAM_CODE` | Leave **blank for now** — you'll fill this in after Step 6 |
-| `DRIVER_NAME` | Your first name or callsign e.g. `Danny` or `DRIVER-A` |
+| **Each Driver** | The pre-filled `.env` file (see below) |
+| **Each Pit Crew member** | The Team Code only (e.g. `PITWALL-A1B2`) + the app URL |
 
-**Example of a correctly filled `.env` file:**
+#### Creating the Driver `.env` File
+
+Open the file `local-bridge/.env.example` in Notepad and fill it in:
 
 ```
 SUPABASE_URL=https://abcdefghijklm.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG0iLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0ODI5MzIwMCwiZXhwIjoyMDYzODY5MjAwfQ.example
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 TEAM_CODE=PITWALL-A1B2
+DRIVER_NAME=
+```
+
+- Fill in your actual Supabase URL and key
+- Fill in the Team Code
+- Leave `DRIVER_NAME=` blank — each driver fills in their own name
+
+**Save this file as `.env`** (not `.env.example`) and send it to each driver via Discord, WhatsApp, or email. They place it in their `local-bridge/` folder.
+
+> **Security note:** This file contains your Supabase anon key. It is safe to share with your drivers — the anon key can only read/write to the team channel, not access any other data or settings. Do not post it publicly online.
+
+---
+
+### Step 7 — Confirm Everyone is Connected
+
+Before the race, open the Team page and verify:
+
+- Your own car card shows a green **LIVE** badge (your bridge is running)
+- Each driver's card appears as they connect
+- Pit crew members see all cards on their screens
+
+#### Team Owner Race Day Checklist
+
+- [ ] Supabase project created and SQL migration run ✓
+- [ ] Team Code generated in the app
+- [ ] Pre-filled `.env` file sent to all drivers
+- [ ] Team Code sent to all pit crew members + app URL
+- [ ] Your own bridge running: terminal shows `[team-relay] ✓ Connected`
+- [ ] Team page shows all driver cards with LIVE badges
+- [ ] All pit crew browsers show the same data
+
+---
+
+
+---
+
+## Driver Guide
+
+> **You are here because:** Your Team Owner has sent you a pre-filled .env file and the Team Code. You do not need to set up anything. Three steps and you are live.
+
+---
+
+### Step 1 — Place the .env File
+
+Your Team Owner will send you a file called .env. Place it inside your local-bridge folder:
+
+`
+iRacing-Companion\
+  local-bridge\
+    .env          <- put it here
+    server.js
+    ...
+`
+
+> **Windows tip:** If .env files are invisible in File Explorer, click the **View** tab and tick **"Hidden items"** and **"File name extensions"**.
+
+---
+
+### Step 2 — Add Your Name
+
+Open .env in Notepad and fill in the last line:
+
+`
 DRIVER_NAME=Danny M
-```
+`
 
-Save the file.
-
-> **Important:** The `.env` file is **never uploaded to GitHub** — it stays only on your PC. Your Supabase keys are safe.
+Save and close.
 
 ---
 
-## Step 6 — Generate a Team Code in the App
+### Step 3 — Start the Bridge
 
-A **Team Code** is a short unique string (e.g. `PITWALL-A1B2`) that links all your drivers together. Think of it like a race room code in a multiplayer game. All drivers on your team use the same code.
+Open a terminal in the local-bridge folder and run:
 
-**One person generates the code** (usually the team manager):
+`
+npm start
+`
 
-1. Start iRacing-Companion as normal (`npm run dev` in the main project folder)
-2. Open your browser and go to the **Team** page (click "Team" in the navigation)
-3. In the top-right of the **Paddock Live HUD** section, click **"+ Join Team"**
-4. A small panel will appear — click **"✦ Generate New Code"**
-5. A code like `PITWALL-A1B2` will appear in the panel
-6. Click **"Copy"** next to the code
+You should see this within a few seconds:
 
-> The code is also saved automatically in your browser. You don't need to write it down.
+`
+[team-relay] * Connected to channel "team:PITWALL-A1B2" -- publishing at 2Hz
+`
 
----
+**That is it. You are live on the team wall.** Start iRacing as normal. Your car data appears automatically once you are on track.
 
-## Step 7 — Share the Code With Your Drivers
-
-Now share the code with everyone on your team:
-
-1. Send the code via WhatsApp, Discord, or any other chat
-2. Tell each driver: **"Open your `local-bridge/.env` file, find the line `TEAM_CODE=` and put the code after the equals sign"**
-
-For example, if the code is `PITWALL-A1B2`, each driver's `.env` should have:
-```
-TEAM_CODE=PITWALL-A1B2
-```
-
-3. After saving the `.env` file, each driver needs to **restart their bridge**:
-   - Close the bridge if it's running (press `Ctrl+C` in the terminal window)
-   - Run it again: open a terminal in the `local-bridge` folder and type `npm start`
-
-4. Watch the terminal output — within a few seconds you should see:
-
-```
-[team-relay] ✓ Connected to channel "team:PITWALL-A1B2" — publishing at 2Hz
-```
-
-That message means the bridge is successfully sending data to the team channel.
+#### Driver Checklist
+- [ ] .env file from Team Owner placed in local-bridge\ folder
+- [ ] DRIVER_NAME= filled in with your name
+- [ ] 
+pm start run in the local-bridge folder
+- [ ] Terminal shows Connected message
+- [ ] Your car card appears on team wall with green **LIVE** badge
 
 ---
 
-## Race Day Checklist
+---
 
-Go through this list **before** the race starts:
+## Pit Crew Guide
 
-**Team Manager (one person):**
-- [ ] Supabase account created and project set up ✓
-- [ ] SQL migration run successfully ✓
-- [ ] Both Supabase keys copied to your `.env` file ✓
-- [ ] Team Code generated in the app and copied to your `.env`
-- [ ] Team Code shared with all drivers
-- [ ] Bridge restarted after editing `.env`
-- [ ] Terminal shows `[team-relay] ✓ Connected` message
-- [ ] Team wall browser open on `/team` page — all driver cards visible with green `LIVE` badge
-
-**Each Driver (including team manager):**
-- [ ] `local-bridge/.env` file exists (not `.env.example`)
-- [ ] `SUPABASE_URL` filled in correctly
-- [ ] `SUPABASE_ANON_KEY` filled in correctly
-- [ ] `TEAM_CODE` filled in with the shared code
-- [ ] `DRIVER_NAME` filled in with your name
-- [ ] Bridge restarted after saving `.env`
-- [ ] Terminal shows `[team-relay] ✓ Connected` message
-- [ ] Your car card appears on the team wall browser with green `LIVE` badge
-
-**30 minutes before race start:**
-- [ ] Open iRacing, join the race session
-- [ ] Confirm your car card on the team wall shows your actual lap data (not all zeros)
-- [ ] All other team cars also showing data
+> **You are here because:** Your Team Owner has given you a Team Code and the app URL. You do not need to install anything, set up a database, or run any software. You just need a browser.
 
 ---
 
-## What the Team Wall Shows
+### What You Received from Your Team Owner
 
-Once everything is connected, the Paddock Live HUD on the `/team` page shows a card for each connected driver. Each card updates **twice per second** and displays:
+- A **Team Code** — e.g. `PITWALL-A1B2`
+- A **URL** for the app — e.g. `https://iracing-companion.com` or a local address like `http://192.168.1.10:3001`
 
-| Data | Source |
+---
+
+### Step 1 — Open the App
+
+Open your browser (Chrome, Firefox, Edge, or Safari on any device) and go to the URL your Team Owner gave you.
+
+You do not need to log in. You do not need to install any software.
+
+---
+
+### Step 2 — Go to the Team Page
+
+Click **"Team"** in the navigation at the top or side of the app.
+
+You will see the full Team Command interface, which includes:
+
+- **Race Timeline** — all driver stints laid out on a timeline
+- **Fuel & Stint Calculator** — fuel requirements per stint
+- **Endurance Planner** — race-length fuel totals, pit stop count, fatigue tracker
+- **Paddock Live HUD** — live telemetry for every car in the team
+- **AI Race Strategist** — strategy briefings and recommendations
+
+---
+
+### Step 3 — Join the Team Channel
+
+In the **Paddock Live HUD** section, click the button in the top-right:
+
+- If no team code is active it will say **"+ Join Team"**
+- If a code was previously saved it will say **"🔗 Team"**
+
+Click it, then:
+
+1. Paste your Team Code (e.g. `PITWALL-A1B2`) into the input box
+2. Click **"Join"**
+
+Within 2–3 seconds, the driver cards will start populating with live data. Each card shows a green **LIVE** badge when that driver is connected and transmitting.
+
+> **The Team Code is saved in your browser automatically.** The next time you open the app on the same device, it will reconnect to the same team channel without you needing to re-enter the code.
+
+---
+
+### Step 4 — Use the Interface
+
+You now have full access to the Team Command page. The live data updates automatically — you do not need to refresh anything.
+
+#### Pit Crew Checklist
+
+- [ ] Team Code received from Team Owner
+- [ ] App URL received from Team Owner
+- [ ] App open in browser
+- [ ] Team page loaded
+- [ ] Team Code pasted and "Join" clicked
+- [ ] Driver cards visible with LIVE badges
+
+---
+
+### What You Can See
+
+#### Paddock Live HUD
+
+Each driver's car has a card showing:
+
+| What it shows | What it means |
 |---|---|
-| **Driver name & car number** | From your `DRIVER_NAME` in `.env` and iRacing session |
-| **LIVE / OFFLINE badge** | Green = data received in last 30 seconds; Grey = no signal |
-| **Fuel remaining** | Current litres in tank from iRacing |
-| **Estimated laps remaining** | Calculated from fuel level and burn rate |
-| **Last lap time** | Your previous completed lap |
-| **Tyre temperatures** | FL / FR / RL / RR corner temperatures in °C |
-| **Tyre wear bars** | Estimated wear — Green = good, Amber = watch it, Red = pit soon |
-| **Offline timer** | If a driver disconnects, shows how many seconds ago they were last seen |
+| Green **LIVE** / grey **+Xs ago** | Whether that driver is actively connected |
+| Fuel: `42.1L ~13 laps` | Current fuel in tank and how many laps it will last |
+| Last lap time | The driver's previous completed lap |
+| Tyre temp bars (FL / FR / RL / RR) | Colour-coded: **green** = optimal, **amber** = warm, **red** = overheating |
+| Tyre wear bars | **Green** = good grip remaining, **amber** = degrading, **red** = pit soon |
 
-### What happens if a driver disconnects?
+#### Race Timeline
 
-- Their card turns grey and shows e.g. `+45s` (45 seconds since last update)
-- After 30 seconds of silence, they are marked **OFFLINE**
-- When they reconnect (bridge restart or internet returns), the card immediately turns green again
+Shows all driver stints as horizontal bars on a timeline. Click any stint to see:
+- Driver name
+- Planned start and end time
+- Notes and fuel target
 
-### The team wall does NOT need to be on the same PC as iRacing
+#### Fuel & Stint Calculator
 
-The team wall browser can be on:
-- A separate laptop in the pit garage
-- A TV connected to a tablet
-- Your phone
-- Any device with a web browser and internet access
+Enter your car's fuel burn rate and the calculator will tell you:
+- How many laps per stint
+- How many pit stops you need
+- Total fuel required for the race
+
+Click **"↺ Sync"** to automatically fill in the burn rate from whichever driver is currently on track.
+
+#### Endurance Planner
+
+For 24hr races. Shows:
+- Total pit stop count for the full race distance
+- Fuel load required per stint and in total
+- Driver fatigue tracking (FIA 4-hour limit warnings)
+- Night/day phase indicator
+
+#### AI Race Strategist
+
+Type a question or click **"Request Briefing"** to get a full strategy analysis. The AI can see all drivers' current fuel levels, tyre states, and lap times, so its advice is based on your actual live race situation.
+
+---
 
 ---
 
 ## Troubleshooting
 
-### "I see `[team-relay] TEAM_CODE not set`" in the terminal
+### Driver: "I see `[team-relay] TEAM_CODE not set`"
 
-Your `.env` file either does not exist, or the `TEAM_CODE=` line is empty.
+The `.env` file is missing or the `TEAM_CODE=` line is empty.
 
-✅ **Fix:** Open `local-bridge/.env` and make sure `TEAM_CODE=PITWALL-A1B2` (replace with your actual code). Save and restart the bridge.
-
----
-
-### "I see `[team-relay] SUPABASE_URL or SUPABASE_ANON_KEY missing`"
-
-One or both of the Supabase settings are missing or empty in your `.env` file.
-
-✅ **Fix:** Re-open `local-bridge/.env`. Check that:
-- `SUPABASE_URL=` has a value starting with `https://` and ending with `.supabase.co`
-- `SUPABASE_ANON_KEY=` has a value — a very long string starting with `eyJ`
+✅ **Fix:** Check the `.env` file is in `local-bridge/` (not the root project folder), and that `TEAM_CODE=PITWALL-A1B2` has the correct code on that line.
 
 ---
 
-### "I see `[team-relay] ✗ Channel error`"
+### Driver: "I see `[team-relay] SUPABASE_URL or SUPABASE_ANON_KEY missing`"
 
-The keys in your `.env` file are wrong or the Supabase project doesn't exist.
+One or both Supabase values are missing from your `.env` file.
+
+✅ **Fix:** Ask your Team Owner to re-send the pre-filled `.env` file. Do not try to fill in the Supabase URL or key yourself — your Team Owner has the correct values.
+
+---
+
+### Driver: "I see `[team-relay] ✗ Channel error`"
+
+The Supabase keys in your `.env` file are incorrect or the Supabase project is paused.
+
+✅ **Fix:** Contact your Team Owner. They need to check if the Supabase project is active (log in at [supabase.com/dashboard](https://supabase.com/dashboard) and confirm the project shows green status). They should then re-send the `.env` file with fresh keys.
+
+---
+
+### Driver: "Terminal shows Connected but I don't see my card on the team wall"
+
+The bridge is connected but the team wall browser is subscribed to a different code.
+
+✅ **Fix:** On the Team page, click **"🔗 Team"** and confirm the displayed code matches what is in your `.env` file exactly. Team codes are case-sensitive.
+
+---
+
+### Pit Crew: "I joined but no driver cards appear"
+
+No drivers are currently connected, or the team code is wrong.
 
 ✅ **Fix:**
-1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
-2. Select your project
-3. Go to **Settings → API**
-4. Re-copy the **Project URL** and **anon public key**
-5. Paste them fresh into `local-bridge/.env`
-6. Restart the bridge
+1. Check the code is correct — ask your Team Owner
+2. Make sure at least one driver has started their bridge and seen the `✓ Connected` message
+3. Try clicking **"Leave"** then re-pasting the code and clicking **"Join"** again
 
 ---
 
-### "The terminal shows Connected but no driver cards appear on the team wall"
+### Pit Crew: "A driver's card shows grey / OFFLINE"
 
-The bridge is connected to Supabase, but the team wall browser is not subscribed to the same code.
+That driver's bridge has disconnected — they lost internet, restarted their PC, or their bridge crashed.
 
-✅ **Fix:**
-1. On the Team page, click **"🔗 Team"** in the Paddock HUD header
-2. Check the code shown matches the `TEAM_CODE` in every driver's `.env`
-3. If they don't match, click **"Leave"**, then paste the correct code and click **"Join"**
+✅ **This is not an error on your side.** The card will return to green automatically when the driver restarts their bridge. The time shown (e.g. `+45s`) tells you how long ago they were last seen.
 
 ---
 
-### "My car card shows but other drivers don't appear"
+### Team Owner: "Supabase project shows as paused"
 
-The other drivers are not connected yet.
+Supabase pauses free tier projects after 7 days of inactivity.
 
-✅ **Fix:**
-1. Ask each other driver to check their terminal for the `[team-relay] ✓ Connected` message
-2. If they don't see it, they need to redo Step 5 (edit `.env`) and restart their bridge
-3. Check they have the exact same `TEAM_CODE` — it is **case-sensitive** (`PITWALL-A1B2` ≠ `pitwall-a1b2`)
-
----
-
-### "I can't find the `.env` file in File Explorer"
-
-Windows hides files starting with `.` by default.
-
-✅ **Fix:**
-1. Open the `local-bridge` folder in File Explorer
-2. Click the **"View"** tab in the ribbon at the top
-3. Tick **"Hidden items"**
-4. You should now see `.env` (if it exists) or just `.env.example` (which you need to copy and rename)
-
----
-
-### "The team wall shows data but the fuel / lap times are all zero"
-
-iRacing hasn't started yet, or the driver is in the pits and not driving.
-
-✅ **This is normal.** Data will populate as soon as the driver is out on track. The bridge reads directly from iRacing — if iRacing shows zeros, so will the bridge.
+✅ **Fix:** Log in to [supabase.com/dashboard](https://supabase.com/dashboard), click your project, and click **"Restore project"**. It takes 1–2 minutes. To prevent this during a race week, simply open the Supabase dashboard once in the week before the race — that resets the inactivity timer.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Do all drivers need their own Supabase account?**
-A: No. Only **one person** creates the Supabase project (usually the team manager). All drivers share the same `SUPABASE_URL` and `SUPABASE_ANON_KEY`. Only the `DRIVER_NAME` and `TEAM_CODE` differ per driver (and `TEAM_CODE` is the same for everyone).
+**Q: Can pit crew members edit the Race Timeline and Stint Calculator?**
+A: Yes — all pit crew members with the Team Code have full access to the Team Command interface. They can update the timeline, adjust the fuel calculator, and add notes. Changes are saved in their own browser. For shared edits to persist across all screens, this would require a future shared-session feature.
 
 ---
 
-**Q: Is my iRacing data stored in Supabase permanently?**
-A: No. Telemetry data is sent as **broadcast messages** — it is never written to any database table. It passes through Supabase's servers in real-time and is gone immediately. The only thing stored is the `team_sessions` table entry (your team code and race name), which expires automatically after 48 hours.
+**Q: Can two pit crew members cause conflicts by editing the calculator at the same time?**
+A: Currently each person's edits are local to their browser. There is no conflict — they each see their own version of the calculator. The live telemetry data (fuel, tyres, laps) is the same for everyone since it comes from the drivers' bridges. For Le Mans, we recommend designating one engineer as the primary calculator operator.
 
 ---
 
-**Q: Can someone from another team see my telemetry?**
-A: No. The team channel name includes your unique team code (e.g. `team:PITWALL-A1B2`). Nobody outside your team knows this code, and Supabase never exposes channel data publicly.
+**Q: Does a pit crew member's phone work as a team wall?**
+A: Yes. Open the app in any mobile browser, go to the Team page, and join with the Team Code. The layout adapts to smaller screens.
 
 ---
 
-**Q: What if we want a new team code for a different race?**
-A: Go to the Team page, click **"🔗 Team"** → **"Generate New Code"**. Share the new code with your drivers. They edit `TEAM_CODE=` in their `.env` and restart their bridge.
+**Q: What happens to the team channel when the race ends?**
+A: The team channel is ephemeral — it only exists while at least one driver's bridge is connected. When all bridges stop, the channel goes idle. The Team Code remains valid for 48 hours before it expires from the database. You can always generate a new code for the next race.
 
 ---
 
-**Q: Does iRacing need to be running for the bridge to work?**
-A: iRacing needs to be running for **live telemetry data** to appear. However, the bridge itself can start without iRacing and will wait for it to connect. You'll see `[bridge] iRacing disconnected` in the terminal until iRacing launches.
+**Q: Can I have separate team codes for separate cars?**
+A: There is only one team code per team session. All cars and all crew share the same code. If you have two completely separate teams, generate a different code for each.
 
 ---
 
-**Q: Can the team wall be on a phone?**
-A: Yes. Open your browser on any device, go to `http://[YOUR-PC-IP]:3001` on your local network (your bridge serves a local copy of the app), or go to the full web version if deployed. The team wall just needs internet access to receive Supabase messages.
+**Q: We have a co-driver sharing a car. Does anything change?**
+A: No. When the co-driver takes over, they start their own bridge. The team wall automatically shows whichever driver's data is most recent for that car number — the card switches seamlessly to the new driver when they cross the start line.
 
 ---
 
-**Q: What does "2Hz" mean?**
-A: It means the team wall receives an update from each driver **twice per second** (every 500ms). This is intentional — the full iRacing data runs at 60Hz on each driver's local PC (for their own dashboard), but sending 60 messages per second per driver to Supabase would consume the free tier in hours. 2Hz is more than enough to track fuel, tyres, and lap times across a race.
+## File Reference (Team Owner Only)
 
----
-
-**Q: We have 3 co-drivers sharing 1 car. How does that work?**
-A: Each driver runs the bridge on their own PC. If two drivers share Car #44, both will publish to the team channel with `carNumber: "44"`. The team wall will show the most recently received update for that car number — whichever driver is currently in the car and on track. This works automatically with no extra setup.
-
----
-
-**Q: The SQL step says "Error: relation already exists". Is that a problem?**
-A: No. It means the migration was already run previously. The table already exists and is working correctly. You can ignore this error and move on to Step 4.
-
----
-
-## File Reference
-
-| File | Purpose |
+| File | What it is |
 |---|---|
-| `local-bridge/.env` | Your personal config — Supabase keys, team code, driver name |
-| `local-bridge/.env.example` | Template — copy this to create `.env` |
+| `local-bridge/.env.example` | Template — fill this in and send it to each driver as `.env` |
+| `local-bridge/.env` | Your personal config — never commit to GitHub |
 | `local-bridge/teamRelay.js` | The relay module — do not edit |
 | `local-bridge/server.js` | The bridge server — do not edit |
-| `supabase/migrations/20260526_team_sessions.sql` | The SQL you paste into Supabase once |
-
----
-
-## Architecture Overview (for the curious)
-
-```
-Your PC                         Internet                    Team Wall
-┌─────────────────┐             ┌──────────────┐           ┌──────────────────┐
-│ iRacing         │             │              │           │ Browser on any   │
-│   ↓ (irsdk)     │             │   Supabase   │           │ device           │
-│ local-bridge    │──publishes──► Realtime     │◄─────────── subscribes to   │
-│ server.js       │  2Hz snap   │ channel:     │  2Hz each   team channel    │
-│   ↓             │             │ team:CODE    │  driver     ↓               │
-│ Local WS at     │             │              │           Team Command page  │
-│ localhost:3001  │             └──────────────┘           /team — all cars  │
-│ (60Hz, your     │                                        visible           │
-│  own dashboard) │                                                           │
-└─────────────────┘                                                           │
-```
-
-The local bridge does two things simultaneously:
-1. **60Hz to your browser** via `ws://localhost:3001` — your own fast local dashboard
-2. **2Hz to Supabase** via the internet — the team relay for other drivers to see you
-
-These are completely independent. If the internet drops, your local dashboard keeps working at full speed.
+| `supabase/migrations/20260526_team_sessions.sql` | The SQL you paste into Supabase once during setup |
