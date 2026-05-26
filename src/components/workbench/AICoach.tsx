@@ -161,7 +161,7 @@ export function AICoach({
       const text = resultDetailed
         ? renderDetailedForSpeech(result as DetailedResult)
         : renderConciseForSpeech(result as ConciseResult);
-      const { speak: ttsSpeak } = await import("@/lib/tts.client");
+      const { speak: ttsSpeak } = await import("@/lib/tts-client");
       const err = await ttsSpeak(text);
       if (err) setTtsError(err);
     } catch (e) {

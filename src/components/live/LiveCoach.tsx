@@ -269,7 +269,7 @@ export function LiveCoach({ t }: { t: Telemetry }) {
       const text = c.focus
         ? `${c.headline}. ${c.detail}. Focus: ${c.focus}.`
         : `${c.headline}. ${c.detail}.`;
-      const { speak } = await import("@/lib/tts.client");
+      const { speak } = await import("@/lib/tts-client");
       const err = await speak(text);
       if (err) console.warn("[LiveCoach] TTS:", err);
     } catch {

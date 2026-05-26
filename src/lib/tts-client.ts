@@ -5,7 +5,7 @@
  * through the user's selected output device (via HTMLMediaElement.setSinkId).
  *
  * Usage:
- *   import { speak } from "@/lib/tts.client";
+ *   import { speak } from "@/lib/tts-client";
  *   await speak("Box this lap, box box.");
  */
 
@@ -27,7 +27,7 @@ export async function playOnSelectedDevice(
     try {
       await (audio as any).setSinkId(deviceId);
     } catch (err) {
-      console.warn("[tts.client] setSinkId failed, falling back to default device:", err);
+      console.warn("[tts-client] setSinkId failed, falling back to default device:", err);
     }
   }
   await audio.play();

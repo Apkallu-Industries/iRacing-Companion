@@ -60,7 +60,7 @@ export function LiveStrategy({ t }: { t: Telemetry }) {
     setSpeaking(true);
     try {
       const text = `${c.headline}. ${c.detail}`;
-      const { speak } = await import("@/lib/tts.client");
+      const { speak } = await import("@/lib/tts-client");
       const err = await speak(text);
       if (err) console.warn("[LiveStrategy] TTS:", err);
     } catch {
