@@ -5,6 +5,7 @@ import { LLMSettings } from "@/components/LLMSettings";
 import { LocalDbSettings } from "@/components/LocalDbSettings";
 import { VoiceSettings } from "@/components/VoiceSettings";
 import { ThemeEditor } from "@/components/ThemeEditor";
+import { LayoutStylePicker } from "@/components/LayoutStylePicker";
 import { BridgePerformanceSettings } from "@/components/BridgePerformanceSettings";
 
 export const Route = createFileRoute("/settings")({
@@ -84,9 +85,14 @@ function SettingsPage() {
                 <Palette className="h-3.5 w-3.5" /> Appearance
               </div>
               <p className="mb-3 text-xs text-muted-foreground">
-                Tune visual theme and color accents used across dashboard and workbench.
+                Pick a UI style — this changes the layout, color theme, and dashboard widgets.
+                The F1 style unlocks the full F1 telemetry dashboard on the Live page.
               </p>
-              <ThemeEditor />
+              <LayoutStylePicker />
+              <div className="mt-3 pt-3 border-t border-border">
+                <p className="mb-2 text-[10px] text-muted-foreground uppercase tracking-wider">Fine-tune individual color tokens</p>
+                <ThemeEditor />
+              </div>
             </div>
 
             <div className="hairline rounded-sm bg-rail p-4 sm:col-span-2">

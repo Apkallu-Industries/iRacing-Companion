@@ -22,10 +22,78 @@ const os = require("os");
 const isDev = process.argv.includes("--dev") || process.env.DEV === "1";
 const APP_VERSION = require("./package.json").version ?? "1.0.0";
 
-// Production always loads the live web app so the UI is always current without
-// shipping a new desktop build. Dev mode points to the local Vite server.
-const BASE_URL = isDev ? "http://127.0.0.1:8080" : "https://iracing-companion.lovable.app";
-const DASHBOARD_URL = `${BASE_URL}/live`;
+/**
+ * URL Resolution — always prefer local servers so the desktop is a
+ * 1-to-1 mirror of whatever is running on this machine.
+ *
+ * Priority order:
+ *   1. Vite dev server  → http://127.0.0.1:8080  (npm run dev in root)
+ *   2. Bridge HTTP UI   → http://localhost:3001   (bridge serves PWA build)
+ *   3. Cloud fallback   → https://iracing-companion.lovable.app (no local servers running)
+ *
+ * In --dev mode we always use 8080 (fast, no wait).
+ * In production mode we probe 8080 first, then 3001, then fall back to cloud.
+ */
+const VITE_URL  = "http://127.0.0.1:8080";
+const BRIDGE_UI = "http://localhost:3001";
+const CLOUD_URL = "https://iracing-companion.lovable.app";
+
+// Start with a sensible default; resolveUrl() will update it before the window opens.
+let BASE_URL    = isDev ? VITE_URL : BRIDGE_UI;
+let DASHBOARD_URL = `${BASE_URL}/live`;
+
+/**
+ * Probe a URL with a short timeout. Returns true if the server is up.
+ */
+async function isReachable(url, timeoutMs = 1500) {
+  const { net } = require("electron");
+  return new Promise((resolve) => {
+    try {
+      const req = net.request({ method: "HEAD", url });
+      const timer = setTimeout(() => { try { req.abort(); } catch {} resolve(false); }, timeoutMs);
+      req.on("response", () => { clearTimeout(timer); resolve(true); });
+      req.on("error",    () => { clearTimeout(timer); resolve(false); });
+      req.end();
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Resolve the best available base URL before we show the window.
+ * Called once during app startup (after bridge has had a moment to start).
+ */
+async function resolveUrl() {
+  if (isDev) {
+    // Dev mode: always use Vite
+    BASE_URL      = VITE_URL;
+    DASHBOARD_URL = `${VITE_URL}/live`;
+    console.log(`[desktop] dev mode → ${DASHBOARD_URL}`);
+    return;
+  }
+
+  // Give the bridge a moment if it just started
+  await new Promise(r => setTimeout(r, 1200));
+
+  if (await isReachable(VITE_URL)) {
+    BASE_URL      = VITE_URL;
+    DASHBOARD_URL = `${VITE_URL}/live`;
+    console.log(`[desktop] local Vite dev server detected → ${DASHBOARD_URL}`);
+    return;
+  }
+
+  if (await isReachable(BRIDGE_UI)) {
+    BASE_URL      = BRIDGE_UI;
+    DASHBOARD_URL = `${BRIDGE_UI}/live`;
+    console.log(`[desktop] bridge HTTP server detected → ${DASHBOARD_URL}`);
+    return;
+  }
+
+  BASE_URL      = CLOUD_URL;
+  DASHBOARD_URL = `${CLOUD_URL}/live`;
+  console.log(`[desktop] ⚠️  no local server found, falling back to cloud → ${DASHBOARD_URL}`);
+}
 
 // Prefer the source-tree bridge over the bundled copy (dev workflow).
 // Falls back to desktop/bridge for packaged distributions.
@@ -262,7 +330,7 @@ function updateTray() {
   ]);
   tray.setContextMenu(menu);
   tray.setToolTip(
-    `Pit Wall Desktop\nBridge: ${bridgeStatus}\n${BASE_URL}`
+    `Pit Wall Desktop v${APP_VERSION}\nBridge: ${bridgeStatus}\nUI: ${BASE_URL}`
   );
 }
 
@@ -414,14 +482,21 @@ ipcMain.handle("get-app-info", () => ({
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Force dark mode to match the UI
   nativeTheme.themeSource = "dark";
 
   startBridge();
   buildMenu();
+
+  // Resolve which local server to use BEFORE opening the window
+  await resolveUrl();
+
   createWindow();
   createTray();
+
+  // Rebuild the menu now that BASE_URL is set correctly
+  buildMenu();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

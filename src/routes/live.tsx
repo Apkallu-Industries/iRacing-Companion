@@ -1,5 +1,5 @@
-﻿import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
-import { Settings } from "lucide-react";
+import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
+import { Settings, Palette } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
 import { useWorkbench } from "@/lib/store";
@@ -28,6 +28,8 @@ import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner
 import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
 import { TabedAnalysisPanel } from "@/components/live/TabedAnalysisPanel";
 import { useTheme } from "@/lib/themeContext";
+import { LAYOUT_PROFILES, type LayoutProfile } from "@/lib/layoutProfiles";
+import { PRESETS, DARK_THEME } from "@/lib/theme";
 import { F1SpeedGauge } from "@/components/live/F1SpeedGauge";
 import { F1LapHero } from "@/components/live/F1LapHero";
 import { F1SectorTable } from "@/components/live/F1SectorTable";
@@ -67,7 +69,7 @@ function Dashboard() {
   const [debugMode, setDebugMode] = useState(false);
   const handleCursor = useCallback((c: CursorInfo | null) => setCursor(c), []);
   const { layout } = useTheme();
-  const isF1Layout = layout === "f1";
+  const isF1Layout = (layout as string) === "f1";
 
   // Keyboard shortcut for debug mode (Ctrl+Shift+D)
   useEffect(() => {
@@ -289,6 +291,16 @@ function Dashboard() {
 
 function TopBar({ t }: { t: Telemetry }) {
   const { activeWorkspace, setActiveWorkspace } = useWorkbench();
+  const { layout, setLayout, setTheme } = useTheme();
+  const activeProfile = LAYOUT_PROFILES.find((p) => p.id === layout);
+
+  const handleLayoutChange = (id: string) => {
+    setLayout(id as LayoutProfile);
+    const preset = PRESETS.find((p) => p.id === id);
+    if (preset) setTheme(preset.theme);
+    else setTheme(DARK_THEME);
+  };
+
   return (
     <header className="flex items-center gap-3 border-b border-border pb-2 text-[11px] uppercase tracking-wider">
       <BackButton />
@@ -303,6 +315,22 @@ function TopBar({ t }: { t: Telemetry }) {
           {Object.values(WORKSPACES).map((w) => (
             <option key={w.key} value={w.key} className="bg-background text-foreground font-mono uppercase text-[10px]">
               {w.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      {/* Layout style switcher */}
+      <div className="flex items-center gap-1.5 bg-muted border border-border-strong rounded-sm px-2 py-0.5 select-none text-[10px] text-muted-foreground">
+        <Palette className="h-3 w-3 text-primary" />
+        <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Style</span>
+        <select
+          value={layout}
+          onChange={(e) => handleLayoutChange(e.target.value)}
+          className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
+        >
+          {LAYOUT_PROFILES.map((p) => (
+            <option key={p.id} value={p.id} className="bg-background text-foreground font-mono uppercase text-[10px]">
+              {p.label}
             </option>
           ))}
         </select>
