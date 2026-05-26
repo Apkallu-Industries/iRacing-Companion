@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
-import { Brain, Loader2, Volume2, Zap, ShieldAlert, Gauge, AlertTriangle } from "lucide-react";
+import { Loader2, Volume2, Zap, ShieldAlert, Gauge, AlertTriangle } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { useAuth } from "@/lib/auth";
 import { recordLiveLap, getPersonalBest } from "@/lib/liveLaps.functions";
@@ -287,8 +287,16 @@ export function LiveCoach({ t }: { t: Telemetry }) {
     <div className={`bg-panel-2 ring-1 ${call ? style.ring : "ring-white/5"} rounded-lg p-4`}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">
-          <Brain className="h-3.5 w-3.5 text-racing-cyan" />
-          AI Race Engineer
+          <img
+            src="/images/coach-avatar.png"
+            alt="AI Coach"
+            className="h-7 w-7 rounded-sm object-cover ring-1 ring-border"
+          />
+          AI Coach
+          <span className="flex items-center gap-1 text-[8px] text-emerald-400">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            LIVE COACH
+          </span>
         </h2>
         <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
           {!user && <span className="text-racing-orange">Sign in to save PBs</span>}
@@ -353,26 +361,37 @@ export function LiveCoach({ t }: { t: Telemetry }) {
                 {t.deltaSec.toFixed(3)}s
               </span>
             )}
-            <button
-              onClick={() => speakCall(call)}
-              disabled={speaking}
-              className="ml-auto flex items-center gap-1 rounded-sm bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground hover:bg-black/50 disabled:opacity-40"
-            >
-              {speaking ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Volume2 className="h-3 w-3" />
-              )}
-              {speaking ? "Speaking" : "Speak"}
-            </button>
           </div>
-          <div className={`text-lg font-semibold leading-tight ${style.text}`}>{call.headline}</div>
-          <div className="mt-1 text-xs text-foreground">{call.detail}</div>
-          {call.focus && (
-            <div className="mt-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
-              Next-lap focus → <span className="text-foreground">{call.focus}</span>
+          {/* Avatar + message layout (F1 reference style) */}
+          <div className="flex gap-3 mt-1">
+            <img
+              src="/images/coach-avatar.png"
+              alt="AI Coach"
+              className="h-16 w-16 rounded-sm object-cover ring-1 ring-border flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-semibold leading-tight ${style.text}`}>{call.headline}</div>
+              <div className="mt-1 text-xs text-foreground leading-relaxed">{call.detail}</div>
+              {call.focus && (
+                <div className="mt-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+                  Focus → <span className="text-foreground">{call.focus}</span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
+          {/* Speak button (full width, bottom) */}
+          <button
+            onClick={() => speakCall(call)}
+            disabled={speaking}
+            className="mt-3 w-full flex items-center justify-center gap-2 rounded-sm bg-black/30 px-3 py-1.5 text-[10px] uppercase tracking-wider text-foreground hover:bg-black/50 disabled:opacity-40 border border-border"
+          >
+            {speaking ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Volume2 className="h-3.5 w-3.5" />
+            )}
+            {speaking ? "Speaking..." : "Speak Last Lap"}
+          </button>
         </div>
       )}
     </div>
