@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Volume2, Zap, ShieldAlert, Gauge, AlertTriangle } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { useAuth } from "@/lib/auth";
@@ -8,6 +8,7 @@ import { speakText } from "@/lib/tts.functions";
 import { decideTone, type RuleSummary, type Tone } from "@/lib/live/coachRules";
 import { waitForStraight } from "@/lib/live/isInCorner";
 import { useWorkbench } from "@/lib/store";
+import { useTheme } from "@/lib/themeContext";
 
 const COACH_DEBOUNCE_MS = 45_000;
 const MIN_CONFIDENCE = 55;
@@ -279,9 +280,105 @@ export function LiveCoach({ t }: { t: Telemetry }) {
     }
   };
 
+  const { layout } = useTheme();
+  const isF1 = layout === "f1";
+
   const tone = call?.tone ?? "hold";
   const style = toneStyles[tone];
   const ToneIcon = style.icon;
+
+  if (isF1) {
+    const activeCall = call || {
+      tone: "hold" as Tone,
+      headline: "Systems Check Ready",
+      detail: user
+        ? "Monitoring live telemetry from the bridge. Complete a clean lap on track, and I'll analyze your sectors and throttle inputs to provide live real-time audio coaching."
+        : "Awaiting telemetry. Complete a lap on track for live telemetry-driven coaching. Sign in to save and track your personal best laps.",
+      focus: "Complete a clean lap on track",
+    };
+    const activeStyle = toneStyles[activeCall.tone];
+    const ActiveToneIcon = activeStyle.icon;
+
+    return (
+      <div className="border border-border bg-background h-full flex flex-col overflow-hidden font-mono select-none">
+        {/* Header bar matching F1 styling */}
+        <div className="border-b border-border px-2 py-1.5 text-[9px] uppercase tracking-wider text-muted-foreground flex-shrink-0 flex items-center justify-between bg-background">
+          <span className="font-semibold text-foreground tracking-[0.18em]">AI Coach</span>
+          <span className="flex items-center gap-1 text-[8px] text-rose-500 font-bold tracking-wider">
+            <span className="size-1.5 rounded-full bg-rose-500 animate-pulse" />
+            LIVE COACH
+          </span>
+        </div>
+
+        {/* Body grid */}
+        <div className="flex-1 p-3 flex gap-3 overflow-hidden min-h-0 bg-panel-2 items-center">
+          {/* Large Avatar of Coach */}
+          <div className="w-24 h-24 flex-shrink-0 relative">
+            <img
+              src="/images/coach-avatar.png"
+              alt="AI Coach"
+              className="w-full h-full object-cover rounded border border-border/80 shadow-lg"
+            />
+            {/* Pulsing indicator in corner of avatar showing active state */}
+            <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-500 border border-background animate-pulse" />
+          </div>
+
+          {/* Coach Message Bubble */}
+          <div className="flex-1 flex flex-col justify-between h-full min-w-0 bg-black/45 border border-border/60 rounded p-2.5 relative">
+            {/* Bubble pointer pointing left to avatar */}
+            <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 rotate-45 bg-black/45 border-l border-b border-border/60" />
+
+            <div className="overflow-y-auto pr-1 flex-1 min-h-0 select-text">
+              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                <span
+                  className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${activeStyle.text} bg-black/40 border border-border/20`}
+                >
+                  <ActiveToneIcon className="h-2.5 w-2.5" />
+                  {activeStyle.label}
+                </span>
+                {lastConfidence != null && call && (
+                  <span className="text-[8px] text-muted-foreground uppercase tracking-widest">
+                    Confidence: {lastConfidence}%
+                  </span>
+                )}
+                {pb && call && (
+                  <span className="text-[8px] text-muted-foreground font-mono">
+                    Δ {t.deltaSec >= 0 ? "+" : ""}
+                    {t.deltaSec.toFixed(3)}s
+                  </span>
+                )}
+              </div>
+              <div className={`text-[11px] font-bold leading-snug uppercase tracking-wide ${activeStyle.text}`}>
+                {activeCall.headline}
+              </div>
+              <div className="mt-1 text-[10px] text-muted-foreground leading-normal font-sans">
+                {activeCall.detail}
+              </div>
+              {activeCall.focus && (
+                <div className="mt-1.5 text-[8px] uppercase tracking-wider text-muted-foreground font-mono">
+                  Focus: <span className="text-foreground">{activeCall.focus}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Speak button inside the bubble at bottom */}
+            <button
+              onClick={() => speakCall(activeCall)}
+              disabled={speaking || loading}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 rounded bg-black/30 hover:bg-black/60 px-2 py-1.5 text-[9px] uppercase tracking-wider text-foreground hover:text-white disabled:opacity-40 border border-border/40 transition-colors"
+            >
+              {speaking ? (
+                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              ) : (
+                <Volume2 className="h-3 w-3 text-muted-foreground" />
+              )}
+              {speaking ? "Speaking..." : "Speak Last Lap"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-panel-2 ring-1 ${call ? style.ring : "ring-white/5"} rounded-lg p-4`}>

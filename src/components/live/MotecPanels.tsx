@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 
 type TraceKey = "speed" | "rpm" | "throttle" | "brake" | "steering" | "gLat" | "gLon";
@@ -135,6 +135,20 @@ export function TraceStack({
   // Cursor x in CSS px, relative to canvas. null = follow live edge.
   const [cursorX, setCursorX] = useState<number | null>(null);
   const draggingRef = useRef(false);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  // Dynamically observe container wrapper size for seamless high-contrast trace rendering
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const observer = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return;
+      const { width, height } = entries[0].contentRect;
+      setDimensions({ width, height });
+    });
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, []);
 
   // Pre-compute smoothed series for each trace+field.
   const smoothed = useMemo(() => {
@@ -151,11 +165,9 @@ export function TraceStack({
   // Find the sample index closest to a given cursor X position.
   const cursorIndex = useMemo(() => {
     if (samples.length === 0) return -1;
-    const wrap = wrapRef.current;
-    if (cursorX == null || !wrap) return samples.length - 1;
-    const cssW = wrap.clientWidth;
+    const cssW = dimensions.width;
     const plotW = cssW - LABEL_W - VAL_W;
-    if (plotW <= 0) return samples.length - 1;
+    if (cursorX == null || plotW <= 0) return samples.length - 1;
     const tEnd = samples[samples.length - 1].t;
     const tStart = tEnd - windowMs;
     const frac = Math.max(0, Math.min(1, (cursorX - LABEL_W) / plotW));
@@ -169,7 +181,7 @@ export function TraceStack({
       else hi = mid;
     }
     return lo;
-  }, [cursorX, samples, windowMs]);
+  }, [cursorX, samples, windowMs, dimensions.width]);
 
   // Notify parent of cursor sample.
   useEffect(() => {
@@ -194,8 +206,12 @@ export function TraceStack({
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const dpr = window.devicePixelRatio || 1;
-    const cssW = wrap.clientWidth;
-    const cssH = TRACES.length * ROW_H;
+    
+    // Scale traces to fill the available space dynamically
+    const cssW = dimensions.width || wrap.clientWidth || 600;
+    const cssH = dimensions.height || wrap.clientHeight || (TRACES.length * ROW_H);
+    const rowHeight = cssH / TRACES.length;
+
     if (canvas.width !== Math.floor(cssW * dpr) || canvas.height !== Math.floor(cssH * dpr)) {
       canvas.width = Math.floor(cssW * dpr);
       canvas.height = Math.floor(cssH * dpr);
@@ -218,23 +234,23 @@ export function TraceStack({
     ctx.textBaseline = "middle";
 
     TRACES.forEach((trace, i) => {
-      const y0 = i * ROW_H;
-      const y1 = y0 + ROW_H;
-      const padY = 8;
+      const y0 = i * rowHeight;
+      const y1 = y0 + rowHeight;
+      const padY = Math.max(4, rowHeight * 0.1); // responsive padding
       const plotYTop = y0 + padY;
       const plotYBot = y1 - padY;
       const plotH = plotYBot - plotYTop;
 
       ctx.fillStyle = i % 2 === 0 ? "#0a0a0a" : "#0d0d0d";
-      ctx.fillRect(0, y0, cssW, ROW_H);
+      ctx.fillRect(0, y0, cssW, rowHeight);
       ctx.fillStyle = "#171717";
       ctx.fillRect(0, y1 - 1, cssW, 1);
 
       ctx.fillStyle = "#525252";
       ctx.textAlign = "left";
-      ctx.fillText(trace.label, 8, y0 + 14);
+      ctx.fillText(trace.label, 8, y0 + Math.min(14, rowHeight * 0.25));
       ctx.fillStyle = "#737373";
-      ctx.fillText(trace.unit, 8, y1 - 12);
+      ctx.fillText(trace.unit, 8, y1 - Math.min(12, rowHeight * 0.22));
 
       ctx.strokeStyle = "#1f1f1f";
       ctx.lineWidth = 1;
@@ -285,7 +301,7 @@ export function TraceStack({
         for (let si = 0; si < trace.fields.length; si++) {
           const v = smoothed[`${trace.key}:${si}`]?.[idx] ?? 0;
           ctx.fillStyle = trace.colors[si];
-          ctx.fillText((trace.fmt ?? ((x) => x.toFixed(2)))(v), cssW - 8, y0 + 16 + si * 14);
+          ctx.fillText((trace.fmt ?? ((x) => x.toFixed(2)))(v), cssW - 8, y0 + Math.min(16, rowHeight * 0.28) + si * 14);
         }
         ctx.textAlign = "left";
       }
@@ -325,7 +341,7 @@ export function TraceStack({
         ctx.textBaseline = "middle";
       }
     }
-  }, [samples, windowMs, smoothed, cursorX, cursorIndex]);
+  }, [samples, windowMs, smoothed, cursorX, cursorIndex, dimensions]);
 
   const handlePointer = (e: React.PointerEvent<HTMLDivElement>) => {
     const wrap = wrapRef.current;
@@ -338,8 +354,8 @@ export function TraceStack({
   return (
     <div
       ref={wrapRef}
-      className="relative w-full overflow-hidden rounded-sm border border-border bg-background touch-none"
-      style={{ height: TRACES.length * ROW_H, cursor: cursorX != null ? "ew-resize" : "crosshair" }}
+      className="relative w-full h-full overflow-hidden rounded-sm border border-border bg-background touch-none"
+      style={{ cursor: cursorX != null ? "ew-resize" : "crosshair" }}
       onPointerDown={(e) => {
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         draggingRef.current = true;
@@ -386,26 +402,33 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const dpr = window.devicePixelRatio || 1;
+    
+    const parent = wrap.parentElement;
     const cssW = wrap.clientWidth;
-    const cssH = cssW;
-    if (canvas.width !== Math.floor(cssW * dpr) || canvas.height !== Math.floor(cssH * dpr)) {
-      canvas.width = Math.floor(cssW * dpr);
-      canvas.height = Math.floor(cssH * dpr);
-      canvas.style.width = `${cssW}px`;
-      canvas.style.height = `${cssH}px`;
+    const parentH = parent ? parent.clientHeight : 0;
+    
+    // Keep the diagram square, scale to fit parents, but limit to 280px max for professional proportions.
+    const cssH = parentH > 0 ? parentH : cssW;
+    const size = Math.max(120, Math.min(cssW, cssH, 280) - 16);
+
+    if (canvas.width !== Math.floor(size * dpr) || canvas.height !== Math.floor(size * dpr)) {
+      canvas.width = Math.floor(size * dpr);
+      canvas.height = Math.floor(size * dpr);
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
     }
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
+    ctx.clearRect(0, 0, size, size);
 
     ctx.fillStyle = "#0a0a0a";
-    ctx.fillRect(0, 0, cssW, cssH);
+    ctx.fillRect(0, 0, size, size);
 
-    const cx = cssW / 2;
-    const cy = cssH / 2;
+    const cx = size / 2;
+    const cy = size / 2;
     const maxG = 3;
-    const scale = (cssW / 2 - 12) / maxG;
+    const scale = (size / 2 - 16) / maxG;
 
     ctx.strokeStyle = "#1f1f1f";
     ctx.lineWidth = 1;
@@ -416,9 +439,9 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
     }
     ctx.beginPath();
     ctx.moveTo(cx, 0);
-    ctx.lineTo(cx, cssH);
+    ctx.lineTo(cx, size);
     ctx.moveTo(0, cy);
-    ctx.lineTo(cssW, cy);
+    ctx.lineTo(size, cy);
     ctx.stroke();
 
     ctx.fillStyle = "#525252";
@@ -451,9 +474,9 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
 
     ctx.fillStyle = "#737373";
     ctx.fillText("ACCEL", cx + 4, 10);
-    ctx.fillText("BRAKE", cx + 4, cssH - 10);
+    ctx.fillText("BRAKE", cx + 4, size - 10);
     ctx.textAlign = "right";
-    ctx.fillText("LEFT", cssW - 6, cy + 12);
+    ctx.fillText("LEFT", size - 6, cy + 12);
     ctx.textAlign = "left";
     ctx.fillText("RIGHT", 6, cy + 12);
   }, [samples]);
@@ -461,9 +484,9 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
   return (
     <div
       ref={wrapRef}
-      className="w-full overflow-hidden rounded-sm border border-border bg-background"
+      className="w-full h-full flex items-center justify-center p-2 bg-background/30"
     >
-      <canvas ref={canvasRef} className="block" />
+      <canvas ref={canvasRef} className="block rounded border border-border/80 shadow-md bg-[#0a0a0a]" />
     </div>
   );
 }
