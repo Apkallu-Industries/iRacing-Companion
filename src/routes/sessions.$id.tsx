@@ -1,4 +1,4 @@
-﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { ExportPwlapDialog } from "@/components/workbench/ExportPwlapDialog";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { SetupCopilot } from "@/components/live/SetupCopilot";
+import { fetchLocalTelemetryFile } from "@/lib/history.functions";
 
 import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
 import { StackedTraces } from "@/components/workbench/StackedTraces";
@@ -206,7 +207,8 @@ function WorkbenchPage() {
         }
         if (cancelled) return;
         setProgress({ phase: "download", pct: 5 });
-        let buf: ArrayBuffer;
+        let buf: ArrayBuffer | null = null;
+        let localDoc: any = null;
 
         // Gap 4: If we have the blob in memory, read it directly and don't download it from supabase
         if (pendingLocalBlob) {
@@ -214,25 +216,49 @@ function WorkbenchPage() {
           setProgress({ phase: "download", pct: 50, msg: "Reading from local memory" });
           setPendingLocalBlob(null); // clear it
         } else {
-          const { data: blob, error: e2 } = await supabase.storage
-            .from("telemetry")
-            .download(row.storage_path);
-          if (e2) throw e2;
-          buf = await blob.arrayBuffer();
+          // Attempt to fetch instantly from Local MongoDB Community Server first
+          try {
+            setProgress({ phase: "download", pct: 15, msg: "Checking Local MongoDB" });
+            const localRes = await fetchLocalTelemetryFile({ data: { sessionId: id } });
+            if (localRes && localRes.ok && localRes.doc) {
+              localDoc = localRes.doc;
+              setProgress({ phase: "download", pct: 50, msg: "Loaded from Local MongoDB" });
+            }
+          } catch (e) {
+            console.warn("[LocalDB] Local session fetch failed, falling back to cloud storage:", e);
+          }
+
+          if (!localDoc) {
+            setProgress({ phase: "download", pct: 20, msg: "Downloading from Pit Wall Cloud Storage" });
+            const { data: blob, error: e2 } = await supabase.storage
+              .from("telemetry")
+              .download(row.storage_path);
+            if (e2) throw e2;
+            buf = await blob.arrayBuffer();
+          }
         }
 
         if (cancelled) return;
         const isPwlap = isPwlapPath(row.storage_path) || isPwlapPath(row.name);
         if (isPwlap) {
           setProgress({ phase: "parse", pct: 50, msg: "Decoding .pwlap recording" });
-          const text = new TextDecoder().decode(buf);
-          const doc = JSON.parse(text) as RecordingDoc;
+          let doc: RecordingDoc;
+          if (localDoc) {
+            doc = localDoc;
+          } else if (buf) {
+            const text = new TextDecoder().decode(buf);
+            doc = JSON.parse(text) as RecordingDoc;
+          } else {
+            throw new Error("No telemetry data retrieved");
+          }
+
           if (doc.format !== "pwlap") throw new Error("Not a Pit Wall recording (.pwlap)");
           const result = pwlapToParsed(doc);
           if (cancelled) return;
           setParsed(result);
           setProgress(null);
         } else {
+          if (!buf) throw new Error("No .ibt data downloaded");
           const result = await parseIbtInWorker(buf, (phase, pct, msg) => {
             if (!cancelled) setProgress({ phase, pct: 5 + Math.floor(pct * 0.95), msg });
           });

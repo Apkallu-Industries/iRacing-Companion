@@ -83,10 +83,13 @@ function Dashboard() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Check query param for debug mode
+  // Check query param for debug mode (robust against accidental spaces/percent-encodings)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("debug") === "1") {
+    const hasDebug = Array.from(params.entries()).some(
+      ([key, val]) => key.trim() === "debug" && val.trim() === "1"
+    );
+    if (hasDebug) {
       setDebugMode(true);
     }
   }, []);
@@ -196,13 +199,25 @@ function Dashboard() {
           </div>
 
           {/* Bottom controls */}
-          <div className="border-t border-border bg-panel-2 px-2 py-1 flex flex-wrap gap-1 items-center text-xs flex-shrink-0">
-            {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
-            <GearAdvisor t={t} samples={samples} />
-            <AdvisorButton t={t} />
-            <LiveReference t={t} />
-            <FingerprintUploadCard />
-            <DesktopLapSync />
+          <div className="border-t border-border bg-background p-2 grid grid-cols-12 gap-2 text-xs flex-shrink-0">
+            <div className="col-span-12 lg:col-span-2 flex flex-col justify-between">
+              {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
+              <GearAdvisor t={t} samples={samples} />
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
+              <AdvisorButton t={t} />
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between">
+              <LiveReference t={t} />
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between relative">
+              <FingerprintUploadCard />
+              <div className="mt-1 flex items-center justify-end">
+                <DesktopLapSync />
+              </div>
+            </div>
           </div>
         </>
       ) : (
@@ -270,13 +285,25 @@ function Dashboard() {
           </div>
 
           {/* Bottom bar: Controls (no gaps, packed) */}
-          <div className="border-t border-border bg-panel-2 px-2 py-1 flex flex-wrap gap-1 items-center text-xs flex-shrink-0">
-            {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
-            <GearAdvisor t={t} samples={samples} />
-            <AdvisorButton t={t} />
-            <LiveReference t={t} />
-            <FingerprintUploadCard />
-            <DesktopLapSync />
+          <div className="border-t border-border bg-background p-2 grid grid-cols-12 gap-2 text-xs flex-shrink-0">
+            <div className="col-span-12 lg:col-span-2 flex flex-col justify-between">
+              {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
+              <GearAdvisor t={t} samples={samples} />
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
+              <AdvisorButton t={t} />
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between">
+              <LiveReference t={t} />
+            </div>
+            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between relative">
+              <FingerprintUploadCard />
+              <div className="mt-1 flex items-center justify-end">
+                <DesktopLapSync />
+              </div>
+            </div>
           </div>
         </>
       )}

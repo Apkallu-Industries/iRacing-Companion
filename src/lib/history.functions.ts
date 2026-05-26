@@ -165,26 +165,37 @@ export const recordTelemetrySessionMeta = createServerFn({ method: "POST" })
   .inputValidator((data: any) => data)
   .handler(async ({ data, context }) => {
     let localId = null;
+    const { fullDoc, ...metaOnly } = data;
 
-    // 1. Write to Local DB first
+    // 1. Write to Local DB first (including full telemetry document in 'telemetry_files')
     try {
       const db = await connectToLocalDb();
       const res = await db.collection("telemetry_sessions").insertOne({
-        ...data,
+        ...metaOnly,
         user_id: context.userId,
       });
       localId = res.insertedId.toString();
+
+      if (fullDoc) {
+        await db.collection("telemetry_files").insertOne({
+          session_id: localId,
+          user_id: context.userId,
+          doc: fullDoc,
+          recorded_at: metaOnly.recorded_at || new Date().toISOString(),
+        });
+        console.log(`[LocalDB] Telemetry session data successfully written to MongoDB for session ${localId}`);
+      }
     } catch (e) {
       console.warn("[LocalDB] Session meta record failed:", e);
     }
 
-    // 2. Sync to Cloud Supabase
+    // 2. Sync to Cloud Supabase (Meta-only)
     try {
       const { data: row, error } = await context.supabase
         .from("telemetry_sessions")
         .insert({
           user_id: context.userId,
-          ...data,
+          ...metaOnly,
         })
         .select("id")
         .single();
@@ -195,4 +206,23 @@ export const recordTelemetrySessionMeta = createServerFn({ method: "POST" })
       if (localId) return { ok: true, id: localId };
       return { ok: false, error: String((e as Error).message || e) };
     }
+  });
+
+export const fetchLocalTelemetryFile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { sessionId: string }) => data)
+  .handler(async ({ data, context }) => {
+    try {
+      const db = await connectToLocalDb();
+      const doc = await db.collection("telemetry_files").findOne({
+        session_id: data.sessionId,
+        user_id: context.userId,
+      });
+      if (doc) {
+        return { ok: true, doc: doc.doc };
+      }
+    } catch (e) {
+      console.warn("[LocalDB] Failed fetching local telemetry from MongoDB:", e);
+    }
+    return { ok: false };
   });

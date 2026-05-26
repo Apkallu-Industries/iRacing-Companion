@@ -139,6 +139,8 @@ const STATIC_CHANNELS: ChannelDef[] = [
   { name: "Latency", unit: "ms", group: "Network", pick: (t) => t.latencyMs },
 ];
 
+const STATIC_CHANNEL_NAMES = new Set(STATIC_CHANNELS.map((d) => d.name));
+
 function emptyStore(): Record<string, ChannelColumn> {
   const out: Record<string, ChannelColumn> = {};
   for (const def of STATIC_CHANNELS) {
@@ -162,8 +164,8 @@ function pushSample(
     for (const [k, v] of Object.entries(snap.extras)) {
       if (typeof v !== "number" || !isFinite(v)) continue;
 
-      // Skip if this channel is already captured as a static channel
-      if (STATIC_CHANNELS.some((d) => d.name === k)) continue;
+      // Skip if this channel is already captured as a static channel (O(1) Set lookup)
+      if (STATIC_CHANNEL_NAMES.has(k)) continue;
 
       let col = store[k];
       if (!col) {
@@ -271,7 +273,8 @@ export function useLiveRecorder(t: Telemetry) {
         if (upErr) throw upErr;
 
         // Offload database insertion to the backend Server Function.
-        // This natively commits to MongoDB AND pushes to Supabase fallback reliably
+        // This natively commits metadata to MongoDB, saves the full telemetry JSON doc locally in MongoDB,
+        // and pushes to Supabase fallback reliably.
         const res = await recordTelemetrySessionMeta({
           data: {
             name: filename,
@@ -285,6 +288,7 @@ export function useLiveRecorder(t: Telemetry) {
             best_lap_s: doc.bestLapS,
             storage_path: path,
             recorded_at: doc.startedAt,
+            fullDoc: doc, // Pass full telemetry payload for local MongoDB zero-latency storage!
           },
         });
 
