@@ -14,10 +14,49 @@ type Node =
   | { kind: "ident"; name: string }
   | { kind: "unary"; op: "-"; expr: Node }
   | { kind: "binary"; op: "+" | "-" | "*" | "/"; left: Node; right: Node }
-  | { kind: "call"; name: "min" | "max" | "abs" | "clamp"; args: Node[] };
+  | {
+      kind: "call";
+      name:
+        | "min"
+        | "max"
+        | "abs"
+        | "clamp"
+        | "sin"
+        | "cos"
+        | "tan"
+        | "asin"
+        | "acos"
+        | "atan"
+        | "sqrt"
+        | "log"
+        | "log10"
+        | "exp"
+        | "floor"
+        | "ceil"
+        | "round";
+      args: Node[];
+    };
 
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;
-const FUNC_NAMES = new Set(["min", "max", "abs", "clamp"]);
+const FUNC_NAMES = new Set([
+  "min",
+  "max",
+  "abs",
+  "clamp",
+  "sin",
+  "cos",
+  "tan",
+  "asin",
+  "acos",
+  "atan",
+  "sqrt",
+  "log",
+  "log10",
+  "exp",
+  "floor",
+  "ceil",
+  "round",
+]);
 const MAX_AST_NODES = 128;
 
 export type CompiledMathExpression = {
@@ -219,10 +258,31 @@ class Parser {
 }
 
 function assertArgCount(fn: string, count: number) {
-  if (fn === "abs" && count !== 1) throw new Error("abs() expects exactly 1 argument.");
-  if ((fn === "min" || fn === "max") && count !== 2)
-    throw new Error(`${fn}() expects exactly 2 arguments.`);
-  if (fn === "clamp" && count !== 3) throw new Error("clamp() expects exactly 3 arguments.");
+  const singleArgFns = new Set([
+    "abs",
+    "sin",
+    "cos",
+    "tan",
+    "asin",
+    "acos",
+    "atan",
+    "sqrt",
+    "log",
+    "log10",
+    "exp",
+    "floor",
+    "ceil",
+    "round",
+  ]);
+  if (singleArgFns.has(fn) && count !== 1) {
+    throw new Error(`${fn}() expects exactly 1 argument.`);
+  }
+  if ((fn === "min" || fn === "max") && count < 2) {
+    throw new Error(`${fn}() expects at least 2 arguments.`);
+  }
+  if (fn === "clamp" && count !== 3) {
+    throw new Error("clamp() expects exactly 3 arguments.");
+  }
 }
 
 function evalNode(node: Node, context: MathContext, tick: () => void): number {
@@ -248,13 +308,54 @@ function evalNode(node: Node, context: MathContext, tick: () => void): number {
     }
     case "call": {
       const args = node.args.map((a) => evalNode(a, context, tick));
-      if (node.name === "abs") return Math.abs(args[0]);
-      if (node.name === "min") return Math.min(args[0], args[1]);
-      if (node.name === "max") return Math.max(args[0], args[1]);
-      const x = args[0];
-      const lo = Math.min(args[1], args[2]);
-      const hi = Math.max(args[1], args[2]);
-      return Math.max(lo, Math.min(hi, x));
+      switch (node.name) {
+        case "abs":
+          return Math.abs(args[0]);
+        case "min":
+          return Math.min(...args);
+        case "max":
+          return Math.max(...args);
+        case "clamp": {
+          const x = args[0];
+          const lo = Math.min(args[1], args[2]);
+          const hi = Math.max(args[1], args[2]);
+          return Math.max(lo, Math.min(hi, x));
+        }
+        case "sin":
+          return Math.sin(args[0]);
+        case "cos":
+          return Math.cos(args[0]);
+        case "tan":
+          return Math.tan(args[0]);
+        case "asin":
+          return Math.asin(args[0]);
+        case "acos":
+          return Math.acos(args[0]);
+        case "atan":
+          return Math.atan(args[0]);
+        case "sqrt": {
+          if (args[0] < 0) throw new Error("Square root of a negative number.");
+          return Math.sqrt(args[0]);
+        }
+        case "log": {
+          if (args[0] <= 0) throw new Error("Logarithm of a non-positive number.");
+          return Math.log(args[0]);
+        }
+        case "log10": {
+          if (args[0] <= 0) throw new Error("Logarithm of a non-positive number.");
+          return Math.log10(args[0]);
+        }
+        case "exp":
+          return Math.exp(args[0]);
+        case "floor":
+          return Math.floor(args[0]);
+        case "ceil":
+          return Math.ceil(args[0]);
+        case "round":
+          return Math.round(args[0]);
+        default:
+          throw new Error(`Unhandled function "${node.name}".`);
+      }
     }
   }
 }
@@ -281,7 +382,35 @@ export function evaluateMathExpressionForIbt(
   compiled: CompiledMathExpression,
   parsed: IbtParsed,
 ): Float32Array | null {
-  for (const id of compiled.identifiers) {
+  const globalConstants: Record<string, number> = {
+    "const.PI": Math.PI,
+    "const.E": Math.E,
+    "const.kph_to_mph": 0.621371192,
+    "const.kph_to_mps": 0.277777778,
+    "const.mps_to_kph": 3.6,
+    "const.mps_to_mph": 2.23693629,
+    "const.bar_to_psi": 14.50377377,
+    "const.bar_to_kpa": 100.0,
+    "const.kpa_to_psi": 0.145037738,
+    "const.psi_to_bar": 0.068947573,
+    "const.c_to_f_gain": 1.8,
+    "const.c_to_f_offset": 32.0,
+    "const.g_to_mps2": 9.80665,
+    "const.mps2_to_g": 0.101971621,
+    "const.nm_to_lbfft": 0.737562149,
+    "const.kg_to_lb": 2.204622622,
+    "const.rpm_to_rads": 0.104719755,
+    "const.rads_to_rpm": 9.549296586,
+    "const.rpm_to_degs": 6.0,
+    "const.litre_to_gal": 0.219969248,
+    "const.litre_to_usgal": 0.264172052,
+    "const.rad_to_deg": 57.295779513,
+    "const.deg_to_rad": 0.0174532925,
+  };
+
+  const channelIdentifiers = compiled.identifiers.filter(id => !id.startsWith("const."));
+
+  for (const id of channelIdentifiers) {
     if (!(id in parsed.channels)) {
       return null;
     }
@@ -293,13 +422,13 @@ export function evaluateMathExpressionForIbt(
   const numTicks = sessionTime.data.length;
   const out = new Float32Array(numTicks);
   const arrays: Record<string, Float32Array | Float64Array> = {};
-  for (const id of compiled.identifiers) {
+  for (const id of channelIdentifiers) {
     arrays[id] = parsed.channels[id].data;
   }
 
-  const ctx: MathContext = {};
+  const ctx: MathContext = { ...globalConstants };
   for (let i = 0; i < numTicks; i++) {
-    for (const id of compiled.identifiers) {
+    for (const id of channelIdentifiers) {
       ctx[id] = arrays[id][i];
     }
     // We can evaluate manually to avoid overhead or just use the helper:

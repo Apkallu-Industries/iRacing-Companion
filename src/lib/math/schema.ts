@@ -34,7 +34,25 @@ export type MathExpression = z.infer<typeof MathExpressionSchema> & {
 
 const TOKEN_RE = /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|[()+\-*/,])\s*/g;
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;
-const FUNC_NAMES = new Set(["min", "max", "abs", "clamp"]);
+const FUNC_NAMES = new Set([
+  "min",
+  "max",
+  "abs",
+  "clamp",
+  "sin",
+  "cos",
+  "tan",
+  "asin",
+  "acos",
+  "atan",
+  "sqrt",
+  "log",
+  "log10",
+  "exp",
+  "floor",
+  "ceil",
+  "round",
+]);
 
 export type MathExpressionValidation = {
   ok: boolean;

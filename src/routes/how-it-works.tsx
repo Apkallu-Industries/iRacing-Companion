@@ -37,24 +37,33 @@ function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="hairline-b">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 relative">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
               <Activity className="h-4 w-4" />
             </div>
             <span className="font-mono text-sm tracking-wider">APEXTRACE</span>
           </Link>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link to="/" className="rounded-sm px-3 py-1.5 hover:bg-accent">
+
+          {/* Centered navigation links in the middle */}
+          <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-4 text-sm">
+            <Link to="/" className="rounded-sm px-3 py-1.5 hover:bg-accent transition-colors">
               Home
             </Link>
-            <Link
-              to="/auth"
-              className="rounded-sm bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:opacity-90"
-            >
-              Get started
+            <Link to="/live" className="rounded-sm px-3 py-1.5 hover:bg-accent transition-colors">
+              Live
+            </Link>
+            <Link to="/sessions" className="rounded-sm px-3 py-1.5 hover:bg-accent transition-colors">
+              Sessions
             </Link>
           </nav>
+
+          <Link
+            to="/auth"
+            className="rounded-sm bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Get started
+          </Link>
         </div>
       </header>
 

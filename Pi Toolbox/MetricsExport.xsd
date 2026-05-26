@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema targetNamespace="http://schemas.cosworth.com/tbx.metricsexport/v2"
+		   xmlns="http://schemas.cosworth.com/tbx.metricsexport/v2"
+		   xmlns:tns="http://schemas.cosworth.com/tbx.metricsexport/v2"
+		   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		   attributeFormDefault="unqualified"
+		   elementFormDefault="qualified">
+
+	<xs:element name="Outings" type="tns:Outings" />
+
+	<xs:complexType name="Outings">
+		<xs:sequence>
+			<xs:element name="Outing" type="tns:Outing" maxOccurs="unbounded" minOccurs="0">
+				<xs:keyref name="regionToRegionKeyRef" refer="regionKey">
+					<xs:selector xpath="tns:Metrics/tns:Metric/tns:Result" />
+					<xs:field xpath="@Region" />
+				</xs:keyref>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="Outing">
+		<xs:sequence>
+			<xs:element name="Properties">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Property" type="tns:Property" maxOccurs="unbounded" minOccurs="0" />
+					</xs:sequence>
+				</xs:complexType>
+				<xs:unique name="property_name_unique">
+					<xs:selector xpath="tns:Property"/>
+					<xs:field xpath="@Name"/>
+				</xs:unique>
+			</xs:element>
+			<xs:element name="Regions">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Region" type="tns:Region" maxOccurs="unbounded" minOccurs="0" />
+					</xs:sequence>
+				</xs:complexType>
+				<xs:unique name="region_id_unique">
+					<xs:selector xpath="tns:Region"/>
+					<xs:field xpath="@Id"/>
+				</xs:unique>
+				<xs:key name="regionKey">
+					<xs:selector xpath="tns:Region" />
+					<xs:field xpath="@Id" />
+				</xs:key>
+			</xs:element>
+			<xs:element name="Metrics">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Metric" type="tns:Metric" maxOccurs="unbounded" minOccurs="0">
+							<xs:unique name="result_region_unique">
+								<xs:selector xpath="tns:Result"/>
+								<xs:field xpath="@Region"/>
+							</xs:unique>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute type="xs:string" name="Caption" use="optional"/>
+	</xs:complexType>
+
+	<xs:complexType name="Property">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute type="xs:string" name="Name" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">
+							The property name, e.g. "Driver name".
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute type="xs:string" name="Value" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">
+							The property value.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="Region">
+		<xs:sequence>
+			<xs:element name="Region" type="Region" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute type="xs:integer" name="Id" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">
+							A unique identifier for the region.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+		<xs:attribute type="xs:string" name="Name" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">
+							The region name e.g. "Lap 1".
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="Metric">
+		<xs:sequence>
+			<xs:element name="Result" type="tns:Result" maxOccurs="unbounded" minOccurs="0" />
+		</xs:sequence>
+		<xs:attribute type="xs:string" name="Name" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">
+					The name of the metric.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute type="xs:string" name="Unit" use="optional">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">
+					The units in which the metric values are exposed.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="Result">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute type="xs:integer" name="Region" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">
+							The id of the region corresponding to this result.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute type="xs:double" name="Value" use="optional">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">
+							The value, in the units specified on the metric.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

@@ -51,40 +51,51 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <nav className="hairline-b flex h-12 items-center px-6">
+      <nav className="hairline-b flex h-12 items-center justify-between px-6 relative">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <Activity className="h-3.5 w-3.5" />
           </div>
           <span className="font-mono text-xs tracking-wider">PIT WALL</span>
         </div>
-        <div className="ml-auto flex items-center gap-4 text-xs">
-          <Link to="/live" className="hover:text-primary">
+
+        {/* Centered navigation links in the middle */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-5 text-xs">
+          <Link to="/live" className="hover:text-primary transition-colors">
             Live
           </Link>
-          <Link to="/lab/lapfile" className="hover:text-primary">
+          <Link to="/lab/lapfile" className="hover:text-primary transition-colors">
             Lab
           </Link>
-          <Link to="/sessions" className="hover:text-primary">
+          <Link to="/sessions" className="hover:text-primary transition-colors">
             Sessions
           </Link>
-          <Link to="/how-it-works" className="hover:text-primary">
+          <Link to="/how-it-works" className="hover:text-primary transition-colors">
             How it works
           </Link>
-          <Link to="/roadmap" className="hover:text-primary">
+          <Link to="/roadmap" className="hover:text-primary transition-colors">
             Roadmap
           </Link>
           <Link
             to="/settings"
-            className="flex items-center gap-1.5 hover:text-primary transition-all group text-muted-foreground"
+            className="flex items-center gap-1.5 hover:text-primary transition-colors group text-muted-foreground"
             title="Settings"
           >
             <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90" />
             <span>Settings</span>
           </Link>
+        </div>
+
+        {/* Right action button */}
+        <div className="flex items-center gap-4 text-xs">
+          {/* Mini fallback menu for mobile screens */}
+          <div className="md:hidden flex items-center gap-3 mr-2">
+            <Link to="/live" className="hover:text-primary">Live</Link>
+            <Link to="/sessions" className="hover:text-primary">Sessions</Link>
+          </div>
           <Link
             to="/auth"
-            className="rounded-sm bg-primary px-3 py-1 text-primary-foreground hover:opacity-90"
+            className="rounded-sm bg-primary px-3 py-1 text-primary-foreground hover:opacity-90 transition-opacity"
           >
             Sign in
           </Link>

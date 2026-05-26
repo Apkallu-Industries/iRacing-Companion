@@ -15,7 +15,7 @@ const { spawn } = require("child_process");
 // Check if we are running in local development mode
 const isDev = process.argv.includes("--dev") || process.env.DEV === "1";
 const DASHBOARD_URL = isDev
-  ? "http://localhost:3000/live"
+  ? "http://127.0.0.1:8080/live"
   : "https://iracing-companion.lovable.app/live";
 
 // Use a single source-of-truth bridge directory (local-bridge) so the desktop
