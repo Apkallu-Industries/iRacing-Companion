@@ -313,9 +313,55 @@ function mapTelemetry(v, session) {
     diffMap: v.dcDiffEntry ?? 0,
     airTempC: weekend?.WeekendOptions?.AirTemp ?? 0,
     trackTempC: weekend?.WeekendOptions?.TrackTemp ?? 0,
+    liveAirTempC: v.AirTemp ?? weekend?.WeekendOptions?.AirTemp ?? 0,
+    liveTrackTempC: v.TrackTemp ?? weekend?.WeekendOptions?.TrackTemp ?? 0,
+    airDensity: v.AirDensity ?? 0,
+    airPressure: v.AirPressure ?? 101325,
+    windVel: v.WindVel ?? 0,
+    windDir: v.WindDir ?? 0,
+    trackWetness: v.TrackWetness ?? 0,
     sof: session?.SessionInfo?.Sessions?.[0]?.ResultsFastestLap?.[0]?.FastestLap ?? 0,
     myCarIdx: driverInfo?.DriverCarIdx ?? -1,
     competitors: getCompetitors(v, session),
+
+    /**
+     * High-value extras forwarded from iRacing shared memory.
+     * These are optional — only populated when the car/session exports the channel.
+     * The UI/AI engines read these via t.extras[key].
+     */
+    extras: {
+      // Yaw rate (rad/s) — body rotation, useful for detecting oversteer/snap
+      YawRate: v.YawRate ?? 0,
+      // Yaw (rad) — cumulative yaw angle
+      Yaw: v.Yaw ?? 0,
+      // Front-left shock deflection (m) — damper travel, bump/rebound indicator
+      LFshockDefl: v.LFshockDefl ?? v.LFshockDefl_ST ?? 0,
+      RFshockDefl: v.RFshockDefl ?? v.RFshockDefl_ST ?? 0,
+      LRshockDefl: v.LRshockDefl ?? v.LRshockDefl_ST ?? 0,
+      RRshockDefl: v.RRshockDefl ?? v.RRshockDefl_ST ?? 0,
+      // Brake line pressure per corner (Pa) — braking trace, bias indicator
+      BrakeLinePressureLF: v.LFbrakeLinePress ?? 0,
+      BrakeLinePressureRF: v.RFbrakeLinePress ?? 0,
+      BrakeLinePressureLR: v.LRbrakeLinePress ?? 0,
+      BrakeLinePressureRR: v.RRbrakeLinePress ?? 0,
+      // Tyre lateral/longitudinal force (N) — if car supports it
+      LFtireForceLatN: v.LFtireForceLatN ?? 0,
+      RFtireForceLatN: v.RFtireForceLatN ?? 0,
+      // Wheel speed per corner (rad/s) — wheel lock detection
+      LFwheelSpeed: v.LFwheelSpeed ?? 0,
+      RFwheelSpeed: v.RFwheelSpeed ?? 0,
+      LRwheelSpeed: v.LRwheelSpeed ?? 0,
+      RRwheelSpeed: v.RRwheelSpeed ?? 0,
+      // Pitch/roll rates (rad/s)
+      Pitch: v.Pitch ?? 0,
+      Roll: v.Roll ?? 0,
+      PitchRate: v.PitchRate ?? 0,
+      RollRate: v.RollRate ?? 0,
+      // Velocity components (m/s) in body frame
+      VelocityX: v.VelocityX ?? 0,
+      VelocityY: v.VelocityY ?? 0,
+      VelocityZ: v.VelocityZ ?? 0,
+    },
   };
 }
 

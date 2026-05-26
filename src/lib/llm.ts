@@ -121,15 +121,16 @@ export async function dispatchAdvisorCall(data: any): Promise<any> {
   const wsCtx = buildWorkspaceContext();
 
   if (llmProvider === "cloud") {
-    return advisorCall({ data });
+    // Cloud server functions run server-side and can't read the browser store,
+    // so we inject wsCtx as a field inside data for buildAdvisorUserMessage to pick up.
+    return advisorCall({ data: { ...data, wsCtx } });
   }
 
   try {
     const system = getAdvisorSystemPrompt(data) + wsCtx;
-    const user = buildAdvisorUserMessage(data);
+    const user = buildAdvisorUserMessage({ ...data, wsCtx });
     const resultObj = await callLocalOpenAI(system, user, ADVISOR_SCHEMA);
 
-    // The component expects { result: { mode, headline, summary, tips... } }
     if (!resultObj.tips || !Array.isArray(resultObj.tips)) {
       throw new Error("Invalid format from local LLM");
     }
@@ -140,7 +141,6 @@ export async function dispatchAdvisorCall(data: any): Promise<any> {
     };
   } catch (err) {
     console.error("[Local LLM] Advisor failure:", err);
-    // Returning error will show up in the UI
     return { error: err instanceof Error ? err.message : "Local LLM failed to respond correctly." };
   }
 }
@@ -184,12 +184,28 @@ export async function dispatchLiveCoach(data: any): Promise<any> {
   const { llmProvider } = useWorkbench.getState();
   const wsCtx = buildWorkspaceContext();
 
+  // Enrich context with any available bridge extras (non-zero values only)
+  const extrasCtx = data.context?.extras;
+  const enrichedContext = {
+    ...data.context,
+    ...(extrasCtx && extrasCtx.peakYawRateRads > 0
+      ? {
+          extras: {
+            peakYawRateRads: extrasCtx.peakYawRateRads,
+            peakShockFL: extrasCtx.peakShockFL,
+            maxBrakeLinePressTotal: extrasCtx.maxBrakeLinePressTotal,
+          },
+        }
+      : {}),
+  };
+  const enrichedData = { ...data, context: enrichedContext };
+
   if (llmProvider === "cloud") {
-    return liveCoach({ data }); // Cloud fallback via Lovable
+    return liveCoach({ data: enrichedData });
   }
 
   try {
-    const user = buildLiveCoachUserMessage(data);
+    const user = buildLiveCoachUserMessage(enrichedData);
     const resultObj = await callLocalOpenAI(LIVE_COACH_SYSTEM + wsCtx, user, LIVE_COACH_SCHEMA);
 
     // Force tone to match the rules layer (model can drift).

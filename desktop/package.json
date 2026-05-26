@@ -1,17 +1,20 @@
 {
   "name": "pit-wall-desktop",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Pit Wall Desktop — iRacing telemetry workbench with bundled local bridge.",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
+    "sync-bridge": "node ./scripts/copy-bridge.js",
+    "prestart": "node ./scripts/copy-bridge.js",
     "prepackage": "node ./scripts/copy-bridge.js",
-    "package": "electron-packager . \"Pit Wall\" --platform=win32 --arch=x64 --out=dist --overwrite",
+    "package": "electron-packager . \"Pit Wall\" --platform=win32 --arch=x64 --out=dist --overwrite --app-version=$npm_package_version --ignore=desktop/dist --ignore=desktop/node_modules",
+    "package:dir": "electron-packager . \"Pit Wall\" --platform=win32 --arch=x64 --out=dist --overwrite --no-prune",
     "postpackage": "node ./scripts/remove-bridge.js"
   },
   "private": true,
-  "author": "Pit Wall",
+  "author": "Apkallu Industries",
   "license": "UNLICENSED",
   "devDependencies": {
     "@electron/packager": "^20.0.0",

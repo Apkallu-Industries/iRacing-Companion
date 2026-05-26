@@ -161,23 +161,12 @@ export function AICoach({
       const text = resultDetailed
         ? renderDetailedForSpeech(result as DetailedResult)
         : renderConciseForSpeech(result as ConciseResult);
-      const resp = await speakText({
-        data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId },
-      });
-      const r = resp as { error?: string; audioBase64?: string; mime?: string };
-      if (r.error || !r.audioBase64) {
-        setTtsError(r.error ?? "Voice unavailable");
-        return;
-      }
-      const audio = new Audio(`data:${r.mime ?? "audio/mpeg"};base64,${r.audioBase64}`);
-      audio.onended = () => setSpeaking(false);
-      audio.onerror = () => {
-        setTtsError("Playback failed");
-        setSpeaking(false);
-      };
-      await audio.play();
+      const { speak: ttsSpeak } = await import("@/lib/tts.client");
+      const err = await ttsSpeak(text);
+      if (err) setTtsError(err);
     } catch (e) {
       setTtsError(e instanceof Error ? e.message : "TTS failed");
+    } finally {
       setSpeaking(false);
     }
   };

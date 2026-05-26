@@ -92,6 +92,12 @@ interface WorkbenchState {
   elevenLabsVoiceId: string;
   setElevenLabsApiKey: (key: string) => void;
   setElevenLabsVoiceId: (voiceId: string) => void;
+  /** MediaDevices deviceId for audio output (where ElevenLabs plays). Empty = system default. */
+  audioOutputDeviceId: string;
+  setAudioOutputDeviceId: (id: string) => void;
+  /** MediaDevices deviceId for microphone input (voice-to-agent). Empty = system default. */
+  micDeviceId: string;
+  setMicDeviceId: (id: string) => void;
 
   subscriptionPlan: SubscriptionPlan;
   setSubscriptionPlan: (plan: SubscriptionPlan) => void;
@@ -183,6 +189,10 @@ export const useWorkbench = create<WorkbenchState>()(
       elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
       setElevenLabsApiKey: (key: string) => set({ elevenLabsApiKey: key }),
       setElevenLabsVoiceId: (voiceId: string) => set({ elevenLabsVoiceId: voiceId }),
+      audioOutputDeviceId: "",
+      setAudioOutputDeviceId: (id: string) => set({ audioOutputDeviceId: id }),
+      micDeviceId: "",
+      setMicDeviceId: (id: string) => set({ micDeviceId: id }),
 
       liveTrack: "",
       liveCar: "",
@@ -225,6 +235,8 @@ export const useWorkbench = create<WorkbenchState>()(
         llmApiKey: state.llmApiKey,
         elevenLabsApiKey: state.elevenLabsApiKey,
         elevenLabsVoiceId: state.elevenLabsVoiceId,
+        audioOutputDeviceId: state.audioOutputDeviceId,
+        micDeviceId: state.micDeviceId,
         mathExpressions: state.mathExpressions,
         activeWorkspace: state.activeWorkspace,
       }),

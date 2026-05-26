@@ -26,6 +26,17 @@ export const Route = createFileRoute("/")({
         content:
           "Live dashboard + lap-file workbench for iRacing. Telemetry on track, analysis off track.",
       },
+      {
+        property: "og:image",
+        content: "https://iracing-companion.lovable.app/pit-wall-team.png",
+      },
+      { property: "og:image:width", content: "1792" },
+      { property: "og:image:height", content: "1024" },
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:image",
+        content: "https://iracing-companion.lovable.app/pit-wall-team.png",
+      },
     ],
     links: [{ rel: "canonical", href: "https://iracing-companion.lovable.app/" }],
     scripts: [
@@ -142,6 +153,35 @@ function LandingPage() {
             Jump to install instructions
           </a>
         </p>
+      </section>
+
+      {/* ── Hero image ── */}
+      <section className="mx-auto max-w-6xl px-6 pb-16 -mt-6">
+        <div className="relative overflow-hidden rounded-xl border border-border/40 shadow-2xl shadow-primary/10">
+          {/* Top fade so the image blends into the dark background above */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background to-transparent z-10" />
+          {/* Bottom fade */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background/80 to-transparent z-10" />
+          {/* Subtle green glow border */}
+          <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-primary/20 z-20" />
+
+          <img
+            src="/pit-wall-team.png"
+            alt="Pit Wall engineering team monitoring live race telemetry on data screens"
+            className="w-full object-cover object-center"
+            style={{ maxHeight: "520px" }}
+            loading="eager"
+            decoding="async"
+          />
+
+          {/* Overlay badge */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-1.5 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Real-time telemetry · 60Hz · AI coaching
+            </span>
+          </div>
+        </div>
       </section>
 
       <section className="mx-auto max-w-5xl grid gap-4 px-6 pb-12 md:grid-cols-2">

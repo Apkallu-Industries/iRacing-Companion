@@ -3,13 +3,10 @@ import { Radar, Loader2, Volume2, ShieldAlert } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { useAuth } from "@/lib/auth";
 import { dispatchStrategyCopilot } from "@/lib/llm";
-import { speakText } from "@/lib/tts.functions";
-import { useWorkbench } from "@/lib/store";
 import type { StrategyCallResult } from "@/lib/strategy.functions";
 
 export function LiveStrategy({ t }: { t: Telemetry }) {
   const { user } = useAuth();
-  const { elevenLabsApiKey, elevenLabsVoiceId } = useWorkbench();
   const [call, setCall] = useState<StrategyCallResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
@@ -63,20 +60,12 @@ export function LiveStrategy({ t }: { t: Telemetry }) {
     setSpeaking(true);
     try {
       const text = `${c.headline}. ${c.detail}`;
-      const resp = (await speakText({
-        data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId },
-      })) as { audioBase64?: string; mime?: string; error?: string };
-
-      if (!resp.audioBase64) {
-        setSpeaking(false);
-        return;
-      }
-
-      const audio = new Audio(`data:${resp.mime ?? "audio/mpeg"};base64,${resp.audioBase64}`);
-      audio.onended = () => setSpeaking(false);
-      audio.onerror = () => setSpeaking(false);
-      await audio.play();
+      const { speak } = await import("@/lib/tts.client");
+      const err = await speak(text);
+      if (err) console.warn("[LiveStrategy] TTS:", err);
     } catch {
+      // non-fatal
+    } finally {
       setSpeaking(false);
     }
   };

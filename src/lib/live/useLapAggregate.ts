@@ -12,6 +12,12 @@ export interface LapAggregate {
   fuelAtStartL: number;
   bigGSpike: boolean;
   tireAvgC: number;
+  /** Peak yaw rate during the lap (rad/s), from bridge extras.YawRate or extras.Yaw */
+  peakYawRateRads: number;
+  /** Peak front-left shock speed / deflection if available */
+  peakShockFL: number;
+  /** Max brake line pressure (total) from extras, MPa or raw units */
+  maxBrakeLinePressTotal: number;
 }
 
 export interface LapResult extends LapAggregate {
@@ -21,6 +27,12 @@ export interface LapResult extends LapAggregate {
   s3S: number | null;
   fuelUsedL: number;
   isValid: boolean;
+  /** Snapshot of notable bridge extras at lap end (may be empty if bridge doesn't send them) */
+  extras: {
+    peakYawRateRads: number;
+    peakShockFL: number;
+    maxBrakeLinePressTotal: number;
+  };
 }
 
 function freshAggregate(now: number, fuelL: number): LapAggregate {
@@ -35,6 +47,9 @@ function freshAggregate(now: number, fuelL: number): LapAggregate {
     fuelAtStartL: fuelL,
     bigGSpike: false,
     tireAvgC: 0,
+    peakYawRateRads: 0,
+    peakShockFL: 0,
+    maxBrakeLinePressTotal: 0,
   };
 }
 
@@ -66,7 +81,20 @@ export function useLapAggregate(t: Telemetry, onLapComplete?: (lap: LapResult) =
     agg.tireSamples += 1;
     if (Math.abs(t.gLat) > 2.5 || Math.abs(t.gLon) > 2.5) agg.bigGSpike = true;
     agg.tireAvgC = agg.tireSamples > 0 ? agg.tireSum / agg.tireSamples : 0;
-  }, [t.brake, t.throttle, t.gLat, t.gLon, t.tires]);
+    // extras — bridge sends these as optional numeric channels
+    if (t.extras) {
+      const yaw = t.extras["YawRate"] ?? t.extras["Yaw"] ?? 0;
+      agg.peakYawRateRads = Math.max(agg.peakYawRateRads, Math.abs(yaw));
+      const shockFL = t.extras["LFshockDefl"] ?? t.extras["LFshockDefl_ST"] ?? 0;
+      agg.peakShockFL = Math.max(agg.peakShockFL, Math.abs(shockFL));
+      const blpTotal =
+        (t.extras["BrakeLinePressureLF"] ?? 0) +
+        (t.extras["BrakeLinePressureRF"] ?? 0) +
+        (t.extras["BrakeLinePressureLR"] ?? 0) +
+        (t.extras["BrakeLinePressureRR"] ?? 0);
+      agg.maxBrakeLinePressTotal = Math.max(agg.maxBrakeLinePressTotal, blpTotal);
+    }
+  }, [t.brake, t.throttle, t.gLat, t.gLon, t.tires, t.extras]);
 
   const handleLapComplete = useCallback(
     (lapTimeS: number) => {
@@ -87,6 +115,11 @@ export function useLapAggregate(t: Telemetry, onLapComplete?: (lap: LapResult) =
         s3S,
         fuelUsedL: fuelUsed,
         isValid,
+        extras: {
+          peakYawRateRads: agg.peakYawRateRads,
+          peakShockFL: agg.peakShockFL,
+          maxBrakeLinePressTotal: agg.maxBrakeLinePressTotal,
+        },
       };
 
       setLastLapResult(result);

@@ -23,6 +23,12 @@ interface LapAgg extends LapResult {
   diffMap: number;
   airTempC: number;
   trackTempC: number;
+  /** Live extras snapshot at lap completion: yaw, shock, brake line press */
+  liveExtras: {
+    peakYawRateRads: number;
+    peakShockFL: number;
+    maxBrakeLinePressTotal: number;
+  };
 }
 
 interface AdvisorResp {
@@ -78,6 +84,11 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
       diffMap: t.diffMap,
       airTempC: t.airTempC,
       trackTempC: t.trackTempC,
+      liveExtras: {
+        peakYawRateRads: lap.extras.peakYawRateRads,
+        peakShockFL: lap.extras.peakShockFL,
+        maxBrakeLinePressTotal: lap.extras.maxBrakeLinePressTotal,
+      },
     };
     setLaps((prevLaps) => [...prevLaps, lapAgg].slice(-10));
   };
@@ -118,6 +129,7 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
               diffMap: _dm,
               airTempC: _a,
               trackTempC: _tt,
+              liveExtras: _le,
               ...rest
             }) => rest,
           ),
@@ -130,6 +142,8 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
           rl: { tempC: latest.tires.rl.tempC, pressureBar: latest.tires.rl.pressureBar },
           rr: { tempC: latest.tires.rr.tempC, pressureBar: latest.tires.rr.pressureBar },
         },
+        // Bridge extras — only included when the bridge sends them (non-zero)
+        extrasSnapshot: latest.liveExtras.maxBrakeLinePressTotal > 0 ? latest.liveExtras : undefined,
       })) as { result?: AdvisorResp; error?: string; fallback?: "no-key" | "local" | "local-llm" };
       if (resp.error) {
         setError(resp.error);

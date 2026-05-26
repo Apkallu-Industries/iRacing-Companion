@@ -57,7 +57,6 @@ const toneStyles: Record<
 
 export function LiveCoach({ t }: { t: Telemetry }) {
   const { user } = useAuth();
-  const { elevenLabsApiKey, elevenLabsVoiceId } = useWorkbench();
   const [call, setCall] = useState<RadioCall | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -228,6 +227,8 @@ export function LiveCoach({ t }: { t: Telemetry }) {
               lapTimeS: lap.lapTimeS,
               pbS: prevPbS,
               pbStreak: newStreak,
+              // Bridge extras — present only when iRacing SDK provides them
+              extras: lap.extras,
             },
           })) as { call?: RadioCall; error?: string };
           if (resp.error) {
@@ -268,18 +269,12 @@ export function LiveCoach({ t }: { t: Telemetry }) {
       const text = c.focus
         ? `${c.headline}. ${c.detail}. Focus: ${c.focus}.`
         : `${c.headline}. ${c.detail}.`;
-      const resp = (await speakText({
-        data: { text, apiKey: elevenLabsApiKey, voiceId: elevenLabsVoiceId },
-      })) as { audioBase64?: string; mime?: string; error?: string };
-      if (!resp.audioBase64) {
-        setSpeaking(false);
-        return;
-      }
-      const audio = new Audio(`data:${resp.mime ?? "audio/mpeg"};base64,${resp.audioBase64}`);
-      audio.onended = () => setSpeaking(false);
-      audio.onerror = () => setSpeaking(false);
-      await audio.play();
+      const { speak } = await import("@/lib/tts.client");
+      const err = await speak(text);
+      if (err) console.warn("[LiveCoach] TTS:", err);
     } catch {
+      // non-fatal
+    } finally {
       setSpeaking(false);
     }
   };

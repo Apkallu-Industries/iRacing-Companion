@@ -349,7 +349,9 @@ export const advisorCall = createServerFn({ method: "POST" })
       if (!apiKey) {
         return { result: localFallback(data), fallback: "no-key" };
       }
-      const userMsg = buildAdvisorUserMessage(data);
+      // wsCtx and extrasSnapshot are injected by llm.ts for the cloud path
+      const { wsCtx, extrasSnapshot, ...coreData } = data as any;
+      const userMsg = buildAdvisorUserMessage({ ...coreData, wsCtx, extrasSnapshot });
       try {
         const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -357,7 +359,7 @@ export const advisorCall = createServerFn({ method: "POST" })
           body: JSON.stringify({
             model: "google/gemini-2.5-pro",
             messages: [
-              { role: "system", content: getAdvisorSystemPrompt(data) },
+              { role: "system", content: getAdvisorSystemPrompt(coreData) },
               { role: "user", content: userMsg },
             ],
             tools: [{ type: "function", function: ADVISOR_SCHEMA }],
