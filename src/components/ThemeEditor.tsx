@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Palette, RotateCcw, Upload, Download, Share2, Loader2 } from "lucide-react";
 import { z } from "zod";
 import {
@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/lib/themeContext";
+import { LAYOUT_PROFILES } from "@/lib/layoutProfiles";
 import {
   DARK_THEME,
   PRESETS,
@@ -59,7 +60,7 @@ const themeFileSchema = z.union([
 ]);
 
 export function ThemeEditor() {
-  const { theme, setToken, setTheme, reset } = useTheme();
+  const { theme, setToken, setTheme, reset, layout, setLayout } = useTheme();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("editor");
@@ -275,22 +276,55 @@ export function ThemeEditor() {
           <TabsContent value="editor" className="mt-0 flex flex-1 flex-col overflow-hidden">
             <div className="px-4 pt-3">
               <div className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-                Presets
+                UI Style
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setTheme(p.theme)}
-                    className="flex items-center gap-2 rounded-sm border border-border bg-panel-2 px-2 py-1.5 text-left text-xs hover:border-primary"
-                  >
-                    <span className="flex h-4 w-4 overflow-hidden rounded-sm border border-border">
-                      <span className="flex-1" style={{ background: p.theme.background }} />
-                      <span className="flex-1" style={{ background: p.theme.primary }} />
-                    </span>
-                    {p.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-1 gap-2 mb-4">
+                {LAYOUT_PROFILES.map((p) => {
+                  const active = layout === p.id;
+                  const matchingPreset = PRESETS.find((pr) => pr.id === p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setLayout(p.id);
+                        if (matchingPreset) setTheme(matchingPreset.theme);
+                      }}
+                      className={`relative flex items-center gap-3 text-left rounded-sm border px-3 py-2.5 text-xs transition-all ${
+                        active
+                          ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                          : "border-border bg-panel-2 hover:border-primary/50"
+                      }`}
+                    >
+                      {/* Color swatches */}
+                      <span className="flex h-8 w-8 flex-shrink-0 flex-wrap overflow-hidden rounded-sm border border-border">
+                        {p.swatches.map((c, i) => (
+                          <span
+                            key={i}
+                            className="block"
+                            style={{
+                              background: c,
+                              width: "50%",
+                              height: "50%",
+                            }}
+                          />
+                        ))}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono font-bold text-[11px] leading-tight truncate">
+                          {p.label}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground mt-0.5 leading-tight">
+                          {p.subtitle}
+                        </div>
+                      </div>
+                      {active && (
+                        <span className="text-[8px] font-bold text-primary uppercase tracking-widest flex-shrink-0">
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

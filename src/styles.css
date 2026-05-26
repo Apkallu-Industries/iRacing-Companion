@@ -1,4 +1,4 @@
-@import "tailwindcss" source(none);
+﻿@import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
 
@@ -236,4 +236,251 @@
 .is-electron header,
 .is-electron nav {
   padding-right: 180px !important;
+}
+
+/* ================================================================
+   LAYOUT DENSITY PROFILES
+   Applied via data-layout attribute on <html>.
+   5 styles matching UI-Styles.png reference (A–E).
+   ================================================================ */
+
+/* Default root values — Style A (MoTeC) is the baseline */
+:root {
+  --layout-radius: 2px;
+  --layout-radius-lg: 3px;
+  --layout-pad-xs: 3px;
+  --layout-pad-sm: 6px;
+  --layout-pad-md: 8px;
+  --layout-pad-lg: 12px;
+  --layout-pad-xl: 16px;
+  --layout-gap: 6px;
+  --layout-gap-lg: 10px;
+  --layout-font-data: 12px;
+  --layout-font-label: 9px;
+  --layout-font-heading: 11px;
+  --layout-nav-height: 38px;
+  --layout-card-border: 1px;
+  --layout-card-shadow: none;
+  --layout-card-bg: var(--panel);
+}
+
+/* ── A: MoTeC / Professional Dark ──
+   Dense engineering layout. Sharp corners, tight spacing.
+   Horizontal nav with uppercase sections. */
+[data-layout="motec"] {
+  --layout-radius: 2px;
+  --layout-radius-lg: 3px;
+  --layout-pad-xs: 3px;
+  --layout-pad-sm: 6px;
+  --layout-pad-md: 8px;
+  --layout-pad-lg: 12px;
+  --layout-pad-xl: 16px;
+  --layout-gap: 6px;
+  --layout-gap-lg: 10px;
+  --layout-font-data: 12px;
+  --layout-font-label: 9px;
+  --layout-font-heading: 11px;
+  --layout-nav-height: 38px;
+}
+
+/* ── B: Modern Flat Dark ──
+   Clean and contemporary. Slightly more space than MoTeC,
+   softer corners, lighter label weight. */
+[data-layout="modern"] {
+  --layout-radius: 6px;
+  --layout-radius-lg: 8px;
+  --layout-pad-xs: 4px;
+  --layout-pad-sm: 8px;
+  --layout-pad-md: 12px;
+  --layout-pad-lg: 16px;
+  --layout-pad-xl: 20px;
+  --layout-gap: 10px;
+  --layout-gap-lg: 14px;
+  --layout-font-data: 12px;
+  --layout-font-label: 10px;
+  --layout-font-heading: 12px;
+  --layout-nav-height: 44px;
+}
+
+/* ── C: Studio Black ──
+   Maximum contrast. Bold, large data readouts.
+   Pure black background, zero radius, aggressive spacing. */
+[data-layout="studio"] {
+  --layout-radius: 0px;
+  --layout-radius-lg: 0px;
+  --layout-pad-xs: 4px;
+  --layout-pad-sm: 8px;
+  --layout-pad-md: 10px;
+  --layout-pad-lg: 14px;
+  --layout-pad-xl: 18px;
+  --layout-gap: 8px;
+  --layout-gap-lg: 12px;
+  --layout-font-data: 14px;
+  --layout-font-label: 10px;
+  --layout-font-heading: 12px;
+  --layout-nav-height: 40px;
+}
+
+/* ── D: Light Engineer ──
+   Professional light mode. Comfortable spacing for long
+   analysis sessions. Subtle shadows, rounded corners. */
+[data-layout="engineer"] {
+  --layout-radius: 8px;
+  --layout-radius-lg: 12px;
+  --layout-pad-xs: 6px;
+  --layout-pad-sm: 10px;
+  --layout-pad-md: 14px;
+  --layout-pad-lg: 18px;
+  --layout-pad-xl: 24px;
+  --layout-gap: 12px;
+  --layout-gap-lg: 16px;
+  --layout-font-data: 13px;
+  --layout-font-label: 10px;
+  --layout-font-heading: 13px;
+  --layout-nav-height: 48px;
+  --layout-card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* ── E: Carbon UI ──
+   F1/motorsport. Aggressive, tight, carbon-fiber feel.
+   Red accents, zero radius, bold uppercase everything. */
+[data-layout="carbon"] {
+  --layout-radius: 0px;
+  --layout-radius-lg: 2px;
+  --layout-pad-xs: 3px;
+  --layout-pad-sm: 6px;
+  --layout-pad-md: 8px;
+  --layout-pad-lg: 12px;
+  --layout-pad-xl: 16px;
+  --layout-gap: 6px;
+  --layout-gap-lg: 10px;
+  --layout-font-data: 13px;
+  --layout-font-label: 9px;
+  --layout-font-heading: 11px;
+  --layout-nav-height: 40px;
+}
+
+/* ── Layout-aware utility classes ── */
+@layer base {
+  /* Cards/panels respond to layout density */
+  .layout-card {
+    background: var(--layout-card-bg);
+    border: var(--layout-card-border) solid var(--border);
+    border-radius: var(--layout-radius-lg);
+    padding: var(--layout-pad-lg);
+    box-shadow: var(--layout-card-shadow);
+  }
+
+  .layout-card-sm {
+    background: var(--layout-card-bg);
+    border: var(--layout-card-border) solid var(--border);
+    border-radius: var(--layout-radius);
+    padding: var(--layout-pad-md);
+    box-shadow: var(--layout-card-shadow);
+  }
+
+  .layout-pad { padding: var(--layout-pad-md); }
+  .layout-pad-sm { padding: var(--layout-pad-sm); }
+  .layout-pad-lg { padding: var(--layout-pad-lg); }
+  .layout-pad-xl { padding: var(--layout-pad-xl); }
+  .layout-gap { gap: var(--layout-gap); }
+  .layout-gap-lg { gap: var(--layout-gap-lg); }
+
+  /* Data typography */
+  .layout-data {
+    font-family: var(--font-mono);
+    font-size: var(--layout-font-data);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+  }
+
+  .layout-label {
+    font-size: var(--layout-font-label);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-foreground);
+    font-weight: 600;
+  }
+
+  .layout-heading {
+    font-family: var(--font-mono);
+    font-size: var(--layout-font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+
+  /* ── Per-style radius overrides ──
+     Forces all Tailwind rounded classes to match the selected style */
+  [data-layout="motec"] .rounded-2xl,
+  [data-layout="motec"] .rounded-xl,
+  [data-layout="motec"] .rounded-lg {
+    border-radius: 3px !important;
+  }
+
+  [data-layout="studio"] .rounded-2xl,
+  [data-layout="studio"] .rounded-xl,
+  [data-layout="studio"] .rounded-lg,
+  [data-layout="studio"] .rounded-md {
+    border-radius: 0px !important;
+  }
+
+  [data-layout="carbon"] .rounded-2xl,
+  [data-layout="carbon"] .rounded-xl,
+  [data-layout="carbon"] .rounded-lg {
+    border-radius: 2px !important;
+  }
+
+  /* ── Light mode overrides ──
+     Style D (engineer) uses light backgrounds — set color-scheme */
+  [data-layout="engineer"] {
+    color-scheme: light;
+  }
+
+  /* ── Nav tightening for dense profiles ── */
+  [data-layout="motec"] header,
+  [data-layout="studio"] header,
+  [data-layout="carbon"] header {
+    min-height: var(--layout-nav-height);
+    padding-top: var(--layout-pad-xs);
+    padding-bottom: var(--layout-pad-xs);
+  }
+
+  /* ── Carbon: uppercase all nav links and labels ── */
+  [data-layout="carbon"] nav,
+  [data-layout="carbon"] header {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Studio Black: bold all data values ── */
+  [data-layout="studio"] .font-mono {
+    font-weight: 700;
+  }
+
+  /* ── Remove glassmorphism in MoTeC/Studio/Carbon ── */
+  [data-layout="motec"] .backdrop-blur-sm,
+  [data-layout="motec"] .backdrop-blur-md,
+  [data-layout="motec"] .backdrop-blur-lg,
+  [data-layout="studio"] .backdrop-blur-sm,
+  [data-layout="studio"] .backdrop-blur-md,
+  [data-layout="studio"] .backdrop-blur-lg,
+  [data-layout="carbon"] .backdrop-blur-sm,
+  [data-layout="carbon"] .backdrop-blur-md,
+  [data-layout="carbon"] .backdrop-blur-lg {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* ── Remove decorative animations in dense styles ── */
+  [data-layout="motec"] .animate-pulse:not([data-critical]),
+  [data-layout="studio"] .animate-pulse:not([data-critical]),
+  [data-layout="carbon"] .animate-pulse:not([data-critical]) {
+    animation: none !important;
+  }
+
+  /* ── Carbon: red border accent on primary panels ── */
+  [data-layout="carbon"] .layout-card {
+    border-left: 2px solid var(--primary);
+  }
 }

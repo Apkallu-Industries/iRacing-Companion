@@ -1,4 +1,4 @@
-export type ThemeTokenKey =
+﻿export type ThemeTokenKey =
   | "background"
   | "foreground"
   | "panel"
@@ -185,92 +185,166 @@ export const THEME_GROUPS: ThemeGroup[] = [
   },
 ];
 
-// Hex defaults derived from the dark MoTeC palette in styles.css.
+/* =============================================
+   Style A - MoTeC / Professional Dark
+   Classic engineering. Dense, dark, cyan accent.
+   ============================================= */
 export const DARK_THEME: Required<ThemeMap> = {
-  background: "#1a1d21",
-  foreground: "#e6e7ea",
-  panel: "#22262b",
-  "panel-2": "#272b30",
-  rail: "#15181c",
-  border: "#2f343a",
-  "border-strong": "#3c424a",
+  background: "#0f1114",
+  foreground: "#e2e4e8",
+  panel: "#181b20",
+  "panel-2": "#1e2228",
+  rail: "#0b0d10",
+  border: "#282d34",
+  "border-strong": "#3a4048",
   primary: "#22d3ee",
   "primary-foreground": "#0c1014",
-  muted: "#272b30",
-  "muted-foreground": "#8b929b",
-  accent: "#343a42",
-  destructive: "#e5484d",
+  muted: "#1e2228",
+  "muted-foreground": "#7a828c",
+  accent: "#282d34",
+  destructive: "#ef4444",
   "ch-speed": "#22d3ee",
   "ch-throttle": "#22c55e",
   "ch-brake": "#ef4444",
   "ch-rpm": "#facc15",
-  "ch-gear": "#e6e7ea",
+  "ch-gear": "#e2e4e8",
   "ch-steer": "#d946ef",
   "ch-glat": "#fb923c",
   "ch-glong": "#60a5fa",
-  "grid-major": "#3a4048",
-  "grid-minor": "#272b30",
+  "grid-major": "#282d34",
+  "grid-minor": "#1e2228",
 };
 
-export const LIGHT_THEME: Required<ThemeMap> = {
-  background: "#f7f7f8",
-  foreground: "#0f1115",
-  panel: "#ffffff",
-  "panel-2": "#f1f2f4",
-  rail: "#eaecef",
-  border: "#d8dbe0",
-  "border-strong": "#b9bec6",
-  primary: "#0891b2",
-  "primary-foreground": "#ffffff",
-  muted: "#eef0f2",
-  "muted-foreground": "#5b6370",
-  accent: "#e2e5ea",
-  destructive: "#dc2626",
-  "ch-speed": "#0891b2",
-  "ch-throttle": "#16a34a",
-  "ch-brake": "#dc2626",
-  "ch-rpm": "#ca8a04",
-  "ch-gear": "#0f1115",
-  "ch-steer": "#a21caf",
-  "ch-glat": "#ea580c",
-  "ch-glong": "#2563eb",
-  "grid-major": "#cfd3d9",
-  "grid-minor": "#e6e8ec",
+/* =============================================
+   Style B - Modern Flat Dark
+   Clean, minimal, contemporary. Blue/violet accents.
+   ============================================= */
+export const MODERN_FLAT_THEME: Required<ThemeMap> = {
+  background: "#111318",
+  foreground: "#d8dce4",
+  panel: "#191d24",
+  "panel-2": "#1f242c",
+  rail: "#0d0f14",
+  border: "#252a34",
+  "border-strong": "#343c48",
+  primary: "#60a5fa",
+  "primary-foreground": "#0c1020",
+  muted: "#1f242c",
+  "muted-foreground": "#6b7280",
+  accent: "#252a34",
+  destructive: "#f87171",
+  "ch-speed": "#60a5fa",
+  "ch-throttle": "#34d399",
+  "ch-brake": "#f87171",
+  "ch-rpm": "#fbbf24",
+  "ch-gear": "#d8dce4",
+  "ch-steer": "#a78bfa",
+  "ch-glat": "#fb923c",
+  "ch-glong": "#38bdf8",
+  "grid-major": "#252a34",
+  "grid-minor": "#1a1f28",
 };
 
-export const HIGH_CONTRAST_THEME: Required<ThemeMap> = {
-  ...DARK_THEME,
+/* =============================================
+   Style C - Studio Black
+   Maximum contrast, bold. Red/orange primary.
+   ============================================= */
+export const STUDIO_BLACK_THEME: Required<ThemeMap> = {
   background: "#000000",
-  panel: "#0a0a0a",
-  "panel-2": "#101010",
-  rail: "#000000",
   foreground: "#ffffff",
-  border: "#5a5a5a",
-  "border-strong": "#8a8a8a",
-  primary: "#00f0ff",
-  "muted-foreground": "#bdbdbd",
+  panel: "#0a0a0e",
+  "panel-2": "#111115",
+  rail: "#000000",
+  border: "#1e1e24",
+  "border-strong": "#2e2e36",
+  primary: "#ff3b30",
+  "primary-foreground": "#ffffff",
+  muted: "#111115",
+  "muted-foreground": "#888892",
+  accent: "#1a1a20",
+  destructive: "#ff453a",
+  "ch-speed": "#00d4ff",
+  "ch-throttle": "#30d158",
+  "ch-brake": "#ff3b30",
+  "ch-rpm": "#ff9f0a",
+  "ch-gear": "#ffffff",
+  "ch-steer": "#bf5af2",
+  "ch-glat": "#ff9500",
+  "ch-glong": "#0a84ff",
+  "grid-major": "#222228",
+  "grid-minor": "#141418",
 };
 
-export const SOLAR_THEME: Required<ThemeMap> = {
-  ...DARK_THEME,
-  background: "#1a1410",
-  panel: "#221a14",
-  "panel-2": "#2a2018",
-  rail: "#120e0a",
-  foreground: "#f5e8d6",
-  primary: "#f59e0b",
-  "primary-foreground": "#1a1208",
-  border: "#3a2c20",
-  "muted-foreground": "#b8a890",
-  "ch-speed": "#fbbf24",
-  "ch-steer": "#f472b6",
+/* =============================================
+   Style D - Light Engineer
+   Professional light mode. Low eye strain.
+   ============================================= */
+export const LIGHT_THEME: Required<ThemeMap> = {
+  background: "#f5f6f8",
+  foreground: "#1a1d24",
+  panel: "#ffffff",
+  "panel-2": "#eef0f4",
+  rail: "#e8eaef",
+  border: "#d0d4dc",
+  "border-strong": "#b0b8c4",
+  primary: "#0066cc",
+  "primary-foreground": "#ffffff",
+  muted: "#eef0f4",
+  "muted-foreground": "#5c6370",
+  accent: "#dde0e8",
+  destructive: "#d32f2f",
+  "ch-speed": "#0066cc",
+  "ch-throttle": "#16a34a",
+  "ch-brake": "#d32f2f",
+  "ch-rpm": "#b8860b",
+  "ch-gear": "#1a1d24",
+  "ch-steer": "#7c3aed",
+  "ch-glat": "#c05000",
+  "ch-glong": "#1d4ed8",
+  "grid-major": "#c8ccd4",
+  "grid-minor": "#e0e4ec",
 };
+
+/* =============================================
+   Style E - Carbon UI
+   F1/motorsport inspired. Carbon + red accents.
+   ============================================= */
+export const CARBON_THEME: Required<ThemeMap> = {
+  background: "#0c0c0f",
+  foreground: "#e0e0e4",
+  panel: "#141418",
+  "panel-2": "#1a1a20",
+  rail: "#080808",
+  border: "#2a2a32",
+  "border-strong": "#3a3a44",
+  primary: "#e63322",
+  "primary-foreground": "#ffffff",
+  muted: "#1a1a20",
+  "muted-foreground": "#7a7a84",
+  accent: "#222228",
+  destructive: "#ff3b30",
+  "ch-speed": "#00bcd4",
+  "ch-throttle": "#4caf50",
+  "ch-brake": "#e63322",
+  "ch-rpm": "#ff9800",
+  "ch-gear": "#e0e0e4",
+  "ch-steer": "#e040fb",
+  "ch-glat": "#ff6b35",
+  "ch-glong": "#2196f3",
+  "grid-major": "#2a2a32",
+  "grid-minor": "#1a1a20",
+};
+
+/** Backward compat aliases */
+export const HIGH_CONTRAST_THEME = STUDIO_BLACK_THEME;
+export const SOLAR_THEME = CARBON_THEME;
 
 export const PRESETS: { id: string; label: string; theme: Required<ThemeMap> }[] = [
-  { id: "dark", label: "MoTeC Dark", theme: DARK_THEME },
-  { id: "light", label: "Daylight", theme: LIGHT_THEME },
-  { id: "hc", label: "High Contrast", theme: HIGH_CONTRAST_THEME },
-  { id: "solar", label: "Solar", theme: SOLAR_THEME },
+  { id: "motec",    label: "A - MoTeC Dark",      theme: DARK_THEME },
+  { id: "modern",   label: "B - Modern Flat",      theme: MODERN_FLAT_THEME },
+  { id: "studio",   label: "C - Studio Black",     theme: STUDIO_BLACK_THEME },
+  { id: "engineer", label: "D - Light Engineer",   theme: LIGHT_THEME },
+  { id: "carbon",   label: "E - Carbon UI",        theme: CARBON_THEME },
 ];
 
 export function applyTheme(theme: ThemeMap) {

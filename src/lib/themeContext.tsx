@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useCallback,
   useContext,
@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { applyTheme, DARK_THEME, loadLocalTheme, saveLocalTheme, type ThemeMap } from "./theme";
+import { applyLayout, loadSavedLayout, saveLayout, type LayoutProfile } from "./layoutProfiles";
 import { useAuth } from "./auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,6 +17,8 @@ interface ThemeCtx {
   setToken: (key: string, value: string) => void;
   setTheme: (theme: ThemeMap) => void;
   reset: () => void;
+  layout: LayoutProfile;
+  setLayout: (profile: LayoutProfile) => void;
 }
 
 const Ctx = createContext<ThemeCtx>({
@@ -23,18 +26,31 @@ const Ctx = createContext<ThemeCtx>({
   setToken: () => {},
   setTheme: () => {},
   reset: () => {},
+  layout: "motec",
+  setLayout: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [theme, setThemeState] = useState<ThemeMap>(() => loadLocalTheme() ?? DARK_THEME);
+  const [layout, setLayoutState] = useState<LayoutProfile>(() => loadSavedLayout());
   const hydratedFor = useRef<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Apply on every change
+  // Apply color theme on every change
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  // Apply layout profile on every change
+  useEffect(() => {
+    applyLayout(layout);
+  }, [layout]);
+
+  const setLayout = useCallback((profile: LayoutProfile) => {
+    setLayoutState(profile);
+    saveLayout(profile);
+  }, []);
 
   // Hydrate from server when user logs in
   useEffect(() => {
@@ -112,7 +128,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  return <Ctx.Provider value={{ theme, setToken, setTheme, reset }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ theme, setToken, setTheme, reset, layout, setLayout }}>{children}</Ctx.Provider>;
 }
 
 export const useTheme = () => useContext(Ctx);
