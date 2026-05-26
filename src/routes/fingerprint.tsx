@@ -9,6 +9,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/lib/fingerprint/compute";
 import { upsertFingerprint } from "@/lib/fingerprint.functions";
 import { useAuth } from "@/lib/auth";
+import { useTelemetry } from "@/lib/useTelemetry";
 
 import { formatLapTime } from "@/lib/lapfile/parser";
 import { classifyCar, type CarClass } from "@/lib/fingerprint/carClass";
@@ -170,6 +172,7 @@ function ClassScoreCard({
 
 function FingerprintPage() {
   const { user } = useAuth();
+  const live = useTelemetry(); // shared bridge
   const [fp, setFp] = useState<DriverFingerprint | null>(() => loadFingerprint());
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number; failed: number } | null>(
@@ -365,6 +368,33 @@ function FingerprintPage() {
         </Link>
       </AppHeader>
 
+      {/* Live bridge context chip */}
+      {live.connected && (
+        <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-900/50 px-4 py-1.5 font-mono text-[11px]">
+          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="font-bold text-emerald-400">CURRENTLY DRIVING</span>
+          <span className="text-zinc-500">·</span>
+          <span className="text-zinc-300">{live.car}</span>
+          <span className="text-zinc-500">@</span>
+          <span className="text-zinc-300">{live.track}</span>
+          {fp && fp.pairs.some((p) =>
+            p.track.toLowerCase().includes(live.track.toLowerCase()) ||
+            live.track.toLowerCase().includes(p.track.toLowerCase())
+          ) ? (
+            <span className="ml-2 rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300 uppercase tracking-wider">
+              ✓ Fingerprint available for this track
+            </span>
+          ) : (
+            <span className="ml-2 rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-400 uppercase tracking-wider">
+              No baseline yet — upload lapfiles to build one
+            </span>
+          )}
+          <span className="ml-auto text-zinc-600">
+            {live.fuelRemainingL.toFixed(1)}L · Lap Δ {live.deltaSec >= 0 ? "+" : ""}{live.deltaSec.toFixed(3)}s
+          </span>
+        </div>
+      )}
+
       <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 p-4">
         <div className="hairline rounded-md bg-panel p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -548,8 +578,12 @@ function FingerprintPage() {
                       const t = targets[pairKey(p.track, p.car)];
                       const gap = t ? p.bestEverS - t : null;
                       const pct = t ? (t / p.bestEverS) * 100 : null;
+                      const isLiveMatch = live.connected && (
+                        p.track.toLowerCase().includes(live.track.toLowerCase()) ||
+                        live.track.toLowerCase().includes(p.track.toLowerCase())
+                      );
                       return (
-                        <tr key={i} className="hairline-b hover:bg-accent/30">
+                        <tr key={i} className={`hairline-b hover:bg-accent/30 ${isLiveMatch ? "bg-emerald-500/5 ring-1 ring-inset ring-emerald-500/20" : ""}`}>
                           <td className="px-2 py-1 text-left">{p.track}</td>
                           <td className="px-2 py-1 text-left text-muted-foreground">{p.car}</td>
                           <td className="px-2 py-1 text-right tabular-nums">{p.fileCount}</td>

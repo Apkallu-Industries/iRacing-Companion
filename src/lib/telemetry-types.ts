@@ -28,6 +28,8 @@ export interface Telemetry {
     bestSector: 1 | 2 | 3 | null;
   };
   fuelRemainingL: number;
+  fuelUsePerHour: number;     // kg/hr ≈ L/hr (iRacing FuelUsePerHour channel)
+  lapLastLapTimeSec: number;  // last lap time in raw seconds (for arithmetic)
   lapsEstimated: number;
   tires: {
     fl: {
@@ -125,6 +127,8 @@ export const DEFAULT_TELEMETRY: Telemetry = {
   deltaSec: 0.145,
   sectors: { s1: "41.420", s2: "1:02.115", s3: null, bestSector: 1 },
   fuelRemainingL: 42.1,
+  fuelUsePerHour: 0,
+  lapLastLapTimeSec: 137.004,  // 2:17.004 in seconds
   lapsEstimated: 14.2,
   tires: {
     fl: {

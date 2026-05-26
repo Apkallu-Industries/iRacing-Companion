@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Users,
@@ -35,6 +35,8 @@ import {
 import { AppHeader } from "@/components/AppHeader";
 import { useWorkbench } from "@/lib/store";
 import { resolveLLMUrl } from "@/lib/llm";
+import { useTelemetry } from "@/lib/useTelemetry";
+import { useTeamTelemetry } from "@/lib/useTeamTelemetry";
 import {
   format,
   addHours,
@@ -123,8 +125,33 @@ function formatDuration(minutes: number): string {
 }
 
 function TeamPage() {
+  const t = useTelemetry(); // Real bridge — 60Hz local
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Team Code — shared between all drivers for multi-car Realtime relay
+  const [teamCode, setTeamCode] = useState<string>(() =>
+    typeof window !== "undefined" ? (localStorage.getItem("team_code") ?? "") : ""
+  );
+  const [teamCodeInput, setTeamCodeInput] = useState("");
+  const [showTeamCodePanel, setShowTeamCodePanel] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("team_code", teamCode);
+  }, [teamCode]);
+
+  // Subscribe to multi-driver team channel
+  const { drivers: teamDrivers, connected: teamConnected, onlineCount } = useTeamTelemetry(
+    teamCode || null
+  );
+
+  /** Generate a unique team code from race name + random suffix */
+  const generateTeamCode = () => {
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    const code = `PITWALL-${suffix}`;
+    setTeamCode(code);
+    setTeamCodeInput(code);
+  };
 
   // SimTeam Core State Variables with localStorage persistence
   const [drivers, setDrivers] = useState<Driver[]>(() => {
@@ -182,6 +209,7 @@ function TeamPage() {
   // Strategy planner calculator states
   const [calcFuelBurn, setCalcFuelBurn] = useState<number>(3.15);
   const [calcStintLaps, setCalcStintLaps] = useState<number>(22);
+  const [calcAvgLapTimeSec, setCalcAvgLapTimeSec] = useState<number>(100); // user-configurable
 
   // Sync to localStorage hooks
   useEffect(() => {
@@ -220,12 +248,21 @@ function TeamPage() {
   }, [selectedCarId]);
 
   // Interactive panels
-  const [activeTab, setActiveTab] = useState<"timeline" | "strategy" | "calc">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "strategy" | "calc" | "endurance">("timeline");
   const [isAddCarOpen, setIsAddCarOpen] = useState(false);
   const [isAddDriverOpen, setIsAddDriverOpen] = useState(false);
   const [isAddWeatherOpen, setIsAddWeatherOpen] = useState(false);
   const [isAddStintOpen, setIsAddStintOpen] = useState(false);
   const [isAddIncidentOpen, setIsAddIncidentOpen] = useState(false);
+
+  // Le Mans / Endurance config
+  const [raceDurationHours, setRaceDurationHours] = useState<number>(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("team_race_duration_h") : null;
+    return saved ? Number(saved) : 24;
+  });
+  useEffect(() => {
+    localStorage.setItem("team_race_duration_h", String(raceDurationHours));
+  }, [raceDurationHours]);
 
   // New item states
   const [newCar, setNewCar] = useState({
@@ -251,23 +288,6 @@ function TeamPage() {
     startOffset: 0,
     duration: 15,
   });
-
-  // simulated live telemetry grid
-  const [liveTelemetry, setLiveTelemetry] = useState<
-    Record<
-      string,
-      {
-        isActive: boolean;
-        driverName?: string;
-        speed?: number;
-        fuel?: number;
-        lapsEstimated?: number;
-        rpm?: number;
-        gear?: number;
-        lapsSincePit?: number;
-      }
-    >
-  >({});
 
   // Stopwatch state
   const [stopwatch, setStopwatch] = useState({
@@ -320,12 +340,56 @@ function TeamPage() {
   }, [selectedCar]);
 
   const calculatedStintDurationMin = useMemo(() => {
-    return calcStintLaps * 1.5;
-  }, [calcStintLaps]);
+    return calcStintLaps * (calcAvgLapTimeSec / 60);
+  }, [calcStintLaps, calcAvgLapTimeSec]);
 
   const raceElapsedMs = useMemo(() => {
     return differenceInMinutes(realTime, parseISO(raceStartTime)) * 60 * 1000;
   }, [realTime, raceStartTime]);
+
+  // Le Mans derived values
+  const raceDurationMs = raceDurationHours * 60 * 60 * 1000;
+  const raceRemainingMs = useMemo(() => {
+    return Math.max(0, raceDurationMs - Math.max(0, raceElapsedMs));
+  }, [raceDurationMs, raceElapsedMs]);
+  const raceProgressPct = useMemo(() => {
+    if (raceDurationMs <= 0) return 0;
+    return Math.min(100, (Math.max(0, raceElapsedMs) / raceDurationMs) * 100);
+  }, [raceElapsedMs, raceDurationMs]);
+
+  // Night/Day cycle for Le Mans (race start ~15:00 local)
+  const racePhase = useMemo(() => {
+    const startHour = parseISO(raceStartTime).getHours();
+    const elapsedH = Math.max(0, raceElapsedMs) / 3_600_000;
+    const currentHour = (startHour + elapsedH) % 24;
+    if (currentHour >= 6 && currentHour < 9) return { label: "DAWN", color: "text-orange-300", bg: "bg-orange-500/10", border: "border-orange-500/20", icon: "🌅" };
+    if (currentHour >= 9 && currentHour < 18) return { label: "DAY", color: "text-yellow-300", bg: "bg-yellow-500/10", border: "border-yellow-500/20", icon: "☀️" };
+    if (currentHour >= 18 && currentHour < 21) return { label: "DUSK", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", icon: "🌇" };
+    return { label: "NIGHT", color: "text-blue-300", bg: "bg-blue-900/20", border: "border-blue-500/20", icon: "🌙" };
+  }, [raceStartTime, raceElapsedMs]);
+
+  // Driver fatigue tracker — sum up stint durations per driver
+  const driverHoursMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const stint of stints) {
+      const start = parseISO(stint.startTime);
+      const end = parseISO(stint.endTime);
+      const hours = differenceInMinutes(end, start) / 60;
+      map[stint.driverId] = (map[stint.driverId] || 0) + hours;
+    }
+    return map;
+  }, [stints]);
+
+  // 24hr fuel planner
+  const enduranceFuelPlan = useMemo(() => {
+    if (calcFuelBurn <= 0 || calcStintLaps <= 0) return null;
+    const totalRaceSec = raceDurationHours * 3600;
+    const totalLapsEst = Math.round(totalRaceSec / calcAvgLapTimeSec);
+    const fuelPerStint = calcFuelBurn * calcStintLaps;
+    const pitStops = Math.ceil(totalLapsEst / calcStintLaps) - 1;
+    const totalFuel = calcFuelBurn * totalLapsEst;
+    return { totalLapsEst, pitStops, fuelPerStint, totalFuel };
+  }, [raceDurationHours, calcFuelBurn, calcStintLaps, calcAvgLapTimeSec]);
 
   const timelineStartTime = parseISO(raceStartTime);
   const timelineHours = 24;
@@ -416,66 +480,7 @@ function TeamPage() {
     setWeatherEvents(demoWeather);
     setIncidents(demoIncidents);
     setSelectedCarId("c1");
-
-    // Populate active live telemetry cards
-    setLiveTelemetry({
-      "44": {
-        isActive: true,
-        driverName: "Lewis Hamilton",
-        speed: 254,
-        fuel: 42.5,
-        lapsEstimated: 14,
-        rpm: 7400,
-        gear: 5,
-        lapsSincePit: 4,
-      },
-      "10": {
-        isActive: true,
-        driverName: "Max Verstappen",
-        speed: 308,
-        fuel: 32.1,
-        lapsEstimated: 8,
-        rpm: 8100,
-        gear: 6,
-        lapsSincePit: 12,
-      },
-    });
   };
-
-  // dynamic tickers to fluctuate mock telemetry data
-  useEffect(() => {
-    if (Object.keys(liveTelemetry).length === 0) return;
-    const t = setInterval(() => {
-      setLiveTelemetry((prev) => {
-        const next = { ...prev };
-        Object.keys(next).forEach((num) => {
-          const card = next[num];
-          if (!card.isActive) return;
-
-          // Randomly fluctuate RPM & speed
-          let newRpm = (card.rpm ?? 7000) + Math.round((Math.random() - 0.5) * 600);
-          let newGear = card.gear ?? 5;
-          if (newRpm >= 8200) {
-            newRpm = 5500;
-            newGear = Math.min(6, newGear + 1);
-          } else if (newRpm <= 5000) {
-            newRpm = 7500;
-            newGear = Math.max(1, newGear - 1);
-          }
-
-          next[num] = {
-            ...card,
-            rpm: newRpm,
-            gear: newGear,
-            speed: Math.round((card.speed ?? 200) + (Math.random() - 0.5) * 4),
-            fuel: Number(Math.max(0.5, (card.fuel ?? 40) - 0.015).toFixed(2)),
-          };
-        });
-        return next;
-      });
-    }, 200);
-    return () => clearInterval(t);
-  }, [liveTelemetry]);
 
   // Delete handlers
   const handleDeleteCar = (carId: string) => {
@@ -526,7 +531,15 @@ function TeamPage() {
         `- ${inc.type} occurred at ${format(parseISO(inc.startTime), "HH:mm")} for a duration of ${inc.duration} mins.`
       ).join("\n");
 
-      // 2. Build the race engineering prompt
+      // 2. Build the race engineering prompt — include live bridge conditions if available
+      const liveConditions = t.connected
+        ? `\n\nLIVE BRIDGE CONDITIONS (current session):
+- Track: ${t.track} | Car: ${t.car}
+- Air Temp: ${t.liveAirTempC?.toFixed(1) ?? t.airTempC}°C | Track Temp: ${t.liveTrackTempC?.toFixed(1) ?? t.trackTempC}°C
+- Track State: ${t.trackWetness > 0.5 ? "WET" : t.trackWetness > 0.1 ? "DAMP" : "DRY"} (wetness ${(t.trackWetness * 100).toFixed(0)}%)
+- Wind: ${t.windVel?.toFixed(1) ?? 0} m/s | SOF: ${t.sof.toLocaleString()}
+- Your car live: ${t.speedKph} kph / G${t.gear} / ${t.rpm} rpm / Fuel ${t.fuelRemainingL.toFixed(1)}L (~${t.lapsEstimated} laps)`
+        : "";
       const prompt = `You are a legendary race strategist and principal race engineer in competitive endurance motorsport. 
 Analyze the current team race schedule and timeline:
 
@@ -540,7 +553,7 @@ Weather Forecast Timeline:
 ${serializedWeather || "- Constant green track conditions, sunny weather forecast."}
 
 Track Incidents Tracked:
-${serializedIncidents || "- Clear green flag racing, no caution/incident periods reported."}
+${serializedIncidents || "- Clear green flag racing, no caution/incident periods reported."}${liveConditions}
 
 Based on this complete operations dashboard, provide a highly specific, professional Race Strategy Briefing:
 1. Identify any critical bottlenecks (e.g., driver changes coinciding with weather transitions, gaps in scheduled stints, active incidents causing caution windows).
@@ -773,6 +786,47 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
             <div className="w-px h-8 bg-border/40" />
 
+            {/* Race countdown and phase */}
+            <div>
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5">
+                REMAINING / {raceDurationHours}H
+              </span>
+              <div className="flex items-baseline gap-1 font-mono text-xl font-bold text-foreground tracking-widest leading-none">
+                {Math.floor(raceRemainingMs / 3600000).toString().padStart(2, "0")}
+                :{Math.floor((raceRemainingMs % 3600000) / 60000).toString().padStart(2, "0")}
+              </div>
+            </div>
+
+            <div className="w-px h-8 bg-border/40" />
+
+            {/* Night/Day phase indicator */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${racePhase.bg} ${racePhase.border}`}>
+              <span className="text-base leading-none">{racePhase.icon}</span>
+              <div>
+                <span className={`text-[9px] font-bold uppercase tracking-widest block ${racePhase.color}`}>
+                  {racePhase.label}
+                </span>
+                <span className="text-[9px] text-muted-foreground">
+                  {Math.round(raceProgressPct)}% done
+                </span>
+              </div>
+            </div>
+
+            {/* Race duration input */}
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Race Hrs</span>
+              <input
+                type="number"
+                min={1}
+                max={24}
+                value={raceDurationHours}
+                onChange={(e) => setRaceDurationHours(Number(e.target.value) || 24)}
+                className="w-14 bg-background border border-border/60 rounded-lg px-2 py-1 text-xs font-mono text-center"
+              />
+            </div>
+
+            <div className="w-px h-8 bg-border/40" />
+
             {/* Stopwatch widget */}
             <div className="flex items-center gap-4 bg-muted/20 border border-border/40 rounded-2xl px-4 py-2">
               <div>
@@ -840,6 +894,15 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   }`}
               >
                 Fuel Stints
+              </button>
+              <button
+                onClick={() => setActiveTab("endurance")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === "endurance"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                Endurance
               </button>
             </div>
           </div>
@@ -1036,6 +1099,115 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   </div>
                 </div>
               </section>
+            ) : activeTab === "endurance" ? (
+              <section className="hairline bg-panel rounded-3xl p-6 relative overflow-hidden flex flex-col justify-start shadow-xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+                    <Timer className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-mono uppercase tracking-widest text-foreground">Endurance Planner</h2>
+                    <p className="text-[10px] text-muted-foreground">Driver fatigue · 24hr fuel load · pit windows</p>
+                  </div>
+                </div>
+
+                {/* 24hr Fuel Load Summary */}
+                {enduranceFuelPlan && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    {[
+                      { label: "Total Laps", value: enduranceFuelPlan.totalLapsEst, color: "text-foreground" },
+                      { label: "Pit Stops", value: enduranceFuelPlan.pitStops, color: "text-amber-400" },
+                      { label: "Fuel / Stint", value: `${enduranceFuelPlan.fuelPerStint.toFixed(1)}L`, color: "text-blue-400" },
+                      { label: "Total Fuel Load", value: `${enduranceFuelPlan.totalFuel.toFixed(0)}L`, color: "text-emerald-400" },
+                    ].map((item) => (
+                      <div key={item.label} className="bg-muted/15 border border-border/30 rounded-2xl p-4 text-center font-mono">
+                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">{item.label}</div>
+                        <div className={`text-xl font-black tracking-tighter ${item.color}`}>{item.value}</div>
+                        <div className="text-[9px] text-muted-foreground mt-1">{raceDurationHours}hr race</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Avg lap time input (feeds fuel planner + stint calc) */}
+                <div className="mb-6 p-4 bg-muted/10 border border-border/30 rounded-2xl">
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Calculator Inputs</div>
+                  <div className="grid grid-cols-3 gap-4 font-sans text-xs">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Avg Lap Time (sec)</label>
+                      <input
+                        type="number"
+                        value={calcAvgLapTimeSec}
+                        onChange={(e) => setCalcAvgLapTimeSec(Number(e.target.value) || 100)}
+                        className="bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Fuel Burn / Lap (L)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={calcFuelBurn}
+                        onChange={(e) => setCalcFuelBurn(parseFloat(e.target.value) || 0)}
+                        className="bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Stint Length (laps)</label>
+                      <input
+                        type="number"
+                        value={calcStintLaps}
+                        onChange={(e) => setCalcStintLaps(parseInt(e.target.value) || 0)}
+                        className="bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Driver Fatigue Tracker */}
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Driver Fatigue Tracker</div>
+                  {drivers.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
+                      Add drivers to track fatigue hours
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {drivers.map((d) => {
+                        const hrs = driverHoursMap[d.id] || 0;
+                        const pct = Math.min(100, (hrs / 4) * 100); // FIA 4hr max per stint reference
+                        const isWarning = hrs > 3;
+                        const isDanger = hrs > 4;
+                        return (
+                          <div key={d.id} className="flex items-center gap-4 p-3 bg-muted/10 border border-border/20 rounded-xl">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                            <span className="font-mono text-xs font-bold w-12 shrink-0">{d.shortName}</span>
+                            <span className="text-xs text-muted-foreground flex-1 truncate">{d.name}</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-28 h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${isDanger ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-emerald-500"}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className={`font-mono text-xs font-bold w-14 text-right ${
+                                isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"
+                              }`}>
+                                {hrs.toFixed(1)}h
+                                {isDanger && " ⚠"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="text-[9px] text-muted-foreground mt-2">
+                        * Bar fills at 4hrs (FIA endurance guideline). Red = over 4hrs total scheduled.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
             ) : (
               <section className="hairline bg-panel rounded-3xl p-6 relative overflow-hidden flex flex-col justify-start shadow-xl">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
@@ -1130,13 +1302,39 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                           onChange={(e) => setCalcStintLaps(parseInt(e.target.value) || 0)}
                           className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
                         />
-                      </div>
-                      <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[10px] text-muted-foreground font-sans leading-normal">
-                        Calculates stints for{" "}
-                        <span className="font-bold text-foreground">
-                          #{selectedCar?.number || "No active car"}
-                        </span>
-                        . Adjust burn rates and lap targets to update required race fuel.
+                        {/* Auto-populate from bridge */}
+                        {t.connected && (
+                          <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[10px] font-mono flex items-center justify-between gap-3">
+                            <div>
+                              <span className="text-emerald-400 font-bold block">Bridge live — real data available</span>
+                              <span className="text-zinc-500">
+                                Last lap: {t.lastLap} · Fuel burn: {t.fuelUsePerHour > 0
+                                  ? `${((t.fuelUsePerHour * t.lapLastLapTimeSec) / 3600).toFixed(2)} L/lap (live)`
+                                  : `${(t.fuelRemainingL / Math.max(1, t.lapsEstimated)).toFixed(2)} L/lap (est)`
+                                }
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (t.lapLastLapTimeSec > 0) setCalcAvgLapTimeSec(Math.round(t.lapLastLapTimeSec));
+                                const burnPerLap = t.fuelUsePerHour > 0
+                                  ? (t.fuelUsePerHour * t.lapLastLapTimeSec) / 3600
+                                  : t.lapsEstimated > 0 ? t.fuelRemainingL / t.lapsEstimated : calcFuelBurn;
+                                if (burnPerLap > 0) setCalcFuelBurn(parseFloat(burnPerLap.toFixed(3)));
+                              }}
+                              className="shrink-0 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-emerald-500/30 transition-all cursor-pointer"
+                            >
+                              ↺ Sync
+                            </button>
+                          </div>
+                        )}
+                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[10px] text-muted-foreground font-sans leading-normal">
+                          Calculates stints for{" "}
+                          <span className="font-bold text-foreground">
+                            #{selectedCar?.number || "No active car"}
+                          </span>
+                          . Adjust burn rates and lap targets to update required race fuel.
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1290,97 +1488,221 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         Paddock Live HUD
                       </h2>
                       <p className="text-[10px] text-muted-foreground">
-                        Multi-car active stream relay grid
+                        {teamCode
+                          ? `Team: ${teamCode} · ${onlineCount} driver${onlineCount !== 1 ? "s" : ""} online`
+                          : "Multi-car active stream relay grid"}
                       </p>
                     </div>
                   </div>
-                  <span className="text-[8px] bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest font-mono animate-pulse shrink-0">
-                    LOW LATENCY
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {teamCode && teamConnected && (
+                      <span className="text-[8px] bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest font-mono animate-pulse">
+                        RELAY LIVE
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setShowTeamCodePanel((v) => !v)}
+                      className="text-[9px] px-2.5 py-1 bg-muted hover:bg-muted/80 border border-border/40 rounded-lg font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                    >
+                      {teamCode ? "🔗 Team" : "+ Join Team"}
+                    </button>
+                  </div>
                 </div>
 
-                {/* Telemetry listing cards */}
-                <div className="space-y-4 flex-1 overflow-y-auto scrollbar-hide pr-1 min-h-0">
-                  {Object.keys(liveTelemetry).map((num) => {
-                    const card = liveTelemetry[num];
-                    if (!card.isActive) return null;
-                    return (
-                      <div
-                        key={num}
-                        className="p-4 bg-muted/25 border border-border/30 rounded-2xl relative overflow-hidden font-mono text-xs"
-                      >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-[50px] pointer-events-none" />
+                {showTeamCodePanel && (
+                  <div className="mb-4 p-4 bg-muted/20 border border-border/30 rounded-2xl space-y-3 text-xs shrink-0">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Team Session</div>
+                    <div className="flex gap-2">
+                      <input type="text" placeholder="Paste team code e.g. PITWALL-A1B2" value={teamCodeInput} onChange={(e) => setTeamCodeInput(e.target.value.toUpperCase())} className="flex-1 bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono placeholder:text-muted-foreground/40" />
+                      <button onClick={() => { setTeamCode(teamCodeInput.trim()); setShowTeamCodePanel(false); }} disabled={!teamCodeInput.trim()} className="px-3 py-2 bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer hover:opacity-90 transition-all">Join</button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { generateTeamCode(); setShowTeamCodePanel(false); }} className="flex-1 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-blue-500/20 transition-all cursor-pointer">✦ Generate New Code</button>
+                      {teamCode && (<button onClick={() => { setTeamCode(""); setTeamCodeInput(""); setShowTeamCodePanel(false); }} className="py-2 px-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all cursor-pointer">Leave</button>)}
+                    </div>
+                    {teamCode && (
+                      <div className="p-2.5 bg-background/60 rounded-xl border border-border/20 font-mono text-[10px]">
+                        <div className="text-muted-foreground mb-1">Share with your drivers:</div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-foreground">{teamCode}</span>
+                          <button onClick={() => navigator.clipboard.writeText(teamCode)} className="text-[9px] text-primary hover:opacity-80 cursor-pointer">Copy</button>
+                        </div>
+                        <div className="text-muted-foreground mt-1.5 leading-relaxed">Each driver: add <span className="text-foreground">TEAM_CODE={teamCode}</span> to <span className="text-foreground">local-bridge/.env</span>, then restart bridge.</div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                        <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-border/10">
-                          <div className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="font-bold text-foreground font-sans"># {num}</span>
-                            <span className="text-[9px] text-muted-foreground truncate uppercase tracking-widest max-w-[120px]">
-                              {card.driverName}
-                            </span>
-                          </div>
+                {/* Bridge live data card for own car — auto-populated from bridge */}
+                {t.connected && (
+                  <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl relative overflow-hidden font-mono text-xs mb-4">
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-emerald-500/10">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="font-bold text-emerald-300 font-sans text-[11px]">YOUR CAR — LIVE BRIDGE</span>
+                      </div>
+                      <span className="text-[9px] font-bold text-blue-400">GEAR {t.gear}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-[8px] text-muted-foreground uppercase tracking-widest block mb-0.5">Velocity</span>
+                        <div className="text-lg font-black font-display text-foreground tracking-tighter italic">
+                          {t.speedKph} <span className="text-[10px] not-italic text-blue-400">KPH</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[8px] text-muted-foreground uppercase tracking-widest block mb-0.5">Remaining fuel</span>
+                        <div className="text-lg font-black font-display text-foreground tracking-tighter italic">
+                          {t.fuelRemainingL.toFixed(1)} <span className="text-[10px] not-italic text-blue-400">L (~{t.lapsEstimated})</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 bg-black/40 h-2 rounded-full overflow-hidden flex gap-[2px] p-[1.5px]">
+                      {Array.from({ length: 12 }).map((_, idx) => {
+                        const limit = (idx / 12) * (t.rpmMax || 8500);
+                        const active = t.rpm >= limit;
+                        const isHigh = limit > (t.rpmShiftWarn || t.rpmMax * 0.9);
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex-1 h-full rounded-sm transition-colors ${
+                              active ? (isHigh ? "bg-red-500" : "bg-emerald-500") : "bg-white/[0.03]"
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="mt-2 text-[9px] text-zinc-500 font-mono">
+                      {t.car} · {t.track} · Δ{t.deltaSec >= 0 ? "+" : ""}{t.deltaSec.toFixed(3)}s
+                    </div>
+                  </div>
+                )}
+                {/* Telemetry listing cards — other team cars via Supabase Realtime */}
+                <div className="space-y-3 flex-1 overflow-y-auto scrollbar-hide pr-1 min-h-0">
 
-                          <span className="text-[9px] font-bold text-blue-400">
-                            GEAR {card.gear ?? "--"}
+                  {!t.connected && teamDrivers.size === 0 && (
+                    <div className="text-center py-8 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
+                      Bridge offline — start the local bridge to see your car's live telemetry here.
+                      <br />Click <span className="text-amber-400 not-italic">● SIM</span> in the header to go to the Live dashboard.
+                    </div>
+                  )}
+
+                  {teamCode && !teamConnected && (
+                    <div className="text-center py-4 text-[10px] text-amber-400 border border-amber-500/20 rounded-xl bg-amber-500/5">
+                      Connecting to team channel <span className="font-mono font-bold">{teamCode}</span>…
+                    </div>
+                  )}
+
+                  {/* Live multi-driver cards from Realtime */}
+                  {Array.from(teamDrivers.values()).map((driver) => (
+                    <div
+                      key={driver.carNumber}
+                      className={`p-3 rounded-2xl border font-mono text-xs relative overflow-hidden transition-all ${
+                        driver.isOnline
+                          ? "bg-blue-500/5 border-blue-500/20"
+                          : "bg-muted/10 border-border/20 opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            driver.isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"
+                          }`} />
+                          <span className="font-bold text-[11px] text-foreground">
+                            #{driver.carNumber} — {driver.driverName}
                           </span>
                         </div>
+                        <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
+                          driver.isOnline
+                            ? "bg-emerald-500/15 text-emerald-400"
+                            : "bg-zinc-800 text-zinc-500"
+                        }`}>
+                          {driver.isOnline ? "LIVE" : `+${Math.round(driver.staleness / 1000)}s`}
+                        </span>
+                      </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-[8px] text-muted-foreground uppercase tracking-widest block mb-0.5">
-                              Velocity
-                            </span>
-                            <div className="text-lg font-black font-display text-foreground tracking-tighter italic">
-                              {card.speed}{" "}
-                              <span className="text-[10px] not-italic text-blue-400">MPH</span>
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-[8px] text-muted-foreground uppercase tracking-widest block mb-0.5">
-                              Remaining fuel
-                            </span>
-                            <div className="text-lg font-black font-display text-foreground tracking-tighter italic">
-                              {card.fuel}{" "}
-                              <span className="text-[10px] not-italic text-blue-400">Liters</span>
-                            </div>
+                      <div className="text-[9px] text-zinc-500 mb-2 truncate">{driver.carName}</div>
+
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <div className="text-[8px] text-muted-foreground">FUEL</div>
+                          <div className="font-bold text-blue-300">
+                            {driver.fuelRemainingL.toFixed(1)}L
+                            <span className="text-[8px] text-zinc-500 ml-1">~{driver.lapsEstimated.toFixed(0)} laps</span>
                           </div>
                         </div>
+                        <div>
+                          <div className="text-[8px] text-muted-foreground">LAST LAP</div>
+                          <div className="font-bold text-foreground">{driver.lastLap}</div>
+                        </div>
+                      </div>
 
-                        {/* RPM Indicator bar */}
-                        <div className="mt-3 bg-black/40 h-2 rounded-full overflow-hidden flex gap-[2px] p-[1.5px]">
-                          {Array.from({ length: 12 }).map((_, idx) => {
-                            const limit = (idx / 12) * 8500;
-                            const active = (card.rpm ?? 6000) >= limit;
-                            const isHigh = limit > 7600;
+                      {/* Tire wear mini-bars */}
+                      {driver.tires && (
+                        <div className="grid grid-cols-4 gap-1">
+                          {(["fl", "fr", "rl", "rr"] as const).map((c) => {
+                            const tire = driver.tires![c];
+                            const wColor = tire.estWearPct > 75 ? "bg-emerald-500" : tire.estWearPct > 45 ? "bg-amber-500" : "bg-red-500";
                             return (
-                              <div
-                                key={idx}
-                                className={`flex-1 h-full rounded-sm transition-colors ${active
-                                  ? isHigh
-                                    ? "bg-red-500 shadow-[0_0_4px_red]"
-                                    : "bg-emerald-500"
-                                  : "bg-white/[0.03]"
-                                  }`}
-                              />
+                              <div key={c} className="text-center">
+                                <div className="text-[7px] text-zinc-600">{c.toUpperCase()}</div>
+                                <div className="h-1 rounded-full bg-muted overflow-hidden mt-0.5">
+                                  <div className={`h-full rounded-full ${wColor}`} style={{ width: `${tire.estWearPct}%` }} />
+                                </div>
+                                <div className={`text-[7px] mt-0.5 ${
+                                  tire.state === "hot" ? "text-red-400" : tire.state === "cold" ? "text-blue-400" : "text-zinc-400"
+                                }`}>{tire.tempC.toFixed(0)}°</div>
+                              </div>
                             );
                           })}
                         </div>
-                      </div>
-                    );
-                  })}
+                      )}
+                    </div>
+                  ))}
 
-                  {Object.keys(liveTelemetry).length === 0 && (
-                    <div className="text-center py-10 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
-                      No live connections tracked. Click "Populate Full Stint Trial" above to run
-                      simulated live paddock feeds!
+                  {teamCode && teamConnected && teamDrivers.size === 0 && (
+                    <div className="text-center py-6 text-[10px] text-muted-foreground italic opacity-60 border border-dashed border-border/30 rounded-2xl">
+                      Waiting for other drivers to join…
+                      <br /><span className="text-[9px]">Share code <span className="font-mono text-foreground not-italic">{teamCode}</span> with your team.</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-6 text-[10px] text-muted-foreground leading-relaxed font-sans shrink-0 border-t border-border/20 pt-4">
-                * Relays multiple driver rig bridges simultaneously matching active car numbers for
-                race strategy calculations.
+              {/* Live tire quad */}
+              {t.connected && (
+                <div className="p-3 bg-muted/20 border border-border/30 rounded-2xl font-mono text-[10px] mt-3">
+                  <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Tire State — Live</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["fl", "fr", "rl", "rr"] as const).map((corner) => {
+                      const tire = t.tires[corner];
+                      const label = corner.toUpperCase();
+                      const wearColor = tire.estWearPct > 80 ? "bg-emerald-500" : tire.estWearPct > 50 ? "bg-amber-500" : "bg-red-500";
+                      const tempColor = tire.state === "hot" ? "text-red-400" : tire.state === "cold" ? "text-blue-400" : "text-emerald-400";
+                      return (
+                        <div key={corner} className="bg-background/40 rounded-xl p-2.5 border border-border/20">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-bold text-foreground text-[9px]">{label}</span>
+                            <span className={`text-[9px] font-bold ${tempColor}`}>{tire.tempC.toFixed(0)}°C</span>
+                          </div>
+                          <div className="text-[8px] text-zinc-600 mb-1">{tire.pressureBar.toFixed(2)} bar</div>
+                          <div className="h-1 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full rounded-full ${wearColor}`} style={{ width: `${tire.estWearPct}%` }} />
+                          </div>
+                          <div className="text-[8px] text-muted-foreground mt-0.5 text-right">{tire.estWearPct.toFixed(0)}% est wear</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 text-[8px] text-zinc-600">
+                    Brakes: FL {t.tires.fl.brakeTempC.toFixed(0)}° · FR {t.tires.fr.brakeTempC.toFixed(0)}° · RL {t.tires.rl.brakeTempC.toFixed(0)}° · RR {t.tires.rr.brakeTempC.toFixed(0)}°
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 text-[10px] text-muted-foreground leading-relaxed font-sans shrink-0 border-t border-border/20 pt-4">
+                * Your car's telemetry streams live from the bridge at 60Hz. Other car cards show manually
+                entered data — multi-car live telemetry requires a networked multi-bridge setup.
               </div>
             </section>
 

@@ -10,6 +10,8 @@ import { pwlapToParsed, isPwlapPath } from "@/lib/pwlap/adapter";
 import type { RecordingDoc } from "@/lib/liveRecorder";
 import { AppHeader } from "@/components/AppHeader";
 import { ExportPwlapDialog } from "@/components/workbench/ExportPwlapDialog";
+import { useTelemetry } from "@/lib/useTelemetry";
+import { SetupCopilot } from "@/components/live/SetupCopilot";
 
 import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
 import { StackedTraces } from "@/components/workbench/StackedTraces";
@@ -98,7 +100,10 @@ function WorkbenchPage() {
     | "setupdiff"
     | "apex"
     | "waterfall"
+    | "setupcopilot"
   >("cinema");
+
+  const live = useTelemetry(); // shared bridge — 60Hz
 
   const config = WORKSPACES[activeWorkspace ?? "lite"];
   const isTabUnlocked = (tabKey: string) => {
@@ -373,6 +378,32 @@ function WorkbenchPage() {
         )}
       </AppHeader>
 
+      {/* Live bridge context banner */}
+      {live.connected && (
+        <div
+          className={`flex items-center gap-3 px-4 py-1.5 text-[11px] font-mono border-b ${
+            sess?.track && live.track && live.track.toLowerCase().includes(sess.track.toLowerCase())
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+              : "bg-zinc-900/60 border-zinc-800 text-zinc-400"
+          }`}
+        >
+          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="font-bold text-emerald-400">BRIDGE LIVE</span>
+          <span className="text-zinc-500">·</span>
+          <span>{live.track}</span>
+          <span className="text-zinc-500">·</span>
+          <span>{live.car}</span>
+          {sess?.track && live.track && live.track.toLowerCase().includes(sess.track.toLowerCase()) && (
+            <span className="ml-2 rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300 uppercase tracking-wider">
+              ⚡ Same track as this session
+            </span>
+          )}
+          <span className="ml-auto text-zinc-600">
+            {live.speedKph} kph · G{live.gear} · {live.fuelRemainingL.toFixed(1)}L fuel
+          </span>
+        </div>
+      )}
+
       {err && (
         <div className="bg-destructive/20 px-3 py-2 text-sm text-destructive-foreground">{err}</div>
       )}
@@ -440,7 +471,8 @@ function WorkbenchPage() {
                         "spider",
                         "setup",
                         "setupdiff",
-                      ] as const
+                        ...(live.connected ? ["setupcopilot"] : []),
+                      ] as Array<typeof bottomTab>
                     ).map((t) => (
                       <button
                         key={t}
@@ -480,7 +512,9 @@ function WorkbenchPage() {
                                                     ? "Spider"
                                                     : t === "setup"
                                                       ? "Setup"
-                                                      : "Δ Setup"}
+                                                      : t === "setupcopilot"
+                                                        ? "⚡ Setup AI"
+                                                        : "Δ Setup"}
                         </span>
                         {!isTabUnlocked(t) && (
                           <span className="text-[9px] text-amber-500/70 ml-1">🔒</span>
@@ -531,6 +565,11 @@ function WorkbenchPage() {
                         sessionId={id}
                       />
                     ))}
+                    {bottomTab === "setupcopilot" && live.connected && (
+                      <div className="h-full overflow-auto p-2">
+                        <SetupCopilot t={live} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

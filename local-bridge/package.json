@@ -11,6 +11,8 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.4.7",
     "irsdk-node": "^4.4.0",
     "ws": "^8.18.0"
   }

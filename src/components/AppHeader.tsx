@@ -7,11 +7,13 @@ import { LocalDbSettings } from "@/components/LocalDbSettings";
 import { VoiceSettings } from "@/components/VoiceSettings";
 import { BackButton } from "@/components/BackButton";
 import { HeaderBreadcrumbs } from "@/components/HeaderBreadcrumbs";
+import { useTelemetry } from "@/lib/useTelemetry";
 
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const t = useTelemetry();
   const settingsActive = pathname === "/settings" || pathname.startsWith("/settings/");
   const teamActive = pathname === "/team";
 
@@ -29,6 +31,24 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
       <div className="mx-3 h-4 w-px bg-border hidden sm:block" />
       <div className="flex flex-1 items-center gap-3 text-xs text-muted-foreground">{children}</div>
       <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
+        {/* Bridge status chip — visible on every page */}
+        <Link
+          to="/live"
+          title={t.connected ? `Bridge live · ${t.track} · ${t.car}` : "Bridge offline — click to go to Live dashboard"}
+          className="flex items-center gap-1.5 rounded-sm px-2 py-1 hover:bg-accent transition-all"
+        >
+          <span
+            className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500 shadow-[0_0_6px_#22c55e] animate-pulse" : "bg-amber-500"}`}
+          />
+          <span className={`font-mono text-[10px] uppercase tracking-wider ${t.connected ? "text-emerald-400" : "text-amber-500"}`}>
+            {t.connected ? `LIVE` : "SIM"}
+          </span>
+          {t.connected && (
+            <span className="font-mono text-[10px] text-zinc-500 hidden lg:inline truncate max-w-36">
+              {t.track}
+            </span>
+          )}
+        </Link>
         <Link
           to="/team"
           className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-all group ${

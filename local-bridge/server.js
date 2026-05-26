@@ -15,6 +15,10 @@ const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
 const licensing = require("./licensing");
+const teamRelay = require("./teamRelay");
+
+// Load .env from local-bridge directory (TEAM_CODE, SUPABASE_URL, etc.)
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 let IRacingSDK = null;
 try {
@@ -185,6 +189,8 @@ server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
   console.log(`[bridge] websocket:  ws://localhost:${PORT}`);
   printNetworkUrls(PORT);
+  // Init team relay AFTER server is up (dotenv already loaded above)
+  teamRelay.init();
 });
 
 let latest = null;
@@ -219,12 +225,18 @@ if (IRacingSDK) {
   }, 1000 / TICK_HZ);
 }
 
-// Broadcast loop
+// 60Hz local WebSocket broadcast
 setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
   const msg = JSON.stringify(latest);
   for (const client of wss.clients) if (client.readyState === 1) client.send(msg);
 }, 1000 / TICK_HZ);
+
+// 2Hz team relay publish (Supabase Realtime — no-op if TEAM_CODE not set)
+setInterval(() => {
+  if (!latest) return;
+  teamRelay.publish(latest);
+}, 500); // 2Hz = every 500ms
 
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
@@ -232,6 +244,10 @@ wss.on("connection", (ws) => {
   if (latest) ws.send(JSON.stringify(latest));
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
+
+// Graceful shutdown — close Supabase channel cleanly
+process.on("SIGINT",  () => { teamRelay.disconnect(); process.exit(0); });
+process.on("SIGTERM", () => { teamRelay.disconnect(); process.exit(0); });
 
 function printNetworkUrls(port) {
   try {
@@ -297,6 +313,8 @@ function mapTelemetry(v, session) {
     sectors: updateSectors(v, session),
 
     fuelRemainingL: v.FuelLevel ?? 0,
+    fuelUsePerHour: v.FuelUsePerHour ?? 0,       // kg/hr from iRacing (≈ L/hr for petrol)
+    lapLastLapTimeSec: v.LapLastLapTime ?? 0,     // raw seconds — lets UI compute burn per lap
     lapsEstimated: estimateLaps(v),
 
     tires: {
