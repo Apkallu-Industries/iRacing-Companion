@@ -1,66 +1,38 @@
 import { useEffect, useRef, useState } from "react";
+import { getBridgeClient } from "./bridgeDataClient";
 import { DEFAULT_TELEMETRY, type Telemetry } from "./telemetry-types";
 import { saveBridgePerformanceSnapshot } from "./bridgePerformance";
 
-const WS_PORT = 3001;
-
-function getBridgeUrl() {
-  if (typeof window === "undefined") return `ws://localhost:${WS_PORT}`;
-  const configuredUrl = new URLSearchParams(window.location.search).get("bridge");
-  if (configuredUrl) return configuredUrl;
-  const host = ["localhost", "127.0.0.1"].includes(window.location.hostname)
-    ? window.location.hostname
-    : "localhost";
-  return `ws://${host}:${WS_PORT}`;
-}
-
 /**
- * Subscribes to a local iRacing bridge over WebSocket. Falls back to a smooth
- * simulator if the bridge isn't running so the dashboard is always alive.
+ * Hook: Subscribe to live bridge telemetry.
+ *
+ * This is the PRIMARY consumer hook for the Bridge Data Client (single source of truth).
+ * Returns current Telemetry state; automatically reconnects if bridge is offline.
+ * Falls back to simulated data when bridge isn't available.
  */
 export function useTelemetry(): Telemetry {
   const [t, setT] = useState<Telemetry>(DEFAULT_TELEMETRY);
   const liveRef = useRef(false);
-  const wsRef = useRef<WebSocket | null>(null);
+  const clientRef = useRef(getBridgeClient());
 
-  // Live WS connection
+  // Live WS connection via Bridge Data Client
   useEffect(() => {
-    let ws: WebSocket | null = null;
-    let retry: ReturnType<typeof setTimeout> | null = null;
-    let cancelled = false;
-
-    const connect = () => {
-      try {
-        ws = new WebSocket(getBridgeUrl());
-        wsRef.current = ws;
-      } catch {
-        retry = setTimeout(connect, 3000);
-        return;
-      }
-      ws.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data) as Partial<Telemetry>;
-          liveRef.current = true;
-          setT((prev) => ({ ...prev, ...data, connected: true, source: "live" }));
-        } catch {
-          /* ignore */
-        }
-      };
-      ws.onclose = () => {
-        wsRef.current = null;
+    const client = clientRef.current;
+    const unsubscribeTelemetry = client.onTelemetry((data) => {
+      liveRef.current = true;
+      setT((prev) => ({ ...prev, ...data, connected: true, source: "live" }));
+    });
+    const unsubscribeDisconnect = client.on((event) => {
+      if (event.type === "disconnect") {
         liveRef.current = false;
         setT((prev) => ({ ...prev, connected: false, source: "simulated" }));
-        if (!cancelled) retry = setTimeout(connect, 3000);
-      };
-      ws.onerror = () => ws?.close();
-    };
-    connect();
-
+      }
+    });
+    const cleanup = client.connect();
     return () => {
-      cancelled = true;
-      if (retry) clearTimeout(retry);
-      ws?.close();
-      wsRef.current = null;
+      unsubscribeTelemetry();
+      unsubscribeDisconnect();
+      cleanup();
     };
   }, []);
 
@@ -85,10 +57,9 @@ export function useTelemetry(): Telemetry {
     raf = requestAnimationFrame(loop);
 
     report = setInterval(() => {
-      const ws = wsRef.current;
-      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      const client = clientRef.current;
       try {
-        ws.send(JSON.stringify({ type: "perf", fps: Math.round(latestFps) }));
+        client.reportFps(latestFps);
         saveBridgePerformanceSnapshot(latestFps);
       } catch {
         // ignore

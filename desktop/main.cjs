@@ -18,7 +18,10 @@ const DASHBOARD_URL = isDev
   ? "http://localhost:3000/live"
   : "https://iracing-companion.lovable.app/live";
 
-const BRIDGE_DIR = path.join(__dirname, "bridge");
+// Use a single source-of-truth bridge directory (local-bridge) so the desktop
+// shell and standalone bridge run the same code. This prefers a repo-level
+// `local-bridge` folder instead of the bundled `desktop/bridge` copy.
+const BRIDGE_DIR = path.join(__dirname, "..", "local-bridge");
 const STATE_FILE_PATH = path.join(app.getPath("userData"), "window-state.json");
 
 let mainWindow = null;

@@ -5,7 +5,10 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev"
+    "dev": "electron . --dev",
+    "prepackage": "node ./scripts/copy-bridge.js",
+    "package": "electron-packager . \"Pit Wall\" --platform=win32 --arch=x64 --out=dist --overwrite",
+    "postpackage": "node ./scripts/remove-bridge.js"
   },
   "private": true,
   "author": "Pit Wall",

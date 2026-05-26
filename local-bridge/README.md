@@ -36,9 +36,12 @@ full screen, no browser chrome.
   in an Administrator PowerShell.
 - **`npm install` fails with C++ / `AccessorSignature` errors** → stale
   `node_modules`. Delete and reinstall:
+
   ```powershell
+
   Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
   npm install
   ```
-- **macOS/Linux** → the bridge runs but iRacing's Shared Memory API is
-  Windows-only, so there's nothing to read. Use a Windows PC.
+
+**_macOS/Linux_** → the bridge runs but iRacing's Shared Memory API is
+Windows-only, so there's nothing to read. Use a Windows PC.

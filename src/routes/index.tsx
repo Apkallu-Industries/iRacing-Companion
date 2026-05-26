@@ -82,6 +82,22 @@ function LandingPage() {
             <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90" />
             <span>Settings</span>
           </Link>
+          <button
+            onClick={() => {
+              try {
+                const btn = typeof document !== 'undefined' && document.getElementById('global-settings-trigger');
+                if (btn) (btn as HTMLButtonElement).click();
+                else window.location.href = '/settings';
+              } catch (e) {
+                window.location.href = '/settings';
+              }
+            }}
+            className="flex items-center gap-1.5 hover:text-primary transition-all group text-muted-foreground"
+            title="System Setup"
+          >
+            <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90" />
+            <span>System Setup</span>
+          </button>
           <Link
             to="/auth"
             className="rounded-sm bg-primary px-3 py-1 text-primary-foreground hover:opacity-90"
@@ -173,8 +189,9 @@ function LandingPage() {
           </p>
           <h2 className="text-3xl font-semibold tracking-tight">Install the Bridge in 3 steps</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
-            The bridge is a tiny Node.js app that reads iRacing's Shared Memory API and broadcasts
-            telemetry over WebSocket to your browser. It runs on the same Windows PC as iRacing.
+            The bridge is a lightweight Node.js program that reads iRacing's Shared Memory API and
+            serves telemetry over WebSocket to connected dashboards. It must run on the same
+            Windows PC where iRacing is installed (the sim machine).
           </p>
         </div>
 
@@ -184,18 +201,10 @@ function LandingPage() {
               <Cpu className="h-3.5 w-3.5" /> Requirements
             </div>
             <ul className="space-y-1 text-muted-foreground">
-              <li>• Windows 10 / 11</li>
-              <li>• iRacing installed</li>
+              <li>• Windows 10 or 11 (runs on the sim PC)</li>
+              <li>• iRacing installed and running while you drive</li>
               <li>
-                •{" "}
-                <a
-                  className="text-primary underline"
-                  href="https://nodejs.org/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Node.js 20 LTS+
-                </a>
+                • <a className="text-primary underline" href="https://nodejs.org/" target="_blank" rel="noreferrer">Node.js 20 LTS+</a>
               </li>
             </ul>
           </div>
@@ -204,18 +213,18 @@ function LandingPage() {
               <Wifi className="h-3.5 w-3.5" /> What it does
             </div>
             <p className="text-muted-foreground">
-              Reads telemetry locally and serves it on{" "}
-              <span className="font-mono">ws://&lt;your-pc&gt;:3001</span>. No cloud, no account,
-              nothing leaves your network.
+              Streams telemetry from iRacing and serves it on <span className="font-mono">ws://&lt;your-pc-ip&gt;:3001</span>.
+              The bridge runs locally on the sim PC — by default nothing leaves your network.
             </p>
           </div>
           <div className="hairline rounded-md bg-panel p-4">
             <div className="mb-2 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground">
-              <Terminal className="h-3.5 w-3.5" /> One command
+              <Terminal className="h-3.5 w-3.5" /> Quick start
             </div>
             <p className="text-muted-foreground">
-              Unzip → <span className="font-mono">npm install</span> →{" "}
-              <span className="font-mono">npm start</span>. That's it.
+              Unzip the bridge package, run <span className="font-mono">npm install</span>, then
+              <span className="font-mono"> npm start</span> from the bridge folder. The bridge will
+              print the exact URLs it is serving (localhost and your LAN IP).
             </p>
           </div>
         </div>
@@ -229,8 +238,8 @@ function LandingPage() {
               <h3 className="font-semibold">Download &amp; unzip</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
-              Grab the bridge package and extract it somewhere easy to find, e.g.
-              <span className="font-mono"> C:\PitWall\bridge</span>.
+              Download the latest bridge package and extract it somewhere easy to find, for
+              example <span className="font-mono">C:\PitWall\bridge</span>.
             </p>
             <a
               href="/downloads/pit-wall-bridge.zip"
@@ -248,18 +257,21 @@ function LandingPage() {
               <h3 className="font-semibold">Install dependencies &amp; start it</h3>
             </div>
             <p className="mb-3 text-sm text-muted-foreground">
-              Open <span className="font-mono">PowerShell</span> in the unzipped folder (Shift +
-              Right-click → "Open PowerShell window here") and run:
+              Open PowerShell in the unzipped folder (Shift + Right-click → "Open PowerShell
+              window here") and run:
             </p>
             <pre className="overflow-x-auto rounded-md border border-border bg-background p-3 font-mono text-xs leading-relaxed">
-              {`cd C:\\PitWall\\bridge
+              {`cd C:\PitWall\bridge
 npm install
 npm start`}
             </pre>
             <p className="mt-3 text-xs text-muted-foreground">
-              First run only: when Windows Firewall prompts, allow Node.js on
-              <strong> Private networks</strong> so other devices on your Wi-Fi can connect.
+              If Windows Firewall blocks the bridge or you don't see a prompt, run an Administrator
+              PowerShell once and add the firewall rule:
             </p>
+            <pre className="mt-1 overflow-x-auto rounded-md border border-border bg-background p-2 font-mono text-xs">
+              {`New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow`}
+            </pre>
           </li>
 
           <li className="hairline rounded-md bg-panel p-5">
@@ -273,17 +285,14 @@ npm start`}
               Launch iRacing and get in a car. Then open Pit Wall:
             </p>
             <ul className="mb-3 space-y-1 text-sm text-muted-foreground">
+              <li>• On the sim PC: <span className="font-mono">http://localhost:3001</span></li>
               <li>
-                • On the sim PC: <span className="font-mono">http://localhost:3001</span>
+                • On phone / tablet / second screen: <span className="font-mono">http://&lt;your-pc-ip&gt;:3001</span>
+                — replace <span className="font-mono">&lt;your-pc-ip&gt;</span> with your sim PC's LAN IP.
               </li>
               <li>
-                • On phone / tablet / second screen:{" "}
-                <span className="font-mono">http://&lt;your-pc-ip&gt;:3001</span> (the bridge prints
-                the URLs on startup)
-              </li>
-              <li>
-                • Or use the hosted dashboard here — it auto-connects to{" "}
-                <span className="font-mono">ws://localhost:3001</span> when opened on the sim PC.
+                • If you open the hosted dashboard on the sim PC it will auto-connect to the
+                bridge at <span className="font-mono">ws://localhost:3001</span> when available.
               </li>
             </ul>
             <Link
