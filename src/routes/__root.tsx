@@ -171,6 +171,15 @@ function RootComponent() {
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
 
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.navigator.userAgent.toLowerCase().includes("electron")
+    ) {
+      document.documentElement.classList.add("is-electron");
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

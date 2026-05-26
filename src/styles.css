@@ -212,3 +212,9 @@
   --color-racing-cyan: #06b6d4;
   --color-zinc-925: #121214;
 }
+
+/* Avoid window control overlapping in Electron (frameless window) */
+.is-electron header,
+.is-electron nav {
+  padding-right: 180px !important;
+}

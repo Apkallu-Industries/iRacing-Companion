@@ -284,8 +284,39 @@ npm run dev
 ### 3. Local Database & File Setup
 
 1. **Database**: Download and start a local **MongoDB** server.
-   - On Windows: `winget install MongoDB.Community.Server` (or verify the service is running).
-   - Via Docker: `docker run -d -p 27017:27017 --name iracing-mongo mongo:latest`
+   
+   #### Method A: Windows Installer (Recommended GUI)
+   1. Visit the [MongoDB Community Download Center](https://www.mongodb.com/try/download/community).
+   2. Select the latest stable version, Platform **Windows**, Package **MSI**, and click **Download**.
+   3. Run the downloaded `.msi` installer.
+   4. Choose the **Complete** setup type.
+   5. Keep the default configuration: **"Install MongoDB as a Service"** and **"Run service as Network Service user"**. This ensures MongoDB runs automatically in the background as a system service.
+   6. Ensure the checkbox for **"Install MongoDB Compass"** is checked (this installs the official MongoDB graphical interface to inspect and query telemetry records easily).
+   7. Finish the installation. MongoDB will start automatically on standard port `27017`.
+
+   #### Method B: Windows Package Manager (winget)
+   1. Open PowerShell or Command Prompt as Administrator and run:
+      ```powershell
+      winget install MongoDB.Community.Server
+      ```
+   2. Once installed, start the MongoDB service by running:
+      ```powershell
+      Start-Service -Name MongoDB
+      ```
+
+   #### Method C: Docker Container (Alternative)
+   If you already run Docker on your machine, launch a containerized instance:
+   ```powershell
+   docker run -d -p 27017:27017 --name iracing-mongo mongo:latest
+   ```
+
+   #### Verifying the Connection
+   - To confirm MongoDB is active and reachable, test the TCP port in PowerShell:
+     ```powershell
+     Test-NetConnection -ComputerName 127.0.0.1 -Port 27017
+     ```
+   - Alternatively, open **MongoDB Compass** and click **Connect** using the default connection URI: `mongodb://localhost:27017`.
+
 2. **File Storage**: Telemetry binary files are automatically cached inside your browser's private **IndexedDB** memory.
 3. Open the **Database** setup panel in the header to run connection tests and manage your local browser cache size.
 

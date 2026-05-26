@@ -270,8 +270,15 @@ export function GlobalSettingsDialog() {
     }
   }, [open, loadDbSettings]);
 
-  // Hide settings cog on specific paths (like auth) to keep UI clean
-  if (pathname === "/auth") return null;
+  // Hide settings cog on specific paths to keep UI clean and avoid redundancy
+  if (
+    pathname === "/" ||
+    pathname === "/auth" ||
+    pathname === "/settings" ||
+    pathname === "/settings/"
+  ) {
+    return null;
+  }
 
   return (
     <>

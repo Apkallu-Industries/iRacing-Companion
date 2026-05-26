@@ -82,22 +82,6 @@ function LandingPage() {
             <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90" />
             <span>Settings</span>
           </Link>
-          <button
-            onClick={() => {
-              try {
-                const btn = typeof document !== 'undefined' && document.getElementById('global-settings-trigger');
-                if (btn) (btn as HTMLButtonElement).click();
-                else window.location.href = '/settings';
-              } catch (e) {
-                window.location.href = '/settings';
-              }
-            }}
-            className="flex items-center gap-1.5 hover:text-primary transition-all group text-muted-foreground"
-            title="System Setup"
-          >
-            <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90" />
-            <span>System Setup</span>
-          </button>
           <Link
             to="/auth"
             className="rounded-sm bg-primary px-3 py-1 text-primary-foreground hover:opacity-90"

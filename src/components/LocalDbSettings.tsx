@@ -235,15 +235,55 @@ export function LocalDbSettings() {
                   Pit Wall requires a running MongoDB server on your local machine to keep your lap
                   records and session metadata.
                 </p>
-                <div className="mt-2 rounded bg-rail p-2.5 font-mono text-[10px] text-foreground border border-border/60">
-                  <span className="text-muted-foreground"># Windows (via winget)</span>
-                  <br />
-                  winget install MongoDB.Community.Server
-                  <br />
-                  <br />
-                  <span className="text-muted-foreground"># Docker Container</span>
-                  <br />
-                  docker run -d -p 27017:27017 --name iracing-mongo mongo:latest
+
+                <div className="flex gap-2 my-2 pt-1">
+                  <a
+                    href="https://www.mongodb.com/try/download/community"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1"
+                  >
+                    <Button variant="outline" size="sm" className="w-full text-[10px] font-mono uppercase tracking-wider h-7">
+                      Download Installer (.MSI)
+                    </Button>
+                  </a>
+                  <a
+                    href="https://www.mongodb.com/products/tools/compass"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1"
+                  >
+                    <Button variant="outline" size="sm" className="w-full text-[10px] font-mono uppercase tracking-wider h-7">
+                      Download Compass GUI
+                    </Button>
+                  </a>
+                </div>
+
+                <div className="mt-2 rounded bg-rail p-2.5 font-mono text-[10px] text-foreground border border-border/60 space-y-2 leading-normal">
+                  <div>
+                    <span className="text-muted-foreground"># Windows MSI Installation (Recommended):</span>
+                    <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-0.5 ml-1">
+                      <li>Choose <span className="text-foreground">Complete</span> setup type</li>
+                      <li>Check <span className="text-foreground">"Install MongoDB as a Service"</span></li>
+                      <li>Check <span className="text-foreground">"Install MongoDB Compass"</span></li>
+                    </ul>
+                  </div>
+
+                  <div className="border-t border-border/40 pt-2">
+                    <span className="text-muted-foreground"># Windows Command Line (winget)</span>
+                    <br />
+                    winget install MongoDB.Community.Server
+                    <br />
+                    <span className="text-muted-foreground"># If service is stopped, run as Admin:</span>
+                    <br />
+                    Start-Service -Name MongoDB
+                  </div>
+
+                  <div className="border-t border-border/40 pt-2">
+                    <span className="text-muted-foreground"># Alternative (Docker Container)</span>
+                    <br />
+                    docker run -d -p 27017:27017 --name iracing-mongo mongo:latest
+                  </div>
                 </div>
               </div>
 
