@@ -4,7 +4,7 @@ export type MathContext = Record<string, number>;
 type Token =
   | { type: "number"; value: number }
   | { type: "ident"; value: string }
-  | { type: "op"; value: "+" | "-" | "*" | "/" }
+  | { type: "op"; value: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "&&" | "||" }
   | { type: "lparen" }
   | { type: "rparen" }
   | { type: "comma" };
@@ -13,7 +13,7 @@ type Node =
   | { kind: "number"; value: number }
   | { kind: "ident"; name: string }
   | { kind: "unary"; op: "-"; expr: Node }
-  | { kind: "binary"; op: "+" | "-" | "*" | "/"; left: Node; right: Node }
+  | { kind: "binary"; op: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "&&" | "||"; left: Node; right: Node }
   | {
       kind: "call";
       name:
@@ -33,7 +33,8 @@ type Node =
         | "exp"
         | "floor"
         | "ceil"
-        | "round";
+        | "round"
+        | "choose";
       args: Node[];
     };
 
@@ -56,6 +57,7 @@ const FUNC_NAMES = new Set([
   "floor",
   "ceil",
   "round",
+  "choose",
 ]);
 const MAX_AST_NODES = 128;
 
@@ -131,8 +133,38 @@ function tokenize(input: string): Token[] {
       i += 1;
       continue;
     }
-    if (ch === "+" || ch === "-" || ch === "*" || ch === "/") {
-      out.push({ type: "op", value: ch });
+    if (s.slice(i, i + 2) === "&&") {
+      out.push({ type: "op", value: "&&" as any });
+      i += 2;
+      continue;
+    }
+    if (s.slice(i, i + 2) === "||") {
+      out.push({ type: "op", value: "||" as any });
+      i += 2;
+      continue;
+    }
+    if (s.slice(i, i + 2) === "<=") {
+      out.push({ type: "op", value: "<=" as any });
+      i += 2;
+      continue;
+    }
+    if (s.slice(i, i + 2) === ">=") {
+      out.push({ type: "op", value: ">=" as any });
+      i += 2;
+      continue;
+    }
+    if (s.slice(i, i + 2) === "==") {
+      out.push({ type: "op", value: "==" as any });
+      i += 2;
+      continue;
+    }
+    if (s.slice(i, i + 2) === "!=") {
+      out.push({ type: "op", value: "!=" as any });
+      i += 2;
+      continue;
+    }
+    if (ch === "+" || ch === "-" || ch === "*" || ch === "/" || ch === "<" || ch === ">") {
+      out.push({ type: "op", value: ch as any });
       i += 1;
       continue;
     }
@@ -165,6 +197,47 @@ class Parser {
   constructor(private readonly tokens: Token[]) {}
 
   parseExpression(): Node {
+    return this.parseLogicalOr();
+  }
+
+  private parseLogicalOr(): Node {
+    let node = this.parseLogicalAnd();
+    while (this.matchOp("||")) {
+      const op = this.prev() as Extract<Token, { type: "op" }>;
+      const right = this.parseLogicalAnd();
+      node = { kind: "binary", op: op.value, left: node, right };
+    }
+    return node;
+  }
+
+  private parseLogicalAnd(): Node {
+    let node = this.parseComparison();
+    while (this.matchOp("&&")) {
+      const op = this.prev() as Extract<Token, { type: "op" }>;
+      const right = this.parseComparison();
+      node = { kind: "binary", op: op.value, left: node, right };
+    }
+    return node;
+  }
+
+  private parseComparison(): Node {
+    let node = this.parseAdditive();
+    while (
+      this.matchOp("==") ||
+      this.matchOp("!=") ||
+      this.matchOp("<") ||
+      this.matchOp(">") ||
+      this.matchOp("<=") ||
+      this.matchOp(">=")
+    ) {
+      const op = this.prev() as Extract<Token, { type: "op" }>;
+      const right = this.parseAdditive();
+      node = { kind: "binary", op: op.value, left: node, right };
+    }
+    return node;
+  }
+
+  private parseAdditive(): Node {
     let node = this.parseTerm();
     while (this.matchOp("+") || this.matchOp("-")) {
       const op = this.prev() as Extract<Token, { type: "op" }>;
@@ -208,7 +281,7 @@ class Parser {
         }
         this.consume("rparen", 'Expected ")" after function arguments.');
         assertArgCount(fn, args.length);
-        return { kind: "call", name: fn as "min" | "max" | "abs" | "clamp", args };
+        return { kind: "call", name: fn as any, args };
       }
       return { kind: "ident", name: ident };
     }
@@ -231,7 +304,7 @@ class Parser {
     }
     return false;
   }
-  private matchOp(op: "+" | "-" | "*" | "/"): boolean {
+  private matchOp(op: string): boolean {
     if (this.check("op") && (this.peek() as Extract<Token, { type: "op" }>).value === op) {
       this.i += 1;
       return true;
@@ -280,8 +353,8 @@ function assertArgCount(fn: string, count: number) {
   if ((fn === "min" || fn === "max") && count < 2) {
     throw new Error(`${fn}() expects at least 2 arguments.`);
   }
-  if (fn === "clamp" && count !== 3) {
-    throw new Error("clamp() expects exactly 3 arguments.");
+  if ((fn === "clamp" || fn === "choose") && count !== 3) {
+    throw new Error(`${fn}() expects exactly 3 arguments.`);
   }
 }
 
@@ -303,8 +376,19 @@ function evalNode(node: Node, context: MathContext, tick: () => void): number {
       if (node.op === "+") return l + r;
       if (node.op === "-") return l - r;
       if (node.op === "*") return l * r;
-      if (Math.abs(r) < 1e-12) throw new Error("Division by zero.");
-      return l / r;
+      if (node.op === "/") {
+        if (Math.abs(r) < 1e-12) throw new Error("Division by zero.");
+        return l / r;
+      }
+      if (node.op === "<") return l < r ? 1 : 0;
+      if (node.op === ">") return l > r ? 1 : 0;
+      if (node.op === "<=") return l <= r ? 1 : 0;
+      if (node.op === ">=") return l >= r ? 1 : 0;
+      if (node.op === "==") return Math.abs(l - r) < 1e-9 ? 1 : 0;
+      if (node.op === "!=") return Math.abs(l - r) >= 1e-9 ? 1 : 0;
+      if (node.op === "&&") return l > 0 && r > 0 ? 1 : 0;
+      if (node.op === "||") return l > 0 || r > 0 ? 1 : 0;
+      throw new Error(`Unhandled binary operator "${node.op}".`);
     }
     case "call": {
       const args = node.args.map((a) => evalNode(a, context, tick));
@@ -353,6 +437,8 @@ function evalNode(node: Node, context: MathContext, tick: () => void): number {
           return Math.ceil(args[0]);
         case "round":
           return Math.round(args[0]);
+        case "choose":
+          return args[0] > 0 ? args[1] : args[2];
         default:
           throw new Error(`Unhandled function "${node.name}".`);
       }

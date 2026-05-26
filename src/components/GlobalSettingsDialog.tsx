@@ -16,6 +16,8 @@ import {
   Terminal,
   Copy,
   Check,
+  Key,
+  Shield,
 } from "lucide-react";
 import {
   Dialog,
@@ -30,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { useWorkbench } from "@/lib/store";
 import { testLLMConnection } from "@/lib/llm";
 import { testLocalDbConnection, getDbConfig, saveDbConfig } from "@/lib/localDb.functions";
+import { getBridgeUrl } from "@/lib/bridgeDataClient";
 import { toast } from "sonner";
 
 const LLM_PROVIDERS = [
@@ -85,6 +88,20 @@ export function GlobalSettingsDialog() {
   );
   const [savingDb, setSavingDb] = useState(false);
   const [idbUsage, setIdbUsage] = useState("Calculating...");
+
+  // Licensing State
+  const [hwid, setHwid] = useState("");
+  const [licenseState, setLicenseState] = useState<{
+    valid: boolean;
+    hwid: string;
+    tier: string;
+    expires: string;
+    error: string | null;
+  } | null>(null);
+  const [licenseChecking, setLicenseChecking] = useState(false);
+  const [licenseKeyInput, setLicenseKeyInput] = useState("");
+  const [activatingLicense, setActivatingLicense] = useState(false);
+  const [copiedHwid, setCopiedHwid] = useState(false);
 
   // AI Engine state
   const {
@@ -239,6 +256,69 @@ export function GlobalSettingsDialog() {
     toast.success("Copied to clipboard.");
   };
 
+  const getBridgeHttpUrl = () => {
+    const wsUrl = getBridgeUrl();
+    return wsUrl.replace(/^ws/, "http");
+  };
+
+  const fetchLicenseData = useCallback(async () => {
+    setLicenseChecking(true);
+    try {
+      const httpUrl = getBridgeHttpUrl();
+      const res = await fetch(`${httpUrl}/api/license`);
+      if (res.ok) {
+        const data = await res.json();
+        setLicenseState(data);
+        if (data.valid && typeof localStorage !== "undefined") {
+          localStorage.setItem("pitwall_bridge_license", JSON.stringify(data));
+        }
+      }
+      
+      const hwidRes = await fetch(`${httpUrl}/api/hwid`);
+      if (hwidRes.ok) {
+        const hwidData = await hwidRes.json();
+        setHwid(hwidData.hwid);
+      }
+    } catch (e) {
+      console.warn("Local bridge not reachable for licensing querying:", e);
+    } finally {
+      setLicenseChecking(false);
+    }
+  }, []);
+
+  const handleActivateLicense = async () => {
+    if (!licenseKeyInput) return;
+    setActivatingLicense(true);
+    try {
+      const httpUrl = getBridgeHttpUrl();
+      const res = await fetch(`${httpUrl}/api/license`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: licenseKeyInput.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(`License activated successfully! Tier: ${data.tier.toUpperCase()}`);
+        setLicenseKeyInput("");
+        fetchLicenseData();
+      } else {
+        toast.error(data.error || "Activation failed. Please check the license key.");
+      }
+    } catch (err: any) {
+      toast.error(`Activation failed: ${err.message}`);
+    } finally {
+      setActivatingLicense(false);
+    }
+  };
+
+  const copyHWIDToClipboard = () => {
+    if (!hwid) return;
+    navigator.clipboard.writeText(hwid);
+    setCopiedHwid(true);
+    setTimeout(() => setCopiedHwid(false), 2000);
+    toast.success("HWID copied to clipboard.");
+  };
+
   // Keyboard shortcut Ctrl+,
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -261,14 +341,15 @@ export function GlobalSettingsDialog() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Fetch db config when dialog opens
+  // Fetch db config and license when dialog opens
   useEffect(() => {
     if (open) {
       loadDbSettings();
       checkConnection();
       checkIndexedDbSize();
+      fetchLicenseData();
     }
-  }, [open, loadDbSettings]);
+  }, [open, loadDbSettings, fetchLicenseData]);
 
   // Hide settings cog on specific paths to keep UI clean and avoid redundancy
   if (
@@ -313,7 +394,7 @@ export function GlobalSettingsDialog() {
             onValueChange={setActiveTab}
             className="flex-1 flex flex-col min-h-0"
           >
-            <TabsList className="grid grid-cols-4 bg-panel border-b border-border/60 p-1 shrink-0 rounded-none h-11">
+            <TabsList className="grid grid-cols-5 bg-panel border-b border-border/60 p-1 shrink-0 rounded-none h-11">
               <TabsTrigger
                 value="db"
                 className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
@@ -334,6 +415,13 @@ export function GlobalSettingsDialog() {
               >
                 <Cpu className="h-3.5 w-3.5" />
                 AI Engine
+              </TabsTrigger>
+              <TabsTrigger
+                value="licensing"
+                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
+              >
+                <Key className="h-3.5 w-3.5" />
+                License
               </TabsTrigger>
               <TabsTrigger
                 value="shortcuts"
@@ -723,6 +811,113 @@ export function GlobalSettingsDialog() {
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            {/* TAB: Licensing */}
+            <TabsContent
+              value="licensing"
+              className="flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none"
+            >
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1.5">
+                  <Key className="h-4 w-4" />
+                  Hardware-Locked Licensing
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Unlock advanced offline analysis sheets and high-frequency real-time widgets. Your license key is cryptographically signed and locked to this PC's hardware.
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong>Accessory devices:</strong> Any auxiliary dash readouts (phones, tablets, second PCs) connected to this PC's local IP address will automatically inherit this license!
+                </p>
+              </div>
+
+              {/* License Status */}
+              <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    Activation Status
+                  </span>
+                  {licenseChecking ? (
+                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
+                      <RefreshCw className="h-3 w-3 animate-spin" /> Verifying...
+                    </span>
+                  ) : licenseState && licenseState.valid ? (
+                    <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-mono tracking-wider font-semibold">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Activated ({licenseState.tier.toUpperCase()})
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-[10px] text-rose-400 uppercase font-mono tracking-wider font-semibold">
+                      <AlertCircle className="h-3.5 w-3.5" /> Lite Tier (Free)
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    Hardware ID (HWID)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-foreground font-semibold bg-rail px-2 py-0.5 rounded border border-border select-all">
+                      {hwid || "Loading..."}
+                    </span>
+                    <button
+                      onClick={() => hwid && copyHWIDToClipboard()}
+                      className="text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer"
+                      title="Copy HWID"
+                    >
+                      {copiedHwid ? (
+                        <Check className="h-3 w-3 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {licenseState && licenseState.valid && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                      Expiration Date
+                    </span>
+                    <span className="text-xs font-mono text-zinc-300 font-semibold">
+                      {licenseState.expires === "never" ? "Lifetime / No Expiration" : licenseState.expires}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Activate key input */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1">
+                  Activate License Key
+                </h3>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                    Paste Key Payload
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      value={licenseKeyInput}
+                      onChange={(e) => setLicenseKeyInput(e.target.value)}
+                      placeholder="Paste your base64.signature license key here..."
+                      className="font-mono text-xs flex-1"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleActivateLicense}
+                      disabled={activatingLicense || !licenseKeyInput}
+                      size="sm"
+                      className="font-mono text-xs uppercase"
+                    >
+                      {activatingLicense ? "Activating..." : "Activate"}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-normal">
+                    Paste the license key received for your HWID and click Activate. This will save the credentials locally in the bridge workspace.
+                  </p>
+                </div>
+              </div>
             </TabsContent>
 
             {/* TAB: Shortcuts */}

@@ -32,7 +32,7 @@ export type MathExpression = z.infer<typeof MathExpressionSchema> & {
   compiled?: CompiledMathExpression;
 };
 
-const TOKEN_RE = /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|[()+\-*/,])\s*/g;
+const TOKEN_RE = /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|<=|>=|==|!=|&&|\|\||[()+\-*/,<>=!&|])\s*/g;
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;
 const FUNC_NAMES = new Set([
   "min",
@@ -52,6 +52,7 @@ const FUNC_NAMES = new Set([
   "floor",
   "ceil",
   "round",
+  "choose",
 ]);
 
 export type MathExpressionValidation = {
@@ -107,7 +108,7 @@ export function validateMathExpressionSyntax(input: string): MathExpressionValid
       expectValue = false;
       continue;
     }
-    if (["+", "-", "*", "/", ","].includes(t)) {
+    if (["+", "-", "*", "/", ",", "<", ">", "<=", ">=", "==", "!=", "&&", "||"].includes(t)) {
       if (t === "," && depth === 0)
         return { ok: false, identifiers: [], error: "Unexpected comma." };
       expectValue = t !== ")";

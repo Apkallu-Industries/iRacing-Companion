@@ -2,6 +2,8 @@ import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
+import { useWorkbench } from "@/lib/store";
+import { WORKSPACES } from "@/lib/workspaces";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { useTelemetryBuffer, type Sample } from "@/lib/useTelemetryBuffer";
 import { useBridgeDiagnostics } from "@/lib/bridgeDiagnostics";
@@ -164,10 +166,25 @@ function Dashboard() {
 /* ──────────────────────────────────────────────────────────── Top bar */
 
 function TopBar({ t }: { t: Telemetry }) {
+  const { activeWorkspace, setActiveWorkspace } = useWorkbench();
   return (
     <header className="flex items-center gap-3 border-b border-zinc-900 pb-2 text-[11px] uppercase tracking-wider">
       <BackButton />
       <span className="rounded-sm bg-zinc-900 px-2 py-1 text-zinc-400">Pit Wall i2</span>
+      <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-sm px-2 py-0.5 ml-1 select-none text-[10px] text-zinc-400">
+        <span className="text-[9px] text-zinc-500 uppercase font-mono tracking-wider">Profile</span>
+        <select
+          value={activeWorkspace}
+          onChange={(e) => setActiveWorkspace(e.target.value as any)}
+          className="bg-transparent text-zinc-200 border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
+        >
+          {Object.values(WORKSPACES).map((w) => (
+            <option key={w.key} value={w.key} className="bg-zinc-950 text-zinc-200 font-mono uppercase text-[10px]">
+              {w.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="flex items-center gap-4 text-zinc-500">
         <Field label="Session" value={t.session} />
         <Field label="Track" value={t.track} />

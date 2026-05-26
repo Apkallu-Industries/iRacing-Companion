@@ -14,6 +14,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
+const licensing = require("./licensing");
 
 let IRacingSDK = null;
 try {
@@ -21,6 +22,50 @@ try {
 } catch (err) {
   console.warn("[bridge] irsdk-node unavailable — running in no-op mode.");
   console.warn(`[bridge] ${err.message}`);
+}
+
+/* ───────────────────────────────────────── Licensing System Activation */
+
+let activeLicense = {
+  valid: false,
+  hwid: licensing.getHWID(),
+  tier: "lite",
+  expires: "never",
+  error: "No license key installed."
+};
+
+const LICENSE_FILE = path.join(__dirname, "license.key");
+if (fs.existsSync(LICENSE_FILE)) {
+  try {
+    const key = fs.readFileSync(LICENSE_FILE, "utf8").trim();
+    const result = licensing.validateLicenseKey(key);
+    if (result.valid) {
+      activeLicense = {
+        valid: true,
+        hwid: result.hwid,
+        tier: result.tier,
+        expires: result.expires,
+        error: null
+      };
+      console.log(`[bridge] Loaded valid license key (Tier: ${result.tier.toUpperCase()})`);
+    } else {
+      activeLicense.error = result.error;
+      console.warn(`[bridge] Invalid license key file: ${result.error}`);
+    }
+  } catch (err) {
+    activeLicense.error = err.message;
+    console.error("[bridge] Failed to read license key file:", err);
+  }
+}
+
+function broadcastLicenseStatus() {
+  if (typeof wss === "undefined" || !wss) return;
+  const msg = JSON.stringify({ type: "license", ...activeLicense });
+  for (const client of wss.clients) {
+    if (client.readyState === 1) {
+      client.send(msg);
+    }
+  }
 }
 
 const PORT = 3001;
@@ -42,6 +87,69 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
+
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  /* ───────────────────────────────────────── Licensing API Endpoints */
+
+  if (urlPath === "/api/license" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(activeLicense));
+    return;
+  }
+
+  if (urlPath === "/api/hwid" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ hwid: licensing.getHWID() }));
+    return;
+  }
+
+  if (urlPath === "/api/license" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body);
+        const { key } = payload;
+        const result = licensing.validateLicenseKey(key);
+        if (result.valid) {
+          fs.writeFileSync(LICENSE_FILE, key, "utf8");
+          activeLicense = {
+            valid: true,
+            hwid: result.hwid,
+            tier: result.tier,
+            expires: result.expires,
+            error: null
+          };
+          console.log(`[bridge] Activated license successfully (Tier: ${result.tier.toUpperCase()})`);
+          broadcastLicenseStatus();
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, tier: result.tier, expires: result.expires }));
+        } else {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: result.error }));
+        }
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  /* ───────────────────────────────────────── Static File Serving */
+
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
 
   // Prevent path traversal
@@ -120,6 +228,7 @@ setInterval(() => {
 
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
+  ws.send(JSON.stringify({ type: "license", ...activeLicense }));
   if (latest) ws.send(JSON.stringify(latest));
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });

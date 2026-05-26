@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { IbtParsed } from "./ibt/types";
 import type { MathExpression } from "./math/schema";
+import { type WorkspaceKey, WORKSPACES } from "./workspaces";
 
 export const DEFAULT_CHANNELS = [
   "Speed",
@@ -97,11 +98,14 @@ interface WorkbenchState {
 
   mathExpressions: MathExpression[];
   setMathExpressions: (exprs: MathExpression[]) => void;
+
+  activeWorkspace: WorkspaceKey;
+  setActiveWorkspace: (w: WorkspaceKey) => void;
 }
 
 export const useWorkbench = create<WorkbenchState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       parsed: null,
       setParsed: (p) => {
         // Default refLap = fastest valid lap (skip in/out & corrupt laps).
@@ -120,10 +124,14 @@ export const useWorkbench = create<WorkbenchState>()(
         // Cursor starts at the fastest lap so widgets reflect the best run.
         const startTick =
           bestLap != null ? (p!.laps.find((l) => l.lap === bestLap)?.startTick ?? 0) : 0;
+        
+        const activeKey = get().activeWorkspace ?? "lite";
+        const config = WORKSPACES[activeKey];
+        
         set(() => ({
           parsed: p,
           cursorTick: startTick,
-          selectedChannels: p ? DEFAULT_CHANNELS.filter((c) => c in p.channels) : [],
+          selectedChannels: p ? config.defaultChannels.filter((c) => c in p.channels) : [],
           refLap: bestLap,
           cmpLap: null,
           playing: false,
@@ -190,6 +198,16 @@ export const useWorkbench = create<WorkbenchState>()(
 
       mathExpressions: [],
       setMathExpressions: (exprs) => set({ mathExpressions: exprs }),
+
+      activeWorkspace: "lite",
+      setActiveWorkspace: (w) => {
+        const config = WORKSPACES[w];
+        set((s) => ({
+          activeWorkspace: w,
+          selectedChannels: s.parsed ? config.defaultChannels.filter((c) => c in s.parsed.channels) : config.defaultChannels,
+          mathExpressions: config.mathExpressions,
+        }));
+      },
     }),
     {
       name: "pitwall-workbench-storage",
@@ -208,6 +226,7 @@ export const useWorkbench = create<WorkbenchState>()(
         elevenLabsApiKey: state.elevenLabsApiKey,
         elevenLabsVoiceId: state.elevenLabsVoiceId,
         mathExpressions: state.mathExpressions,
+        activeWorkspace: state.activeWorkspace,
       }),
     }
   )

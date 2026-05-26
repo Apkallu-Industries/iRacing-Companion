@@ -83,8 +83,12 @@ export class BridgeDataClient {
         };
         this.ws.onmessage = (ev) => {
           try {
-            const data = JSON.parse(ev.data) as Partial<Telemetry>;
-            this.emit({ type: "telemetry", data });
+            const data = JSON.parse(ev.data);
+            if (data && data.type === "license") {
+              this.emit({ type: "license", data });
+            } else {
+              this.emit({ type: "telemetry", data: data as Partial<Telemetry> });
+            }
           } catch (e) {
             this.emit({ type: "error", data: e });
           }

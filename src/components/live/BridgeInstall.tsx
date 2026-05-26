@@ -172,21 +172,13 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
       )}
 
       <div className="pt-3 border-t border-zinc-900 flex items-center justify-between text-[10px] text-zinc-500 font-mono">
-        <span>Standalone install</span>
-        <div className="flex gap-3">
-          <a
-            href="/downloads/pit-wall-desktop-win-x64.zip"
-            className="flex items-center gap-1 hover:text-zinc-300 transition-colors"
-          >
-            <Download className="h-3 w-3" /> Desktop
-          </a>
-          <a
-            href="/downloads/pit-wall-bridge.zip"
-            className="flex items-center gap-1 hover:text-zinc-300 transition-colors"
-          >
-            <Terminal className="h-3 w-3" /> CLI
-          </a>
-        </div>
+        <span>Bridge Package</span>
+        <a
+          href="/downloads/pit-wall-bridge.zip"
+          className="flex items-center gap-1 hover:text-zinc-300 transition-colors text-primary font-semibold"
+        >
+          <Download className="h-3 w-3" /> Download pit-wall-bridge.zip
+        </a>
       </div>
     </div>
   );

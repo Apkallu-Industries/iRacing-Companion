@@ -26,6 +26,10 @@ export function useTelemetry(): Telemetry {
       if (event.type === "disconnect") {
         liveRef.current = false;
         setT((prev) => ({ ...prev, connected: false, source: "simulated" }));
+      } else if (event.type === "license" && event.data) {
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("pitwall_bridge_license", JSON.stringify(event.data));
+        }
       }
     });
     const cleanup = client.connect();

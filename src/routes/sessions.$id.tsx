@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useWorkbench } from "@/lib/store";
+import { WORKSPACES } from "@/lib/workspaces";
 import { parseIbtInWorker } from "@/lib/ibt/parseInWorker";
 import { loadChannelPrefs } from "@/components/live/ChannelRegistry";
 import { pwlapToParsed, isPwlapPath } from "@/lib/pwlap/adapter";
@@ -69,6 +70,8 @@ function WorkbenchPage() {
     pendingLocalBlob,
     setPendingLocalBlob,
     setMathExpressions,
+    activeWorkspace,
+    setActiveWorkspace,
   } = useWorkbench();
   const [sess, setSess] = useState<Tables<"telemetry_sessions"> | null>(null);
   const [showExport, setShowExport] = useState(false);
@@ -96,6 +99,68 @@ function WorkbenchPage() {
     | "apex"
     | "waterfall"
   >("cinema");
+
+  const config = WORKSPACES[activeWorkspace ?? "lite"];
+  const isTabUnlocked = (tabKey: string) => {
+    if (import.meta.env.DEV) return true; // Dev Mode Workspace Override
+    
+    // Check if the tab corresponds to Pro-tier (real-time workbook)
+    const isProTab = ["replay3d", "piano", "spider"].includes(tabKey);
+    
+    // Retrieve license from local storage cached from the bridge
+    try {
+      const cachedLicStr = typeof localStorage !== "undefined" ? localStorage.getItem("pitwall_bridge_license") : null;
+      if (cachedLicStr) {
+        const cachedLic = JSON.parse(cachedLicStr);
+        if (cachedLic && cachedLic.valid) {
+          if (cachedLic.tier === "pro") return true; // Pro license unlocks all
+          if (cachedLic.tier === "plus" && !isProTab) return true; // Plus license unlocks all except Pro sheets
+        }
+      }
+    } catch (e) {
+      // fallback
+    }
+    
+    return config.activeTabs.includes(tabKey);
+  };
+
+  const renderPanelOrLock = (tabKey: string, children: React.ReactNode) => {
+    if (isTabUnlocked(tabKey)) {
+      return children;
+    }
+    
+    let unlockingWorkspace = "iRacing Plus Workbook";
+    let unlockingTier = "Plus";
+    if (["replay3d", "piano", "spider"].includes(tabKey)) {
+      unlockingWorkspace = "iRacing Plus Real-Time Workbook";
+      unlockingTier = "Pro";
+    }
+
+    return (
+      <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-950/95 text-center p-6 border border-zinc-900 rounded-sm overflow-hidden select-none">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-10 pointer-events-none" />
+        <div className="relative z-10 flex flex-col items-center max-w-sm">
+          <div className="size-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3 text-amber-400 text-sm shadow-[0_0_15px_rgba(245,158,11,0.05)] animate-pulse">
+            🔒
+          </div>
+          <h3 className="font-mono uppercase text-[10px] tracking-widest text-zinc-200">
+            Locked Analysis Sheet
+          </h3>
+          <p className="mt-2 font-mono text-[9px] text-zinc-500 leading-relaxed uppercase tracking-wider">
+            This sheet is active in the premium <span className="text-zinc-300 font-semibold">{unlockingWorkspace}</span>.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => setActiveWorkspace(tabKey === "replay3d" || tabKey === "piano" || tabKey === "spider" ? "realtime" : "plus")}
+              className="rounded-sm bg-amber-500 hover:bg-amber-400 px-3 py-1 font-mono text-[9px] uppercase font-semibold text-zinc-950 transition-all shadow-[0_0_10px_rgba(245,158,11,0.2)] hover:scale-105 cursor-pointer"
+            >
+              Unlock {unlockingTier} Workspace
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Guests can't load cloud sessions — show a friendly prompt instead of redirecting.
 
@@ -283,6 +348,20 @@ function WorkbenchPage() {
                 </>
               );
             })()}
+            <div className="flex items-center gap-1.5 bg-panel border border-border rounded-sm px-2 py-0.5 ml-1 select-none">
+              <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Profile</span>
+              <select
+                value={activeWorkspace}
+                onChange={(e) => setActiveWorkspace(e.target.value as any)}
+                className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
+              >
+                {Object.values(WORKSPACES).map((w) => (
+                  <option key={w.key} value={w.key} className="bg-zinc-950 text-foreground font-mono uppercase text-[10px]">
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <ShareButton sessionId={id} />
             <button
               onClick={() => setShowExport(true)}
@@ -366,46 +445,51 @@ function WorkbenchPage() {
                       <button
                         key={t}
                         onClick={() => setBottomTab(t)}
-                        className={`flex-1 px-3 py-1.5 text-left ${
+                        className={`flex-1 px-3 py-1.5 text-left flex items-center justify-between border-r border-zinc-900/50 last:border-r-0 ${
                           bottomTab === t
                             ? "bg-panel text-foreground"
                             : "bg-rail text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        {t === "cinema"
-                          ? "Cinema"
-                          : t === "readout"
-                            ? "Readout"
-                            : t === "laps"
-                              ? `Laps · ${parsed.laps.length}`
-                              : t === "gg"
-                                ? "g-g"
-                                : t === "optimal"
-                                  ? "Optimal"
-                                  : t === "whatif"
-                                    ? "What-if"
-                                    : t === "apex"
-                                      ? "Apex"
-                                      : t === "waterfall"
-                                        ? "Waterfall"
-                                        : t === "brake"
-                                          ? "Brake"
-                                          : t === "slip"
-                                            ? "Slip"
-                                            : t === "replay3d"
-                                              ? "3D"
-                                              : t === "piano"
-                                                ? "Piano"
-                                                : t === "spider"
-                                                  ? "Spider"
-                                                  : t === "setup"
-                                                    ? "Setup"
-                                                    : "Δ Setup"}
+                        <span className="truncate">
+                          {t === "cinema"
+                            ? "Cinema"
+                            : t === "readout"
+                              ? "Readout"
+                              : t === "laps"
+                                ? `Laps`
+                                : t === "gg"
+                                  ? "g-g"
+                                  : t === "optimal"
+                                    ? "Optimal"
+                                    : t === "whatif"
+                                      ? "What-if"
+                                      : t === "apex"
+                                        ? "Apex"
+                                        : t === "waterfall"
+                                          ? "Waterfall"
+                                          : t === "brake"
+                                            ? "Brake"
+                                            : t === "slip"
+                                              ? "Slip"
+                                              : t === "replay3d"
+                                                ? "3D"
+                                                : t === "piano"
+                                                  ? "Piano"
+                                                  : t === "spider"
+                                                    ? "Spider"
+                                                    : t === "setup"
+                                                      ? "Setup"
+                                                      : "Δ Setup"}
+                        </span>
+                        {!isTabUnlocked(t) && (
+                          <span className="text-[9px] text-amber-500/70 ml-1">🔒</span>
+                        )}
                       </button>
                     ))}
                   </div>
                   <div className="min-h-0 flex-1">
-                    {bottomTab === "cinema" && (
+                    {bottomTab === "cinema" && renderPanelOrLock("cinema", (
                       <Suspense
                         fallback={
                           <div className="p-3 text-xs text-muted-foreground">Loading cinema...</div>
@@ -413,19 +497,19 @@ function WorkbenchPage() {
                       >
                         <LazyCinemaPlayback parsed={parsed} />
                       </Suspense>
-                    )}
-                    {bottomTab === "readout" && <LiveReadout parsed={parsed} />}
-                    {bottomTab === "laps" && <LapList parsed={parsed} />}
-                    {bottomTab === "gg" && <GGDiagram parsed={parsed} />}
-                    {bottomTab === "histogram" && <HistogramPanel />}
-                    {bottomTab === "scatter" && <XYScatterPanel />}
-                    {bottomTab === "optimal" && <OptimalLap parsed={parsed} />}
-                    {bottomTab === "whatif" && <Counterfactuals parsed={parsed} />}
-                    {bottomTab === "apex" && <MinCornerSpeed parsed={parsed} />}
-                    {bottomTab === "waterfall" && <TimeLossWaterfall parsed={parsed} />}
-                    {bottomTab === "brake" && <BrakeBias parsed={parsed} />}
-                    {bottomTab === "slip" && <SlipAngle parsed={parsed} />}
-                    {bottomTab === "replay3d" && (
+                    ))}
+                    {bottomTab === "readout" && renderPanelOrLock("readout", <LiveReadout parsed={parsed} />)}
+                    {bottomTab === "laps" && renderPanelOrLock("laps", <LapList parsed={parsed} />)}
+                    {bottomTab === "gg" && renderPanelOrLock("gg", <GGDiagram parsed={parsed} />)}
+                    {bottomTab === "histogram" && renderPanelOrLock("histogram", <HistogramPanel />)}
+                    {bottomTab === "scatter" && renderPanelOrLock("scatter", <XYScatterPanel />)}
+                    {bottomTab === "optimal" && renderPanelOrLock("optimal", <OptimalLap parsed={parsed} />)}
+                    {bottomTab === "whatif" && renderPanelOrLock("whatif", <Counterfactuals parsed={parsed} />)}
+                    {bottomTab === "apex" && renderPanelOrLock("apex", <MinCornerSpeed parsed={parsed} />)}
+                    {bottomTab === "waterfall" && renderPanelOrLock("waterfall", <TimeLossWaterfall parsed={parsed} />)}
+                    {bottomTab === "brake" && renderPanelOrLock("brake", <BrakeBias parsed={parsed} />)}
+                    {bottomTab === "slip" && renderPanelOrLock("slip", <SlipAngle parsed={parsed} />)}
+                    {bottomTab === "replay3d" && renderPanelOrLock("replay3d", (
                       <Suspense
                         fallback={
                           <div className="p-3 text-xs text-muted-foreground">
@@ -435,18 +519,18 @@ function WorkbenchPage() {
                       >
                         <LazyReplayThree parsed={parsed} />
                       </Suspense>
-                    )}
-                    {bottomTab === "piano" && <PianoRoll parsed={parsed} />}
-                    {bottomTab === "spider" && <SectorSpider parsed={parsed} />}
-                    {bottomTab === "setup" && <SetupSheet parsed={parsed} />}
-                    {bottomTab === "setupdiff" && (
+                    ))}
+                    {bottomTab === "piano" && renderPanelOrLock("piano", <PianoRoll parsed={parsed} />)}
+                    {bottomTab === "spider" && renderPanelOrLock("spider", <SectorSpider parsed={parsed} />)}
+                    {bottomTab === "setup" && renderPanelOrLock("setup", <SetupSheet parsed={parsed} />)}
+                    {bottomTab === "setupdiff" && renderPanelOrLock("setupdiff", (
                       <SetupDiff
                         parsed={parsed}
                         track={sess?.track}
                         car={sess?.car}
                         sessionId={id}
                       />
-                    )}
+                    ))}
                   </div>
                 </div>
               </div>
