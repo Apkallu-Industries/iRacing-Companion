@@ -1,4 +1,4 @@
-import { useRouter, useLocation, useCanGoBack, Link } from "@tanstack/react-router";
+﻿import { useRouter, useLocation, useCanGoBack, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 /**
@@ -14,7 +14,7 @@ export function BackButton() {
   if (location.pathname === "/") return null;
 
   const baseClass =
-    "inline-flex items-center gap-1.5 rounded-sm border border-border bg-rail px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-zinc-400 hover:bg-accent hover:text-foreground transition-all hover:scale-105 mr-1.5 shrink-0 cursor-pointer";
+    "inline-flex items-center gap-1.5 rounded-sm border border-border bg-rail px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:bg-accent hover:text-foreground transition-all hover:scale-105 mr-1.5 shrink-0 cursor-pointer";
 
   if (canGoBack) {
     return (

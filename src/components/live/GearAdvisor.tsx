@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 import type { Telemetry } from "@/lib/telemetry-types";
@@ -218,19 +218,19 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
     rose: "text-rose-400",
     amber: "text-amber-400",
     emerald: "text-emerald-400",
-    zinc: "text-zinc-300",
+    zinc: "text-foreground",
   };
 
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950">
-      <div className="flex items-center justify-between border-b border-zinc-900 px-2 py-1.5">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+    <div className="rounded-sm border border-border bg-background">
+      <div className="flex items-center justify-between border-b border-border px-2 py-1.5">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           Gear Ratio Advisor
         </span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setBrowseOpen(true)}
-            className="rounded-sm bg-zinc-900 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-300 hover:bg-zinc-800"
+            className="rounded-sm bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-foreground hover:bg-accent"
             title="Browse community gear ratios for this car"
           >
             browse
@@ -244,7 +244,7 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
           </button>
           <button
             onClick={resetCar}
-            className="text-[9px] uppercase tracking-wider text-zinc-600 hover:text-zinc-300"
+            className="text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
             title="Clear learned ratios for this car"
           >
             reset
@@ -253,78 +253,78 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
       </div>
 
       {/* Action header */}
-      <div className="flex items-baseline justify-between gap-2 border-b border-zinc-900 px-2 py-2">
+      <div className="flex items-baseline justify-between gap-2 border-b border-border px-2 py-2">
         <div>
-          <div className="text-[9px] uppercase tracking-wider text-zinc-500">Action</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Action</div>
           <div className={`text-lg tabular-nums ${toneClass[advice.action.tone]}`}>
             {advice.action.label}
           </div>
-          <div className="text-[9px] text-zinc-600">{advice.action.detail}</div>
+          <div className="text-[9px] text-muted-foreground">{advice.action.detail}</div>
         </div>
         <div className="text-right">
-          <div className="text-[9px] uppercase tracking-wider text-zinc-500">Gear · RPM</div>
-          <div className="text-lg tabular-nums text-zinc-200">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Gear · RPM</div>
+          <div className="text-lg tabular-nums text-foreground">
             {advice.gear || "—"}
-            <span className="text-zinc-600"> · </span>
+            <span className="text-muted-foreground"> · </span>
             {Math.round(advice.rpm)}
           </div>
-          <div className="text-[9px] text-zinc-600">
+          <div className="text-[9px] text-muted-foreground">
             warn {Math.round(advice.warn)} · red {Math.round(advice.red)}
           </div>
         </div>
       </div>
 
       {/* Per-gear ratio table */}
-      <div className="grid grid-cols-8 gap-px bg-zinc-900 text-[10px]">
+      <div className="grid grid-cols-8 gap-px bg-muted text-[10px]">
         {allGears.map((g) => {
           const s = advice.ratios[g];
           const isCurrent = g === advice.gear;
           return (
             <div
               key={g}
-              className={`bg-zinc-950 p-1.5 text-center ${
+              className={`bg-background p-1.5 text-center ${
                 isCurrent ? "ring-1 ring-inset ring-amber-500/60" : ""
               }`}
             >
-              <div className="text-[9px] uppercase text-zinc-500">G{g}</div>
+              <div className="text-[9px] uppercase text-muted-foreground">G{g}</div>
               <div
                 className={`tabular-nums ${
-                  s ? (isCurrent ? "text-amber-300" : "text-zinc-300") : "text-zinc-700"
+                  s ? (isCurrent ? "text-amber-300" : "text-foreground") : "text-muted-foreground"
                 }`}
               >
                 {s ? s.ratio.toFixed(2) : "—"}
               </div>
-              <div className="text-[8px] text-zinc-600 tabular-nums">{s ? s.samples : 0}</div>
+              <div className="text-[8px] text-muted-foreground tabular-nums">{s ? s.samples : 0}</div>
             </div>
           );
         })}
       </div>
 
       {/* Shift previews + gap advice */}
-      <div className="grid grid-cols-2 gap-px bg-zinc-900 text-[11px]">
-        <div className="bg-zinc-950 p-2">
-          <div className="text-[9px] uppercase tracking-wider text-zinc-500">After ↑shift</div>
-          <div className="tabular-nums text-zinc-300">
+      <div className="grid grid-cols-2 gap-px bg-muted text-[11px]">
+        <div className="bg-background p-2">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">After ↑shift</div>
+          <div className="tabular-nums text-foreground">
             {advice.rpmAfterUp ? `${Math.round(advice.rpmAfterUp)} rpm` : "—"}
           </div>
-          <div className="text-[9px] text-zinc-600">
+          <div className="text-[9px] text-muted-foreground">
             drop {advice.rpmAfterUp ? `${Math.round(advice.rpm - advice.rpmAfterUp)}` : "—"}
           </div>
         </div>
-        <div className="bg-zinc-950 p-2">
-          <div className="text-[9px] uppercase tracking-wider text-zinc-500">After ↓shift</div>
-          <div className="tabular-nums text-zinc-300">
+        <div className="bg-background p-2">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">After ↓shift</div>
+          <div className="tabular-nums text-foreground">
             {advice.rpmAfterDown ? `${Math.round(advice.rpmAfterDown)} rpm` : "—"}
           </div>
-          <div className="text-[9px] text-zinc-600">
+          <div className="text-[9px] text-muted-foreground">
             rise {advice.rpmAfterDown ? `+${Math.round(advice.rpmAfterDown - advice.rpm)}` : "—"}
           </div>
         </div>
       </div>
 
       {advice.gaps.length > 0 && (
-        <div className="border-t border-zinc-900 px-2 py-1.5">
-          <div className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1">Ratio Gaps</div>
+        <div className="border-t border-border px-2 py-1.5">
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1">Ratio Gaps</div>
           <div className="grid grid-cols-1 gap-0.5 text-[10px] tabular-nums">
             {advice.gaps.map((g) => {
               const tag = g.pct < 12 ? "tight" : g.pct > 28 ? "wide" : "ok";
@@ -336,10 +336,10 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
                     : "text-emerald-400";
               return (
                 <div key={`${g.from}-${g.to}`} className="flex items-baseline justify-between">
-                  <span className="text-zinc-500">
+                  <span className="text-muted-foreground">
                     G{g.from}→G{g.to}
                   </span>
-                  <span className="text-zinc-300">{g.pct.toFixed(1)}%</span>
+                  <span className="text-foreground">{g.pct.toFixed(1)}%</span>
                   <span className={`uppercase text-[9px] ${tagColor}`}>{tag}</span>
                 </div>
               );

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from "react";
+﻿import { useMemo, useRef, useEffect, useState } from "react";
 import { computeHistogram, type HistogramData, type HistogramBin } from "@/lib/histogramUtils";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 import { STATIC_CHANNELS } from "./ChannelRegistry";
@@ -135,14 +135,14 @@ export function HistogramWidget({
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded overflow-hidden">
+    <div className="flex flex-col h-full bg-background border border-border-strong rounded overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-925 flex items-center justify-between flex-shrink-0">
-        <div className="text-[11px] uppercase tracking-wider text-zinc-400">
+      <div className="px-3 py-2 border-b border-border-strong bg-panel-2 flex items-center justify-between flex-shrink-0">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
           {label} Distribution
         </div>
         <div className="flex items-center gap-2">
-          <label className="text-[10px] text-zinc-500">Bins:</label>
+          <label className="text-[10px] text-muted-foreground">Bins:</label>
           <input
             type="range"
             min="5"
@@ -151,7 +151,7 @@ export function HistogramWidget({
             onChange={(e) => setBinCount(parseInt(e.target.value))}
             className="w-20 h-1"
           />
-          <span className="text-[10px] text-zinc-400 w-5">{binCount}</span>
+          <span className="text-[10px] text-muted-foreground w-5">{binCount}</span>
         </div>
       </div>
 
@@ -166,7 +166,7 @@ export function HistogramWidget({
       </div>
 
       {/* Stats Footer */}
-      <div className="px-3 py-2 border-t border-zinc-800 bg-zinc-925 flex-shrink-0 grid grid-cols-3 gap-2 text-[10px]">
+      <div className="px-3 py-2 border-t border-border-strong bg-panel-2 flex-shrink-0 grid grid-cols-3 gap-2 text-[10px]">
         <StatRow label="Mean" value={histogram.stats.mean} unit={unit} />
         <StatRow label="Median" value={histogram.stats.median} unit={unit} />
         <StatRow label="Std Dev" value={histogram.stats.stdDev} unit={unit} />
@@ -181,10 +181,10 @@ export function HistogramWidget({
 function StatRow({ label, value, unit }: { label: string; value: number; unit: string }) {
   return (
     <div className="flex justify-between items-baseline gap-1">
-      <span className="text-zinc-500">{label}</span>
-      <span className="text-zinc-300">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-foreground">
         {value.toFixed(1)}
-        <span className="text-[9px] text-zinc-600 ml-0.5">{unit}</span>
+        <span className="text-[9px] text-muted-foreground ml-0.5">{unit}</span>
       </span>
     </div>
   );

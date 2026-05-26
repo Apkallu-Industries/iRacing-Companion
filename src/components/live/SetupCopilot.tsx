@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Telemetry } from "@/lib/telemetry-types";
 import { Bot, Wrench, Wind, Thermometer, CloudRain } from "lucide-react";
 import { useWorkbench } from "@/lib/store";
@@ -88,7 +88,7 @@ Based on this specific car, track, and environmental conditions, what setup adju
   };
 
   return (
-    <div className="bg-zinc-900/60 backdrop-blur-md rounded-xl p-4 border border-zinc-800 shadow-2xl mt-4">
+    <div className="bg-muted/60 backdrop-blur-md rounded-xl p-4 border border-border-strong shadow-2xl mt-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -99,32 +99,32 @@ Based on this specific car, track, and environmental conditions, what setup adju
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+        <div className="bg-accent/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
+          <span className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
             <Thermometer className="w-3 h-3" /> Air / Track Temp
           </span>
           <span className="text-sm font-medium text-white">
             {t.liveAirTempC.toFixed(1)}°C / {t.liveTrackTempC.toFixed(1)}°C
           </span>
         </div>
-        <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+        <div className="bg-accent/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
+          <span className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
             <Wind className="w-3 h-3" /> Wind / Aero
           </span>
           <span className="text-sm font-medium text-white">
             {t.windVel.toFixed(1)} m/s | {t.airDensity.toFixed(2)} kg/m³
           </span>
         </div>
-        <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+        <div className="bg-accent/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
+          <span className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
             <CloudRain className="w-3 h-3" /> Track State
           </span>
           <span className="text-sm font-medium text-white">
             {t.trackWetness > 0.5 ? "Wet" : t.trackWetness > 0.1 ? "Damp" : "Dry"}
           </span>
         </div>
-        <div className="bg-zinc-800/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
-          <span className="text-xs text-zinc-400 mb-1 flex items-center gap-1">
+        <div className="bg-accent/50 p-3 rounded-lg border border-zinc-700/50 flex flex-col">
+          <span className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
             <Bot className="w-3 h-3" /> Context
           </span>
           <span className="text-sm font-medium text-white truncate" title={t.car}>
@@ -149,7 +149,7 @@ Based on this specific car, track, and environmental conditions, what setup adju
       </button>
 
       {response && (
-        <div className="mt-4 p-4 bg-zinc-950/80 rounded-lg border border-zinc-800 text-sm text-zinc-300 leading-relaxed font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
+        <div className="mt-4 p-4 bg-background/80 rounded-lg border border-border-strong text-sm text-foreground leading-relaxed font-mono whitespace-pre-wrap max-h-96 overflow-y-auto">
           {response}
         </div>
       )}

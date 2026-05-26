@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Fingerprint, History } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
@@ -82,10 +82,10 @@ export function LiveReference({ t }: { t: Telemetry }) {
   const dLast = liveBest != null && last != null ? +(liveBest - last).toFixed(3) : null;
 
   return (
-    <div className="bg-zinc-925 ring-1 ring-white/5 rounded-lg p-4">
+    <div className="bg-panel-2 ring-1 ring-white/5 rounded-lg p-4">
       <div className="mb-3 flex items-center gap-2">
         <Fingerprint className="h-3.5 w-3.5 text-racing-cyan" />
-        <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-medium">
+        <h2 className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">
           Reference Pace
         </h2>
         {!user && (
@@ -122,7 +122,7 @@ export function LiveReference({ t }: { t: Telemetry }) {
       </div>
 
       {lastSess && (
-        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
           <History className="h-3 w-3" />
           <span className="truncate">{lastSess.name}</span>
         </div>
@@ -148,22 +148,22 @@ function RefCell({
 }) {
   const dColor =
     delta == null
-      ? "text-zinc-500"
+      ? "text-muted-foreground"
       : delta < -0.05
         ? "text-emerald-400"
         : delta > 0.05
           ? "text-rose-400"
-          : "text-zinc-300";
+          : "text-foreground";
   const dStr = delta == null ? "" : `${delta > 0 ? "+" : ""}${delta.toFixed(3)}s`;
   const inner = (
-    <div className="rounded-sm bg-zinc-900/60 px-2 py-1.5">
-      <div className="text-[9px] uppercase tracking-widest text-zinc-500">{label}</div>
-      <div className={`tabular-nums ${highlight ? "text-racing-cyan" : "text-zinc-100"}`}>
+    <div className="rounded-sm bg-muted/60 px-2 py-1.5">
+      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className={`tabular-nums ${highlight ? "text-racing-cyan" : "text-foreground"}`}>
         {value}
       </div>
       <div className={`text-[10px] tabular-nums ${dColor}`}>{dStr || (sub ?? "\u00a0")}</div>
       {dStr && sub && (
-        <div className="text-[9px] uppercase tracking-widest text-zinc-600">{sub}</div>
+        <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{sub}</div>
       )}
     </div>
   );

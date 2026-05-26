@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Download,
   Terminal,
@@ -34,26 +34,26 @@ function StepRow({
     <div
       className={`flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors ${
         active
-          ? "bg-zinc-800/80 ring-1 ring-racing-orange/30"
+          ? "bg-accent/80 ring-1 ring-racing-orange/30"
           : done
-            ? "bg-zinc-900/40"
-            : "bg-zinc-900/20"
+            ? "bg-muted/40"
+            : "bg-muted/20"
       }`}
     >
       {done ? (
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
       ) : (
         <Circle
-          className={`mt-0.5 h-4 w-4 shrink-0 ${active ? "text-racing-orange" : "text-zinc-600"}`}
+          className={`mt-0.5 h-4 w-4 shrink-0 ${active ? "text-racing-orange" : "text-muted-foreground"}`}
         />
       )}
       <div>
         <div
-          className={`text-[11px] font-mono uppercase tracking-wider ${done ? "text-emerald-400" : "text-zinc-300"}`}
+          className={`text-[11px] font-mono uppercase tracking-wider ${done ? "text-emerald-400" : "text-foreground"}`}
         >
           {label}
         </div>
-        <p className="mt-0.5 text-[11px] text-zinc-400 leading-relaxed">{detail}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{detail}</p>
       </div>
     </div>
   );
@@ -88,11 +88,11 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
   };
 
   return (
-    <div className="rounded-lg bg-zinc-925 ring-1 ring-racing-orange/40 p-5">
+    <div className="rounded-lg bg-panel-2 ring-1 ring-racing-orange/40 p-5">
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Wifi className={`h-4 w-4 ${step3 ? "text-emerald-400" : "text-racing-orange"}`} />
-          <h2 className="text-[11px] uppercase tracking-[0.2em] font-medium font-mono text-zinc-300">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] font-medium font-mono text-foreground">
             {step3
               ? "Live — iRacing connected"
               : step1
@@ -104,7 +104,7 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
           type="button"
           onClick={() => bridge.refresh()}
           disabled={bridge.checking}
-          className="rounded p-1 text-zinc-500 hover:text-zinc-200 disabled:opacity-40"
+          className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
           aria-label="Refresh connection status"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${bridge.checking ? "animate-spin" : ""}`} />
@@ -166,16 +166,16 @@ export function BridgeInstall({ iracingLive = false }: BridgeInstallProps) {
       )}
 
       {step1 && !step3 && (
-        <p className="text-[11px] text-zinc-400 mb-4 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground mb-4 leading-relaxed">
           Bridge is up. Open iRacing on this PC — data appears automatically when you are on track.
         </p>
       )}
 
-      <div className="pt-3 border-t border-zinc-900 flex items-center justify-between text-[10px] text-zinc-500 font-mono">
+      <div className="pt-3 border-t border-border flex items-center justify-between text-[10px] text-muted-foreground font-mono">
         <span>Bridge Package</span>
         <a
           href="/downloads/pit-wall-bridge.zip"
-          className="flex items-center gap-1 hover:text-zinc-300 transition-colors text-primary font-semibold"
+          className="flex items-center gap-1 hover:text-foreground transition-colors text-primary font-semibold"
         >
           <Download className="h-3 w-3" /> Download pit-wall-bridge.zip
         </a>

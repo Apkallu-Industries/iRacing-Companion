@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 
 export interface LapMetric {
@@ -124,16 +124,16 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded overflow-hidden">
+    <div className="flex flex-col h-full bg-background border border-border-strong rounded overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-925 flex-shrink-0">
-        <div className="text-[11px] uppercase tracking-wider text-zinc-400 mb-2">Lap Metrics</div>
+      <div className="px-3 py-2 border-b border-border-strong bg-panel-2 flex-shrink-0">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Lap Metrics</div>
         <div className="flex gap-2 text-[10px]">
-          <label className="text-zinc-500">Status:</label>
+          <label className="text-muted-foreground">Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded text-[9px] border border-zinc-700"
+            className="bg-accent text-foreground px-2 py-0.5 rounded text-[9px] border border-zinc-700"
           >
             <option value="all">All</option>
             <option value="complete">Complete</option>
@@ -145,7 +145,7 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
       {/* Table */}
       <div className="flex-1 min-h-0 overflow-auto">
         <table className="w-full text-[10px] border-collapse">
-          <thead className="sticky top-0 bg-zinc-925 border-b border-zinc-800">
+          <thead className="sticky top-0 bg-panel-2 border-b border-border-strong">
             <tr>
               <HeaderCell
                 label="Lap"
@@ -201,7 +201,7 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
             {filtered.map((lap) => (
               <tr
                 key={lap.lapNumber}
-                className="border-b border-zinc-800 hover:bg-zinc-900 transition-colors"
+                className="border-b border-border-strong hover:bg-muted transition-colors"
               >
                 <Cell value={lap.lapNumber} status={lap.status} />
                 <Cell value={lap.lapTime?.toFixed(2)} unit="s" />
@@ -216,7 +216,7 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
           </tbody>
         </table>
         {filtered.length === 0 && (
-          <div className="p-4 text-center text-zinc-500 text-[10px]">No laps yet</div>
+          <div className="p-4 text-center text-muted-foreground text-[10px]">No laps yet</div>
         )}
       </div>
     </div>
@@ -238,7 +238,7 @@ function HeaderCell({
     <th
       onClick={onSort}
       className={`px-2 py-1 text-left cursor-pointer font-normal ${
-        active ? "text-zinc-200 bg-zinc-900" : "text-zinc-500 hover:text-zinc-300"
+        active ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground"
       }`}
     >
       <div className="flex items-center gap-1">
@@ -262,15 +262,15 @@ function Cell({
     status === "in-progress"
       ? "text-emerald-400"
       : status === "complete"
-        ? "text-zinc-300"
-        : "text-zinc-400";
+        ? "text-foreground"
+        : "text-muted-foreground";
 
   return (
     <td className={`px-2 py-1 text-right tabular-nums ${textColor}`}>
       {value != null ? (
         <>
           {value}
-          {unit && <span className="text-[9px] text-zinc-600 ml-0.5">{unit}</span>}
+          {unit && <span className="text-[9px] text-muted-foreground ml-0.5">{unit}</span>}
         </>
       ) : (
         "—"

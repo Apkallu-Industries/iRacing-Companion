@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 import { HistogramWidget } from "./HistogramWidget";
 import { ScatterWidget } from "./ScatterWidget";
@@ -22,9 +22,9 @@ export function TabedAnalysisPanel({ samples, ggScatterComponent }: TabedAnalysi
   ];
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded overflow-hidden">
+    <div className="flex flex-col h-full bg-background border border-border-strong rounded overflow-hidden">
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-zinc-800 bg-zinc-925 flex-shrink-0 overflow-x-auto">
+      <div className="flex gap-0 border-b border-border-strong bg-panel-2 flex-shrink-0 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -32,7 +32,7 @@ export function TabedAnalysisPanel({ samples, ggScatterComponent }: TabedAnalysi
             className={`px-3 py-1.5 text-[10px] uppercase tracking-wider font-medium border-b-2 transition-colors ${
               activeTab === tab.id
                 ? "text-cyan-300 border-cyan-400"
-                : "text-zinc-500 border-transparent hover:text-zinc-300"
+                : "text-muted-foreground border-transparent hover:text-foreground"
             }`}
           >
             {tab.label}

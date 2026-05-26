@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { compileMathExpression, evaluateCompiledMathExpression } from "@/lib/math/evaluator";
@@ -313,17 +313,17 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
   }, [t, visibleChannels, mathNumericByChannelKey]);
 
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950">
-      <div className="flex items-center justify-between border-b border-zinc-900 px-2 py-1.5">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">Channels</span>
+    <div className="rounded-sm border border-border bg-background">
+      <div className="flex items-center justify-between border-b border-border px-2 py-1.5">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Channels</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-[9px] tabular-nums text-zinc-600">
+          <span className="text-[9px] tabular-nums text-muted-foreground">
             {visibleChannels.length}/{registry.length}
           </span>
           <button
             type="button"
             onClick={() => setBrowseOpen(true)}
-            className="rounded-sm bg-zinc-900 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-zinc-300 hover:bg-zinc-800"
+            className="rounded-sm bg-muted px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-foreground hover:bg-accent"
             title="Browse community channel layouts"
           >
             browse
@@ -347,7 +347,7 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
             className={`rounded-sm px-1.5 py-0.5 text-[9px] uppercase tracking-wider ${
               editing
                 ? "bg-amber-500/20 text-amber-300"
-                : "bg-zinc-900 text-zinc-400 hover:text-zinc-200"
+                : "bg-muted text-muted-foreground hover:text-foreground"
             }`}
           >
             {editing ? "Done" : "Edit"}
@@ -356,13 +356,13 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
       </div>
 
       {!editing ? (
-        <ul className="divide-y divide-zinc-900">
+        <ul className="divide-y divide-border">
           {visibleChannels.map((c) => {
             const isTrace = modeByKey[c.key] === "trace";
             return (
               <li
                 key={c.key}
-                className="flex items-center gap-2 px-2 py-1 text-[11px] cursor-pointer hover:bg-zinc-900/60 transition-colors group"
+                className="flex items-center gap-2 px-2 py-1 text-[11px] cursor-pointer hover:bg-muted/60 transition-colors group"
                 onClick={() => toggleMode(c.key)}
                 title={`Click to switch to ${isTrace ? "RAW" : "TRACE"} view`}
               >
@@ -371,7 +371,7 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
                   style={{ background: c.color, color: c.color }}
                 />
                 <span
-                  className="w-24 truncate text-zinc-500 group-hover:text-zinc-400 transition-colors"
+                  className="w-24 truncate text-muted-foreground group-hover:text-muted-foreground transition-colors"
                   title={c.key}
                 >
                   {c.label}
@@ -379,24 +379,24 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
                 {isTrace ? (
                   <span className="ml-auto flex items-center gap-1.5">
                     <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
-                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                    <span className="text-[7px] uppercase tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity select-none">
                       trc
                     </span>
                   </span>
                 ) : (
                   <span className="ml-auto flex items-center gap-1.5">
-                    <span className="truncate tabular-nums text-zinc-100">{c.read(t)}</span>
-                    <span className="text-[7px] uppercase tracking-wider text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                    <span className="truncate tabular-nums text-foreground">{c.read(t)}</span>
+                    <span className="text-[7px] uppercase tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity select-none">
                       raw
                     </span>
                   </span>
                 )}
-                <span className="w-8 text-right text-[9px] text-zinc-600">{c.unit}</span>
+                <span className="w-8 text-right text-[9px] text-muted-foreground">{c.unit}</span>
               </li>
             );
           })}
           {visibleChannels.length === 0 && (
-            <li className="px-2 py-3 text-center text-[10px] text-zinc-600">
+            <li className="px-2 py-3 text-center text-[10px] text-muted-foreground">
               No channels selected · tap Edit
             </li>
           )}
@@ -542,23 +542,23 @@ function EditPanel({
   return (
     <div className="max-h-[480px] overflow-y-auto">
       {/* Active / ordered list */}
-      <div className="border-b border-zinc-900 px-2 py-1.5 text-[9px] uppercase tracking-wider text-zinc-500">
+      <div className="border-b border-border px-2 py-1.5 text-[9px] uppercase tracking-wider text-muted-foreground">
         Active order
       </div>
-      <ul className="divide-y divide-zinc-900">
+      <ul className="divide-y divide-border">
         {visibleKeys.map((key, idx) => {
           const c = registry.find((r) => r.key === key);
           if (!c) return null;
           return (
             <li key={key} className="flex items-center gap-1 px-2 py-1 text-[11px]">
               <span className="size-1.5 rounded-full" style={{ background: c.color }} />
-              <span className="w-24 truncate text-zinc-300">{c.label}</span>
+              <span className="w-24 truncate text-foreground">{c.label}</span>
               <span className="ml-auto flex items-center gap-0.5">
                 <button
                   type="button"
                   onClick={() => move(key, -1)}
                   disabled={idx === 0}
-                  className="rounded-sm bg-zinc-900 px-1 py-0.5 text-zinc-400 disabled:opacity-30 hover:text-zinc-100"
+                  className="rounded-sm bg-muted px-1 py-0.5 text-muted-foreground disabled:opacity-30 hover:text-foreground"
                   aria-label="Move up"
                 >
                   ↑
@@ -567,7 +567,7 @@ function EditPanel({
                   type="button"
                   onClick={() => move(key, 1)}
                   disabled={idx === visibleKeys.length - 1}
-                  className="rounded-sm bg-zinc-900 px-1 py-0.5 text-zinc-400 disabled:opacity-30 hover:text-zinc-100"
+                  className="rounded-sm bg-muted px-1 py-0.5 text-muted-foreground disabled:opacity-30 hover:text-foreground"
                   aria-label="Move down"
                 >
                   ↓
@@ -601,20 +601,20 @@ function EditPanel({
         if (inactive.length === 0) return null;
         return (
           <div key={group}>
-            <div className="border-y border-zinc-900 bg-zinc-900/30 px-2 py-1 text-[9px] uppercase tracking-wider text-zinc-500">
+            <div className="border-y border-border bg-muted/30 px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
               {group}
             </div>
-            <ul className="divide-y divide-zinc-900">
+            <ul className="divide-y divide-border">
               {inactive.map((c) => (
                 <li key={c.key} className="flex items-center gap-2 px-2 py-1 text-[11px]">
                   <span
                     className="size-1.5 rounded-full opacity-60"
                     style={{ background: c.color }}
                   />
-                  <span className="truncate text-zinc-400" title={c.key}>
+                  <span className="truncate text-muted-foreground" title={c.key}>
                     {c.label}
                   </span>
-                  <span className="ml-auto text-[9px] text-zinc-600">{c.unit}</span>
+                  <span className="ml-auto text-[9px] text-muted-foreground">{c.unit}</span>
                   <button
                     type="button"
                     onClick={() => toggle(c.key)}
@@ -628,7 +628,7 @@ function EditPanel({
           </div>
         );
       })}
-      <div className="border-y border-zinc-900 bg-zinc-900/30 px-2 py-1 text-[9px] uppercase tracking-wider text-zinc-500">
+      <div className="border-y border-border bg-muted/30 px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
         Math
       </div>
       <div className="space-y-2 px-2 py-2">
@@ -637,7 +637,7 @@ function EditPanel({
           const compiled = compileMathExpression(m.expression);
           const valid = syntax.ok && compiled.ok;
           return (
-            <div key={m.id} className="rounded-sm border border-zinc-900 bg-zinc-950 p-2">
+            <div key={m.id} className="rounded-sm border border-border bg-background p-2">
               <div className="mb-1 flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -647,7 +647,7 @@ function EditPanel({
                 <input
                   value={m.name}
                   onChange={(e) => updateExpression(m.id, { name: e.target.value })}
-                  className="min-w-0 flex-1 rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[11px] text-zinc-200"
+                  className="min-w-0 flex-1 rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[11px] text-foreground"
                   placeholder="Name"
                 />
                 <button
@@ -662,23 +662,23 @@ function EditPanel({
                 <input
                   value={m.key}
                   onChange={(e) => updateExpression(m.id, { key: e.target.value })}
-                  className="rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                  className="rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[10px] text-foreground"
                   placeholder="key (snake_case)"
                 />
                 <input
                   value={m.unit ?? ""}
                   onChange={(e) => updateExpression(m.id, { unit: e.target.value })}
-                  className="rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                  className="rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[10px] text-foreground"
                   placeholder="unit"
                 />
                 <input
                   value={m.expression}
                   onChange={(e) => updateExpression(m.id, { expression: e.target.value })}
-                  className="col-span-2 rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                  className="col-span-2 rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[10px] text-foreground"
                   placeholder="expression"
                 />
               </div>
-              <div className="mt-2 border-t border-zinc-900 pt-2 space-y-2">
+              <div className="mt-2 border-t border-border pt-2 space-y-2">
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -688,14 +688,14 @@ function EditPanel({
                     }
                     className="accent-cyan-500 h-3.5 w-3.5"
                   />
-                  <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
                     Vocal Alert Enable
                   </span>
                 </label>
                 {(m.speechAlertEnabled ?? false) && (
-                  <div className="grid grid-cols-2 gap-1 bg-zinc-900/20 p-1.5 rounded-sm border border-zinc-900/50">
+                  <div className="grid grid-cols-2 gap-1 bg-muted/20 p-1.5 rounded-sm border border-border/50">
                     <div className="col-span-2 space-y-1">
-                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground">
                         Alert Speech Text
                       </span>
                       <input
@@ -703,12 +703,12 @@ function EditPanel({
                         onChange={(e) =>
                           updateExpression(m.id, { speechAlertText: e.target.value })
                         }
-                        className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                        className="w-full rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[10px] text-foreground"
                         placeholder="e.g. Stop overlapping brake and throttle!"
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground">
                         Trigger Threshold
                       </span>
                       <input
@@ -721,12 +721,12 @@ function EditPanel({
                               e.target.value === "" ? undefined : parseFloat(e.target.value),
                           })
                         }
-                        className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                        className="w-full rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[10px] text-foreground"
                         placeholder="e.g. 1.2"
                       />
                     </div>
                     <div className="space-y-1">
-                      <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-500">
+                      <span className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground">
                         Cooldown (sec)
                       </span>
                       <input
@@ -740,14 +740,14 @@ function EditPanel({
                               e.target.value === "" ? undefined : parseInt(e.target.value, 10),
                           })
                         }
-                        className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-1.5 py-1 text-[10px] text-zinc-300"
+                        className="w-full rounded-sm border border-border-strong bg-muted px-1.5 py-1 text-[10px] text-foreground"
                         placeholder="e.g. 15"
                       />
                     </div>
                   </div>
                 )}
               </div>
-              <div className="mt-1 text-[9px] text-zinc-500">
+              <div className="mt-1 text-[9px] text-muted-foreground">
                 {valid
                   ? "Valid expression."
                   : (syntax.error ?? (!compiled.ok ? compiled.error : "Invalid expression."))}
@@ -771,25 +771,25 @@ function EditPanel({
         </button>
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-zinc-900 px-2 py-2 text-[9px] uppercase tracking-wider">
+      <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-2 text-[9px] uppercase tracking-wider">
         <button
           type="button"
           onClick={() => onChange(DEFAULT_CHANNEL_KEYS)}
-          className="rounded-sm bg-zinc-900 px-2 py-1 text-zinc-400 hover:text-zinc-100"
+          className="rounded-sm bg-muted px-2 py-1 text-muted-foreground hover:text-foreground"
         >
           Reset defaults
         </button>
         <button
           type="button"
           onClick={() => onChange([])}
-          className="rounded-sm bg-zinc-900 px-2 py-1 text-zinc-400 hover:text-zinc-100"
+          className="rounded-sm bg-muted px-2 py-1 text-muted-foreground hover:text-foreground"
         >
           Clear all
         </button>
         <button
           type="button"
           onClick={() => onChange(registry.map((c) => c.key))}
-          className="rounded-sm bg-zinc-900 px-2 py-1 text-zinc-400 hover:text-zinc-100"
+          className="rounded-sm bg-muted px-2 py-1 text-muted-foreground hover:text-foreground"
         >
           Add all
         </button>

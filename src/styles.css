@@ -360,6 +360,44 @@
   --layout-nav-height: 40px;
 }
 
+
+/* ── F: Modern F1 ──
+   High contrast, F1 red accents, bold headings,
+   DIN-style uppercase, clean grid. */
+[data-layout="f1"] {
+  --layout-radius: 3px;
+  --layout-radius-lg: 4px;
+  --layout-pad-xs: 4px;
+  --layout-pad-sm: 8px;
+  --layout-pad-md: 10px;
+  --layout-pad-lg: 14px;
+  --layout-pad-xl: 18px;
+  --layout-gap: 8px;
+  --layout-gap-lg: 12px;
+  --layout-font-data: 13px;
+  --layout-font-label: 9px;
+  --layout-font-heading: 12px;
+  --layout-nav-height: 42px;
+}
+
+/* ── G: IndyCar / NASCAR ──
+   Dense data with running order, 4-sector splits,
+   fuel strategy panels, caution flag indicators. */
+[data-layout="indycar"] {
+  --layout-radius: 2px;
+  --layout-radius-lg: 3px;
+  --layout-pad-xs: 3px;
+  --layout-pad-sm: 6px;
+  --layout-pad-md: 8px;
+  --layout-pad-lg: 10px;
+  --layout-pad-xl: 14px;
+  --layout-gap: 5px;
+  --layout-gap-lg: 8px;
+  --layout-font-data: 13px;
+  --layout-font-label: 9px;
+  --layout-font-heading: 11px;
+  --layout-nav-height: 38px;
+}
 /* ── Layout-aware utility classes ── */
 @layer base {
   /* Cards/panels respond to layout density */
@@ -482,5 +520,61 @@
   /* ── Carbon: red border accent on primary panels ── */
   [data-layout="carbon"] .layout-card {
     border-left: 2px solid var(--primary);
+  }
+
+  /* ── F1: uppercase nav, bold data, red focus ── */
+  [data-layout="f1"] header {
+    min-height: var(--layout-nav-height);
+    padding-top: var(--layout-pad-xs);
+    padding-bottom: var(--layout-pad-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+
+  [data-layout="f1"] .font-mono {
+    font-weight: 600;
+  }
+
+  [data-layout="f1"] .rounded-2xl,
+  [data-layout="f1"] .rounded-xl,
+  [data-layout="f1"] .rounded-lg {
+    border-radius: 4px !important;
+  }
+
+  /* ── IndyCar: dense nav, green live accents ── */
+  [data-layout="indycar"] header {
+    min-height: var(--layout-nav-height);
+    padding-top: var(--layout-pad-xs);
+    padding-bottom: var(--layout-pad-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  [data-layout="indycar"] .layout-card {
+    border-left: 2px solid var(--primary);
+  }
+
+  [data-layout="indycar"] .rounded-2xl,
+  [data-layout="indycar"] .rounded-xl,
+  [data-layout="indycar"] .rounded-lg {
+    border-radius: 3px !important;
+  }
+
+  /* ── F1 + IndyCar: strip glassmorphism ── */
+  [data-layout="f1"] .backdrop-blur-sm,
+  [data-layout="f1"] .backdrop-blur-md,
+  [data-layout="f1"] .backdrop-blur-lg,
+  [data-layout="indycar"] .backdrop-blur-sm,
+  [data-layout="indycar"] .backdrop-blur-md,
+  [data-layout="indycar"] .backdrop-blur-lg {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* ── F1 + IndyCar: kill decorative pulse ── */
+  [data-layout="f1"] .animate-pulse:not([data-critical]),
+  [data-layout="indycar"] .animate-pulse:not([data-critical]) {
+    animation: none !important;
   }
 }

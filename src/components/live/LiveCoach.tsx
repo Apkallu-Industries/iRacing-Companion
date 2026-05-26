@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { Brain, Loader2, Volume2, Zap, ShieldAlert, Gauge, AlertTriangle } from "lucide-react";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { useAuth } from "@/lib/auth";
@@ -284,13 +284,13 @@ export function LiveCoach({ t }: { t: Telemetry }) {
   const ToneIcon = style.icon;
 
   return (
-    <div className={`bg-zinc-925 ring-1 ${call ? style.ring : "ring-white/5"} rounded-lg p-4`}>
+    <div className={`bg-panel-2 ring-1 ${call ? style.ring : "ring-white/5"} rounded-lg p-4`}>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-medium">
+        <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">
           <Brain className="h-3.5 w-3.5 text-racing-cyan" />
           AI Race Engineer
         </h2>
-        <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-400">
+        <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
           {!user && <span className="text-racing-orange">Sign in to save PBs</span>}
           <label className="flex cursor-pointer items-center gap-1">
             <input
@@ -315,14 +315,14 @@ export function LiveCoach({ t }: { t: Telemetry }) {
 
       {/* Radio call */}
       {!call && !loading && (
-        <div className="rounded-md bg-zinc-900/50 p-3 text-center text-xs text-zinc-400">
+        <div className="rounded-md bg-muted/50 p-3 text-center text-xs text-muted-foreground">
           {user
             ? "Complete a lap on the bridge and I'll start coaching."
             : "Coaching active in session-only mode. Sign in to keep your personal bests."}
         </div>
       )}
       {loading && (
-        <div className="flex items-center gap-2 rounded-md bg-zinc-900/50 p-3 text-xs text-zinc-400">
+        <div className="flex items-center gap-2 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
           Reading lap…
         </div>
@@ -343,12 +343,12 @@ export function LiveCoach({ t }: { t: Telemetry }) {
               {style.label}
             </span>
             {lastConfidence != null && (
-              <span className="font-mono text-[9px] text-zinc-500" title="Rules-engine confidence">
+              <span className="font-mono text-[9px] text-muted-foreground" title="Rules-engine confidence">
                 {lastConfidence}%
               </span>
             )}
             {pb && (
-              <span className="font-mono text-[10px] text-zinc-400">
+              <span className="font-mono text-[10px] text-muted-foreground">
                 Δ {t.deltaSec >= 0 ? "+" : ""}
                 {t.deltaSec.toFixed(3)}s
               </span>
@@ -356,7 +356,7 @@ export function LiveCoach({ t }: { t: Telemetry }) {
             <button
               onClick={() => speakCall(call)}
               disabled={speaking}
-              className="ml-auto flex items-center gap-1 rounded-sm bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-zinc-200 hover:bg-black/50 disabled:opacity-40"
+              className="ml-auto flex items-center gap-1 rounded-sm bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground hover:bg-black/50 disabled:opacity-40"
             >
               {speaking ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -367,10 +367,10 @@ export function LiveCoach({ t }: { t: Telemetry }) {
             </button>
           </div>
           <div className={`text-lg font-semibold leading-tight ${style.text}`}>{call.headline}</div>
-          <div className="mt-1 text-xs text-zinc-200">{call.detail}</div>
+          <div className="mt-1 text-xs text-foreground">{call.detail}</div>
           {call.focus && (
-            <div className="mt-1.5 text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-              Next-lap focus → <span className="text-zinc-100">{call.focus}</span>
+            <div className="mt-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+              Next-lap focus → <span className="text-foreground">{call.focus}</span>
             </div>
           )}
         </div>
@@ -389,9 +389,9 @@ function PbCell({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-sm bg-zinc-900/50 px-2 py-1">
-      <div className="text-[9px] uppercase tracking-widest text-zinc-500">{label}</div>
-      <div className={`tabular-nums ${highlight ? "text-racing-green" : "text-zinc-200"}`}>
+    <div className="rounded-sm bg-muted/50 px-2 py-1">
+      <div className="text-[9px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className={`tabular-nums ${highlight ? "text-racing-green" : "text-foreground"}`}>
         {value}
       </div>
     </div>

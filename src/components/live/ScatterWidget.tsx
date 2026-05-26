@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from "react";
+﻿import { useMemo, useRef, useEffect, useState } from "react";
 import {
   prepareScatterData,
   calculateGridDensity,
@@ -173,18 +173,18 @@ export function ScatterWidget({
   }, [scatterData, density, densityMode, metrics]);
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 border border-zinc-800 rounded overflow-hidden">
+    <div className="flex flex-col h-full bg-background border border-border-strong rounded overflow-hidden">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-zinc-800 bg-zinc-925 flex-shrink-0">
-        <div className="text-[11px] uppercase tracking-wider text-zinc-400 mb-2">
+      <div className="px-3 py-2 border-b border-border-strong bg-panel-2 flex-shrink-0">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">
           XY Scatter Plot
         </div>
         <div className="flex items-center gap-2 text-[10px]">
-          <label className="text-zinc-500">X:</label>
+          <label className="text-muted-foreground">X:</label>
           <select
             value={xChannel}
             onChange={(e) => setXChannel(e.target.value)}
-            className="bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded text-[9px] border border-zinc-700"
+            className="bg-accent text-foreground px-2 py-0.5 rounded text-[9px] border border-zinc-700"
           >
             {CHANNEL_KEYS.map((k) => (
               <option key={k} value={k}>
@@ -193,11 +193,11 @@ export function ScatterWidget({
             ))}
           </select>
 
-          <label className="text-zinc-500 ml-2">Y:</label>
+          <label className="text-muted-foreground ml-2">Y:</label>
           <select
             value={yChannel}
             onChange={(e) => setYChannel(e.target.value)}
-            className="bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded text-[9px] border border-zinc-700"
+            className="bg-accent text-foreground px-2 py-0.5 rounded text-[9px] border border-zinc-700"
           >
             {CHANNEL_KEYS.map((k) => (
               <option key={k} value={k}>
@@ -206,11 +206,11 @@ export function ScatterWidget({
             ))}
           </select>
 
-          <label className="text-zinc-500 ml-2">Density:</label>
+          <label className="text-muted-foreground ml-2">Density:</label>
           <select
             value={densityMode}
             onChange={(e) => setDensityMode(e.target.value as DensityMode)}
-            className="bg-zinc-800 text-zinc-200 px-2 py-0.5 rounded text-[9px] border border-zinc-700"
+            className="bg-accent text-foreground px-2 py-0.5 rounded text-[9px] border border-zinc-700"
           >
             <option value="none">Off</option>
             <option value="grid">Grid</option>
@@ -224,13 +224,13 @@ export function ScatterWidget({
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 border-t border-zinc-800 bg-zinc-925 flex-shrink-0 text-[10px]">
+      <div className="px-3 py-2 border-t border-border-strong bg-panel-2 flex-shrink-0 text-[10px]">
         <div className="flex justify-between">
-          <span className="text-zinc-500">
-            Correlation: <span className="text-zinc-300">{metrics.correlation.toFixed(2)}</span>
+          <span className="text-muted-foreground">
+            Correlation: <span className="text-foreground">{metrics.correlation.toFixed(2)}</span>
           </span>
-          <span className="text-zinc-500">
-            Points: <span className="text-zinc-300">{scatterData.length}</span>
+          <span className="text-muted-foreground">
+            Points: <span className="text-foreground">{scatterData.length}</span>
           </span>
         </div>
       </div>

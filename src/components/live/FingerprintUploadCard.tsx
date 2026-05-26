@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Fingerprint, FolderUp } from "lucide-react";
 import { toast } from "sonner";
@@ -110,10 +110,10 @@ export function FingerprintUploadCard() {
   );
 
   return (
-    <div className="bg-zinc-925 ring-1 ring-white/5 rounded-lg p-4">
+    <div className="bg-panel-2 ring-1 ring-white/5 rounded-lg p-4">
       <div className="mb-3 flex items-center gap-2">
         <Fingerprint className="h-3.5 w-3.5 text-racing-cyan" />
-        <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-medium">
+        <h2 className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">
           Driver Fingerprint
         </h2>
         <Link
@@ -124,9 +124,9 @@ export function FingerprintUploadCard() {
         </Link>
       </div>
 
-      <p className="text-[11px] text-zinc-400 mb-3">
+      <p className="text-[11px] text-muted-foreground mb-3">
         Upload your{" "}
-        <code className="rounded-sm bg-zinc-900 px-1 font-mono text-[10px]">
+        <code className="rounded-sm bg-muted px-1 font-mono text-[10px]">
           Documents/iRacing/lapfiles
         </code>{" "}
         folder to build a baseline from every reference lap. Parsed locally; only summaries sync.
@@ -136,13 +136,13 @@ export function FingerprintUploadCard() {
         <button
           disabled={busy}
           onClick={() => inputRef.current?.click()}
-          className="flex h-9 items-center gap-2 rounded-sm border border-zinc-800 bg-racing-cyan/15 px-3 font-mono text-[11px] uppercase tracking-wider text-zinc-100 hover:bg-racing-cyan/25 disabled:opacity-50"
+          className="flex h-9 items-center gap-2 rounded-sm border border-border-strong bg-racing-cyan/15 px-3 font-mono text-[11px] uppercase tracking-wider text-foreground hover:bg-racing-cyan/25 disabled:opacity-50"
         >
           <FolderUp className="h-3.5 w-3.5" />
           {fp ? "Rebuild from folder" : "Pick lapfiles folder"}
         </button>
         {fp && (
-          <span className="font-mono text-[10px] text-zinc-400">
+          <span className="font-mono text-[10px] text-muted-foreground">
             {fp.totalTracks} tracks · {fp.totalCars} cars · {fp.pairs.length} pairs
           </span>
         )}
@@ -159,10 +159,10 @@ export function FingerprintUploadCard() {
       </div>
 
       {progress && (
-        <div className="mt-3 font-mono text-[11px] text-zinc-400">
+        <div className="mt-3 font-mono text-[11px] text-muted-foreground">
           Parsing {progress.done}/{progress.total}
           {progress.failed > 0 && ` · ${progress.failed} skipped`}
-          <div className="mt-1 h-1 w-full overflow-hidden rounded-sm bg-zinc-900">
+          <div className="mt-1 h-1 w-full overflow-hidden rounded-sm bg-muted">
             <div
               className="h-full bg-racing-cyan transition-[width]"
               style={{ width: `${(progress.done / progress.total) * 100}%` }}

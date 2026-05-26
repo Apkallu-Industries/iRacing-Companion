@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 
 type TraceKey = "speed" | "rpm" | "throttle" | "brake" | "steering" | "gLat" | "gLon";
@@ -338,7 +338,7 @@ export function TraceStack({
   return (
     <div
       ref={wrapRef}
-      className="relative w-full overflow-hidden rounded-sm border border-zinc-900 bg-zinc-950 touch-none"
+      className="relative w-full overflow-hidden rounded-sm border border-border bg-background touch-none"
       style={{ height: TRACES.length * ROW_H, cursor: cursorX != null ? "ew-resize" : "crosshair" }}
       onPointerDown={(e) => {
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -366,7 +366,7 @@ export function TraceStack({
             e.stopPropagation();
             setCursorX(null);
           }}
-          className="absolute right-1 top-1 rounded-sm bg-zinc-900/90 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-amber-400 hover:bg-zinc-800"
+          className="absolute right-1 top-1 rounded-sm bg-muted/90 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-amber-400 hover:bg-accent"
         >
           Live
         </button>
@@ -461,7 +461,7 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
   return (
     <div
       ref={wrapRef}
-      className="w-full overflow-hidden rounded-sm border border-zinc-900 bg-zinc-950"
+      className="w-full overflow-hidden rounded-sm border border-border bg-background"
     >
       <canvas ref={canvasRef} className="block" />
     </div>

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -142,17 +142,17 @@ function WorkbenchPage() {
     }
 
     return (
-      <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-950/95 text-center p-6 border border-zinc-900 rounded-sm overflow-hidden select-none">
+      <div className="relative h-full w-full flex flex-col items-center justify-center bg-background/95 text-center p-6 border border-border rounded-sm overflow-hidden select-none">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-10 pointer-events-none" />
         <div className="relative z-10 flex flex-col items-center max-w-sm">
           <div className="size-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3 text-amber-400 text-sm shadow-[0_0_15px_rgba(245,158,11,0.05)] animate-pulse">
             🔒
           </div>
-          <h3 className="font-mono uppercase text-[10px] tracking-widest text-zinc-200">
+          <h3 className="font-mono uppercase text-[10px] tracking-widest text-foreground">
             Locked Analysis Sheet
           </h3>
-          <p className="mt-2 font-mono text-[9px] text-zinc-500 leading-relaxed uppercase tracking-wider">
-            This sheet is active in the premium <span className="text-zinc-300 font-semibold">{unlockingWorkspace}</span>.
+          <p className="mt-2 font-mono text-[9px] text-muted-foreground leading-relaxed uppercase tracking-wider">
+            This sheet is active in the premium <span className="text-foreground font-semibold">{unlockingWorkspace}</span>.
           </p>
           <div className="mt-4 flex gap-2">
             <button
@@ -361,7 +361,7 @@ function WorkbenchPage() {
                 className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
               >
                 {Object.values(WORKSPACES).map((w) => (
-                  <option key={w.key} value={w.key} className="bg-zinc-950 text-foreground font-mono uppercase text-[10px]">
+                  <option key={w.key} value={w.key} className="bg-background text-foreground font-mono uppercase text-[10px]">
                     {w.name}
                   </option>
                 ))}
@@ -384,21 +384,21 @@ function WorkbenchPage() {
           className={`flex items-center gap-3 px-4 py-1.5 text-[11px] font-mono border-b ${
             sess?.track && live.track && live.track.toLowerCase().includes(sess.track.toLowerCase())
               ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-              : "bg-zinc-900/60 border-zinc-800 text-zinc-400"
+              : "bg-muted/60 border-border-strong text-muted-foreground"
           }`}
         >
           <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <span className="font-bold text-emerald-400">BRIDGE LIVE</span>
-          <span className="text-zinc-500">·</span>
+          <span className="text-muted-foreground">·</span>
           <span>{live.track}</span>
-          <span className="text-zinc-500">·</span>
+          <span className="text-muted-foreground">·</span>
           <span>{live.car}</span>
           {sess?.track && live.track && live.track.toLowerCase().includes(sess.track.toLowerCase()) && (
             <span className="ml-2 rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300 uppercase tracking-wider">
               ⚡ Same track as this session
             </span>
           )}
-          <span className="ml-auto text-zinc-600">
+          <span className="ml-auto text-muted-foreground">
             {live.speedKph} kph · G{live.gear} · {live.fuelRemainingL.toFixed(1)}L fuel
           </span>
         </div>
@@ -477,7 +477,7 @@ function WorkbenchPage() {
                       <button
                         key={t}
                         onClick={() => setBottomTab(t)}
-                        className={`flex-1 px-3 py-1.5 text-left flex items-center justify-between border-r border-zinc-900/50 last:border-r-0 ${
+                        className={`flex-1 px-3 py-1.5 text-left flex items-center justify-between border-r border-border/50 last:border-r-0 ${
                           bottomTab === t
                             ? "bg-panel text-foreground"
                             : "bg-rail text-muted-foreground hover:text-foreground"

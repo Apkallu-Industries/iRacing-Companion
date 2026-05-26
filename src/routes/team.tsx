@@ -1069,7 +1069,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                                     className="absolute h-6 rounded-lg border flex items-center justify-between px-2 select-none overflow-hidden transition-all group/stint"
                                     title={`${driver.name}: ${stint.note || "No notes"}`}
                                   >
-                                    <span className="text-[8px] font-mono font-black tracking-widest text-zinc-100 leading-none uppercase truncate mr-1">
+                                    <span className="text-[8px] font-mono font-black tracking-widest text-foreground leading-none uppercase truncate mr-1">
                                       {driver.shortName}
                                     </span>
                                     <button
@@ -1307,7 +1307,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                           <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[10px] font-mono flex items-center justify-between gap-3">
                             <div>
                               <span className="text-emerald-400 font-bold block">Bridge live — real data available</span>
-                              <span className="text-zinc-500">
+                              <span className="text-muted-foreground">
                                 Last lap: {t.lastLap} · Fuel burn: {t.fuelUsePerHour > 0
                                   ? `${((t.fuelUsePerHour * t.lapLastLapTimeSec) / 3600).toFixed(2)} L/lap (live)`
                                   : `${(t.fuelRemainingL / Math.max(1, t.lapsEstimated)).toFixed(2)} L/lap (est)`
@@ -1572,7 +1572,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         );
                       })}
                     </div>
-                    <div className="mt-2 text-[9px] text-zinc-500 font-mono">
+                    <div className="mt-2 text-[9px] text-muted-foreground font-mono">
                       {t.car} · {t.track} · Δ{t.deltaSec >= 0 ? "+" : ""}{t.deltaSec.toFixed(3)}s
                     </div>
                   </div>
@@ -1615,20 +1615,20 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
                           driver.isOnline
                             ? "bg-emerald-500/15 text-emerald-400"
-                            : "bg-zinc-800 text-zinc-500"
+                            : "bg-accent text-muted-foreground"
                         }`}>
                           {driver.isOnline ? "LIVE" : `+${Math.round(driver.staleness / 1000)}s`}
                         </span>
                       </div>
 
-                      <div className="text-[9px] text-zinc-500 mb-2 truncate">{driver.carName}</div>
+                      <div className="text-[9px] text-muted-foreground mb-2 truncate">{driver.carName}</div>
 
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         <div>
                           <div className="text-[8px] text-muted-foreground">FUEL</div>
                           <div className="font-bold text-blue-300">
                             {driver.fuelRemainingL.toFixed(1)}L
-                            <span className="text-[8px] text-zinc-500 ml-1">~{driver.lapsEstimated.toFixed(0)} laps</span>
+                            <span className="text-[8px] text-muted-foreground ml-1">~{driver.lapsEstimated.toFixed(0)} laps</span>
                           </div>
                         </div>
                         <div>
@@ -1645,12 +1645,12 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                             const wColor = tire.estWearPct > 75 ? "bg-emerald-500" : tire.estWearPct > 45 ? "bg-amber-500" : "bg-red-500";
                             return (
                               <div key={c} className="text-center">
-                                <div className="text-[7px] text-zinc-600">{c.toUpperCase()}</div>
+                                <div className="text-[7px] text-muted-foreground">{c.toUpperCase()}</div>
                                 <div className="h-1 rounded-full bg-muted overflow-hidden mt-0.5">
                                   <div className={`h-full rounded-full ${wColor}`} style={{ width: `${tire.estWearPct}%` }} />
                                 </div>
                                 <div className={`text-[7px] mt-0.5 ${
-                                  tire.state === "hot" ? "text-red-400" : tire.state === "cold" ? "text-blue-400" : "text-zinc-400"
+                                  tire.state === "hot" ? "text-red-400" : tire.state === "cold" ? "text-blue-400" : "text-muted-foreground"
                                 }`}>{tire.tempC.toFixed(0)}°</div>
                               </div>
                             );
@@ -1685,7 +1685,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                             <span className="font-bold text-foreground text-[9px]">{label}</span>
                             <span className={`text-[9px] font-bold ${tempColor}`}>{tire.tempC.toFixed(0)}°C</span>
                           </div>
-                          <div className="text-[8px] text-zinc-600 mb-1">{tire.pressureBar.toFixed(2)} bar</div>
+                          <div className="text-[8px] text-muted-foreground mb-1">{tire.pressureBar.toFixed(2)} bar</div>
                           <div className="h-1 rounded-full bg-muted overflow-hidden">
                             <div className={`h-full rounded-full ${wearColor}`} style={{ width: `${tire.estWearPct}%` }} />
                           </div>
@@ -1694,7 +1694,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       );
                     })}
                   </div>
-                  <div className="mt-2 text-[8px] text-zinc-600">
+                  <div className="mt-2 text-[8px] text-muted-foreground">
                     Brakes: FL {t.tires.fl.brakeTempC.toFixed(0)}° · FR {t.tires.fr.brakeTempC.toFixed(0)}° · RL {t.tires.rl.brakeTempC.toFixed(0)}° · RR {t.tires.rr.brakeTempC.toFixed(0)}°
                   </div>
                 </div>
@@ -1747,7 +1747,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   </button>
 
                   {aiResponse && (
-                    <div className="p-4 bg-muted/15 border border-border/30 rounded-2xl text-xs text-zinc-300 leading-relaxed font-mono whitespace-pre-wrap max-h-96 overflow-y-auto scrollbar-hide">
+                    <div className="p-4 bg-muted/15 border border-border/30 rounded-2xl text-xs text-foreground leading-relaxed font-mono whitespace-pre-wrap max-h-96 overflow-y-auto scrollbar-hide">
                       {aiResponse}
                     </div>
                   )}

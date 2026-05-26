@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 import type { Telemetry } from "@/lib/telemetry-types";
 import type { CursorInfo } from "./MotecPanels";
@@ -23,16 +23,16 @@ export function DerivedMetrics({
   const metrics = useMemo(() => computeMetrics(samples, t), [samples, t]);
 
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950">
-      <div className="flex items-center justify-between border-b border-zinc-900 px-2 py-1.5">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+    <div className="rounded-sm border border-border bg-background">
+      <div className="flex items-center justify-between border-b border-border px-2 py-1.5">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           Derived Metrics
         </span>
-        <span className="text-[9px] tabular-nums text-zinc-600">
+        <span className="text-[9px] tabular-nums text-muted-foreground">
           {cursor ? "@ cursor" : `${metrics.windowSec.toFixed(1)}s window`}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-px bg-zinc-900 text-[11px]">
+      <div className="grid grid-cols-2 gap-px bg-muted text-[11px]">
         <Cell
           label="ACCEL RATE"
           value={metrics.accelRate.toFixed(2)}
@@ -77,14 +77,14 @@ export function DerivedMetrics({
         />
       </div>
       {cursor && (
-        <div className="border-t border-zinc-900 px-2 py-1.5 text-[10px] text-zinc-500">
+        <div className="border-t border-border px-2 py-1.5 text-[10px] text-muted-foreground">
           <div className="flex items-center justify-between">
             <span className="uppercase tracking-wider">Cursor</span>
             <span className="tabular-nums text-amber-400">
               t = {(cursor.sample.t / 1000).toFixed(2)}s
             </span>
           </div>
-          <div className="mt-1 grid grid-cols-3 gap-x-2 gap-y-0.5 tabular-nums text-zinc-300">
+          <div className="mt-1 grid grid-cols-3 gap-x-2 gap-y-0.5 tabular-nums text-foreground">
             <Row
               k="Spd"
               v={`${(cursor.smoothed["speed:0"] ?? cursor.sample.speed).toFixed(1)} km/h`}
@@ -119,7 +119,7 @@ export function DerivedMetrics({
 function Row({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-baseline justify-between gap-1">
-      <span className="text-zinc-600">{k}</span>
+      <span className="text-muted-foreground">{k}</span>
       <span>{v}</span>
     </div>
   );
@@ -143,16 +143,16 @@ function Cell({
     rose: "text-rose-400",
     amber: "text-amber-400",
     sky: "text-sky-400",
-    zinc: "text-zinc-100",
+    zinc: "text-foreground",
   }[tone];
   return (
-    <div className="bg-zinc-950 p-2">
+    <div className="bg-background p-2">
       <div className="flex items-baseline justify-between">
-        <span className="text-[9px] uppercase tracking-wider text-zinc-500">{label}</span>
-        <span className="text-[9px] text-zinc-600">{unit}</span>
+        <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-[9px] text-muted-foreground">{unit}</span>
       </div>
       <div className={`mt-0.5 text-base tabular-nums ${toneClass}`}>{value}</div>
-      {sub && <div className="text-[9px] text-zinc-600">{sub}</div>}
+      {sub && <div className="text-[9px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }

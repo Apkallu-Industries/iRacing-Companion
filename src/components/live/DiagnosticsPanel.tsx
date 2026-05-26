@@ -1,4 +1,4 @@
-import type { BridgeDiagnostics } from "@/lib/bridgeDiagnostics";
+﻿import type { BridgeDiagnostics } from "@/lib/bridgeDiagnostics";
 
 interface DiagnosticsPanelProps {
   diagnostics: BridgeDiagnostics;
@@ -27,13 +27,13 @@ export function DiagnosticsPanel({ diagnostics }: DiagnosticsPanelProps) {
 
   return (
     <div
-      className={`fixed bottom-4 right-4 bg-zinc-950 border border-zinc-800 rounded font-mono text-[11px] select-text ${statusColor}`}
+      className={`fixed bottom-4 right-4 bg-background border border-border-strong rounded font-mono text-[11px] select-text ${statusColor}`}
       style={{ width: "180px" }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-2 py-1 border-b border-zinc-800 bg-zinc-925">
+      <div className="flex items-center gap-2 px-2 py-1 border-b border-border-strong bg-panel-2">
         <div className={`w-2 h-2 rounded-full ${statusDot}`} />
-        <span className="uppercase tracking-wider text-zinc-400">Diagnostics</span>
+        <span className="uppercase tracking-wider text-muted-foreground">Diagnostics</span>
       </div>
 
       {/* Content */}
@@ -45,10 +45,10 @@ export function DiagnosticsPanel({ diagnostics }: DiagnosticsPanelProps) {
           unit="Hz"
           status={streamStatus}
         />
-        <div className="text-zinc-500 text-[10px] mt-1 pt-1 border-t border-zinc-800">
+        <div className="text-muted-foreground text-[10px] mt-1 pt-1 border-t border-border-strong">
           <div className="flex justify-between">
             <span>Status</span>
-            <span className="text-zinc-300">{diagnostics.connectionStatus}</span>
+            <span className="text-foreground">{diagnostics.connectionStatus}</span>
           </div>
         </div>
       </div>
@@ -68,15 +68,15 @@ function MetricRow({ label, value, unit, status }: MetricRowProps) {
     good: "text-emerald-400",
     warning: "text-amber-400",
     critical: "text-rose-400",
-    undefined: "text-zinc-300",
+    undefined: "text-foreground",
   }[status ?? "undefined"];
 
   return (
     <div className="flex items-baseline justify-between">
-      <span className="text-zinc-500">{label}</span>
+      <span className="text-muted-foreground">{label}</span>
       <span className={statusColor}>
         {typeof value === "string" ? value : Math.round(value as number)}
-        <span className="text-[9px] text-zinc-600 ml-0.5">{unit}</span>
+        <span className="text-[9px] text-muted-foreground ml-0.5">{unit}</span>
       </span>
     </div>
   );

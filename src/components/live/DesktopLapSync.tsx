@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { syncDesktopLaps } from "@/lib/community.functions";
 
@@ -90,13 +90,13 @@ export function DesktopLapSync() {
   }, [sync]);
 
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950 px-2 py-1.5 text-[10px]">
+    <div className="rounded-sm border border-border bg-background px-2 py-1.5 text-[10px]">
       <div className="flex items-center justify-between">
-        <span className="uppercase tracking-[0.18em] text-zinc-500">Desktop Lap Sync</span>
-        <span className="text-zinc-400 tabular-nums">{status}</span>
+        <span className="uppercase tracking-[0.18em] text-muted-foreground">Desktop Lap Sync</span>
+        <span className="text-muted-foreground tabular-nums">{status}</span>
       </div>
       {total > 0 && (
-        <div className="mt-0.5 text-[9px] text-zinc-600">
+        <div className="mt-0.5 text-[9px] text-muted-foreground">
           Local laps from ~/.pitwall/laps.jsonl are pushed to Cloud every 60s.
         </div>
       )}

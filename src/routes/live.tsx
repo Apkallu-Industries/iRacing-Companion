@@ -1,4 +1,4 @@
-import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
@@ -27,6 +27,13 @@ import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
 import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
 import { TabedAnalysisPanel } from "@/components/live/TabedAnalysisPanel";
+import { useTheme } from "@/lib/themeContext";
+import { F1SpeedGauge } from "@/components/live/F1SpeedGauge";
+import { F1LapHero } from "@/components/live/F1LapHero";
+import { F1SectorTable } from "@/components/live/F1SectorTable";
+import { F1TyreDisplay } from "@/components/live/F1TyreDisplay";
+import { F1QuickStats } from "@/components/live/F1QuickStats";
+import { F1SectorComparison } from "@/components/live/F1SectorComparison";
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -59,6 +66,8 @@ function Dashboard() {
   const [cursor, setCursor] = useState<CursorInfo | null>(null);
   const [debugMode, setDebugMode] = useState(false);
   const handleCursor = useCallback((c: CursorInfo | null) => setCursor(c), []);
+  const { layout } = useTheme();
+  const isF1Layout = layout === "f1";
 
   // Keyboard shortcut for debug mode (Ctrl+Shift+D)
   useEffect(() => {
@@ -81,81 +90,194 @@ function Dashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-200 font-mono p-0 select-none flex flex-col overflow-hidden">
+    <main className="min-h-screen bg-background text-foreground font-mono p-0 select-none flex flex-col overflow-hidden">
       <TopBar t={t} />
       <BridgeConnectionBanner t={t} />
       <RpmBar rpm={t.rpm} warn={t.rpmShiftWarn} red={t.rpmShiftRedline} max={t.rpmMax} />
 
-      {/* Main content: Fill all remaining vertical space */}
-      <div className="flex-1 min-h-0 grid grid-cols-12 gap-0">
-        {/* Left column: Channels + Metrics */}
-        <section className="col-span-3 flex flex-col overflow-hidden border-r border-zinc-900">
-          <div className="flex-1 min-h-0 overflow-auto">
-            <ConfigurableChannelList t={t} />
-          </div>
-          <div className="border-t border-zinc-900">
-            <SectorPanel t={t} />
-          </div>
-          <div className="border-t border-zinc-900 flex-1 min-h-0 overflow-auto">
-            <TirePanel t={t} />
-          </div>
-        </section>
 
-        {/* Center column: Main traces (fill most space) */}
-        <section className="col-span-6 flex flex-col overflow-hidden border-r border-zinc-900">
-          <div className="flex items-center justify-between px-2 py-1 border-b border-zinc-900 flex-shrink-0 bg-zinc-925">
-            <PanelHeader
-              title="Time Trace"
-              right={
-                cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 60Hz"
-              }
-            />
-            <FilterControls
-              mode={smoothing}
-              window={smoothWindow}
-              onMode={setSmoothing}
-              onWindow={setSmoothWindow}
-            />
-          </div>
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <TraceStack
-              samples={samples}
-              smoothing={smoothing}
-              smoothWindow={smoothWindow}
-              onCursorChange={handleCursor}
-            />
-          </div>
-          <div className="border-t border-zinc-900 flex-shrink-0">
-            <InputBars t={t} />
-          </div>
-          <div className="border-t border-zinc-900 flex-shrink-0 max-h-24">
-            <DerivedMetrics samples={samples} t={t} cursor={cursor} />
-          </div>
-        </section>
+      {isF1Layout ? (
+        /* ═══════════════ F1 LAYOUT ═══════════════ */
+        <>
+          {/* Top section: 3-column grid */}
+          <div className="flex-1 min-h-0 grid grid-cols-12 gap-0">
+            {/* Left column: Lap info + Speed gauge + Quick stats */}
+            <section className="col-span-3 flex flex-col overflow-hidden border-r border-border">
+              {/* Live Telemetry header */}
+              <div className="flex items-center gap-2 border-b border-border px-3 py-1.5 text-[10px] flex-shrink-0">
+                <span className="uppercase tracking-wider text-muted-foreground">Live Telemetry</span>
+                <span className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`} />
+                <span className="text-muted-foreground">{t.connected ? "Connected" : "Simulated"}</span>
+                {t.connected && <span className="text-muted-foreground ml-auto">{t.latencyMs}ms</span>}
+              </div>
 
-        {/* Right column: Analysis Panels + Coach */}
-        <section className="col-span-3 flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-hidden border-b border-zinc-900">
-            <TabedAnalysisPanel
-              samples={samples}
-              ggScatterComponent={<GGScatterPanel samples={samples} />}
-            />
-          </div>
-          <div className="flex-1 min-h-0 overflow-auto">
-            <LiveCoach t={t} />
-          </div>
-        </section>
-      </div>
+              {/* Lap hero */}
+              <F1LapHero t={t} />
 
-      {/* Bottom bar: Controls (no gaps, packed) */}
-      <div className="border-t border-zinc-900 bg-zinc-925 px-2 py-1 flex flex-wrap gap-1 items-center text-xs flex-shrink-0">
-        {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
-        <GearAdvisor t={t} samples={samples} />
-        <AdvisorButton t={t} />
-        <LiveReference t={t} />
-        <FingerprintUploadCard />
-        <DesktopLapSync />
-      </div>
+              {/* Sectors */}
+              <F1SectorTable t={t} />
+
+              {/* Speed gauge + Gear */}
+              <div className="flex-1 flex flex-col items-center justify-center border-b border-border px-3 py-2">
+                <F1SpeedGauge t={t} />
+                <div className="mt-1 text-center">
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Gear</div>
+                  <div className="font-mono text-[32px] font-bold leading-none text-foreground">{t.gear}</div>
+                </div>
+              </div>
+
+              {/* Quick stats: THR/BRK/DRS/Fuel */}
+              <div className="flex-shrink-0">
+                <F1QuickStats t={t} />
+              </div>
+            </section>
+
+            {/* Center column: Traces */}
+            <section className="col-span-6 flex flex-col overflow-hidden border-r border-border">
+              <div className="flex items-center justify-between px-2 py-1 border-b border-border flex-shrink-0 bg-panel-2">
+                <PanelHeader
+                  title="Time Trace"
+                  right={
+                    cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 60Hz"
+                  }
+                />
+                <FilterControls
+                  mode={smoothing}
+                  window={smoothWindow}
+                  onMode={setSmoothing}
+                  onWindow={setSmoothWindow}
+                />
+              </div>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <TraceStack
+                  samples={samples}
+                  smoothing={smoothing}
+                  smoothWindow={smoothWindow}
+                  onCursorChange={handleCursor}
+                />
+              </div>
+            </section>
+
+            {/* Right column: Track map placeholder + G-G + Tyres */}
+            <section className="col-span-3 flex flex-col overflow-hidden">
+              {/* Track Map placeholder */}
+              <div className="border-b border-border px-2 py-1.5 flex-shrink-0">
+                <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Track Map</div>
+                <div className="h-28 flex items-center justify-center text-muted-foreground text-[10px] opacity-50">
+                  {t.track || "No track data"}
+                </div>
+              </div>
+
+              {/* G-G Diagram */}
+              <div className="flex-1 min-h-0 overflow-hidden border-b border-border">
+                <GGScatterPanel samples={samples} />
+              </div>
+
+              {/* Tyre temps */}
+              <div className="flex-shrink-0">
+                <F1TyreDisplay t={t} />
+              </div>
+            </section>
+          </div>
+
+          {/* Bottom section: Sector comparison + AI Coach */}
+          <div className="border-t border-border grid grid-cols-12 gap-0 flex-shrink-0" style={{ height: "180px" }}>
+            {/* Sector comparison (spans 8 cols) */}
+            <div className="col-span-8 border-r border-border overflow-hidden">
+              <F1SectorComparison t={t} />
+            </div>
+
+            {/* AI Coach (spans 4 cols) */}
+            <div className="col-span-4 overflow-auto">
+              <LiveCoach t={t} />
+            </div>
+          </div>
+
+          {/* Bottom controls */}
+          <div className="border-t border-border bg-panel-2 px-2 py-1 flex flex-wrap gap-1 items-center text-xs flex-shrink-0">
+            {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
+            <GearAdvisor t={t} samples={samples} />
+            <AdvisorButton t={t} />
+            <LiveReference t={t} />
+            <FingerprintUploadCard />
+            <DesktopLapSync />
+          </div>
+        </>
+      ) : (
+        /* ═══════════════ DEFAULT LAYOUT ═══════════════ */
+        <>
+          {/* Main content: Fill all remaining vertical space */}
+          <div className="flex-1 min-h-0 grid grid-cols-12 gap-0">
+            {/* Left column: Channels + Metrics */}
+            <section className="col-span-3 flex flex-col overflow-hidden border-r border-border">
+              <div className="flex-1 min-h-0 overflow-auto">
+                <ConfigurableChannelList t={t} />
+              </div>
+              <div className="border-t border-border">
+                <SectorPanel t={t} />
+              </div>
+              <div className="border-t border-border flex-1 min-h-0 overflow-auto">
+                <TirePanel t={t} />
+              </div>
+            </section>
+
+            {/* Center column: Main traces (fill most space) */}
+            <section className="col-span-6 flex flex-col overflow-hidden border-r border-border">
+              <div className="flex items-center justify-between px-2 py-1 border-b border-border flex-shrink-0 bg-panel-2">
+                <PanelHeader
+                  title="Time Trace"
+                  right={
+                    cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 60Hz"
+                  }
+                />
+                <FilterControls
+                  mode={smoothing}
+                  window={smoothWindow}
+                  onMode={setSmoothing}
+                  onWindow={setSmoothWindow}
+                />
+              </div>
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <TraceStack
+                  samples={samples}
+                  smoothing={smoothing}
+                  smoothWindow={smoothWindow}
+                  onCursorChange={handleCursor}
+                />
+              </div>
+              <div className="border-t border-border flex-shrink-0">
+                <InputBars t={t} />
+              </div>
+              <div className="border-t border-border flex-shrink-0 max-h-24">
+                <DerivedMetrics samples={samples} t={t} cursor={cursor} />
+              </div>
+            </section>
+
+            {/* Right column: Analysis Panels + Coach */}
+            <section className="col-span-3 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden border-b border-border">
+                <TabedAnalysisPanel
+                  samples={samples}
+                  ggScatterComponent={<GGScatterPanel samples={samples} />}
+                />
+              </div>
+              <div className="flex-1 min-h-0 overflow-auto">
+                <LiveCoach t={t} />
+              </div>
+            </section>
+          </div>
+
+          {/* Bottom bar: Controls (no gaps, packed) */}
+          <div className="border-t border-border bg-panel-2 px-2 py-1 flex flex-wrap gap-1 items-center text-xs flex-shrink-0">
+            {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
+            <GearAdvisor t={t} samples={samples} />
+            <AdvisorButton t={t} />
+            <LiveReference t={t} />
+            <FingerprintUploadCard />
+            <DesktopLapSync />
+          </div>
+        </>
+      )}
 
       <FooterBar t={t} />
       {debugMode && <DiagnosticsPanel diagnostics={diagnostics} />}
@@ -168,29 +290,29 @@ function Dashboard() {
 function TopBar({ t }: { t: Telemetry }) {
   const { activeWorkspace, setActiveWorkspace } = useWorkbench();
   return (
-    <header className="flex items-center gap-3 border-b border-zinc-900 pb-2 text-[11px] uppercase tracking-wider">
+    <header className="flex items-center gap-3 border-b border-border pb-2 text-[11px] uppercase tracking-wider">
       <BackButton />
-      <span className="rounded-sm bg-zinc-900 px-2 py-1 text-zinc-400">Pit Wall i2</span>
-      <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 rounded-sm px-2 py-0.5 ml-1 select-none text-[10px] text-zinc-400">
-        <span className="text-[9px] text-zinc-500 uppercase font-mono tracking-wider">Profile</span>
+      <span className="rounded-sm bg-muted px-2 py-1 text-muted-foreground">Pit Wall i2</span>
+      <div className="flex items-center gap-1.5 bg-muted border border-border-strong rounded-sm px-2 py-0.5 ml-1 select-none text-[10px] text-muted-foreground">
+        <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Profile</span>
         <select
           value={activeWorkspace}
           onChange={(e) => setActiveWorkspace(e.target.value as any)}
-          className="bg-transparent text-zinc-200 border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
+          className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
         >
           {Object.values(WORKSPACES).map((w) => (
-            <option key={w.key} value={w.key} className="bg-zinc-950 text-zinc-200 font-mono uppercase text-[10px]">
+            <option key={w.key} value={w.key} className="bg-background text-foreground font-mono uppercase text-[10px]">
               {w.name}
             </option>
           ))}
         </select>
       </div>
-      <div className="flex items-center gap-4 text-zinc-500">
+      <div className="flex items-center gap-4 text-muted-foreground">
         <Field label="Session" value={t.session} />
         <Field label="Track" value={t.track} />
         <Field label="Car" value={`${t.car} #${t.carNumber}`} />
       </div>
-      <div className="ml-auto flex items-center gap-3 text-zinc-500">
+      <div className="ml-auto flex items-center gap-3 text-muted-foreground">
         <Field label="Best" value={t.bestLap} mono valueClass="text-emerald-400" />
         <Field label="Last" value={t.lastLap} mono />
         <Field
@@ -199,7 +321,7 @@ function TopBar({ t }: { t: Telemetry }) {
           mono
           valueClass={t.deltaSec < 0 ? "text-emerald-400" : "text-rose-400"}
         />
-        <div className="flex items-center gap-1.5 rounded-sm bg-zinc-900 px-2 py-1">
+        <div className="flex items-center gap-1.5 rounded-sm bg-muted px-2 py-1">
           <span
             className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`}
           />
@@ -209,10 +331,10 @@ function TopBar({ t }: { t: Telemetry }) {
         </div>
         <Link
           to="/settings"
-          className="flex h-6 w-6 items-center justify-center rounded-sm bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-primary hover:border-primary/50 transition-all hover:scale-110 group cursor-pointer"
+          className="flex h-6 w-6 items-center justify-center rounded-sm bg-muted border border-border-strong text-muted-foreground hover:text-primary hover:border-primary/50 transition-all hover:scale-110 group cursor-pointer"
           title="Settings"
         >
-          <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90 text-zinc-500 group-hover:text-primary" />
+          <Settings className="h-3.5 w-3.5 transition-transform duration-500 group-hover:rotate-90 text-muted-foreground group-hover:text-primary" />
         </Link>
       </div>
     </header>
@@ -232,8 +354,8 @@ function Field({
 }) {
   return (
     <div className="flex items-baseline gap-1.5">
-      <span className="text-[9px] text-zinc-600">{label}</span>
-      <span className={`${mono ? "tabular-nums" : ""} text-zinc-300 ${valueClass}`}>{value}</span>
+      <span className="text-[9px] text-muted-foreground">{label}</span>
+      <span className={`${mono ? "tabular-nums" : ""} text-foreground ${valueClass}`}>{value}</span>
     </div>
   );
 }
@@ -246,7 +368,7 @@ function RpmBar({ rpm, warn, red, max }: { rpm: number; warn: number; red: numbe
   const redFrac = red / max;
   const color = rpm > red ? "bg-rose-500" : rpm > warn ? "bg-amber-400" : "bg-emerald-500";
   return (
-    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-sm bg-zinc-900 relative">
+    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-sm bg-muted relative">
       <div className={`h-full ${color} transition-[width]`} style={{ width: `${pct * 100}%` }} />
       <div
         className="absolute inset-y-0 w-px bg-amber-500/50"
@@ -265,8 +387,8 @@ function RpmBar({ rpm, warn, red, max }: { rpm: number; warn: number; red: numbe
 function PanelHeader({ title, right }: { title: string; right?: string }) {
   return (
     <div className="flex items-baseline justify-between px-1">
-      <span className="text-[10px] uppercase tracking-[0.18em] text-zinc-500">{title}</span>
-      {right && <span className="text-[10px] tabular-nums text-zinc-600">{right}</span>}
+      <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{title}</span>
+      {right && <span className="text-[10px] tabular-nums text-muted-foreground">{right}</span>}
     </div>
   );
 }
@@ -289,8 +411,8 @@ function FilterControls({
   ];
   return (
     <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider">
-      <span className="text-zinc-600">Filter</span>
-      <div className="flex overflow-hidden rounded-sm border border-zinc-800">
+      <span className="text-muted-foreground">Filter</span>
+      <div className="flex overflow-hidden rounded-sm border border-border-strong">
         {modes.map((m) => (
           <button
             key={m.k}
@@ -298,8 +420,8 @@ function FilterControls({
             onClick={() => onMode(m.k)}
             className={`px-2 py-0.5 ${
               mode === m.k
-                ? "bg-zinc-800 text-zinc-100"
-                : "bg-zinc-950 text-zinc-500 hover:text-zinc-300"
+                ? "bg-accent text-foreground"
+                : "bg-background text-muted-foreground hover:text-foreground"
             }`}
           >
             {m.label}
@@ -307,7 +429,7 @@ function FilterControls({
         ))}
       </div>
       {mode !== "none" && (
-        <label className="flex items-center gap-1.5 text-zinc-500">
+        <label className="flex items-center gap-1.5 text-muted-foreground">
           <span>N</span>
           <input
             type="range"
@@ -317,7 +439,7 @@ function FilterControls({
             onChange={(e) => onWindow(Number(e.target.value))}
             className="h-1 w-20 accent-amber-500"
           />
-          <span className="w-5 text-right tabular-nums text-zinc-300">{win}</span>
+          <span className="w-5 text-right tabular-nums text-foreground">{win}</span>
         </label>
       )}
     </div>
@@ -333,11 +455,11 @@ function SectorPanel({ t }: { t: Telemetry }) {
     { key: "s3", idx: 3 },
   ];
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950">
-      <div className="border-b border-zinc-900 px-2 py-1.5 text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+    <div className="rounded-sm border border-border bg-background">
+      <div className="border-b border-border px-2 py-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
         Sectors
       </div>
-      <ul className="divide-y divide-zinc-900">
+      <ul className="divide-y divide-border">
         {rows.map(({ key, idx }) => {
           const time = t.sectors[key];
           const isBest = t.sectors.bestSector === idx;
@@ -348,9 +470,9 @@ function SectorPanel({ t }: { t: Telemetry }) {
                   !time ? "bg-zinc-700" : isBest ? "bg-emerald-500" : "bg-rose-500"
                 }`}
               />
-              <span className="w-8 text-zinc-500">S{idx}</span>
+              <span className="w-8 text-muted-foreground">S{idx}</span>
               <span
-                className={`ml-auto tabular-nums ${isBest ? "text-emerald-400" : "text-zinc-100"}`}
+                className={`ml-auto tabular-nums ${isBest ? "text-emerald-400" : "text-foreground"}`}
               >
                 {time ?? "--.---"}
               </span>
@@ -366,7 +488,7 @@ function SectorPanel({ t }: { t: Telemetry }) {
 
 function InputBars({ t }: { t: Telemetry }) {
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950 p-2">
+    <div className="rounded-sm border border-border bg-background p-2">
       <div className="grid grid-cols-3 gap-3">
         <Bar label="THR" value={t.throttle} color="#22c55e" />
         <Bar label="BRK" value={t.brake} color="#ef4444" />
@@ -379,11 +501,11 @@ function InputBars({ t }: { t: Telemetry }) {
 function Bar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex items-center gap-2 text-[10px]">
-      <span className="w-7 text-zinc-500">{label}</span>
-      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-zinc-900">
+      <span className="w-7 text-muted-foreground">{label}</span>
+      <div className="h-2 flex-1 overflow-hidden rounded-sm bg-muted">
         <div className="h-full" style={{ width: `${value * 100}%`, background: color }} />
       </div>
-      <span className="w-8 text-right tabular-nums text-zinc-300">{Math.round(value * 100)}</span>
+      <span className="w-8 text-right tabular-nums text-foreground">{Math.round(value * 100)}</span>
     </div>
   );
 }
@@ -393,15 +515,15 @@ function SteerBar({ deg }: { deg: number }) {
   const leftPct = 50 + (clamped / 180) * 50;
   return (
     <div className="flex items-center gap-2 text-[10px]">
-      <span className="w-7 text-zinc-500">STR</span>
-      <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-zinc-900">
+      <span className="w-7 text-muted-foreground">STR</span>
+      <div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-muted">
         <div className="absolute inset-y-0 left-1/2 w-px bg-zinc-700" />
         <div
           className="absolute top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400"
           style={{ left: `${leftPct}%` }}
         />
       </div>
-      <span className="w-8 text-right tabular-nums text-zinc-300">{Math.round(deg)}°</span>
+      <span className="w-8 text-right tabular-nums text-foreground">{Math.round(deg)}°</span>
     </div>
   );
 }
@@ -418,24 +540,24 @@ function TirePanel({ t }: { t: Telemetry }) {
   const stateColor = (s: "cold" | "ok" | "hot") =>
     s === "hot" ? "text-amber-400" : s === "cold" ? "text-sky-400" : "text-emerald-400";
   return (
-    <div className="rounded-sm border border-zinc-900 bg-zinc-950">
-      <div className="border-b border-zinc-900 px-2 py-1.5 text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+    <div className="rounded-sm border border-border bg-background">
+      <div className="border-b border-border px-2 py-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
         Tyres
       </div>
-      <div className="grid grid-cols-2 gap-px bg-zinc-900">
+      <div className="grid grid-cols-2 gap-px bg-muted">
         {corners.map(({ key, label }) => {
           const c = t.tires[key];
           return (
-            <div key={key} className="bg-zinc-950 p-2">
+            <div key={key} className="bg-background p-2">
               <div className="flex items-baseline justify-between">
-                <span className="text-[9px] text-zinc-500">{label}</span>
+                <span className="text-[9px] text-muted-foreground">{label}</span>
                 <span className={`text-[9px] uppercase ${stateColor(c.state)}`}>{c.state}</span>
               </div>
               <div className="mt-0.5 flex items-baseline justify-between tabular-nums">
-                <span className="text-sm text-zinc-100">{Math.round(c.tempC)}°</span>
-                <span className="text-[10px] text-zinc-400">{c.pressureBar.toFixed(2)} bar</span>
+                <span className="text-sm text-foreground">{Math.round(c.tempC)}°</span>
+                <span className="text-[10px] text-muted-foreground">{c.pressureBar.toFixed(2)} bar</span>
               </div>
-              <div className="mt-1 h-0.5 w-full overflow-hidden rounded-sm bg-zinc-900">
+              <div className="mt-1 h-0.5 w-full overflow-hidden rounded-sm bg-muted">
                 <div
                   className="h-full bg-emerald-500"
                   style={{ width: `${Math.max(0, Math.min(100, c.wearPct))}%` }}
@@ -453,28 +575,28 @@ function TirePanel({ t }: { t: Telemetry }) {
 
 function FooterBar({ t }: { t: Telemetry }) {
   return (
-    <footer className="mt-3 flex items-center gap-4 rounded-sm border border-zinc-900 bg-zinc-950 px-3 py-1.5 text-[10px] text-zinc-500">
+    <footer className="mt-3 flex items-center gap-4 rounded-sm border border-border bg-background px-3 py-1.5 text-[10px] text-muted-foreground">
       <span>
-        DRS <span className="text-zinc-300">{t.drsAvailable ? "AVAIL" : "OFF"}</span>
+        DRS <span className="text-foreground">{t.drsAvailable ? "AVAIL" : "OFF"}</span>
       </span>
       <span>
-        BBIAS <span className="tabular-nums text-zinc-300">{t.brakeBias.toFixed(1)}%</span>
+        BBIAS <span className="tabular-nums text-foreground">{t.brakeBias.toFixed(1)}%</span>
       </span>
       <span>
-        DIFF <span className="tabular-nums text-zinc-300">MAP {t.diffMap}</span>
+        DIFF <span className="tabular-nums text-foreground">MAP {t.diffMap}</span>
       </span>
       <div className="ml-auto flex items-center gap-4 tabular-nums">
         <span>
-          AIR <span className="text-zinc-300">{t.airTempC}°C</span>
+          AIR <span className="text-foreground">{t.airTempC}°C</span>
         </span>
         <span>
-          TRACK <span className="text-zinc-300">{t.trackTempC}°C</span>
+          TRACK <span className="text-foreground">{t.trackTempC}°C</span>
         </span>
         <span>
-          SOF <span className="text-zinc-300">{t.sof.toLocaleString()}</span>
+          SOF <span className="text-foreground">{t.sof.toLocaleString()}</span>
         </span>
         <span>
-          SR <span className="text-zinc-300">{t.safetyRating.toFixed(2)}</span>
+          SR <span className="text-foreground">{t.safetyRating.toFixed(2)}</span>
         </span>
       </div>
     </footer>
@@ -484,7 +606,7 @@ function FooterBar({ t }: { t: Telemetry }) {
 function GGScatterPanel({ samples }: { samples: Sample[] }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-shrink-0 px-2 py-1 border-b border-zinc-900 bg-zinc-925">
+      <div className="flex-shrink-0 px-2 py-1 border-b border-border bg-panel-2">
         <PanelHeader title="G-G Diagram" right={`${samples.length} pts`} />
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">

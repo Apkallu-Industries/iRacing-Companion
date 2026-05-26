@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
 import {
@@ -370,13 +370,13 @@ function FingerprintPage() {
 
       {/* Live bridge context chip */}
       {live.connected && (
-        <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-900/50 px-4 py-1.5 font-mono text-[11px]">
+        <div className="flex items-center gap-3 border-b border-border-strong bg-muted/50 px-4 py-1.5 font-mono text-[11px]">
           <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <span className="font-bold text-emerald-400">CURRENTLY DRIVING</span>
-          <span className="text-zinc-500">·</span>
-          <span className="text-zinc-300">{live.car}</span>
-          <span className="text-zinc-500">@</span>
-          <span className="text-zinc-300">{live.track}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-foreground">{live.car}</span>
+          <span className="text-muted-foreground">@</span>
+          <span className="text-foreground">{live.track}</span>
           {fp && fp.pairs.some((p) =>
             p.track.toLowerCase().includes(live.track.toLowerCase()) ||
             live.track.toLowerCase().includes(p.track.toLowerCase())
@@ -389,7 +389,7 @@ function FingerprintPage() {
               No baseline yet — upload lapfiles to build one
             </span>
           )}
-          <span className="ml-auto text-zinc-600">
+          <span className="ml-auto text-muted-foreground">
             {live.fuelRemainingL.toFixed(1)}L · Lap Δ {live.deltaSec >= 0 ? "+" : ""}{live.deltaSec.toFixed(3)}s
           </span>
         </div>

@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+﻿import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Circle, Square, Save, Trash2 } from "lucide-react";
@@ -54,9 +54,9 @@ export function RecordingControls({ t }: { t: Telemetry }) {
   };
 
   return (
-    <div className="rounded-lg bg-zinc-925 ring-1 ring-white/5 p-4">
+    <div className="rounded-lg bg-panel-2 ring-1 ring-white/5 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[10px] uppercase tracking-[0.2em] text-zinc-300 font-medium">
+        <h2 className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">
           Session recording
         </h2>
         <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function RecordingControls({ t }: { t: Telemetry }) {
               state === "recording" ? "bg-racing-red animate-pulse" : "bg-zinc-700"
             } ${pulse ? "scale-150 transition-transform" : ""}`}
           />
-          <span className="text-[10px] font-mono uppercase text-zinc-300">
+          <span className="text-[10px] font-mono uppercase text-foreground">
             {state === "recording"
               ? "REC"
               : state === "saving"
@@ -97,7 +97,7 @@ export function RecordingControls({ t }: { t: Telemetry }) {
         ) : (
           <button
             onClick={stop}
-            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-100 px-3 py-1.5 text-xs font-mono uppercase tracking-wider"
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent hover:bg-zinc-700 text-foreground px-3 py-1.5 text-xs font-mono uppercase tracking-wider"
           >
             <Square className="h-3.5 w-3.5 fill-current" />
             Stop
@@ -116,7 +116,7 @@ export function RecordingControls({ t }: { t: Telemetry }) {
         {sampleCount > 0 && state === "idle" && (
           <button
             onClick={reset}
-            className="inline-flex items-center gap-1.5 rounded-md ring-1 ring-zinc-800 hover:bg-zinc-900 text-zinc-400 px-3 py-1.5 text-xs font-mono uppercase tracking-wider"
+            className="inline-flex items-center gap-1.5 rounded-md ring-1 ring-border hover:bg-muted text-muted-foreground px-3 py-1.5 text-xs font-mono uppercase tracking-wider"
             title="Discard"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -126,7 +126,7 @@ export function RecordingControls({ t }: { t: Telemetry }) {
       </div>
 
       {!user && sampleCount > 0 && (
-        <p className="mt-3 text-[10px] text-zinc-400">
+        <p className="mt-3 text-[10px] text-muted-foreground">
           Signed-out recordings download as <code className="font-mono">.pwlap</code> files only.
           Sign in to save them to your library.
         </p>
@@ -137,8 +137,8 @@ export function RecordingControls({ t }: { t: Telemetry }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-zinc-900/60 rounded p-2">
-      <p className="text-[9px] text-zinc-400 uppercase">{label}</p>
+    <div className="bg-muted/60 rounded p-2">
+      <p className="text-[9px] text-muted-foreground uppercase">{label}</p>
       <p className="text-sm tabular-nums">{value}</p>
     </div>
   );

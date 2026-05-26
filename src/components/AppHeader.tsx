@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+﻿import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Activity, LogOut, Settings, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeEditor } from "@/components/ThemeEditor";
@@ -44,7 +44,7 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
             {t.connected ? `LIVE` : "SIM"}
           </span>
           {t.connected && (
-            <span className="font-mono text-[10px] text-zinc-500 hidden lg:inline truncate max-w-36">
+            <span className="font-mono text-[10px] text-muted-foreground hidden lg:inline truncate max-w-36">
               {t.track}
             </span>
           )}

@@ -335,6 +335,68 @@ export const CARBON_THEME: Required<ThemeMap> = {
   "grid-minor": "#1a1a20",
 };
 
+
+/* =============================================
+   Style F - Modern F1
+   F1 Red on carbon black. DIN-style bold headings.
+   High contrast, performance-inspired accents.
+   ============================================= */
+export const F1_THEME: Required<ThemeMap> = {
+  background: "#0d0d10",
+  foreground: "#e8e8ec",
+  panel: "#14171c",
+  "panel-2": "#1e232b",
+  rail: "#08080c",
+  border: "#2a2f38",
+  "border-strong": "#3a4050",
+  primary: "#e10600",
+  "primary-foreground": "#ffffff",
+  muted: "#1e232b",
+  "muted-foreground": "#aab0b9",
+  accent: "#252a34",
+  destructive: "#e10600",
+  "ch-speed": "#e10600",
+  "ch-throttle": "#00e676",
+  "ch-brake": "#e10600",
+  "ch-rpm": "#ffb300",
+  "ch-gear": "#e8e8ec",
+  "ch-steer": "#b026ff",
+  "ch-glat": "#0d6efd",
+  "ch-glong": "#b026ff",
+  "grid-major": "#2a2f38",
+  "grid-minor": "#1a1f26",
+};
+
+/* =============================================
+   Style G - IndyCar / NASCAR
+   Dense oval/road data. Green live accents, deep dark.
+   Running order, fuel strategy, caution flags.
+   ============================================= */
+export const INDYCAR_THEME: Required<ThemeMap> = {
+  background: "#0a0c10",
+  foreground: "#e4e6ea",
+  panel: "#111520",
+  "panel-2": "#1a1f2c",
+  rail: "#060810",
+  border: "#252a36",
+  "border-strong": "#353c4a",
+  primary: "#00e676",
+  "primary-foreground": "#0a0c10",
+  muted: "#1a1f2c",
+  "muted-foreground": "#8892a0",
+  accent: "#202838",
+  destructive: "#ff3b30",
+  "ch-speed": "#00bcd4",
+  "ch-throttle": "#00e676",
+  "ch-brake": "#ff3b30",
+  "ch-rpm": "#ff9800",
+  "ch-gear": "#e4e6ea",
+  "ch-steer": "#b388ff",
+  "ch-glat": "#ff6b35",
+  "ch-glong": "#448aff",
+  "grid-major": "#252a36",
+  "grid-minor": "#181d28",
+};
 /** Backward compat aliases */
 export const HIGH_CONTRAST_THEME = STUDIO_BLACK_THEME;
 export const SOLAR_THEME = CARBON_THEME;
@@ -345,6 +407,8 @@ export const PRESETS: { id: string; label: string; theme: Required<ThemeMap> }[]
   { id: "studio",   label: "C - Studio Black",     theme: STUDIO_BLACK_THEME },
   { id: "engineer", label: "D - Light Engineer",   theme: LIGHT_THEME },
   { id: "carbon",   label: "E - Carbon UI",        theme: CARBON_THEME },
+  { id: "f1",       label: "F - Modern F1",        theme: F1_THEME },
+  { id: "indycar",  label: "G - IndyCar/NASCAR",   theme: INDYCAR_THEME },
 ];
 
 export function applyTheme(theme: ThemeMap) {

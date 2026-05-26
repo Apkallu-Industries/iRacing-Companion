@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Unified UI Styles — combines layout density + color theme into
  * a single selectable style preset, matching the 5 design directions
  * from the UI-Styles.png reference.
@@ -11,7 +11,7 @@
  * individual tokens after selecting a style.
  */
 
-export type LayoutProfile = "motec" | "modern" | "studio" | "engineer" | "carbon";
+export type LayoutProfile = "motec" | "modern" | "studio" | "engineer" | "carbon" | "f1" | "indycar";
 
 export interface LayoutProfileMeta {
   id: LayoutProfile;
@@ -63,6 +63,22 @@ export const LAYOUT_PROFILES: LayoutProfileMeta[] = [
       "Carbon textures and red accents. Aggressive and performance focused. Built for race day.",
     swatches: ["#0c0c0f", "#141418", "#e63322", "#ff6b35"],
   },
+    {
+    id: "f1",
+    label: "Modern F1",
+    subtitle: "High Performance. Precision.",
+    description:
+      "F1-inspired. Carbon black background, F1 red accents, DIN-style headings. Built for open-wheeler telemetry.",
+    swatches: ["#0d0d10", "#14171c", "#e10600", "#00e676"],
+  },
+  {
+    id: "indycar",
+    label: "IndyCar / NASCAR",
+    subtitle: "Oval & Road Course",
+    description:
+      "Dense race data: running order, 4-sector splits, fuel strategy, caution flags. Green live accents on deep dark.",
+    swatches: ["#0a0c10", "#111520", "#00e676", "#ff6b35"],
+  },
 ];
 
 const LS_KEY = "pitwall.layout";
@@ -77,7 +93,7 @@ export function applyLayout(profile: LayoutProfile): void {
 export function loadSavedLayout(): LayoutProfile {
   if (typeof localStorage === "undefined") return "motec";
   const saved = localStorage.getItem(LS_KEY);
-  if (saved && (["motec", "modern", "studio", "engineer", "carbon"] as string[]).includes(saved)) {
+  if (saved && (["motec", "modern", "studio", "engineer", "carbon", "f1", "indycar"] as string[]).includes(saved)) {
     return saved as LayoutProfile;
   }
   return "motec";

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "@tanstack/react-router";
 import {
   Settings,
@@ -559,7 +559,7 @@ export function GlobalSettingsDialog() {
                         )}
                       </button>
                     </div>
-                    <code className="block text-[10px] bg-background/50 p-2 rounded font-mono text-zinc-300">
+                    <code className="block text-[10px] bg-background/50 p-2 rounded font-mono text-foreground">
                       winget install MongoDB.Community.Server
                     </code>
                   </div>
@@ -587,7 +587,7 @@ export function GlobalSettingsDialog() {
                         )}
                       </button>
                     </div>
-                    <code className="block text-[10px] bg-background/50 p-2 rounded font-mono text-zinc-300 leading-normal">
+                    <code className="block text-[10px] bg-background/50 p-2 rounded font-mono text-foreground leading-normal">
                       docker run -d -p 27017:27017 --name iracing-mongo mongo:latest
                     </code>
                   </div>
@@ -879,7 +879,7 @@ export function GlobalSettingsDialog() {
                     <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                       Expiration Date
                     </span>
-                    <span className="text-xs font-mono text-zinc-300 font-semibold">
+                    <span className="text-xs font-mono text-foreground font-semibold">
                       {licenseState.expires === "never" ? "Lifetime / No Expiration" : licenseState.expires}
                     </span>
                   </div>

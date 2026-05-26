@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   getBridgePerformanceMode,
   getBridgePerformanceSnapshot,
@@ -32,36 +32,36 @@ export function BridgePerformanceSettings() {
         <button
           type="button"
           onClick={() => onMode("stable30")}
-          className={`rounded-sm border px-3 py-2 text-left ${mode === "stable30" ? "border-emerald-400 bg-emerald-500/10 text-emerald-200" : "border-zinc-800 bg-zinc-900 text-zinc-300"}`}
+          className={`rounded-sm border px-3 py-2 text-left ${mode === "stable30" ? "border-emerald-400 bg-emerald-500/10 text-emerald-200" : "border-border-strong bg-muted text-foreground"}`}
         >
           <div className="font-mono text-[11px] uppercase tracking-wider">Stable 30Hz</div>
-          <div className="mt-1 text-[11px] text-zinc-400">
+          <div className="mt-1 text-[11px] text-muted-foreground">
             Best for weaker clients and consistent delivery.
           </div>
         </button>
         <button
           type="button"
           onClick={() => onMode("balanced60")}
-          className={`rounded-sm border px-3 py-2 text-left ${mode === "balanced60" ? "border-cyan-400 bg-cyan-500/10 text-cyan-200" : "border-zinc-800 bg-zinc-900 text-zinc-300"}`}
+          className={`rounded-sm border px-3 py-2 text-left ${mode === "balanced60" ? "border-cyan-400 bg-cyan-500/10 text-cyan-200" : "border-border-strong bg-muted text-foreground"}`}
         >
           <div className="font-mono text-[11px] uppercase tracking-wider">Balanced 60Hz</div>
-          <div className="mt-1 text-[11px] text-zinc-400">
+          <div className="mt-1 text-[11px] text-muted-foreground">
             Smoother visuals with adaptive fallback to 30Hz.
           </div>
         </button>
       </div>
 
-      <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-2 text-[11px] text-zinc-400">
-        Last measured client FPS: <span className="text-zinc-200">{lastFps ?? "n/a"}</span>
+      <div className="rounded-sm border border-border-strong bg-muted/50 p-2 text-[11px] text-muted-foreground">
+        Last measured client FPS: <span className="text-foreground">{lastFps ?? "n/a"}</span>
         {" · "}
         Recommended:{" "}
-        <span className="text-zinc-200">
+        <span className="text-foreground">
           {recommended === "stable30" ? "Stable 30Hz" : "Balanced 60Hz"}
         </span>
         <button
           type="button"
           onClick={() => onMode(recommended)}
-          className="ml-2 rounded-sm bg-zinc-800 px-2 py-0.5 text-[10px] uppercase tracking-wider text-zinc-200 hover:bg-zinc-700"
+          className="ml-2 rounded-sm bg-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground hover:bg-zinc-700"
         >
           Apply recommendation
         </button>
