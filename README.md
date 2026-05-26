@@ -1,13 +1,15 @@
 # Pit Wall — iRacing Telemetry & Lap Analysis
 
-> Live iRacing telemetry dashboard **+** MoTeC‑style `.ibt` lap analysis workbench, in the browser.
+> Live iRacing telemetry dashboard **+** MoTeC‑style `.ibt` lap analysis workbench, in the browser and on the desktop.  
 > Telemetry on track. Analysis off track. One app.
 
 **Live:** [https://iracing-companion.lovable.app](https://iracing-companion.lovable.app)
 
+![Pit Wall engineering team monitoring live race telemetry](public/pit-wall-team.png)
+
 ---
 
-## Table of contents
+## Table of Contents
 
 1. [What this is](#what-this-is)
 2. [Tech stack](#tech-stack)
@@ -15,14 +17,15 @@
 4. [Live telemetry (on track)](#live-telemetry-on-track)
 5. [Lap analysis workbench (off track)](#lap-analysis-workbench-off-track)
 6. [AI Coach & Advisor](#ai-coach--advisor)
-7. [Car fingerprint & setup tools](#car-fingerprint--setup-tools)
-8. [Community](#community)
-9. [Sessions, sharing & history](#sessions-sharing--history)
-10. [Theming](#theming)
+7. [Voice & Audio](#voice--audio)
+8. [Licensing & Admin](#licensing--admin)
+9. [Desktop App](#desktop-app)
+10. [Sessions, sharing & history](#sessions-sharing--history)
 11. [Backend, auth & security](#backend-auth--security)
 12. [Project structure](#project-structure)
 13. [Running locally](#running-locally)
-14. [Pi-parity roadmap](#pi-parity-roadmap)
+14. [Local AI (offline mode)](#local-ai-offline-mode)
+15. [Credits](#credits)
 
 ---
 
@@ -30,46 +33,47 @@
 
 Pit Wall is a two‑sided iRacing companion:
 
-- **Live mode** streams real‑time telemetry from a local bridge running alongside iRacing and renders a configurable dashboard (gauges, channel readouts, derived metrics, a spoken AI coach).
-- **Workbench mode** parses native iRacing `.ibt` telemetry files **directly in the browser** (Web Worker), and gives you a MoTeC‑style analysis environment: stacked traces, track map, sector spider, G‑G diagram, lap compare, optimal lap, time‑loss waterfall, setup sheet, replay, and AI counterfactuals.
-
-Everything is account‑scoped via row‑level security — your laps are yours.
+- **Live mode** streams real‑time telemetry from a local bridge running alongside iRacing at **60Hz** and renders a configurable dashboard (gauges, channel readouts, derived math channels, a spoken AI race engineer).
+- **Workbench mode** parses native iRacing `.ibt` telemetry files **directly in the browser** (Web Worker) and gives you a MoTeC‑style analysis environment: stacked traces, track map, sector spider, G–G diagram, lap compare, optimal lap, time‑loss waterfall, setup sheet, replay, and AI counterfactuals.
+- **Desktop App** wraps both modes in an Electron shell that auto‑spawns the bridge, persists window state, and routes audio to any output device.
 
 ---
 
 ## Tech stack
 
-- **Framework:** TanStack Start v1 (React 19, SSR, file‑based routing) on Vite 7
-- **Runtime:** Cloudflare Workers (edge) for server functions & API routes
-- **Styling:** Tailwind CSS v4 with `oklch` design tokens in `src/styles.css`
-- **UI:** shadcn/ui (Radix primitives) + lucide-react icons
-- **Charts:** uPlot (synchronized stacked traces), custom Canvas/SVG (track map, G‑G, spider)
-- **3D / Replay:** `@react-three/fiber` + `@react-three/drei`
-- **State / data:** TanStack Query, Zustand
-- **Backend:** Lovable Cloud (Supabase: Postgres + Auth + Storage + Realtime)
-- **AI:** Lovable AI Gateway (Google Gemini / OpenAI GPT‑5 family) for coaching, summarization, setup advice
-- **TTS:** Server‑side text‑to‑speech for spoken coach call‑outs
-- **Parser:** Custom `.ibt` (IRSDK) binary parser in a Web Worker — typed arrays for 250+ channels
+| Layer | Technology |
+|---|---|
+| Framework | TanStack Start v1 (React 19, SSR, file‑based routing) on Vite 7 |
+| Runtime | Cloudflare Workers (edge) for server functions & API routes |
+| Styling | Tailwind CSS v4 with `oklch` design tokens in `src/styles.css` |
+| UI | shadcn/ui (Radix primitives) + lucide-react icons |
+| Charts | uPlot (synchronized stacked traces), custom Canvas/SVG (track map, G–G, spider) |
+| State | TanStack Query + Zustand (persisted to localStorage) |
+| Backend | Supabase (Postgres + Auth + Storage + Realtime) via Lovable Cloud |
+| AI | Lovable AI Gateway (Gemini 2.5 Pro) · local LLM via OpenAI-compatible API |
+| TTS | ElevenLabs (server‑side) with per-user output device routing |
+| Desktop | Electron 31 + auto-bridge-sync |
+| Parser | Custom `.ibt` binary parser in a Web Worker — typed arrays for 250+ channels |
 
 ---
 
 ## Feature map
 
-| Area                | Route           | Highlights                                                        |
-| ------------------- | --------------- | ----------------------------------------------------------------- |
-| Marketing / landing | `/`             | Hero, feature overview, schema.org metadata                       |
-| How it works        | `/how-it-works` | Parsing pipeline diagram, `.ibt` format breakdown                 |
-| Auth                | `/auth`         | Email + password, Google OAuth                                    |
-| Live dashboard      | `/live`         | Real‑time telemetry, gauges, AI coach, bridge install             |
-| Settings            | `/settings`     | AI provider, Voice (ElevenLabs), Local DB diagnostics, Appearance |
-| Workbench           | `/sessions/$id` | Lap analysis for an uploaded `.ibt`                               |
-| Sessions list       | `/sessions`     | All uploaded laps, fingerprint deltas                             |
-| Car fingerprint     | `/fingerprint`  | Tire / brake / aero fingerprint vs reference                      |
-| Shared lap          | `/share/$token` | Public read‑only view of a lap                                    |
-| Lab                 | `/lab/lapfile`  | Diagnostic parser playground                                      |
-| Sitemap             | `/sitemap.xml`  | SEO sitemap                                                       |
-
-A global fixed **Back** button (`src/components/BackButton.tsx`) is pinned top‑left on every non‑landing page so you’re never trapped.
+| Area | Route | Highlights |
+|---|---|---|
+| Landing | `/` | Hero image, feature overview, OG image, schema.org |
+| How it works | `/how-it-works` | Architecture, parsing pipeline |
+| Auth | `/auth` | Email/password, Google OAuth, email verification |
+| Live dashboard | `/live` | 60Hz telemetry, gauges, AI coach, voice radio, bridge install |
+| Settings | `/settings` | AI provider, ElevenLabs, output device, microphone, Local LLM |
+| Workbench | `/sessions/$id` | Full lap analysis for an uploaded `.ibt` |
+| Sessions list | `/sessions` | All uploaded laps, fingerprint deltas |
+| Car fingerprint | `/fingerprint` | Tire/brake/aero fingerprint vs reference |
+| Shared lap | `/share/$token` | Public read-only view of a lap |
+| Lab | `/lab/lapfile` | Parser diagnostic playground |
+| Admin | `/admin` | Key generation, licence management (owner only) |
+| Roadmap | `/roadmap` | Public feature roadmap |
+| Sitemap | `/sitemap.xml` | SEO sitemap |
 
 ---
 
@@ -79,27 +83,46 @@ Route: **`/live`** · Components: `src/components/live/*`
 
 ### Bridge
 
-- **`BridgeInstall.tsx`** — One‑click download + setup instructions for the local desktop bridge that exposes iRacing’s IRSDK over a local websocket.
-- Bridge runtime now supports independent rates and adaptive streaming:
-  - `TICK_HZ` (sample rate, up to 360Hz)
-  - `UI_HZ` (dashboard websocket rate)
-  - `RECORD_HZ` (recording rate)
-  - `ADAPTIVE_UI=1` auto-falls back to 30Hz for slow clients based on reported browser FPS
-- **`DesktopLapSync.tsx`** — Auto‑uploads completed laps from the bridge into your session history so you can analyze them in the workbench right after the run.
+The local bridge (`local-bridge/server.js`) runs on your Windows sim PC and reads iRacing's Shared Memory API via `irsdk-node`.
+
+- Sends a **`Telemetry`** JSON packet at **60Hz** over WebSocket (`ws://localhost:3001`)
+- Broadcasts to all connected clients simultaneously (browser, phone, desktop app)
+- Falls back gracefully when iRacing is closed — clients show a "Disconnected" state
+- Auto-reconnects every 3 seconds on the client side
+
+**Bridge extras** — every packet now includes a rich `extras` block with high-fidelity channels the AI uses:
+
+| Channel | SDK Key | Units |
+|---|---|---|
+| Yaw rate | `YawRate` | rad/s |
+| Shock deflection ×4 | `LFshockDefl` etc. | m |
+| Brake line pressure ×4 | `LFbrakeLinePress` etc. | Pa |
+| Wheel speed ×4 | `LFwheelSpeed` etc. | rad/s |
+| Pitch / Roll / rates | `Pitch`, `Roll` etc. | rad, rad/s |
+| Tyre lateral force | `LFtireForceLatN` etc. | N |
+| Velocity XYZ | `VelocityX/Y/Z` | m/s |
 
 ### Dashboard widgets
 
-- **`ConfigurableChannelList.tsx`** + **`ChannelRegistry.ts`** — Pick any of the 250+ live IRSDK channels and lay them out as compact readouts. Layout is persisted per user via `preferences.functions.ts` and shareable as a _community channel layout_ (votes, security‑definer RPC for vote counts).
+- **`ConfigurableChannelList.tsx`** — Pick any live IRSDK channel, lay them out as compact readouts. Layout persisted per user.
 - **`DerivedMetrics.tsx`** — Computed channels (delta to ref, brake bias %, slip estimates, ideal gear).
-- **`MotecPanels.tsx`** — MoTeC‑style multi‑panel gauges.
-- **`RecordingControls.tsx`** — Start / stop a local recording buffer (`liveRecorder.ts`) — useful when you want to capture a stint without waiting for iRacing’s own .ibt write.
-- **`LiveReference.tsx`** — Overlays your best historical lap as a moving reference while driving.
-- **`FingerprintUploadCard.tsx`** — Upload a fingerprint baseline from your car so the coach knows your tire/brake envelope.
+- **`LapMetricsTable.tsx`** — Rolling 60-sample (last 1s @ 60Hz) table of live lap metrics.
+- **`LiveCoach.tsx`** — Per-lap spoken radio calls via ElevenLabs, routed to the user's chosen audio output device.
+- **`AdvisorButton.tsx`** — On-demand setup/driving style tips from the AI, including bridge extras data.
+- **`LiveStrategy.tsx`** — Real-time strategy copilot (gaps, pit windows, tyre windows).
+- **`BridgeInstall.tsx`** — Step-by-step bridge setup instructions shown when not connected.
 
-### Real‑time coach
+### Workspaces (tiers)
 
-- **`LiveCoach.tsx`** + **`AdvisorButton.tsx`** + `src/lib/live/coachRules.ts` — Rule‑based + LLM hybrid coach that watches live channels and surfaces call‑outs (“lift earlier into T4”, “brake bias too rearward for this fuel load”). Spoken via `tts.functions.ts`.
-- **`GearAdvisor.tsx`** — Suggests gear ratio changes based on observed RPM histograms vs target shift points; integrates with the community gear‑ratio library.
+Three workspace presets are available, lockable behind licence tiers:
+
+| Workspace | Key | Focus |
+|---|---|---|
+| iRacing Lite Workbook v1.2 | `lite` | Core telemetry channels |
+| iRacing Plus Workbook v1.3 | `plus` | Extended channels + math |
+| iRacing Plus Real-Time Telemetry v1.0 | `realtime` | Full 60Hz real-time channels |
+
+The active workspace and its enabled math channel definitions are injected into every AI prompt automatically.
 
 ---
 
@@ -109,110 +132,150 @@ Route: **`/sessions/$id`** · Components: `src/components/workbench/*`
 
 ### Parsing pipeline (`src/lib/ibt/`)
 
-1. **Upload** `.ibt` → stored privately (RLS scoped) via `uploadIbt.ts`.
-2. **Decode header** — IRSDK header, variable headers, embedded session YAML (`parser.ts`).
-3. **Stream samples** in a dedicated **Web Worker** (`parser.worker.ts`, `parseInWorker.ts`) — 250+ channels decoded into `Float32Array`s without blocking the UI.
-4. **Reconstruct** lap boundaries from the `Lap` channel and integrate `VelocityX/Y` × `Yaw` to rebuild the track outline.
-5. **Render** with uPlot + a single shared sub‑frame cursor across every pane.
+1. **Upload** `.ibt` → stored privately (RLS-scoped) via `uploadIbt.ts`
+2. **Decode header** — IRSDK header, variable headers, embedded session YAML (`parser.ts`)
+3. **Stream samples** in a dedicated **Web Worker** (`parser.worker.ts`) — 250+ channels decoded into `Float32Array`s without blocking the UI
+4. **Reconstruct** lap boundaries from the `Lap` channel; rebuild track outline from `VelocityX/Y × Yaw`
+5. **Render** with uPlot + a single shared sub-frame cursor across every pane
 
-### Panes
+### Analysis panes
 
-| Component                                | What it does                                                                                                                         |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `ChannelBrowser.tsx`                     | All 250+ channels grouped (Driver Inputs · Vehicle · Engine · Tires · Suspension · Session · Environment), searchable, click‑to‑plot |
-| `StackedTraces.tsx`                      | Synchronized uPlot panels with min/max/avg readout per channel                                                                       |
-| `TrackMap.tsx`                           | Reconstructed XY outline, live cursor dot, optional sector overlay                                                                   |
-| `Timeline.tsx` + `LapList.tsx`           | Pick reference lap + compare lap (dashed overlay on every trace)                                                                     |
-| `SectorSpider.tsx`                       | Per‑sector deltas vs reference as a radar chart                                                                                      |
-| `TimeLossWaterfall.tsx`                  | Where you lost / gained time across a lap, per micro‑sector                                                                          |
-| `GGDiagram.tsx`                          | Longitudinal × lateral G scatter with envelope                                                                                       |
-| `MinCornerSpeed.tsx`                     | Apex speed per corner, deltas vs reference                                                                                           |
-| `BrakeBias.tsx`                          | Brake‑bias analysis over a stint                                                                                                     |
-| `SlipAngle.tsx`                          | Slip angle estimate (front/rear) from IMU + steering                                                                                 |
-| `OptimalLap.tsx`                         | Theoretical best lap stitched from your fastest sectors                                                                              |
-| `PianoRoll.tsx`                          | Throttle/brake/gear roll for pattern spotting                                                                                        |
-| `SetupSheet.tsx` + `SetupDiff.tsx`       | Parsed setup YAML; diff two setups side by side                                                                                      |
-| `ReplayThree.tsx` + `CinemaPlayback.tsx` | 3D car‑on‑track playback driven by telemetry                                                                                         |
-| `LiveReadout.tsx`                        | HUD‑style readout you can pop out (`HudSettings.tsx`)                                                                                |
-| `FingerprintDelta.tsx`                   | Compare lap’s fingerprint vs your baseline                                                                                           |
-| `Counterfactuals.tsx`                    | “What if you’d braked 5m later into T3?” — AI counterfactual analysis                                                                |
-| `AICoach.tsx`                            | Per‑lap natural‑language critique                                                                                                    |
-| `ExportButton.tsx` / `ShareButton.tsx`   | CSV export + create a public share link                                                                                              |
+| Component | What it does |
+|---|---|
+| `ChannelBrowser.tsx` | 250+ channels grouped and searchable, click-to-plot |
+| `StackedTraces.tsx` | Synchronized uPlot panels with min/max/avg readout |
+| `TrackMap.tsx` | Reconstructed XY outline, live cursor dot, sector overlay |
+| `Timeline.tsx` + `LapList.tsx` | Reference lap + compare lap (dashed overlay) |
+| `SectorSpider.tsx` | Per-sector deltas vs reference as radar chart |
+| `TimeLossWaterfall.tsx` | Where time was lost/gained across a lap |
+| `GGDiagram.tsx` | Longitudinal × lateral G scatter with envelope |
+| `MinCornerSpeed.tsx` | Apex speed per corner, deltas vs reference |
+| `BrakeBias.tsx` | Brake-bias analysis over a stint |
+| `OptimalLap.tsx` | Theoretical best lap stitched from fastest sectors |
+| `SetupSheet.tsx` + `SetupDiff.tsx` | Parsed setup YAML; diff two setups side by side |
+| `AICoach.tsx` | Per-lap natural-language critique with workspace context |
+| `ExportButton.tsx` / `ShareButton.tsx` | CSV export + public share link |
 
 ---
 
 ## AI Coach & Advisor
 
-Powered by **Lovable AI Gateway** (no API key needed):
+Three AI engines, all workspace-aware and bridge-extras-aware:
 
-- `src/lib/coach.functions.ts` + `src/lib/coach/summarize.ts` — Server functions that build a compact lap summary (driver inputs, corner phases, sector times, deltas) and call an LLM to produce a critique + actionable suggestions.
-- `src/lib/coach/physics.ts` — Lightweight vehicle physics features fed to the LLM (load transfer estimates, slip ratios).
-- `src/lib/advisor.functions.ts` + `src/lib/advisor.knowledge.ts` — Setup advisor that combines a curated knowledge base (springs, dampers, bars, aero, brake bias) with lap telemetry to recommend setup nudges.
-- `src/lib/tts.functions.ts` — Server‑side TTS so the live coach can _speak_ call‑outs while you drive.
-- `src/components/VoiceSettings.tsx` — Per-user ElevenLabs API key + Voice ID configuration from Settings.
+### Engine 1 — Live Coach (per lap, automatic)
+- Fires after every completed lap
+- Receives: track, car, lap time, sector times, PB delta, streak, brake/throttle peaks, tyre temps, **yaw rate, shock deflection, brake line pressure** from bridge extras
+- Speaks the call via ElevenLabs on the user's chosen output device
+- Rules-based fallback when AI confidence is low
 
-All AI calls go through authenticated server functions (`requireSupabaseAuth`) so user context and rate limits are honored.
+### Engine 2 — Advisor (on demand)
+- Triggered via `AdvisorButton` on the live dashboard
+- Receives: last 5 valid laps, tyre temps/pressures, brake bias, diff map, conditions, **bridge extras snapshot**, active workspace channels, Setup Bible knowledge base
+- Returns 3-6 prioritised tips with setup citations
+
+### Engine 3 — Offline Coach (IBT analysis)
+- Per-lap critique in the workbench
+- Receives: 60-bin per-lap arrays (speed, throttle, brake, gear, steer), GG envelope, brake linearity, slip/balance, counterfactual zones, active workspace
+
+### AI provider configuration
+
+Go to **Settings → AI Provider** to choose:
+
+| Provider | When to use |
+|---|---|
+| Cloud (Gemini 2.5 Pro) | Default — best quality, requires internet |
+| LM Studio | Local, fully offline, privacy-first |
+| Ollama | Local, fully offline, privacy-first |
 
 ---
 
-## Car fingerprint & setup tools
+## Voice & Audio
 
-`src/lib/fingerprint/` + route `/fingerprint`
+Configured in **Settings → Voice & Audio Devices**.
 
-A “fingerprint” is a compact, comparable signature of how a given car/track combo behaves for you:
+- **ElevenLabs API Key** — Your personal key for high-quality TTS
+- **Voice ID** — 20-character ID from your ElevenLabs account (default: George)
+- **Playback Device** — Choose which speaker/headset ElevenLabs audio plays through (uses `setSinkId`)
+- **Microphone** — Choose which microphone to use for push-to-talk voice commands
+- **Mic Level Meter** — Live VU meter with test button to confirm microphone is working
 
-- `compute.ts` — Derives the fingerprint from a lap (tire temps envelope, brake duty cycle, throttle modulation, aero balance proxy).
-- `carClass.ts` + `trackLengths.ts` — Normalizes by car class and track length so comparisons are apples‑to‑apples.
-- `targets.ts` — Reference targets per car class (community‑sourced).
-- `FingerprintDelta.tsx` — Visual delta in the workbench.
-
-This feeds the live coach (“your front tires are 18°C hotter than baseline — back off the kerbs”) and the setup advisor.
+All three AI engines route their TTS output through the selected playback device automatically.
 
 ---
 
-## Community
+## Licensing & Admin
 
-`src/lib/community.functions.ts` · `src/components/community/*`
+### Licence keys
 
-Three sharable artifact types — all stored in their own tables with strict RLS:
+Pit Wall uses HWID-bound licence keys:
 
-1. **Gear ratio sets** (`shared_gear_ratios`) — Per car class, votable.
-2. **Channel layouts** (`shared_channel_layouts`) — Live‑dashboard configurations.
-3. **Car class profiles** (`shared_car_classes`) — Class metadata used by the advisor.
+- Keys are tied to the **machine ID** of the primary PC
+- Network devices (same PC on the network) are allowed
+- Keys can be generated and managed in the **Admin Dashboard**
 
-**Security note (enforced by the DB, not the client):** vote counts can only be mutated through the `public.set_community_votes(kind, target_id, votes)` SECURITY DEFINER RPC. A `BEFORE UPDATE` trigger blocks any direct `UPDATE … SET votes = …` from clients. This is intentional — do not “simplify” around it.
+### Admin Dashboard (`/admin`)
 
-`CommunityBrowser.tsx` and `CarClassCommunity.tsx` provide browse / search / upvote UIs.
+Access restricted to the owner account (verified via Supabase `user_roles`). Features:
+
+- **Generate licence key** for a user (enter their email)
+- **View all active licences** and revoke as needed
+- **Workspace tier assignment** per licence
+- **Usage stats** — active sessions, AI call counts
+
+> **Access:** Admin dashboard is only reachable by the owner GitHub account. There is no public registration for admin access.
+
+---
+
+## Desktop App
+
+The desktop app (`desktop/`) is an Electron 31 shell:
+
+- **Auto-spawns** the bridge on startup — no separate terminal needed
+- **Auto-syncs** bridge code from `local-bridge/` before every launch (`prestart` hook)
+- **System tray** with live bridge status (running / crashed / starting)
+- **Auto-restart** on bridge crash with exponential backoff (up to 5 attempts)
+- **Bridge log** persisted to `%APPDATA%/Pit Wall Desktop/bridge.log`
+- **Window state** persisted (size, position, maximised)
+- **Single-instance lock** — focuses existing window if opened twice
+- **Audio device support** — `experimentalFeatures: true` enables `setSinkId()` for output device routing
+- **Keyboard shortcuts**: `Ctrl+1` Live, `Ctrl+2` Sessions, `Ctrl+,` Settings
+
+### Running the desktop app
+
+```powershell
+cd desktop
+npm install
+npm run dev          # Dev mode — loads http://127.0.0.1:8080
+npm start            # Production mode — loads https://iracing-companion.lovable.app
+```
+
+### Packaging
+
+```powershell
+cd desktop
+npm run package      # Produces desktop/dist/Pit Wall-win32-x64/
+```
 
 ---
 
 ## Sessions, sharing & history
 
-- `src/lib/history.functions.ts` — Server functions for listing, deleting, and renaming sessions.
-- `src/lib/share.functions.ts` + `/share/$token` — Generates a one‑way share token that lets anyone view a single lap without an account. The shared view is read‑only and only exposes the chosen lap.
-- `src/lib/exportView.ts` + `ExportButton.tsx` — CSV export of the currently‑plotted channels.
-- `src/lib/liveLaps.functions.ts` — Bridges live‑recorded laps into the same `sessions` table used by uploaded `.ibt` files, so everything lives in one history.
-
----
-
-## Theming
-
-`src/lib/themes.functions.ts` · `src/lib/themeContext.tsx` · `ThemeEditor.tsx` · `ThemeCard.tsx`
-
-- Tokens are defined in `oklch` in `src/styles.css` and consumed exclusively via semantic Tailwind classes (`bg-background`, `text-primary`, etc).
-- Users can author their own themes in `ThemeEditor` and save them to `shared_themes`.
-- **Security note:** `SELECT` on `shared_themes` is authenticated‑only by design — do not re‑open this to anon.
+- `src/lib/history.functions.ts` — List, delete, rename sessions
+- `src/lib/share.functions.ts` + `/share/$token` — One-way share token for read-only public lap view
+- `src/lib/exportView.ts` + `ExportButton.tsx` — CSV export of plotted channels
+- `src/lib/liveLaps.functions.ts` — Bridges live-recorded laps into the same `sessions` table as `.ibt` uploads
 
 ---
 
 ## Backend, auth & security
 
-- **Auth:** Supabase Auth via Lovable Cloud — email/password + Google OAuth. Sign‑up requires email verification.
-- **Server logic:** TanStack `createServerFn` only (no Supabase Edge Functions). Every protected function uses the `requireSupabaseAuth` middleware; the browser auto‑attaches the bearer token via `attachSupabaseAuth` registered in `src/start.ts`.
-- **CSRF:** `createCsrfMiddleware` is registered globally for all server functions in `src/start.ts`.
-- **RLS:** Every user‑owned table (sessions, laps, fingerprints, preferences, themes, community submissions) enforces row‑level security keyed to `auth.uid()`. The `user_roles` table follows the recommended pattern with a SECURITY DEFINER `has_role()` helper — roles are **never** stored on profiles.
-- **Public API routes:** Live under `app/routes/api/public/*` and verify signatures before any write.
-- **Storage:** `.ibt` uploads live in private buckets, scoped by `user_id`.
+- **Auth:** Supabase Auth — email/password + Google OAuth. Sign-up requires email verification.
+- **Server logic:** TanStack `createServerFn` only. Every protected function uses `requireSupabaseAuth` middleware.
+- **CSRF:** `createCsrfMiddleware` registered globally in `src/start.ts`
+- **RLS:** Every user-owned table enforces row-level security keyed to `auth.uid()`
+- **Roles:** `user_roles` table with SECURITY DEFINER `has_role()` helper — roles never stored on profiles
+- **Storage:** `.ibt` uploads in private buckets, scoped by `user_id`
+- **Community votes:** Only mutatable via `public.set_community_votes()` SECURITY DEFINER RPC — a `BEFORE UPDATE` trigger blocks direct client writes
 
 See `supabase/migrations/` for the full schema history.
 
@@ -220,151 +283,118 @@ See `supabase/migrations/` for the full schema history.
 
 ## Project structure
 
-```bash
-src/
-├── routes/                     # TanStack Start file-based routes
-│   ├── __root.tsx              # Shell + global providers + BackButton
-│   ├── index.tsx               # Landing
-│   ├── how-it-works.tsx
-│   ├── auth.tsx
-│   ├── live.tsx                # Live telemetry dashboard
-│   ├── sessions.index.tsx      # All sessions
-│   ├── sessions.$id.tsx        # Workbench for one lap
-│   ├── fingerprint.tsx
-│   ├── share.$token.tsx        # Public share view
-│   ├── lab.lapfile.tsx         # Parser playground
-│   ├── sitemap[.]xml.ts
-│   └── api/                    # Server routes (webhooks, public API)
-├── components/
-│   ├── AppHeader.tsx
-│   ├── BackButton.tsx          # Global "Back / Home" affordance
-│   ├── ThemeCard.tsx, ThemeEditor.tsx
-│   ├── live/                   # Live dashboard widgets
-│   ├── workbench/              # Lap-analysis panes
-│   ├── community/              # Browse & vote on shared artifacts
-│   └── ui/                     # shadcn primitives
-├── lib/
-│   ├── ibt/                    # .ibt parser + Web Worker
-│   ├── lapfile/                # Generic lap-file parser
-│   ├── pwlap/                  # Pit Wall internal lap format
-│   ├── live/                   # Live coach rules
-│   ├── coach/, fingerprint/    # Domain logic
-│   ├── *.functions.ts          # createServerFn server endpoints
-│   ├── themeContext.tsx, theme.ts
-│   ├── store.ts                # Zustand store
-│   └── useTelemetry.ts, useTelemetryBuffer.ts
-├── integrations/supabase/      # Auto-generated client + middleware (do not edit)
-├── styles.css                  # Tailwind v4 + oklch design tokens
-└── start.ts                    # Server runtime + middleware registration
-supabase/
-├── config.toml
-└── migrations/                 # Schema, RLS, RPCs, triggers
+```
+C:\Dev\iRacing-Companion\
+├── local-bridge/               # iRacing → WebSocket bridge (60Hz)
+│   ├── server.js               # Main bridge — reads irsdk, broadcasts Telemetry
+│   ├── telemetry-recorder.js   # Optional lap recording
+│   ├── lap-cache.js            # Local lap cache
+│   ├── channel-manifest.js     # Channel definitions
+│   └── README.md               # Bridge quickstart
+├── desktop/                    # Electron desktop wrapper
+│   ├── main.cjs                # Main process — bridge spawn, tray, window
+│   ├── assets/                 # App icon + tray icon
+│   ├── bridge/                 # Auto-synced copy of local-bridge (do not edit here)
+│   └── scripts/copy-bridge.js  # Sync script (runs on prestart/prepackage)
+├── src/
+│   ├── routes/                 # TanStack Start file-based routes
+│   │   ├── __root.tsx          # Shell + global providers
+│   │   ├── index.tsx           # Landing page with hero image
+│   │   ├── live.tsx            # Live telemetry dashboard (60Hz)
+│   │   ├── sessions.$id.tsx    # Workbench for one lap
+│   │   ├── settings.tsx        # Settings (AI, Voice, Devices)
+│   │   ├── admin.tsx           # Admin dashboard (owner only)
+│   │   └── api/                # Server routes
+│   ├── components/
+│   │   ├── live/               # Live dashboard widgets
+│   │   ├── workbench/          # Lap analysis panes
+│   │   ├── VoiceSettings.tsx   # Output device + microphone pickers
+│   │   └── ui/                 # shadcn primitives
+│   ├── lib/
+│   │   ├── ibt/                # .ibt binary parser + Web Worker
+│   │   ├── live/               # useLapAggregate, coach rules
+│   │   ├── math/               # Math expression evaluator
+│   │   ├── advisor.prompts.ts  # AI advisor prompt builder (with extras)
+│   │   ├── advisor.functions.ts# Advisor cloud server function
+│   │   ├── llm.ts              # AI dispatch (cloud/local, workspace context)
+│   │   ├── tts.functions.ts    # ElevenLabs server function
+│   │   ├── tts.client.ts       # Client TTS with setSinkId device routing
+│   │   ├── store.ts            # Zustand store (AI, ElevenLabs, device IDs)
+│   │   ├── useTelemetry.ts     # Bridge WebSocket hook (60Hz)
+│   │   └── useTelemetryBuffer.ts # 30s rolling buffer (60Hz)
+│   └── styles.css              # Tailwind v4 + oklch design tokens
+├── supabase/
+│   ├── config.toml
+│   └── migrations/             # Schema, RLS, RPCs, triggers
+├── docs/
+│   ├── MATH_EVAL_GRAMMAR.md    # Math channel expression grammar
+│   └── MATH_V1_TECH_SPEC.md    # Math evaluator technical spec
+├── BRIDGE_ARCHITECTURE.md      # Bridge data flow & consumer guide
+└── public/
+    └── pit-wall-team.png       # Hero image (also og:image)
 ```
 
 ---
 
-## Running locally & Offline Mode
+## Running locally
 
-You can run Pit Wall entirely locally on your Windows machine without a Supabase cloud connection, using a local MongoDB database and browser-level IndexedDB file storage.
+### Prerequisites
 
-### 1. Boot the Application
+- Node.js 20 LTS or newer
+- Windows PC (for bridge + iRacing; the web app runs on any OS)
 
-Install dependencies and boot the development server:
+### 1. Install & start the web app
 
-```bash
+```powershell
 npm install
 npm run dev
+# → http://localhost:3000 (or :8080 depending on Vite config)
 ```
 
-### 2. Standalone Offline / Local Developer Mode
+### 2. Start the bridge (separate terminal)
 
-1. Open [http://localhost:3000](http://localhost:3000) in your browser.
-2. Go to the login screen and click **"Continue as Local Developer (No Cloud)"**. This logs you in with a mock credential and directs your traffic to local storage endpoints.
+```powershell
+cd local-bridge
+npm install
+npm start
+# → ws://localhost:3001  (live telemetry)
+# → http://localhost:3001 (local dashboard)
+```
 
-### 3. Local Database & File Setup
+Open iRacing, get in a car, and the dashboard will auto-connect.
 
-1. **Database**: Download and start a local **MongoDB** server.
-   
-   #### Method A: Windows Installer (Recommended GUI)
-   1. Visit the [MongoDB Community Download Center](https://www.mongodb.com/try/download/community).
-   2. Select the latest stable version, Platform **Windows**, Package **MSI**, and click **Download**.
-   3. Run the downloaded `.msi` installer.
-   4. Choose the **Complete** setup type.
-   5. Keep the default configuration: **"Install MongoDB as a Service"** and **"Run service as Network Service user"**. This ensures MongoDB runs automatically in the background as a system service.
-   6. Ensure the checkbox for **"Install MongoDB Compass"** is checked (this installs the official MongoDB graphical interface to inspect and query telemetry records easily).
-   7. Finish the installation. MongoDB will start automatically on standard port `27017`.
+### 3. Environment variables
 
-   #### Method B: Windows Package Manager (winget)
-   1. Open PowerShell or Command Prompt as Administrator and run:
-      ```powershell
-      winget install MongoDB.Community.Server
-      ```
-   2. Once installed, start the MongoDB service by running:
-      ```powershell
-      Start-Service -Name MongoDB
-      ```
+Copy `.env.example` to `.env` and fill in:
 
-   #### Method C: Docker Container (Alternative)
-   If you already run Docker on your machine, launch a containerized instance:
-   ```powershell
-   docker run -d -p 27017:27017 --name iracing-mongo mongo:latest
-   ```
+```env
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+ELEVENLABS_API_KEY=...       # Optional — users can provide their own in Settings
+LOVABLE_API_KEY=...          # For cloud AI (Gemini 2.5 Pro)
+```
 
-   #### Verifying the Connection
-   - To confirm MongoDB is active and reachable, test the TCP port in PowerShell:
-     ```powershell
-     Test-NetConnection -ComputerName 127.0.0.1 -Port 27017
-     ```
-   - Alternatively, open **MongoDB Compass** and click **Connect** using the default connection URI: `mongodb://localhost:27017`.
+---
 
-2. **File Storage**: Telemetry binary files are automatically cached inside your browser's private **IndexedDB** memory.
-3. Open the **Database** setup panel in the header to run connection tests and manage your local browser cache size.
+## Local AI (offline mode)
 
-### 4. Spawning the iRacing Bridge
+Pit Wall works fully offline for AI coaching using a local LLM:
 
-**iRacing Bridge** is a Node.js process that runs in the background. It connects to your local database and file storage, and streams telemetry data from iRacing to your browser. Start the companion app.
+### Setup
 
-- Navigate to the **Live** dashboard (`/live`).
-- If the bridge is stopped, click **"Run Local Bridge"** in the UI. The app spawns `local-bridge` on port `3001` automatically.
-- Optional performance env vars for the bridge process:
-  - `TICK_HZ` (default `120`)
-  - `UI_HZ` (default `60`)
-  - `RECORD_HZ` (default `120`)
-  - `ADAPTIVE_UI` (`1` default, set `0` to disable adaptive fallback)
-- Launch iRacing and start driving — data will stream live immediately.
+1. Install [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.com/)
+2. Download an instruction-following model (recommended: `Llama 3 8B Instruct` or `Mistral 7B Instruct`)
+3. Start the local server:
+   - **LM Studio**: Enable the local server in the app (defaults to `http://localhost:1234/v1`)
+   - **Ollama**: `ollama serve` (defaults to `http://localhost:11434/v1`)
+4. In Pit Wall Settings → AI Provider, select your engine and enter the Model ID
 
-### 5. Local AI Setup (LM Studio / Ollama)
-
-Pit Wall supports fully offline **AI Coaching and Setup Advice** by connecting directly to local large language model (LLM) engines running on your machine.
-
-1. **Choose/Install your Local AI Engine**:
-   - **LM Studio**: Download and start [LM Studio](https://lmstudio.ai/).
-   - **Ollama**: Download and run [Ollama](https://ollama.com/).
-2. **Load a Model**:
-   - Open your local AI engine and download/load an instruction-following model (e.g., `Llama 3 8B Instruct`, `Mistral 7B Instruct`, or `Liquid LFM 2.5`).
-   - *Note: For the Setup Advisor to function correctly, it is recommended to use models that support tool-calling schemas.*
-3. **Configure the AI Engine in Pit Wall**:
-   - Open [http://localhost:3000/settings](http://localhost:3000/settings) in your browser.
-   - Under **AI Provider**, choose either **LM Studio** or **Ollama**.
-   - The app will pre-fill the default endpoints:
-     - **LM Studio**: `http://localhost:1234/v1`
-     - **Ollama**: `http://localhost:11434/v1`
-   - Enter your loaded **Model ID** (e.g. `llama-3-8b-instruct`).
-4. **Test the Connection**:
-   - Click **"Test Local Host Software Connection"** (or **"Test Connection"**) under the settings card to verify the app can successfully communicate with your local AI engine.
-   - Once verified, all telemetry analysis, lap critiques, and car setup recommendations will be processed locally on your machine, with 100% data privacy.
+> For the Setup Advisor, use a model that supports tool-calling (function calling) schemas.
 
 ---
 
 ## Credits
 
-Built with [Lovable](https://lovable.dev) on Lovable Cloud + Lovable AI Gateway.
-iRacing® and IRSDK are trademarks of iRacing.com Motorsport Simulations, LLC. This project is an independent companion tool and is not affiliated with or endorsed by iRacing.
-
----
-
-## Pi-parity roadmap
-
-For a full gap matrix and 30/60/90 execution plan toward Pi Toolbox-class workflows, see:
-
-- [PI_PARITY_ROADMAP.md](PI_PARITY_ROADMAP.md)
+Built with [Lovable](https://lovable.dev) on Lovable Cloud + Lovable AI Gateway.  
+iRacing® and IRSDK are trademarks of iRacing.com Motorsport Simulations, LLC.  
+This project is an independent companion tool and is not affiliated with or endorsed by iRacing.

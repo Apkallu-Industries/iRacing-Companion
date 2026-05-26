@@ -1,47 +1,88 @@
-# iRacing → Pit Wall Bridge + Local Dashboard
+# Pit Wall — iRacing Bridge
 
-One command. One URL. Live telemetry from iRacing on any device on your network,
-installable as a PWA.
+The bridge reads iRacing's Shared Memory API and streams telemetry to the Pit Wall dashboard at **60Hz** over WebSocket.
+
+Run it on the same Windows PC as iRacing. Then open the Pit Wall dashboard on any device on your network.
+
+---
 
 ## Requirements
 
 - **Windows PC** running iRacing
 - Node.js 20 LTS or newer
 
-## Run
+---
+
+## Quick start
 
 ```powershell
-cd C:\Dev\racedash-live-main\local-bridge
+cd local-bridge
 npm install
 npm start
 ```
 
-Then open **http://localhost:3001** on the same PC, or
-**http://<your-pc-ip>:3001** from your phone, tablet, or second screen.
-The terminal prints all the URLs when it starts.
+The terminal prints all the URLs when it starts:
 
-That's it. No HTTPS, no mixed-content errors, no cloud account needed.
+```
+[bridge] dashboard:  http://localhost:3001
+[bridge] websocket:  ws://localhost:3001
+[bridge] network:    http://192.168.x.x:3001
+```
 
-## Install as an app
+Open **http://localhost:3001** on the sim PC, or  
+**http://\<your-pc-ip\>:3001** from your phone, tablet, or second screen.
 
-Open the dashboard in Chrome/Edge → click the **Install** button (top right)
-or use the browser menu → "Install Pit Wall". It launches like a native app,
-full screen, no browser chrome.
+---
+
+## Install as a PWA
+
+Open the dashboard in Chrome or Edge → click **Install** (address bar) or browser menu → **Install Pit Wall**.  
+Launches like a native app — full screen, no browser chrome.
+
+---
+
+## What it sends
+
+Every 60Hz tick, the bridge sends a `Telemetry` JSON packet over WebSocket containing:
+
+- Gear, speed, RPM, shift lights
+- Throttle, brake, clutch, steering
+- Lap timing: last lap, best lap, delta, sector splits
+- Tyre temps, pressures, wear, brake temps
+- Fuel remaining, estimated laps
+- G-forces (lateral + longitudinal)
+- Brake bias, diff map
+- Air/track temperature, wind, wetness
+- Competitors list (position, gaps)
+- **Extras block**: yaw rate, shock deflection, brake line pressures, wheel speeds, pitch/roll, tyre forces, velocity XYZ
+
+---
 
 ## Troubleshooting
 
-- **Phone can't connect** → Windows Firewall is blocking port 3001. Allow Node.js
-  through "Private networks" the first time it prompts, or run
-  `New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow`
-  in an Administrator PowerShell.
-- **`npm install` fails with C++ / `AccessorSignature` errors** → stale
-  `node_modules`. Delete and reinstall:
+**Phone/tablet can't connect**  
+Windows Firewall is blocking port 3001. Run once in an Administrator PowerShell:
+```powershell
+New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow
+```
 
-  ```powershell
+**`npm install` fails with C++ errors**  
+Delete stale modules and reinstall:
+```powershell
+Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
+npm install
+```
 
-  Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
-  npm install
-  ```
+**Dashboard shows "Disconnected"**  
+- Make sure iRacing is running and you are **on track** (not in the menus)
+- The bridge terminal should show `[bridge] iRacing connected`
+- If it shows `irsdk-node unavailable`, try reinstalling: `npm install irsdk-node`
 
-**_macOS/Linux_** → the bridge runs but iRacing's Shared Memory API is
-Windows-only, so there's nothing to read. Use a Windows PC.
+**macOS / Linux**  
+The bridge process will start but iRacing's Shared Memory API is Windows-only — there is nothing to read. Run the bridge on your Windows sim PC.
+
+---
+
+## Architecture
+
+See [`BRIDGE_ARCHITECTURE.md`](../BRIDGE_ARCHITECTURE.md) for the full data flow, Telemetry interface definition, and guide for adding new channels.

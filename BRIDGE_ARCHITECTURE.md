@@ -1,77 +1,109 @@
-# Bridge Architecture — Single Source of Truth
+# Bridge Architecture
 
-## Overview
-The **`local-bridge`** (in `/local-bridge/`) is the canonical and single source of truth for all iRacing telemetry data. All UI sections (Live Dashboard, Lab Workbench, Desktop App, Web App) connect to this bridge and consume data through its published interfaces.
+The **`local-bridge`** is the single source of truth for all iRacing telemetry. Every consumer (Live Dashboard, Workbench, Desktop App) connects to it and reads through the same published interface.
 
-## Bridge Data Sources & Interfaces
+---
 
-### 1. Live Telemetry Stream (WebSocket)
-**Endpoint:** `ws://localhost:3001` or `ws://<your-pc-ip>:3001`
+## Data Flow
 
-**Data Model:** `Telemetry` object sent at 30 Hz (configurable via bridge performance settings)
+```
+iRacing Shared Memory API (irsdk-node)
+         ↓  60Hz poll
+  local-bridge/server.js
+  - flattenTelemetry() — flatten SDK variable objects
+  - mapTelemetry()    — typed Telemetry packet + extras block
+         ↓
+  WebSocket broadcast @ ws://localhost:3001
+         ↓         ↓         ↓
+   ┌──────────┐ ┌────────┐ ┌──────────┐
+   │ Browser  │ │ Phone  │ │ Desktop  │
+   │ Live Tab │ │  PWA   │ │  Electron│
+   └──────────┘ └────────┘ └──────────┘
+         ↓
+   useTelemetry() React hook
+         ↓
+   useLapAggregate() — per-lap metric accumulation (extras included)
+         ↓
+   AI engines (LiveCoach, Advisor, Offline Coach)
+```
+
+---
+
+## Telemetry Packet (`Telemetry` interface)
+
+Sent at **60Hz** over WebSocket as JSON. Defined in `src/lib/telemetry-types.ts`.
+
+### Core fields
 
 ```typescript
 interface Telemetry {
-  // Connection & Session
+  // Connection
   connected: boolean;
   source: "live" | "simulated";
-  session: string;           // e.g. "PRACTICE — MONZA"
+  session: string;       // "PRACTICE — MONZA"
   track: string;
   car: string;
-  
-  // Driving Inputs
-  throttle: 0-1;
-  brake: 0-1;
-  clutch: 0-1;
+  carNumber: string;
+  sdkVersion: string;
+  latencyMs: number;
+  safetyRating: number;
+
+  // Driver inputs
+  throttle: number;      // 0–1
+  brake: number;         // 0–1
+  clutch: number;        // 0–1
   steeringDeg: number;
-  
-  // Engine & Speed
+
+  // Engine & speed
   gear: number;
   speedKph: number;
   rpm: number;
   rpmMax: number;
   rpmShiftWarn: number;
-  
-  // Lap Timing
-  lastLap: string;           // "M:SS.sss"
+  rpmShiftRedline: number;
+
+  // Lap timing
+  lastLap: string;       // "1:23.456"
   bestLap: string;
-  deltaSec: number;
-  sectors: {
-    s1: string;
-    s2: string;
-    s3: string;
-  };
-  
-  // Tires (FL, FR, RL, RR)
-  tires: {
-    [corner]: {
-      tempC: number;
-      pressureBar: number;
-      wearPct: number;
-      estWearPct: number;
-      brakeTempC: number;
-      brakeLinePress: number;
-      state: "hot" | "cold" | "ok";
-    };
-  };
-  
-  // Fuel & Load
+  deltaSec: number;      // delta to personal best
+  sectors: { s1: string; s2: string; s3: string; bestSector: null };
+
+  // Fuel
   fuelRemainingL: number;
   lapsEstimated: number;
-  
+
+  // Tyres (fl / fr / rl / rr)
+  tires: Record<"fl"|"fr"|"rl"|"rr", {
+    tempC: number;
+    pressureBar: number;
+    wearPct: number;
+    estWearPct: number;
+    brakeTempC: number;
+    brakeLinePress: number;
+    state: "hot" | "cold" | "ok";
+  }>;
+
   // Physics
-  gLat: number;              // G-forces
+  gLat: number;
   gLon: number;
-  
-  // Setup & Environment
+
+  // Setup & environment
   brakeBias: number;
   diffMap: number;
   drsAvailable: boolean;
   airTempC: number;
   trackTempC: number;
-  safetyRating: number;
-  
-  // Competitors
+  liveAirTempC: number;
+  liveTrackTempC: number;
+  airDensity: number;
+  airPressure: number;
+  windVel: number;
+  windDir: number;
+  trackWetness: number;
+
+  // Race
+  sof: number;
+  myCarIdx: number;
   competitors: Array<{
     pos: number;
     carIdx: number;
@@ -79,142 +111,117 @@ interface Telemetry {
     lastTime: number;
     fastestTime: number;
   }>;
-  
-  // Raw Data (for advanced use)
-  all: Record<string, number>;  // flattened iRacing IRSDK
+
+  // High-fidelity extras (see below)
+  extras: Record<string, number>;
+
+  // Raw IRSDK flat object (all available channels)
+  all: Record<string, number>;
 }
 ```
 
-**Connection Management:**
-- Auto-reconnect every 3 seconds if bridge is offline
-- Falls back to simulated telemetry when bridge unavailable (for dashboard UI testing)
-- Clients should send FPS metrics periodically: `{ type: "perf", fps: 60 }`
+### extras block
 
-### 2. Static Assets (HTTP)
-**Endpoint:** `http://localhost:3001/`
+Every packet includes an `extras` object with high-value channels that the AI engines consume. Channels are `0` when the car or session does not export them.
 
-Serves the local bridge dashboard UI (optional; the web app can be hosted remotely).
+| Key | SDK Source | Units | AI use |
+|---|---|---|---|
+| `YawRate` | `v.YawRate` | rad/s | Oversteer / snap detection |
+| `Yaw` | `v.Yaw` | rad | Cumulative rotation |
+| `LFshockDefl` .. `RRshockDefl` | `v.LFshockDefl` | m | Damper travel, bump/rebound |
+| `BrakeLinePressureLF` .. `RR` | `v.LFbrakeLinePress` | Pa | Brake bias indicator |
+| `LFwheelSpeed` .. `RRwheelSpeed` | `v.LFwheelSpeed` | rad/s | Wheel lock detection |
+| `Pitch`, `Roll` | `v.Pitch`, `v.Roll` | rad | Car attitude |
+| `PitchRate`, `RollRate` | `v.PitchRate` | rad/s | Dynamic loads |
+| `LFtireForceLatN`, `RFtireForceLatN` | `v.LFtireForceLatN` | N | Grip level |
+| `VelocityX/Y/Z` | `v.VelocityX` | m/s | Body velocity vector |
 
-### 3. Desktop Lap Recording API (HTTP) — *In Development*
-**Endpoints:**
-- `GET /api/laps?limit=500` — list cached offline laps
-- `POST /api/laps/mark-synced` — mark laps as synced to cloud
+---
 
-**Response Format:**
-```json
-{
-  "laps": [
-    {
-      "ts": 1234567890,
-      "car": "Ferrari 488 GT3",
-      "track": "Monza",
-      "lapTimeS": 123.456,
-      "fuel": 45.2,
-      "sof": 2500
-    }
-  ]
-}
-```
+## Connection Management
 
-### 4. MongoDB Local Recording — *In Development*
-The bridge optionally records full telemetry to a local MongoDB instance:
-- **Collections:** `telemetry_sessions`, `telemetry_samples`, `laps`
-- Used for offline lap analysis when internet/cloud sync is unavailable
-- Users configure MongoDB URI in System Settings
-
-## Data Flow
-
-```
-iRacing Shared Memory API
-        ↓
-   local-bridge/server.js
-   - Reads IRSDK telemetry @ 30 Hz
-   - Flattens & maps to Telemetry object
-   - Optional: Records to MongoDB
-        ↓
-    ┌─────────────────────────────────┐
-    │   WebSocket @ ws://localhost:3001│
-    └─────────────────────────────────┘
-         ↓         ↓         ↓
-    ┌──────┐  ┌──────┐  ┌──────┐
-    │ Live │  │ Lab  │  │Desktop│
-    │ Dash │  │Bench │  │ App  │
-    └──────┘  └──────┘  └──────┘
-```
-
-## Consumer Implementation
-
-### Using the Bridge (Frontend)
-
-**1. Live Telemetry Hook (React)**
 ```typescript
-import { useTelemetry } from "@/lib/useTelemetry";
-
-export function MyComponent() {
-  const telemetry = useTelemetry();  // Always returns Telemetry
-  
-  if (!telemetry.connected) {
-    return <div>Bridge offline — simulated mode</div>;
-  }
-  
-  return (
-    <div>
-      Speed: {telemetry.speedKph} kph
-      Tire Temps: {telemetry.tires.fl.tempC}°C
-    </div>
-  );
-}
+// src/lib/useTelemetry.ts
+const telemetry = useTelemetry();
+// Always returns a Telemetry object — connected=false when bridge is offline
+// Falls back to a simulated telemetry stream for UI development
 ```
 
-**2. Accessing via Global Store**
+- Auto-reconnects every **3 seconds** when bridge is unreachable
+- First connect sends the latest packet immediately
+- Clients show "Disconnected" state when `connected === false`
+
+---
+
+## Lap Aggregate (extras included)
+
+`src/lib/live/useLapAggregate.ts` accumulates per-tick values across a lap and produces a `LapResult` at lap completion:
+
 ```typescript
-import { useWorkbench } from "@/lib/store";
-
-export function AICoach() {
-  const { liveContext } = useWorkbench();
-  // liveContext = { track, car, connected }
+interface LapResult {
+  lapTimeS: number;
+  s1S, s2S, s3S: number | null;
+  fuelUsedL: number;
+  isValid: boolean;
+  maxBrakePct: number;
+  maxThrottlePct: number;
+  peakLatG: number;
+  peakLonG: number;
+  tireAvgC: number;
+  bigGSpike: boolean;
+  // extras accumulated during lap:
+  extras: {
+    peakYawRateRads: number;       // rad/s — max absolute yaw rate in lap
+    peakShockFL: number;           // m — max absolute FL shock deflection
+    maxBrakeLinePressTotal: number; // Pa — max total brake line pressure
+  };
 }
 ```
 
-**3. Buffered Historical Data**
-```typescript
-import { useTelemetryBuffer } from "@/lib/useTelemetryBuffer";
+This `extras` object flows through to both the Live Coach and the Advisor AI payloads.
 
-export function Chart() {
-  const samples = useTelemetryBuffer(telemetry, 30_000, 30);
-  // samples = array of Telemetry objects sampled over last 30s @ 30Hz
-}
+---
+
+## AI Data Flow
+
+All three AI engines receive `extras` data and workspace context:
+
+```
+LapResult.extras
+    ↓
+LiveCoach.tsx           → dispatchLiveCoach({ context: { extras } })
+AdvisorButton.tsx       → dispatchAdvisorCall({ extrasSnapshot })
+                                    ↓
+                            llm.ts (builds workspace context string)
+                                    ↓
+                    buildLiveCoachUserMessage() / buildAdvisorUserMessage()
+                                    ↓
+                          Gemini 2.5 Pro / Local LLM
 ```
 
-## Architecture Principles
+---
 
-✅ **Single Source of Truth:** All data originates from `local-bridge`  
-✅ **Stateless Bridge:** Bridge does not depend on client state  
-✅ **Passive Consumers:** UI components only read, never write back to bridge  
-✅ **Graceful Degradation:** Fallback to simulation when bridge offline  
-✅ **Local-First:** Everything works offline; cloud sync is optional  
+## Adding New Channels
 
-## Adding New Data Points
+1. **Add to `mapTelemetry()`** in `local-bridge/server.js` — either as a top-level field or inside `extras`
+2. **Update `Telemetry` interface** in `src/lib/telemetry-types.ts`
+3. **Accumulate in `useLapAggregate.ts`** if a per-lap peak/sum is needed
+4. **Inject into AI prompts** in `advisor.prompts.ts` or `llm.ts` if the AI should see it
 
-1. **Add to iRading IRSDK telemetry** → captured by bridge
-2. **Map in `local-bridge/server.js`** → `mapTelemetry()` function
-3. **Update `Telemetry` type** → [src/lib/telemetry-types.ts](src/lib/telemetry-types.ts)
-4. **Use in components** → `useTelemetry()` hook automatically includes it
+---
 
-Example:
-```javascript
-// In local-bridge/server.js, mapTelemetry()
-return {
-  ...existingFields,
-  myNewMetric: calculateMetric(v),
-};
-```
+## File References
 
-## Files & References
-
-- **Bridge (Source of Truth):** [local-bridge/server.js](local-bridge/server.js)
-- **Telemetry Mapping:** [local-bridge/server.js#mapTelemetry](local-bridge/server.js)
-- **Consumer Hook:** [src/lib/useTelemetry.ts](src/lib/useTelemetry.ts)
-- **Type Definition:** [src/lib/telemetry-types.ts](src/lib/telemetry-types.ts)
-- **Global Store:** [src/lib/store.ts](src/lib/store.ts)
-- **Desktop Integration:** [desktop/main.cjs](desktop/main.cjs) → uses `../local-bridge`
+| File | Purpose |
+|---|---|
+| `local-bridge/server.js` | Bridge — reads irsdk, maps Telemetry, broadcasts |
+| `src/lib/telemetry-types.ts` | `Telemetry` TypeScript interface |
+| `src/lib/useTelemetry.ts` | React hook — WebSocket consumer |
+| `src/lib/useTelemetryBuffer.ts` | 30s rolling buffer at 60Hz |
+| `src/lib/live/useLapAggregate.ts` | Per-lap accumulation (extras included) |
+| `src/lib/advisor.prompts.ts` | Advisor user message builder (extras + wsCtx) |
+| `src/lib/llm.ts` | AI dispatch — cloud/local, workspace + extras injection |
+| `src/lib/tts.client.ts` | Client TTS with `setSinkId` output device routing |
+| `src/lib/store.ts` | Zustand — ElevenLabs key, output device ID, mic device ID |
+| `desktop/main.cjs` | Electron — spawns bridge, tray, single-instance lock |
+| `desktop/scripts/copy-bridge.js` | Syncs `local-bridge/` → `desktop/bridge/` |
