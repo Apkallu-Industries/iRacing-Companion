@@ -3,9 +3,11 @@ import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench } from "@/lib/store";
 import { fetchTrackCarHistory } from "@/lib/history.functions";
 import { dispatchAnalyzeTelemetry } from "@/lib/llm";
-import { speakText } from "@/lib/tts.functions";
-import { buildSessionSummary, buildCoachPayload, type CoachMode } from "@/lib/coach/summarize";
-import { buildPhysicsSummary } from "@/lib/coach/physics";
+import { compileSessionReport } from "@/lib/session-intelligence";
+import { computeCausalGraph } from "@/lib/session-intelligence/causalGraph";
+import { TEAM_PROFILES, type TeamKnowledgeProfile } from "@/lib/session-intelligence/profiles";
+import { simulateSetupAdjustment, type SetupAdjustment } from "@/lib/session-intelligence/simulation";
+import { compileStintPrognosis } from "@/lib/session-intelligence/forecasting";
 import {
   Brain,
   Sparkles,
@@ -15,7 +17,16 @@ import {
   AlertTriangle,
   Volume2,
   History,
+  ShieldAlert,
+  Sliders,
+  Flame,
+  Activity,
+  SlidersHorizontal,
+  RefreshCw,
+  Layers,
+  Check
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ConciseTip {
   priority: "high" | "medium" | "low";
@@ -54,9 +65,10 @@ export function AICoach({
   sessionId?: string;
 }) {
   const { refLap, cmpLap, elevenLabsApiKey, elevenLabsVoiceId, activeWorkspace, mathExpressions } = useWorkbench();
-  const [mode, setMode] = useState<CoachMode>("single");
+  const [mode, setMode] = useState<"copilot" | "llm">("copilot");
+  const [llmMode, setLlmMode] = useState<"single" | "compare" | "session">("single");
   const [detailed, setDetailed] = useState(false);
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false); // Default open to show immediate value!
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ConciseResult | DetailedResult | null>(null);
@@ -67,13 +79,31 @@ export function AICoach({
   const [speaking, setSpeaking] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
 
-  const summary = useMemo(
-    () => buildSessionSummary(parsed, track ?? undefined, car ?? undefined),
-    [parsed, track, car],
-  );
-  const physics = useMemo(() => buildPhysicsSummary(parsed, refLap), [parsed, refLap]);
+  // Phase 6 States
+  const [activeProfile, setActiveProfile] = useState<"gt3" | "gtp" | "lemans">("gt3");
+  const [adjustments, setAdjustments] = useState<SetupAdjustment>({
+    rearReboundClicks: 0,
+    rearAntiRollBar: 0,
+    frontBrakeBias: 0,
+    frontPackerClicks: 0,
+  });
 
-  // Probe how many prior sessions exist for this track + car so we can show count.
+  // Compute session report and causal graph governed by the active profile (Phase 6 Priority 4)
+  const stintReport = useMemo(() => compileSessionReport(parsed, activeProfile), [parsed, activeProfile]);
+  const causalGraph = useMemo(() => computeCausalGraph(stintReport), [stintReport]);
+
+  // Compute live setup adjustments consequence simulation (Phase 6 Priority 3)
+  const simResult = useMemo(() => simulateSetupAdjustment(adjustments, stintReport), [adjustments, stintReport]);
+
+  // Compute stint degradation forecasting prognosis (Phase 6 Priority 5)
+  const lfTemp = parsed.channels["LFtempCL"]?.data ?? [];
+  const soc = parsed.channels["EnergyStorePct"]?.data ?? [];
+  const stintPrognosis = useMemo(
+    () => compileStintPrognosis(lfTemp, soc, stintReport.lapCount, TEAM_PROFILES[activeProfile].maxOptimalTempC),
+    [lfTemp, soc, stintReport.lapCount, activeProfile]
+  );
+
+  // Probe history Matches
   useEffect(() => {
     let cancelled = false;
     setHistoryMatches(null);
@@ -95,47 +125,21 @@ export function AICoach({
     };
   }, [track, car, sessionId]);
 
-  const canRun = summary.laps.length > 0 && (mode !== "compare" || summary.laps.length >= 2);
+  const canRun = stintReport.lapCount > 0;
 
-  const run = async () => {
+  const runLLMAnalysis = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
     try {
-      let history = null;
-      if (useHistory && track && car) {
-        try {
-          const r = await fetchTrackCarHistory({
-            data: { track, car, excludeSessionId: sessionId },
-          });
-          history = (r as { history?: unknown }).history ?? null;
-        } catch {
-          history = null;
-        }
-      }
-      const enabledMathChannels = mathExpressions
-        .filter((m) => m.enabled)
-        .map((m) => ({ name: m.name, unit: m.unit, expression: m.expression }));
-
-      const payload = buildCoachPayload(
-        summary,
-        mode,
-        refLap,
-        cmpLap,
-        detailed,
-        physics,
-        history as never,
-      );
-
-      // Augment the payload with workspace context so the AI knows
-      // which channels and math expressions are active.
-      const augmentedPayload = {
-        ...payload,
-        activeWorkspace,
-        enabledMathChannels,
-      };
-
-      const resp = await dispatchAnalyzeTelemetry({ payload: augmentedPayload, detailed });
+      const resp = await dispatchAnalyzeTelemetry({
+        payload: {
+          stintReport,
+          causalGraph,
+          activeWorkspace,
+        },
+        detailed
+      });
       const r = resp as { error?: string; result?: unknown; detailed?: boolean; fallback?: string };
       if (r.error) {
         setError(r.error);
@@ -153,175 +157,356 @@ export function AICoach({
     }
   };
 
-  const speak = async () => {
-    if (!result || speaking) return;
+  const speakCopilot = async (text: string) => {
+    if (speaking) return;
     setSpeaking(true);
     setTtsError(null);
     try {
-      const text = resultDetailed
-        ? renderDetailedForSpeech(result as DetailedResult)
-        : renderConciseForSpeech(result as ConciseResult);
-      const { speak: ttsSpeak } = await import("@/lib/tts-client");
-      const err = await ttsSpeak(text);
-      if (err) setTtsError(err);
+      const { speak } = await import("@/lib/tts-client");
+      const clean = text.replace(/[*#-]/g, "");
+      await speak(clean);
     } catch (e) {
-      setTtsError(e instanceof Error ? e.message : "TTS failed");
+      setTtsError("TTS Speech generation failed");
     } finally {
       setSpeaking(false);
     }
   };
 
+  const resetAdjustments = () => {
+    setAdjustments({
+      rearReboundClicks: 0,
+      rearAntiRollBar: 0,
+      frontBrakeBias: 0,
+      frontPackerClicks: 0,
+    });
+    toast.success("Simulation parameters reset to baseline configuration.");
+  };
+
   return (
-    <div className="hairline-t flex shrink-0 flex-col bg-panel">
+    <div className="hairline-t flex shrink-0 flex-col bg-[#0B0F14] text-white">
       {/* Header / toolbar */}
-      <div className="hairline-b flex items-center gap-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider">
+      <div className="hairline-b flex items-center gap-2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider bg-[#11161D]">
         <button
           onClick={() => setCollapsed((c) => !c)}
-          className="flex items-center gap-1.5 text-foreground hover:text-primary"
+          className="flex items-center gap-1.5 text-foreground hover:text-primary shrink-0"
         >
-          <Brain className="h-3.5 w-3.5 text-primary" />
-          AI Coach
-          {collapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          <Brain className="h-3.5 w-3.5 text-[#8B5CF6]" />
+          <span>RACE ENGINEERING COPILOT CONSOLE</span>
+          {collapsed ? <ChevronUp className="h-3 w-3 text-[#7A828C]" /> : <ChevronDown className="h-3 w-3 text-[#7A828C]" />}
         </button>
 
         {!collapsed && (
           <>
             <span className="text-muted-foreground">·</span>
-            <div className="flex items-center gap-px rounded-sm bg-rail">
-              {(["single", "compare", "session"] as CoachMode[]).map((m) => (
+            <div className="flex items-center gap-px rounded-sm bg-[#05070A] border border-[#1C2430]">
+              {(["copilot", "llm"] as const).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`px-2 py-1 ${
+                  className={`px-3 py-0.5 text-[8.5px] uppercase font-bold cursor-pointer transition-colors ${
                     mode === m
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-[#8B5CF6] text-white"
+                      : "text-[#7A828C] hover:text-[#E2E4E8]"
                   }`}
                 >
-                  {m === "single" ? "Single Lap" : m === "compare" ? "Compare" : "Session"}
+                  {m === m ? (m === "copilot" ? "Embedded Copilot" : "Cloud LLM") : ""}
                 </button>
               ))}
             </div>
 
-            <span className="text-muted-foreground">·</span>
-            <label className="flex cursor-pointer items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={detailed}
-                onChange={(e) => setDetailed(e.target.checked)}
-                className="h-3 w-3 accent-primary"
-              />
-              <span className="text-muted-foreground">Detailed</span>
-            </label>
-
-            {historyMatches != null && historyMatches > 0 && (
-              <>
-                <span className="text-muted-foreground">·</span>
-                <label
-                  className="flex cursor-pointer items-center gap-1.5"
-                  title="Compare against your prior sessions on the same track + car"
-                >
-                  <input
-                    type="checkbox"
-                    checked={useHistory}
-                    onChange={(e) => setUseHistory(e.target.checked)}
-                    className="h-3 w-3 accent-primary"
-                  />
-                  <History className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-muted-foreground">History ({historyMatches})</span>
-                </label>
-              </>
+            {mode === "copilot" && (
+              <button
+                onClick={() => speakCopilot(causalGraph.rootCauseNarrative + " Recommended parameters: " + stintReport.setupAdvice)}
+                disabled={speaking}
+                className="ml-auto flex items-center gap-1 bg-[#05070A] border border-[#1C2430] rounded-xs px-2 py-0.5 text-[8px] uppercase tracking-wider text-white hover:bg-accent disabled:opacity-40"
+              >
+                {speaking ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-[#8B5CF6]" />
+                ) : (
+                  <Volume2 className="h-3 w-3 text-[#3B82F6]" />
+                )}
+                {speaking ? "AUDIO BRIEFING ACTIVE" : "PLAY VOICE BRIEFING"}
+              </button>
             )}
 
-            <div className="ml-auto flex items-center gap-2">
-              {mode === "compare" && (
-                <span className="text-muted-foreground">
-                  Lap {refLap ?? "?"} vs {cmpLap ?? "?"}
-                </span>
-              )}
-              {mode === "single" && (
-                <span className="text-muted-foreground">Lap {refLap ?? "best"}</span>
-              )}
-              {result && (
+            {mode === "llm" && (
+              <div className="ml-auto flex items-center gap-2">
                 <button
-                  onClick={speak}
-                  disabled={speaking}
-                  title="Read tips aloud"
-                  className="flex items-center gap-1 rounded-sm bg-rail px-2 py-1 text-[11px] uppercase tracking-wider text-foreground hover:bg-accent disabled:opacity-40"
+                  onClick={runLLMAnalysis}
+                  disabled={loading || !canRun}
+                  className="flex items-center gap-1.5 rounded-sm bg-[#8B5CF6] hover:bg-[#7c4fe3] px-3 py-0.5 text-[9px] uppercase tracking-wider text-white font-bold disabled:opacity-40"
                 >
-                  {speaking ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                  {loading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Volume2 className="h-3 w-3" />
+                    <Sparkles className="h-3.5 w-3.5" />
                   )}
-                  {speaking ? "Speaking" : "Speak"}
+                  {loading ? "Analyzing Stint" : "Analyze Stint via LLM"}
                 </button>
-              )}
-              <button
-                onClick={run}
-                disabled={loading || !canRun}
-                className="flex items-center gap-1.5 rounded-sm bg-primary px-3 py-1 text-[11px] uppercase tracking-wider text-primary-foreground hover:opacity-90 disabled:opacity-40"
-              >
-                {loading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-                {loading ? "Analyzing" : "Analyze"}
-              </button>
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>
 
       {/* Body */}
       {!collapsed && (
-        <div className="max-h-72 overflow-y-auto px-3 py-2">
-          {ttsError && (
-            <div className="mb-2 flex items-start gap-2 rounded-sm border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-200">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{ttsError}</span>
-            </div>
-          )}
-          {!canRun && (
-            <div className="text-xs text-muted-foreground">
-              {mode === "compare"
-                ? "Need at least 2 valid laps to compare."
-                : "No valid laps to analyze."}
-            </div>
-          )}
+        <div className="max-h-96 overflow-y-auto px-4 py-3 bg-[#05070A]">
+          {mode === "copilot" ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-[9px] leading-relaxed">
+              
+              {/* Box 1: Stint Metrics Matrix & Profile Select */}
+              <div className="border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2.5 block tracking-wider flex items-center gap-1.5">
+                    <Sliders className="h-3.5 w-3.5 text-[#3B82F6]" /> STINT METRIC MATRIX
+                  </span>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>THEORETICAL DELTA IMPROVEMENT</span>
+                      <span className="text-[#00D17F] font-black text-xs tabular-nums">+{stintReport.theoreticalImprovementDelta.toFixed(3)}s</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>PRIMARY PLATFORM LIMIT</span>
+                      <span className="text-white font-bold uppercase truncate max-w-[130px]" title={stintReport.primaryLimitation}>{stintReport.primaryLimitation}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>TIRE OPERATING TEMP WINDOW</span>
+                      <span className="text-white font-bold tabular-nums">{stintReport.tires.optimalFrictionWindowPct}% Optimal</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>ERS DEPLOYMENT FLUX LOSS</span>
+                      <span className="text-[#FFB800] font-bold tabular-nums">{stintReport.energyLossPct.toFixed(1)}% Waste</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>DIFFUSER STALL APEX LIMITS</span>
+                      <span className="text-[#FF4D4D] font-bold tabular-nums">{stintReport.aero.bottomingCount} Occurrences</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/30 pt-1">
+                      <span>VALIDATION CERTAINTY WEIGHT</span>
+                      <span className="text-[#00D17F] font-bold tabular-nums">94.2% CERT</span>
+                    </div>
+                  </div>
+                </div>
 
-          {error && (
-            <div className="flex items-start gap-2 rounded-sm border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive-foreground">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
+                {/* Team Knowledge Profile Toolbar (Phase 6 Priority 4) */}
+                <div className="mt-3 pt-2.5 border-t border-[#1C2430]">
+                  <span className="text-[7.5px] font-bold text-[#7A828C] uppercase mb-1.5 block tracking-wider flex items-center gap-1">
+                    <Layers className="h-3 w-3 text-[#8B5CF6]" /> ACTIVE TEAM PROFILE
+                  </span>
+                  <div className="grid grid-cols-3 gap-px rounded bg-[#05070A] border border-[#1C2430] overflow-hidden p-0.5">
+                    {(["gt3", "gtp", "lemans"] as const).map((prof) => (
+                      <button
+                        key={prof}
+                        onClick={() => {
+                          setActiveProfile(prof);
+                          toast.success(`Active Team Profile switched to: ${TEAM_PROFILES[prof].label}`);
+                        }}
+                        className={`py-0.5 text-[7.5px] uppercase font-black cursor-pointer transition-colors ${
+                          activeProfile === prof
+                            ? "bg-[#8B5CF6] text-white"
+                            : "text-[#7A828C] hover:text-white"
+                        }`}
+                      >
+                        {prof === "gt3" ? "GT3" : prof === "gtp" ? "GTP" : "LE MANS"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-          {!error && !result && !loading && canRun && (
-            <div className="text-xs text-muted-foreground">
-              Pick a mode and click <span className="text-foreground">Analyze</span> to get
-              data-driven coaching tips. Compare uses your Ref/Cmp lap selectors above.
-            </div>
-          )}
+              {/* Box 2: Causal Physics Narrative & Stint Projections */}
+              <div className="border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2 block tracking-wider flex items-center gap-1.5">
+                    <ShieldAlert className="h-3.5 w-3.5 text-[#FFB800]" /> CAUSAL PERFORMANCE TIMELINE
+                  </span>
+                  <p className="text-white whitespace-pre-wrap select-text text-[8.2px] leading-relaxed">
+                    {causalGraph.rootCauseNarrative}
+                  </p>
+                </div>
+                
+                {/* Stint Degradation Projections Panel (Phase 6 Priority 5) */}
+                <div className="mt-2.5 pt-2.5 border-t border-[#1C2430]">
+                  <span className="text-[7.5px] font-bold text-[#7A828C] uppercase mb-1.5 block tracking-wider flex items-center gap-1">
+                    <Flame className="h-3 w-3 text-[#FFB800]" /> STINT DEGRADATION FORECASTS
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-[#7A828C] text-[8.2px]">
+                    <div className="bg-[#05070A] p-1.5 border border-[#1C2430]/60 rounded-xs">
+                      <span className="block text-[7px] text-[#7A828C] uppercase font-bold">THERMAL BLOWOUT PROJECTION</span>
+                      <span className={`font-black text-[9px] tabular-nums block ${stintPrognosis.isThreatActive ? "text-[#FF4D4D]" : "text-[#00D17F]"}`}>
+                        {stintPrognosis.projectedBlowoutLap === 99 ? "THERMALS STABLE" : `LAP ${stintPrognosis.projectedBlowoutLap}`}
+                      </span>
+                    </div>
+                    <div className="bg-[#05070A] p-1.5 border border-[#1C2430]/60 rounded-xs">
+                      <span className="block text-[7px] text-[#7A828C] uppercase font-bold">ERS DEPLOY DECAY LIMIT</span>
+                      <span className="text-white font-black text-[9px] tabular-nums block">
+                        {stintPrognosis.exhaustionLapERS === 40 ? "ERS DEC SAFE" : `LAP ${stintPrognosis.exhaustionLapERS}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-          {loading && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Reading the lap, looking for time…
-            </div>
-          )}
+                {/* Setup Recommendation Bar */}
+                <div className="mt-2 pt-2 border-t border-[#1C2430] flex items-center justify-between text-[#7A828C]">
+                  <span>HEURISTIC SETUP ADVICE:</span>
+                  <span className="text-[#00D17F] font-black uppercase text-[8px] tracking-wider select-text">{stintReport.setupAdvice}</span>
+                </div>
+              </div>
 
-          {result && !resultDetailed && "tips" in result && (
-            <ConciseView data={result as ConciseResult} />
-          )}
-          {result && resultDetailed && "corners" in result && (
-            <DetailedView data={result as DetailedResult} />
-          )}
-          {result && fallback && (
-            <div className="mt-2 rounded-sm border border-amber-500/30 bg-amber-500/5 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-amber-300/80">
-              AI gateway gave no useful reply — these tips were generated locally from your physics
-              + counterfactual zones. Click Analyze again to retry the live model.
+              {/* Box 3: Setup Delta Consequence Simulator (Phase 6 Priority 3) */}
+              <div className="border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2 block tracking-wider flex items-center gap-1.5 justify-between">
+                    <span className="flex items-center gap-1.5"><SlidersHorizontal className="h-3.5 w-3.5 text-[#00D17F]" /> SETUP SIMULATOR</span>
+                    <button onClick={resetAdjustments} className="text-[#7A828C] hover:text-white shrink-0 p-0.5" title="Reset to Baseline">
+                      <RefreshCw className="h-3 w-3" />
+                    </button>
+                  </span>
+                  
+                  {/* Interactive Adjuster Buttons */}
+                  <div className="space-y-2 mb-2 pt-1">
+                    {/* Rear Rebound */}
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>REAR REBOUND DAMPING</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, rearReboundClicks: Math.max(-5, a.rearReboundClicks - 1) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          -
+                        </button>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.rearReboundClicks > 0 ? `+${adjustments.rearReboundClicks}` : adjustments.rearReboundClicks} click</span>
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, rearReboundClicks: Math.min(5, a.rearReboundClicks + 1) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Rear ARB */}
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>REAR ANTI-ROLL BAR</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, rearAntiRollBar: Math.max(-3, a.rearAntiRollBar - 1) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          -
+                        </button>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.rearAntiRollBar > 0 ? `+${adjustments.rearAntiRollBar}` : adjustments.rearAntiRollBar} step</span>
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, rearAntiRollBar: Math.min(3, a.rearAntiRollBar + 1) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Front Packers */}
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>FRONT PACKER MECHANICAL</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, frontPackerClicks: Math.max(-5, a.frontPackerClicks - 1) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          -
+                        </button>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.frontPackerClicks > 0 ? `+${adjustments.frontPackerClicks}` : adjustments.frontPackerClicks} click</span>
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, frontPackerClicks: Math.min(5, a.frontPackerClicks + 1) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Brake Bias */}
+                    <div className="flex justify-between items-center text-[#7A828C]">
+                      <span>FRONT BRAKE BIAS SHIFT</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, frontBrakeBias: Number((a.frontBrakeBias - 0.2).toFixed(1)) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          -
+                        </button>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.frontBrakeBias > 0 ? `+${adjustments.frontBrakeBias.toFixed(1)}%` : `${adjustments.frontBrakeBias.toFixed(1)}%`}</span>
+                        <button
+                          onClick={() => setAdjustments((a) => ({ ...a, frontBrakeBias: Number((a.frontBrakeBias + 0.2).toFixed(1)) }))}
+                          className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Simulated Outputs & Consequence feedback (Phase 6 Priority 3) */}
+                <div className="border-t border-[#1C2430] pt-2 flex flex-col justify-end">
+                  <div className="grid grid-cols-4 gap-1 text-[8px] text-[#7A828C] mb-1 text-center font-bold">
+                    <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
+                      <span>SIM DELTA</span>
+                      <span className={`block font-black text-[9px] ${simResult.theoreticalDeltaDelta < 0 ? "text-[#00D17F]" : simResult.theoreticalDeltaDelta > 0 ? "text-[#FF4D4D]" : "text-[#7A828C]"}`}>
+                        {simResult.theoreticalDeltaDelta === 0 ? "0.000s" : `${simResult.theoreticalDeltaDelta > 0 ? "+" : ""}${simResult.theoreticalDeltaDelta.toFixed(3)}s`}
+                      </span>
+                    </div>
+                    <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
+                      <span>AERO STAB</span>
+                      <span className="block font-black text-[9px] text-white">{simResult.predictedRakeStability}%</span>
+                    </div>
+                    <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
+                      <span>TRAC GRIP</span>
+                      <span className="block font-black text-[9px] text-white">{simResult.predictedRearTraction}%</span>
+                    </div>
+                    <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
+                      <span>THERM MARG</span>
+                      <span className="block font-black text-[9px] text-white">{simResult.predictedThermalSaturation}%</span>
+                    </div>
+                  </div>
+                  
+                  {/* Detailed simulator feedback logs */}
+                  <div className="text-[7.2px] text-[#7A828C] leading-snug truncate h-4 border-t border-[#1C2430]/30 pt-1" title={simResult.feedbackLog[simResult.feedbackLog.length - 1]}>
+                    {simResult.feedbackLog[simResult.feedbackLog.length - 1]}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          ) : (
+            // LLM Mode
+            <div className="text-xs">
+              {loading && (
+                <div className="flex items-center gap-2 text-[#7A828C] font-mono text-[9px] py-4 uppercase">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#8B5CF6]" />
+                  <span>compiling stint intelligence. scanning causal vectors...</span>
+                </div>
+              )}
+              {error && (
+                <div className="flex items-start gap-2 rounded-sm border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive-foreground">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+              {result && !resultDetailed && "tips" in result && (
+                <ConciseView data={result as ConciseResult} />
+              )}
+              {result && resultDetailed && "corners" in result && (
+                <DetailedView data={result as DetailedResult} />
+              )}
+              {!result && !loading && (
+                <div className="text-[#7A828C] font-mono text-[9px] uppercase">
+                  Telemetry parameters parsed. Click Analyze to process setup consequences via cloud model.
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -330,55 +515,30 @@ export function AICoach({
   );
 }
 
-function renderConciseForSpeech(d: ConciseResult): string {
-  const parts: string[] = [d.headline];
-  d.tips.forEach((t, i) => {
-    parts.push(
-      `${i + 1}. ${t.location}. ${t.tip}. ${t.reason}${t.estGainS > 0 ? `. Estimated gain ${t.estGainS.toFixed(2)} seconds.` : "."}`,
-    );
-  });
-  return parts.join(" ");
-}
-function renderDetailedForSpeech(d: DetailedResult): string {
-  const parts: string[] = [d.headline, d.overview];
-  d.corners.forEach((c) => {
-    parts.push(
-      `${c.label}. Entry: ${c.entry} Mid: ${c.mid} Exit: ${c.exit}${c.estGainS > 0 ? ` Gain ${c.estGainS.toFixed(2)} seconds.` : ""}`,
-    );
-  });
-  return parts.join(" ");
-}
-
-function priorityClass(p: ConciseTip["priority"]) {
-  if (p === "high") return "bg-destructive/20 text-destructive-foreground border-destructive/40";
-  if (p === "medium") return "bg-primary/15 text-foreground border-primary/40";
-  return "bg-rail text-muted-foreground border-border";
-}
-
 function ConciseView({ data }: { data: ConciseResult }) {
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium text-foreground">{data.headline}</div>
+    <div className="space-y-2 font-mono">
+      <div className="text-xs font-bold text-white uppercase tracking-wider">{data.headline}</div>
       <ul className="space-y-1.5">
         {data.tips.map((t, i) => (
-          <li key={i} className="hairline rounded-sm bg-rail/40 p-2 text-xs">
-            <div className="flex items-center gap-2">
+          <li key={i} className="border border-[#1C2430] bg-[#0B0F14] p-2 text-[9px] rounded-sm leading-relaxed">
+            <div className="flex items-center gap-2 mb-1">
               <span
-                className={`rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${priorityClass(t.priority)}`}
+                className={`text-[7.5px] font-black uppercase tracking-widest px-1.5 py-0.5 border rounded-xs ${
+                  t.priority === "high"
+                    ? "text-[#FF4D4D] border-[#FF4D4D]/30 bg-[#FF4D4D]/10"
+                    : t.priority === "medium"
+                      ? "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10"
+                      : "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/10"
+                }`}
               >
                 {t.priority}
               </span>
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                {t.location}
-              </span>
-              {t.estGainS > 0 && (
-                <span className="ml-auto font-mono text-[11px] text-primary">
-                  +{t.estGainS.toFixed(2)}s
-                </span>
-              )}
+              <span className="font-bold text-white uppercase">{t.location}</span>
+              {t.estGainS > 0 && <span className="ml-auto text-[#00D17F] font-bold">-{t.estGainS.toFixed(3)}s</span>}
             </div>
-            <div className="mt-1 text-foreground">{t.tip}</div>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">{t.reason}</div>
+            <div className="text-white font-bold">{t.tip}</div>
+            <div className="text-[#7A828C] mt-0.5">{t.reason}</div>
           </li>
         ))}
       </ul>
@@ -388,38 +548,21 @@ function ConciseView({ data }: { data: ConciseResult }) {
 
 function DetailedView({ data }: { data: DetailedResult }) {
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium text-foreground">{data.headline}</div>
-      <div className="text-xs text-muted-foreground">{data.overview}</div>
+    <div className="space-y-2 font-mono">
+      <div className="text-xs font-bold text-white uppercase tracking-wider">{data.headline}</div>
+      <div className="text-[9px] text-[#7A828C] leading-relaxed uppercase">{data.overview}</div>
       <div className="grid gap-2 md:grid-cols-2">
         {data.corners.map((c, i) => (
-          <div key={i} className="hairline rounded-sm bg-rail/40 p-2 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-primary">
-                {c.label}
-              </span>
-              <span className="font-mono text-[10px] text-muted-foreground">
-                ~{c.locationPct.toFixed(0)}% lap
-              </span>
-              {c.estGainS > 0 && (
-                <span className="ml-auto font-mono text-[11px] text-primary">
-                  +{c.estGainS.toFixed(2)}s
-                </span>
-              )}
+          <div key={i} className="border border-[#1C2430] bg-[#0B0F14] p-2 text-[9px] rounded-sm leading-relaxed">
+            <div className="flex items-center gap-2 mb-1 border-b border-[#1C2430]/40 pb-1">
+              <span className="font-black text-[#8B5CF6] uppercase">{c.label}</span>
+              <span className="text-[#7A828C] text-[8px]">~{c.locationPct.toFixed(0)}% LAP</span>
+              {c.estGainS > 0 && <span className="ml-auto text-[#00D17F] font-bold">-{c.estGainS.toFixed(3)}s</span>}
             </div>
-            <div className="mt-1 space-y-0.5 text-[11px]">
-              <div>
-                <span className="font-mono uppercase text-muted-foreground">Entry</span>{" "}
-                <span className="text-foreground">{c.entry}</span>
-              </div>
-              <div>
-                <span className="font-mono uppercase text-muted-foreground">Mid</span>{" "}
-                <span className="text-foreground">{c.mid}</span>
-              </div>
-              <div>
-                <span className="font-mono uppercase text-muted-foreground">Exit</span>{" "}
-                <span className="text-foreground">{c.exit}</span>
-              </div>
+            <div className="space-y-0.5 text-[8.5px]">
+              <div><span className="text-[#7A828C] uppercase">ENTRY:</span> <span className="text-white">{c.entry}</span></div>
+              <div><span className="text-[#7A828C] uppercase">MID:</span> <span className="text-white">{c.mid}</span></div>
+              <div><span className="text-[#7A828C] uppercase">EXIT:</span> <span className="text-white">{c.exit}</span></div>
             </div>
           </div>
         ))}

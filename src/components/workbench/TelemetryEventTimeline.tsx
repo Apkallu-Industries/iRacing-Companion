@@ -121,6 +121,11 @@ export function TelemetryEventTimeline() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
+                  {event.metadata?.confidence !== undefined && (
+                    <span className="text-[7.5px] text-[#00D17F] font-black border border-[#00D17F]/30 bg-[#00D17F]/10 px-1 py-0.5 rounded-xs tabular-nums" title="Scanner Signal Certainty Score">
+                      {(event.metadata.confidence * 100).toFixed(0)}% CERT
+                    </span>
+                  )}
                   {getClassificationBadge(event)}
                   <span className="text-[8px] text-[#7A828C] font-bold tabular-nums">
                     t = {event.timestampSec.toFixed(2)}s {event.cornerNumber ? `· T${event.cornerNumber}` : ""}
