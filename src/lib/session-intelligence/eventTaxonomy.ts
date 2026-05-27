@@ -2,7 +2,8 @@
  * eventTaxonomy.ts — Structured Motorsport Ontology & Temporal Event Taxonomy
  *
  * Implements a formal taxonomy for vehicle states, behavior-centric Driver DNA,
- * temporal telemetry events, and recommendation lineages (observability/tracing).
+ * temporal telemetry events, stateful engineering episodes (progressive instability sequences),
+ * causality-aware motorsport reasoning nodes, session narratives, and auditable decision lineage tracing.
  */
 
 export enum RaceEventType {
@@ -15,6 +16,31 @@ export enum RaceEventType {
   DIRTY_AIR_PUSH = "DIRTY_AIR_PUSH",
   THERMAL_REAR_OVERLOAD = "THERMAL_REAR_OVERLOAD",
   HIGH_SPEED_HEAVE_SPIKE = "HIGH_SPEED_HEAVE_SPIKE",
+}
+
+export enum EventSeverity {
+  INFO = "INFO",
+  ADVISORY = "ADVISORY",
+  WARNING = "WARNING",
+  CRITICAL = "CRITICAL",
+}
+
+export enum EngineeringPersonality {
+  CONSERVATIVE_ENDURANCE = "CONSERVATIVE_ENDURANCE", // Prioritizes tire longevity, platform stability, and predictability
+  AGGRESSIVE_QUALIFYING = "AGGRESSIVE_QUALIFYING",   // Prioritizes peak rotation, front-axle bite, and risk-tolerant track attack
+  BALANCED_STRATEGIST = "BALANCED_STRATEGIST",       // Coordinated balance between pit windows, fuel margin, and dynamic track evolution
+}
+
+/**
+ * Race Event Priority Matrix.
+ * Dictates cognitive load and prioritization filters for the pit-wall advisor.
+ */
+export interface RaceEventPriority {
+  severity: EventSeverity;
+  confidence: number;       // Heuristic certainty rating (0.0 to 1.0)
+  persistence: number;      // Number of consecutive laps this event has occurred
+  lapTimeImpactS: number;   // Projected delta cost in seconds
+  driverRiskRating: number; // 0 (low) to 10 (spin/crash risk)
 }
 
 /**
@@ -38,11 +64,60 @@ export interface TelemetryEvent {
   lapNumber: number;
   sectorNumber: number;
   eventType: RaceEventType;
-  severity: "low" | "medium" | "high" | "critical";
+  priority: RaceEventPriority;
   /** The specific telemetry channel that triggered this event. */
   triggerChannel: string;
   triggerValue: number;
   narrativeDescription: string;
+}
+
+/**
+ * Temporal Engineering Episode.
+ * Groups related sequences of isolated events into causal, progressive handling episodes
+ * (e.g. progressive rear tire saturation cascades over consecutive laps).
+ */
+export interface EngineeringEpisode {
+  episodeId: string;
+  title: string;                 // e.g. "Rear Tire Thermal Saturation Cascade"
+  startTime: string;
+  endTime?: string;
+  isActive: boolean;
+  precursorEvents: RaceEventType[];
+  triggerConditions: string[];
+  progressionStages: {
+    stageIndex: number;
+    description: string;
+    detectedEvents: TelemetryEvent[];
+  }[];
+  mitigationAdvised: string;
+}
+
+/**
+ * Causality-Aware Knowledge Graph Nodes.
+ * Maps deterministic physical links between conditions, handling anomalies, and driver inputs.
+ */
+export interface CausalityNode {
+  nodeId: string;
+  label: string;                  // e.g. "High Rear Rebound"
+  type: "condition" | "chassis_behavior" | "driver_input" | "aero_state";
+  affectsNodes: {
+    targetNodeId: string;
+    relationship: string;         // e.g. "stalls under braking" or "increases temp"
+    strength: "low" | "medium" | "high";
+  }[];
+}
+
+/**
+ * Session Evolution Narrative.
+ * Models macro-level stint evolution, tracking how changing fuel loads and track evolution
+ * interact with driver inputs over the course of a session.
+ */
+export interface SessionNarrative {
+  sessionId: string;
+  trackEvolutionState: "green" | "rubbered_in" | "greasy_hot" | "abrasive";
+  fuelLoadDecayState: "heavy_start" | "stint_mid" | "fuel_reserve";
+  driverConfidenceTrend: "improving" | "stable" | "decaying";
+  keyMechanicalNarrative: string; // e.g. "Track rubbering masked entry over-rotation until rear tire thermal saturation on lap 18."
 }
 
 /**
@@ -66,8 +141,33 @@ export interface RecommendationLineage {
   /** Active heuristic correlations (The "Interpretation") */
   activeCorrelations: string[];
   
+  /** Active stateful engineering episodes influencing this recommendation */
+  relatedEpisodes: string[];
+  
   /** Driver trait influence (The "Personalization") */
   driverTraitsInfluence: Partial<DriverBehaviorTraits>;
+}
+
+/**
+ * Strict Ontological Guardrail.
+ * Every payload pushed to the LLM/AI Communication Layer MUST conform to this schema,
+ * guaranteeing the LLM can NEVER parse raw telemetry or bypass ontology logic.
+ */
+export interface AICommunicationPayload {
+  recipientDriverId: string;
+  activeContext: {
+    track: string;
+    car: string;
+    ambientTempC: number;
+    fuelLapsMargin: number;
+  };
+  personality: EngineeringPersonality;
+  /** ONLY classified events are exposed to the AI, never raw sensor traces. */
+  ontologyEvents: TelemetryEvent[];
+  activeEpisodes: EngineeringEpisode[];
+  provenRecommendations: RecommendationLineage[];
+  sessionNarrative: SessionNarrative;
+  driverTraits: DriverBehaviorTraits;
 }
 
 /**
@@ -80,7 +180,7 @@ export function synthesizeDriverTraits(
   throttleExitGradient: number,
   averageYawRateRads: number
 ): DriverBehaviorTraits {
-  // 1. Entry Rotation Preference
+  // 1. Corner Entry Rotation Preference
   let rotation: DriverBehaviorTraits["cornerEntryRotationPreference"] = "medium";
   if (averageYawRateRads > 0.35) rotation = "high";
   else if (averageYawRateRads < 0.18) rotation = "low";
@@ -117,6 +217,7 @@ export function traceDecisionLineage(
   confidence: number,
   evidence: RecommendationLineage["sensorEvidence"],
   correlations: string[],
+  relatedEpisodes: string[],
   traits: DriverBehaviorTraits
 ): RecommendationLineage {
   return {
@@ -127,6 +228,7 @@ export function traceDecisionLineage(
     confidenceRating: confidence,
     sensorEvidence: evidence,
     activeCorrelations: correlations,
+    relatedEpisodes,
     driverTraitsInfluence: {
       cornerEntryRotationPreference: traits.cornerEntryRotationPreference,
       rearAxleStabilityTolerance: traits.rearAxleStabilityTolerance,
