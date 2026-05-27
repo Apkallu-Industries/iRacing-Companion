@@ -13,7 +13,12 @@ import { ExportPwlapDialog } from "@/components/workbench/ExportPwlapDialog";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { SetupCopilot } from "@/components/live/SetupCopilot";
 import { fetchLocalTelemetryFile } from "@/lib/history.functions";
+import { ResizablePanelGroup as ResizablePanelGroupRaw, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+const ResizablePanelGroup = ResizablePanelGroupRaw as any;
+import type { IbtParsed } from "@/lib/ibt/types";
+import { WORKSPACE_PRESETS, TELEMETRY_INSTRUMENTS } from "@/components/instruments/registry";
 
+import { TelemetryEventTimeline } from "@/components/workbench/TelemetryEventTimeline";
 import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
 import { StackedTraces } from "@/components/workbench/StackedTraces";
 import { TrackMap } from "@/components/workbench/TrackMap";
@@ -75,6 +80,7 @@ function WorkbenchPage() {
     setMathExpressions,
     activeWorkspace,
     setActiveWorkspace,
+    cursorTick,
   } = useWorkbench();
   const [sess, setSess] = useState<Tables<"telemetry_sessions"> | null>(null);
   const [showExport, setShowExport] = useState(false);
@@ -102,9 +108,112 @@ function WorkbenchPage() {
     | "apex"
     | "waterfall"
     | "setupcopilot"
+    | "instruments"
+    | "timeline"
   >("cinema");
 
+  const [activePreset, setActivePreset] = useState<keyof typeof WORKSPACE_PRESETS>("gt3");
+
   const live = useTelemetry(); // shared bridge — 60Hz
+
+  // Global Contextual Channel Listener to auto-shift active preset
+  useEffect(() => {
+    const handleChannelClick = (e: Event) => {
+      const channel = ((e as CustomEvent).detail?.channel || "").toLowerCase();
+      if (["brake", "bias", "press", "tempc"].some(k => channel.includes(k))) {
+        setActivePreset("gt3");
+        setBottomTab("instruments");
+      } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some(k => channel.includes(k))) {
+        setActivePreset("gtp");
+        setBottomTab("instruments");
+      } else if (["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(k => channel.includes(k))) {
+        setActivePreset("aero");
+        setBottomTab("instruments");
+      } else if (["throttle", "steer", "clutch", "input"].some(k => channel.includes(k))) {
+        setActivePreset("coach");
+        setBottomTab("instruments");
+      }
+    };
+    window.addEventListener("pitwall-contextual-channel", handleChannelClick);
+    return () => window.removeEventListener("pitwall-contextual-channel", handleChannelClick);
+  }, []);
+
+  const getReplayTelemetry = (parsedData: IbtParsed, tick: number): any => {
+    const getVal = (name: string, fallback = 0) => parsedData.channels[name]?.data[tick] ?? fallback;
+    const throttle = getVal("Throttle");
+    const brake = getVal("Brake");
+    const clutch = getVal("Clutch");
+    const speedKph = getVal("Speed", getVal("speed")) * 3.6;
+    const gear = getVal("Gear", 1);
+    const rpm = getVal("RPM", getVal("rpm"));
+    const steeringDeg = getVal("SteeringWheelAngle", getVal("steering")) * 57.2958;
+    
+    return {
+      connected: false,
+      source: "replay",
+      session: (parsedData.meta as any).sessionType || "REPLAY ANALYSIS",
+      track: parsedData.meta.trackName || "UNKNOWN TRACK",
+      car: parsedData.meta.carName || "PROTOTYPE CAR",
+      carNumber: "44",
+      gear,
+      speedKph: Math.round(speedKph > 0 ? speedKph : getVal("Speed", 180)),
+      rpm: Math.round(rpm),
+      rpmMax: parsedData.channels["RPM"]?.max ?? 11000,
+      rpmShiftWarn: (parsedData.channels["RPM"]?.max ?? 11000) * 0.85,
+      rpmShiftRedline: (parsedData.channels["RPM"]?.max ?? 11000) * 0.95,
+      throttle,
+      brake,
+      clutch,
+      steeringDeg: steeringDeg || getVal("SteeringWheelAngle", 0),
+      brakeBias: getVal("dcBrakeBias", 54.5),
+      gLat: getVal("LatAccel", 0),
+      gLon: getVal("LongAccel", 0),
+      tires: {
+        fl: {
+          tempC: getVal("LFtempCL", 80),
+          pressureBar: getVal("LFpress", 1.8),
+          wearPct: Math.round(getVal("LFwearL", 98) * 100),
+          estWearPct: Math.round(getVal("LFwearL", 98) * 100),
+          brakeTempC: getVal("LFbrakeTemp", 320),
+          brakeLinePress: getVal("LFbrakeLinePress", brake * 65),
+          state: "ok",
+        },
+        fr: {
+          tempC: getVal("RFtempCL", 82),
+          pressureBar: getVal("RFpress", 1.82),
+          wearPct: Math.round(getVal("RFwearL", 98) * 100),
+          estWearPct: Math.round(getVal("RFwearL", 98) * 100),
+          brakeTempC: getVal("RFbrakeTemp", 325),
+          brakeLinePress: getVal("RFbrakeLinePress", brake * 65),
+          state: "ok",
+        },
+        rl: {
+          tempC: getVal("LRtempCL", 84),
+          pressureBar: getVal("LRpress", 1.84),
+          wearPct: Math.round(getVal("LRwearL", 97) * 100),
+          estWearPct: Math.round(getVal("LRwearL", 97) * 100),
+          brakeTempC: getVal("LRbrakeTemp", 310),
+          brakeLinePress: getVal("LRbrakeLinePress", brake * 45),
+          state: "ok",
+        },
+        rr: {
+          tempC: getVal("RRtempCL", 86),
+          pressureBar: getVal("RRpress", 1.86),
+          wearPct: Math.round(getVal("RRwearL", 96) * 100),
+          estWearPct: Math.round(getVal("RRwearL", 96) * 100),
+          brakeTempC: getVal("RRbrakeTemp", 315),
+          brakeLinePress: getVal("RRbrakeLinePress", brake * 45),
+          state: "ok",
+        },
+      },
+      extras: {
+        ersSoc: getVal("EnergyStorePct", 75),
+        ersBatteryTemp: getVal("EnergyStoreTemp", 42.5),
+        mgukDeployKw: getVal("MgukDeploykW", throttle * 120),
+        mgukRegenKw: getVal("MgukRegenkW", brake * 200),
+      }
+    };
+  };
 
   const config = WORKSPACES[activeWorkspace ?? "lite"];
   const isTabUnlocked = (tabKey: string) => {
@@ -457,165 +566,282 @@ function WorkbenchPage() {
         </div>
       ) : (
         <>
-          <div className="flex min-h-0 flex-1">
-            <ChannelBrowser parsed={parsed} />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <div className="min-h-0 flex-1 overflow-hidden">
-                <StackedTraces parsed={parsed} />
-              </div>
-              <Suspense
-                fallback={
-                  <div className="hairline-t px-3 py-2 font-mono text-[10px] uppercase text-muted-foreground">
-                    Loading timeline...
+          <div className="flex-1 min-h-0 bg-[#05070A] flex flex-col">
+            <ResizablePanelGroup direction="horizontal">
+              {/* Left Panel: Channel Browser */}
+              <ResizablePanel defaultSize={16} minSize={10} maxSize={25}>
+                <div className="h-full flex flex-col overflow-hidden border-r border-[#1C2430] bg-[#0B0F14]">
+                  <div className="px-3 py-2 border-b border-[#1C2430] text-[9px] font-mono tracking-widest text-[#7A828C] uppercase font-bold shrink-0 bg-[#11161D]">
+                    channel browser
                   </div>
-                }
-              >
-                <LazyTimeline parsed={parsed} />
-              </Suspense>
-              <div className="hairline-t flex h-72 shrink-0">
-                <div className="hairline-r w-1/2 bg-panel">
-                  <TrackMap parsed={parsed} />
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                    <ChannelBrowser parsed={parsed} />
+                  </div>
                 </div>
-                <div className="flex flex-1 flex-col bg-panel">
-                  <div className="hairline-b flex items-center gap-px bg-border font-mono text-[11px] uppercase tracking-wider">
-                    {(
-                      [
-                        "cinema",
-                        "readout",
-                        "laps",
-                        "gg",
-                        "histogram",
-                        "scatter",
-                        "optimal",
-                        "whatif",
-                        "apex",
-                        "waterfall",
-                        "brake",
-                        "slip",
-                        "replay3d",
-                        "piano",
-                        "spider",
-                        "setup",
-                        "setupdiff",
-                        ...(live.connected ? ["setupcopilot"] : []),
-                      ] as Array<typeof bottomTab>
-                    ).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => setBottomTab(t)}
-                        className={`flex-1 px-3 py-1.5 text-left flex items-center justify-between border-r border-border/50 last:border-r-0 ${
-                          bottomTab === t
-                            ? "bg-panel text-foreground"
-                            : "bg-rail text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <span className="truncate">
-                          {t === "cinema"
-                            ? "Cinema"
-                            : t === "readout"
-                              ? "Readout"
-                              : t === "laps"
-                                ? `Laps`
-                                : t === "gg"
-                                  ? "g-g"
-                                  : t === "optimal"
-                                    ? "Optimal"
-                                    : t === "whatif"
-                                      ? "What-if"
-                                      : t === "apex"
-                                        ? "Apex"
-                                        : t === "waterfall"
-                                          ? "Waterfall"
-                                          : t === "brake"
-                                            ? "Brake"
-                                            : t === "slip"
-                                              ? "Slip"
-                                              : t === "replay3d"
-                                                ? "3D"
-                                                : t === "piano"
-                                                  ? "Piano"
-                                                  : t === "spider"
-                                                    ? "Spider"
-                                                    : t === "setup"
-                                                      ? "Setup"
-                                                      : t === "setupcopilot"
-                                                        ? "⚡ Setup AI"
-                                                        : "Δ Setup"}
-                        </span>
-                        {!isTabUnlocked(t) && (
-                          <span className="text-[9px] text-amber-500/70 ml-1">🔒</span>
-                        )}
-                      </button>
-                    ))}
+              </ResizablePanel>
+              
+              <ResizableHandle />
+
+              {/* Center Panel: Primary Stacked Traces Waveforms (Takes ~55% space) */}
+              <ResizablePanel defaultSize={54} minSize={40}>
+                <div className="h-full flex flex-col overflow-hidden bg-[#05070A]">
+                  <div className="px-3 py-2 border-b border-[#1C2430] text-[9px] font-mono tracking-widest text-[#7A828C] uppercase font-bold shrink-0 bg-[#0B0F14] flex justify-between items-center select-none">
+                    <span>rolling traces · synchronized telemetry</span>
+                    <span className="text-[8px] text-[#3B82F6] font-bold">MoTeC PRO WORKSPACE</span>
                   </div>
-                  <div className="min-h-0 flex-1">
-                    {bottomTab === "cinema" && renderPanelOrLock("cinema", (
-                      <Suspense
-                        fallback={
-                          <div className="p-3 text-xs text-muted-foreground">Loading cinema...</div>
-                        }
-                      >
-                        <LazyCinemaPlayback parsed={parsed} />
-                      </Suspense>
-                    ))}
-                    {bottomTab === "readout" && renderPanelOrLock("readout", <LiveReadout parsed={parsed} />)}
-                    {bottomTab === "laps" && renderPanelOrLock("laps", <LapList parsed={parsed} />)}
-                    {bottomTab === "gg" && renderPanelOrLock("gg", <GGDiagram parsed={parsed} />)}
-                    {bottomTab === "histogram" && renderPanelOrLock("histogram", <HistogramPanel />)}
-                    {bottomTab === "scatter" && renderPanelOrLock("scatter", <XYScatterPanel />)}
-                    {bottomTab === "optimal" && renderPanelOrLock("optimal", <OptimalLap parsed={parsed} />)}
-                    {bottomTab === "whatif" && renderPanelOrLock("whatif", <Counterfactuals parsed={parsed} />)}
-                    {bottomTab === "apex" && renderPanelOrLock("apex", <MinCornerSpeed parsed={parsed} />)}
-                    {bottomTab === "waterfall" && renderPanelOrLock("waterfall", <TimeLossWaterfall parsed={parsed} />)}
-                    {bottomTab === "brake" && renderPanelOrLock("brake", <BrakeBias parsed={parsed} />)}
-                    {bottomTab === "slip" && renderPanelOrLock("slip", <SlipAngle parsed={parsed} />)}
-                    {bottomTab === "replay3d" && renderPanelOrLock("replay3d", (
-                      <Suspense
-                        fallback={
-                          <div className="p-3 text-xs text-muted-foreground">
-                            Loading 3D replay...
-                          </div>
-                        }
-                      >
-                        <LazyReplayThree parsed={parsed} />
-                      </Suspense>
-                    ))}
-                    {bottomTab === "piano" && renderPanelOrLock("piano", <PianoRoll parsed={parsed} />)}
-                    {bottomTab === "spider" && renderPanelOrLock("spider", <SectorSpider parsed={parsed} />)}
-                    {bottomTab === "setup" && renderPanelOrLock("setup", <SetupSheet parsed={parsed} />)}
-                    {bottomTab === "setupdiff" && renderPanelOrLock("setupdiff", (
-                      <SetupDiff
-                        parsed={parsed}
-                        track={sess?.track}
-                        car={sess?.car}
-                        sessionId={id}
-                      />
-                    ))}
-                    {bottomTab === "setupcopilot" && live.connected && (
-                      <div className="h-full overflow-auto p-2">
-                        <SetupCopilot t={live} />
+                  
+                  {/* Primary Waveforms */}
+                  <div className="flex-1 min-h-0 overflow-hidden p-1 bg-[#05070A]">
+                    <StackedTraces parsed={parsed} />
+                  </div>
+
+                  {/* Synchronized Timeline */}
+                  <div className="shrink-0 bg-[#0B0F14] border-t border-[#1C2430]">
+                    <Suspense
+                      fallback={
+                        <div className="px-3 py-1.5 font-mono text-[9px] uppercase text-[#7A828C]">
+                          Loading timeline...
+                        </div>
+                      }
+                    >
+                      <LazyTimeline parsed={parsed} />
+                    </Suspense>
+                  </div>
+
+                  {/* Fingerprint stats split bar */}
+                  <div className="shrink-0 bg-[#0B0F14] border-t border-[#1C2430] p-2.5">
+                    <FingerprintDelta
+                      track={sess?.track}
+                      car={sess?.car}
+                      thisLapS={sess?.best_lap_s != null ? Number(sess.best_lap_s) : null}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle />
+
+              {/* Right Panel: Geometry splits and Timing sheets (Takes ~30% space) */}
+              <ResizablePanel defaultSize={30} minSize={20}>
+                <ResizablePanelGroup direction="vertical">
+                  
+                  {/* Right Top: Track map overlay */}
+                  <ResizablePanel defaultSize={35} minSize={25}>
+                    <div className="h-full flex flex-col overflow-hidden bg-[#05070A]">
+                      <div className="px-3 py-1.5 border-b border-[#1C2430] text-[9px] font-mono tracking-widest text-[#7A828C] uppercase font-bold shrink-0 bg-[#11161D] select-none">
+                        track map geometry
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="hairline-t bg-bg p-3">
-                <FingerprintDelta
-                  track={sess?.track}
-                  car={sess?.car}
-                  thisLapS={sess?.best_lap_s != null ? Number(sess.best_lap_s) : null}
-                />
-              </div>
-              <Suspense
-                fallback={
-                  <div className="hairline-t bg-bg p-3 font-mono text-[10px] uppercase text-muted-foreground">
-                    Loading AI coach…
-                  </div>
-                }
-              >
-                <LazyAICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
-              </Suspense>
-            </div>
+                      <div className="flex-1 min-h-0 bg-[#05070A] border-b border-[#1C2430]/40">
+                        <TrackMap parsed={parsed} />
+                      </div>
+                    </div>
+                  </ResizablePanel>
+
+                  <ResizableHandle />
+
+                  {/* Right Bottom: Analysis Tab Sheets and AI Coach */}
+                  <ResizablePanel defaultSize={65} minSize={40}>
+                    <div className="h-full flex flex-col overflow-hidden bg-[#0B0F14]">
+                      
+                      <div className="flex items-center gap-px bg-[#1C2430] font-mono text-[9px] uppercase tracking-wider shrink-0 overflow-x-auto select-none">
+                        {(
+                          [
+                            "cinema",
+                            "readout",
+                            "laps",
+                            "gg",
+                            "histogram",
+                            "scatter",
+                            "optimal",
+                            "whatif",
+                            "apex",
+                            "waterfall",
+                            "brake",
+                            "slip",
+                            "replay3d",
+                            "piano",
+                            "spider",
+                            "setup",
+                            "setupdiff",
+                            "instruments",
+                            "timeline",
+                            ...(live.connected ? ["setupcopilot"] : []),
+                          ] as Array<typeof bottomTab>
+                        ).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setBottomTab(t)}
+                            className={`px-2.5 py-1.5 text-left flex items-center justify-between border-r border-[#1C2430] last:border-r-0 shrink-0 font-bold ${
+                              bottomTab === t
+                                ? "bg-[#0B0F14] text-white"
+                                : "bg-[#11161D] text-[#7A828C] hover:text-[#E2E4E8]"
+                            }`}
+                          >
+                            <span className="truncate">
+                              {t === "cinema"
+                                ? "Cinema"
+                                : t === "readout"
+                                  ? "Readout"
+                                  : t === "laps"
+                                    ? `Laps`
+                                    : t === "gg"
+                                      ? "g-g"
+                                      : t === "optimal"
+                                        ? "Optimal"
+                                        : t === "whatif"
+                                          ? "What-if"
+                                          : t === "apex"
+                                            ? "Apex"
+                                            : t === "waterfall"
+                                              ? "Waterfall"
+                                              : t === "brake"
+                                                ? "Brake"
+                                                : t === "slip"
+                                                  ? "Slip"
+                                                  : t === "replay3d"
+                                                    ? "3D"
+                                                    : t === "piano"
+                                                      ? "Piano"
+                                                      : t === "spider"
+                                                        ? "Spider"
+                                                        : t === "setup"
+                                                          ? "Setup"
+                                                          : t === "setupcopilot"
+                                                            ? "⚡ Setup AI"
+                                                            : t === "instruments"
+                                                              ? "Instruments"
+                                                              : t === "timeline"
+                                                                ? "Timeline"
+                                                                : "Δ Setup"}
+                            </span>
+                            {!isTabUnlocked(t) && (
+                              <span className="text-[8px] text-[#FFB800] ml-1">🔒</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Sheet Contents Area */}
+                      <div className="flex-1 min-h-0 bg-[#05070A] overflow-y-auto">
+                        {bottomTab === "cinema" && renderPanelOrLock("cinema", (
+                          <Suspense
+                            fallback={
+                              <div className="p-3 text-[10px] font-mono text-[#7A828C]">Loading cinema...</div>
+                            }
+                          >
+                            <LazyCinemaPlayback parsed={parsed} />
+                          </Suspense>
+                        ))}
+                        {bottomTab === "readout" && renderPanelOrLock("readout", <LiveReadout parsed={parsed} />)}
+                        {bottomTab === "laps" && renderPanelOrLock("laps", <LapList parsed={parsed} />)}
+                        {bottomTab === "gg" && renderPanelOrLock("gg", <GGDiagram parsed={parsed} />)}
+                        {bottomTab === "histogram" && renderPanelOrLock("histogram", <HistogramPanel />)}
+                        {bottomTab === "scatter" && renderPanelOrLock("scatter", <XYScatterPanel />)}
+                        {bottomTab === "optimal" && renderPanelOrLock("optimal", <OptimalLap parsed={parsed} />)}
+                        {bottomTab === "whatif" && renderPanelOrLock("whatif", <Counterfactuals parsed={parsed} />)}
+                        {bottomTab === "apex" && renderPanelOrLock("apex", <MinCornerSpeed parsed={parsed} />)}
+                        {bottomTab === "waterfall" && renderPanelOrLock("waterfall", <TimeLossWaterfall parsed={parsed} />)}
+                        {bottomTab === "brake" && renderPanelOrLock("brake", <BrakeBias parsed={parsed} />)}
+                        {bottomTab === "slip" && renderPanelOrLock("slip", <SlipAngle parsed={parsed} />)}
+                        {bottomTab === "replay3d" && renderPanelOrLock("replay3d", (
+                          <Suspense
+                            fallback={
+                              <div className="p-3 text-[10px] font-mono text-[#7A828C]">
+                                Loading 3D replay...
+                              </div>
+                            }
+                          >
+                            <LazyReplayThree parsed={parsed} />
+                          </Suspense>
+                        ))}
+                        {bottomTab === "piano" && renderPanelOrLock("piano", <PianoRoll parsed={parsed} />)}
+                        {bottomTab === "spider" && renderPanelOrLock("spider", <SectorSpider parsed={parsed} />)}
+                        {bottomTab === "setup" && renderPanelOrLock("setup", <SetupSheet parsed={parsed} />)}
+                        {bottomTab === "setupdiff" && renderPanelOrLock("setupdiff", (
+                          <SetupDiff
+                            parsed={parsed}
+                            track={sess?.track}
+                            car={sess?.car}
+                            sessionId={id}
+                          />
+                        ))}
+                        {bottomTab === "setupcopilot" && live.connected && (
+                          <div className="h-full overflow-y-auto p-2">
+                            <SetupCopilot t={live} />
+                          </div>
+                        )}
+                        {bottomTab === "instruments" && (
+                          <div className="h-full flex flex-col font-mono bg-[#05070A] text-white">
+                            {/* Preset Selection bar */}
+                            <div className="bg-[#11161D] border-b border-[#1C2430] px-3 py-2 flex items-center justify-between select-none">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold tracking-[0.2em] text-[#7A828C] uppercase">
+                                  WORKSPACE:
+                                </span>
+                                <div className="flex bg-[#05070A] border border-[#1C2430] rounded-sm overflow-hidden">
+                                  {(Object.keys(WORKSPACE_PRESETS) as Array<keyof typeof WORKSPACE_PRESETS>).map((key) => {
+                                    const isActive = activePreset === key;
+                                    return (
+                                      <button
+                                        key={key}
+                                        onClick={() => setActivePreset(key)}
+                                        className={`px-3 py-1 text-[9px] uppercase tracking-wider font-bold cursor-pointer ${
+                                          isActive
+                                            ? "bg-[#8B5CF6] text-white"
+                                            : "text-[#7A828C] hover:text-[#E2E4E8]"
+                                        }`}
+                                      >
+                                        {WORKSPACE_PRESETS[key].name}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              <span className="text-[8px] text-[#7A828C] font-bold uppercase truncate max-w-[280px] hidden lg:inline">
+                                {WORKSPACE_PRESETS[activePreset].description}
+                              </span>
+                            </div>
+
+                            {/* Active Specialized telemetry instruments (Replay mode) */}
+                            <div className="flex-1 p-2 overflow-y-auto bg-[#05070A]">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {WORKSPACE_PRESETS[activePreset].instruments.map((instrumentKey) => {
+                                  const InstrumentComponent = TELEMETRY_INSTRUMENTS[instrumentKey];
+                                  return (
+                                    <div key={instrumentKey} className="min-h-[260px] border border-[#1C2430] bg-[#0B0F14] rounded-sm">
+                                      <InstrumentComponent telemetry={getReplayTelemetry(parsed, cursorTick)} mode="replay" />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {bottomTab === "timeline" && (
+                          <div className="h-full bg-[#05070A] overflow-y-auto">
+                            <TelemetryEventTimeline />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* AI Coach Console at the bottom */}
+                      <div className="shrink-0 border-t border-[#1C2430] bg-[#0B0F14]">
+                        <Suspense
+                          fallback={
+                            <div className="p-3 font-mono text-[9px] uppercase text-[#7A828C]">
+                              Loading AI coach…
+                            </div>
+                          }
+                        >
+                          <LazyAICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
+                        </Suspense>
+                      </div>
+
+                    </div>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         </>
       )}

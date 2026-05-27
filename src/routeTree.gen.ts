@@ -17,6 +17,7 @@ import { Route as LiveRouteImport } from './routes/live'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as FingerprintRouteImport } from './routes/fingerprint'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AiEngineerRouteImport } from './routes/ai-engineer'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SessionsIndexRouteImport } from './routes/sessions.index'
@@ -65,6 +66,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiEngineerRoute = AiEngineerRouteImport.update({
+  id: '/ai-engineer',
+  path: '/ai-engineer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -104,6 +110,7 @@ const ApiPublicOgShareTokenRoute = ApiPublicOgShareTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ai-engineer': typeof AiEngineerRoute
   '/auth': typeof AuthRoute
   '/fingerprint': typeof FingerprintRoute
   '/how-it-works': typeof HowItWorksRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ai-engineer': typeof AiEngineerRoute
   '/auth': typeof AuthRoute
   '/fingerprint': typeof FingerprintRoute
   '/how-it-works': typeof HowItWorksRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ai-engineer': typeof AiEngineerRoute
   '/auth': typeof AuthRoute
   '/fingerprint': typeof FingerprintRoute
   '/how-it-works': typeof HowItWorksRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ai-engineer'
     | '/auth'
     | '/fingerprint'
     | '/how-it-works'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/ai-engineer'
     | '/auth'
     | '/fingerprint'
     | '/how-it-works'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/ai-engineer'
     | '/auth'
     | '/fingerprint'
     | '/how-it-works'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AiEngineerRoute: typeof AiEngineerRoute
   AuthRoute: typeof AuthRoute
   FingerprintRoute: typeof FingerprintRoute
   HowItWorksRoute: typeof HowItWorksRoute
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-engineer': {
+      id: '/ai-engineer'
+      path: '/ai-engineer'
+      fullPath: '/ai-engineer'
+      preLoaderRoute: typeof AiEngineerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -338,6 +358,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AiEngineerRoute: AiEngineerRoute,
   AuthRoute: AuthRoute,
   FingerprintRoute: FingerprintRoute,
   HowItWorksRoute: HowItWorksRoute,

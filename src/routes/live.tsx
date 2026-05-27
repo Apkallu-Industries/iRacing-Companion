@@ -20,6 +20,7 @@ import {
   type SmoothingMode,
   type CursorInfo,
 } from "@/components/live/MotecPanels";
+import { TelemetryEventTimeline } from "@/components/workbench/TelemetryEventTimeline";
 import { DerivedMetrics } from "@/components/live/DerivedMetrics";
 import { ConfigurableChannelList } from "@/components/live/ConfigurableChannelList";
 import { GearAdvisor } from "@/components/live/GearAdvisor";
@@ -36,6 +37,8 @@ import { F1SectorTable } from "@/components/live/F1SectorTable";
 import { F1TyreDisplay } from "@/components/live/F1TyreDisplay";
 import { F1QuickStats } from "@/components/live/F1QuickStats";
 import { F1SectorComparison } from "@/components/live/F1SectorComparison";
+
+import { WORKSPACE_PRESETS, TELEMETRY_INSTRUMENTS } from "@/components/instruments/registry";
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -70,6 +73,27 @@ function Dashboard() {
   const handleCursor = useCallback((c: CursorInfo | null) => setCursor(c), []);
   const { layout } = useTheme();
   const isF1Layout = (layout as string) === "f1";
+
+  // Active Workspace Preset
+  const [activePreset, setActivePreset] = useState<keyof typeof WORKSPACE_PRESETS>("gt3");
+
+  // Global Contextual Channel Listener to auto-shift active preset
+  useEffect(() => {
+    const handleChannelClick = (e: Event) => {
+      const channel = ((e as CustomEvent).detail?.channel || "").toLowerCase();
+      if (["brake", "bias", "press", "tempc"].some(k => channel.includes(k))) {
+        setActivePreset("gt3");
+      } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some(k => channel.includes(k))) {
+        setActivePreset("gtp");
+      } else if (["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(k => channel.includes(k))) {
+        setActivePreset("aero");
+      } else if (["throttle", "steer", "clutch", "input"].some(k => channel.includes(k))) {
+        setActivePreset("coach");
+      }
+    };
+    window.addEventListener("pitwall-contextual-channel", handleChannelClick);
+    return () => window.removeEventListener("pitwall-contextual-channel", handleChannelClick);
+  }, []);
 
   // Keyboard shortcut for debug mode (Ctrl+Shift+D)
   useEffect(() => {
@@ -221,30 +245,46 @@ function Dashboard() {
           </div>
         </>
       ) : (
-        /* ═══════════════ DEFAULT LAYOUT ═══════════════ */
+        /* ═══════════════ MOTORSPORT WORKSTATION DEFAULT LAYOUT ═══════════════ */
         <>
-          {/* Main content: Fill all remaining vertical space */}
-          <div className="flex-1 min-h-0 grid grid-cols-12 gap-0">
-            {/* Left column: Channels + Metrics */}
-            <section className="col-span-3 flex flex-col overflow-hidden border-r border-border">
-              <div className="flex-1 min-h-0 overflow-auto">
+          {/* Main workspace pane splits */}
+          <div className="flex-1 min-h-0 grid grid-cols-12 gap-0 bg-[#05070A]">
+            
+            {/* 1. LEFT RAIL: ENGINEERING NAVIGATION RAIL (Col span 3) */}
+            <section className="col-span-3 flex flex-col overflow-hidden border-r border-[#1C2430] bg-[#0B0F14] select-none">
+              {/* Profile / Workspace Header */}
+              <div className="border-b border-[#1C2430] px-3 py-2 flex items-center justify-between bg-[#11161D] shrink-0">
+                <span className="text-[9px] font-mono font-bold tracking-[0.25em] text-[#7A828C] uppercase">
+                  OPERATIONS PANEL
+                </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-[#00D17F] shadow-[0_0_6px_#00D17F]" />
+              </div>
+
+              {/* Channel Browser & Configuration list */}
+              <div className="flex-1 min-h-0 overflow-y-auto border-b border-[#1C2430]">
                 <ConfigurableChannelList t={t} />
               </div>
-              <div className="border-t border-border">
+
+              {/* Fast Sector Splits splits */}
+              <div className="border-b border-[#1C2430] bg-[#0B0F14]">
                 <SectorPanel t={t} />
               </div>
-              <div className="border-t border-border flex-1 min-h-0 overflow-auto">
+
+              {/* Tyre State and pressure diagnostics */}
+              <div className="flex-1 min-h-0 overflow-y-auto bg-[#0B0F14]">
                 <TirePanel t={t} />
               </div>
             </section>
 
-            {/* Center column: Main traces (fill most space) */}
-            <section className="col-span-6 flex flex-col overflow-hidden border-r border-border">
-              <div className="flex items-center justify-between px-2 py-1 border-b border-border flex-shrink-0 bg-panel-2">
+            {/* 2. CENTER PANEL: GRAPH/TRACE CLUSTER (Col span 6 - 60-70% space) */}
+            <section className="col-span-6 flex flex-col overflow-hidden border-r border-[#1C2430] bg-[#05070A]">
+              
+              {/* Stacked trace controls */}
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#1C2430] shrink-0 bg-[#0B0F14]">
                 <PanelHeader
-                  title="Time Trace"
+                  title="rolling stacked channel traces"
                   right={
-                    cursor ? `cursor t=${(cursor.sample.t / 1000).toFixed(2)}s` : "Last 30s · 60Hz"
+                    cursor ? `cursor delta t=${(cursor.sample.t / 1000).toFixed(3)}s` : "last 30s @ 60hz stream"
                   }
                 />
                 <FilterControls
@@ -254,7 +294,9 @@ function Dashboard() {
                   onWindow={setSmoothWindow}
                 />
               </div>
-              <div className="flex-1 min-h-0 overflow-hidden">
+
+              {/* Rolling Traces Graph Region */}
+              <div className="flex-1 min-h-0 overflow-hidden bg-[#05070A] p-1">
                 <TraceStack
                   samples={samples}
                   smoothing={smoothing}
@@ -262,43 +304,100 @@ function Dashboard() {
                   onCursorChange={handleCursor}
                 />
               </div>
-              <div className="border-t border-border flex-shrink-0">
-                <InputBars t={t} />
+
+              {/* ────────────────── ACTIVE WORKSPACE INSTRUMENTS ────────────────── */}
+              <div className="border-t border-[#1C2430] bg-[#11161D] px-3 py-1.5 flex items-center justify-between shrink-0 select-none">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold tracking-[0.2em] text-[#7A828C] uppercase">
+                    ACTIVE WORKSPACE ENVIRONMENT:
+                  </span>
+                  <div className="flex bg-[#05070A] border border-[#1C2430] rounded-sm overflow-hidden">
+                    {(Object.keys(WORKSPACE_PRESETS) as Array<keyof typeof WORKSPACE_PRESETS>).map((key) => {
+                      const isActive = activePreset === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setActivePreset(key)}
+                          className={`px-2 py-0.5 text-[8px] uppercase tracking-wider font-bold cursor-pointer ${
+                            isActive
+                              ? "bg-[#8B5CF6] text-white"
+                              : "text-[#7A828C] hover:text-[#E2E4E8]"
+                          }`}
+                        >
+                          {WORKSPACE_PRESETS[key].name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <span className="text-[7.5px] text-[#7A828C] font-bold uppercase truncate max-w-[200px] hidden md:inline">
+                  {WORKSPACE_PRESETS[activePreset].description}
+                </span>
               </div>
-              <div className="border-t border-border flex-shrink-0 max-h-24">
-                <DerivedMetrics samples={samples} t={t} cursor={cursor} />
+
+              {/* Grid of the 3 active specialized instruments */}
+              <div className="border-t border-[#1C2430] bg-[#05070A] p-1 h-[270px] shrink-0 overflow-y-auto">
+                <div className="grid grid-cols-3 gap-1 h-full min-h-[220px]">
+                  {WORKSPACE_PRESETS[activePreset].instruments.map((instrumentKey) => {
+                    const InstrumentComponent = TELEMETRY_INSTRUMENTS[instrumentKey];
+                    return (
+                      <div key={instrumentKey} className="h-full">
+                        <InstrumentComponent telemetry={t} mode="live" />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+
             </section>
 
-            {/* Right column: Analysis Panels + Coach */}
-            <section className="col-span-3 flex flex-col overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-hidden border-b border-border">
+            {/* 3. RIGHT RAIL: AI COACH & STRATEGY CENTER (Col span 3) */}
+            <section className="col-span-3 flex flex-col overflow-hidden bg-[#0B0F14]">
+              {/* Strategy Header */}
+              <div className="border-b border-[#1C2430] px-3 py-2 flex items-center justify-between bg-[#11161D] shrink-0">
+                <span className="text-[9px] font-mono font-bold tracking-[0.25em] text-[#8B5CF6] uppercase">
+                  COACH STRATEGY NET
+                </span>
+                <span className="text-[8px] font-mono font-black text-[#8B5CF6] tracking-widest">
+                  AI ACTIVE
+                </span>
+              </div>
+
+              {/* Scatter / G-G Analysis panels */}
+              <div className="flex-1 min-h-0 overflow-hidden border-b border-[#1C2430]">
                 <TabedAnalysisPanel
                   samples={samples}
                   ggScatterComponent={<GGScatterPanel samples={samples} />}
                 />
               </div>
-              <div className="flex-1 min-h-0 overflow-auto">
+
+              {/* Live Assistant Coach Panel */}
+              <div className="flex-1 min-h-0 overflow-y-auto bg-[#0B0F14] border-t border-[#1C2430]/40">
                 <LiveCoach t={t} />
+              </div>
+
+              {/* Real-time Incident Event Timeline */}
+              <div className="h-[250px] shrink-0 border-t border-[#1C2430]">
+                <TelemetryEventTimeline />
               </div>
             </section>
           </div>
 
-          {/* Bottom bar: Controls (no gaps, packed) */}
-          <div className="border-t border-border bg-background p-2 grid grid-cols-12 gap-2 text-xs flex-shrink-0">
+          {/* 4. BOTTOM RAIL: TIMING & CONTROLS RAIL (packed tightly) */}
+          <div className="border-t border-[#1C2430] bg-[#0B0F14] p-2 grid grid-cols-12 gap-2 text-[10px] uppercase font-mono tracking-wider shrink-0 select-none">
             <div className="col-span-12 lg:col-span-2 flex flex-col justify-between">
               {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
             </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
+            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2">
               <GearAdvisor t={t} samples={samples} />
             </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
+            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2">
               <AdvisorButton t={t} />
             </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between">
+            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2">
               <LiveReference t={t} />
             </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between relative">
+            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2 relative">
               <FingerprintUploadCard />
               <div className="mt-1 flex items-center justify-end">
                 <DesktopLapSync />

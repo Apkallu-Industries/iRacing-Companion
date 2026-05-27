@@ -1,4 +1,4 @@
-﻿export type ThemeTokenKey =
+export type ThemeTokenKey =
   | "background"
   | "foreground"
   | "panel"
@@ -190,29 +190,29 @@ export const THEME_GROUPS: ThemeGroup[] = [
    Classic engineering. Dense, dark, cyan accent.
    ============================================= */
 export const DARK_THEME: Required<ThemeMap> = {
-  background: "#0f1114",
+  background: "#05070A",
   foreground: "#e2e4e8",
-  panel: "#181b20",
-  "panel-2": "#1e2228",
-  rail: "#0b0d10",
-  border: "#282d34",
-  "border-strong": "#3a4048",
-  primary: "#22d3ee",
-  "primary-foreground": "#0c1014",
-  muted: "#1e2228",
+  panel: "#0B0F14",
+  "panel-2": "#11161D",
+  rail: "#05070A",
+  border: "#1C2430",
+  "border-strong": "#263241",
+  primary: "#3B82F6", /* Telemetry Blue */
+  "primary-foreground": "#ffffff",
+  muted: "#11161D",
   "muted-foreground": "#7a828c",
-  accent: "#282d34",
-  destructive: "#ef4444",
-  "ch-speed": "#22d3ee",
-  "ch-throttle": "#22c55e",
-  "ch-brake": "#ef4444",
-  "ch-rpm": "#facc15",
+  accent: "#161C24",
+  destructive: "#FF4D4D", /* Warning Red */
+  "ch-speed": "#3B82F6",
+  "ch-throttle": "#00D17F",
+  "ch-brake": "#FF4D4D",
+  "ch-rpm": "#FFB800",
   "ch-gear": "#e2e4e8",
-  "ch-steer": "#d946ef",
-  "ch-glat": "#fb923c",
-  "ch-glong": "#60a5fa",
-  "grid-major": "#282d34",
-  "grid-minor": "#1e2228",
+  "ch-steer": "#8B5CF6",
+  "ch-glat": "#FFB800",
+  "ch-glong": "#3B82F6",
+  "grid-major": "#1C2430",
+  "grid-minor": "#11161D",
 };
 
 /* =============================================

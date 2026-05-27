@@ -1,4 +1,4 @@
-﻿@import "tailwindcss" source(none);
+@import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
 
@@ -62,66 +62,54 @@
 }
 
 :root {
-  /* MoTeC i2 Pro dark workspace tokens (single dark theme) */
-  --radius: 0.25rem;
+  /* Cinematic motorsport workstation tokens (sharp, high-performance) */
+  --radius: 2px;
 
-  --background: oklch(0.18 0.005 250);
-  /* #1a1d21 */
-  --foreground: oklch(0.92 0.005 250);
+  --background: #05070A;
+  --foreground: #E2E4E8;
 
-  --panel: oklch(0.21 0.006 250);
-  /* #22262b */
-  --panel-2: oklch(0.235 0.006 250);
-  --rail: oklch(0.16 0.005 250);
+  --panel: #0B0F14;
+  --panel-2: #11161D;
+  --rail: #05070A;
 
   --card: var(--panel);
   --card-foreground: var(--foreground);
   --popover: var(--panel-2);
   --popover-foreground: var(--foreground);
 
-  --primary: oklch(0.78 0.16 195);
-  /* cyan accent */
-  --primary-foreground: oklch(0.15 0.01 250);
+  --primary: #3B82F6; /* Telemetry Blue */
+  --primary-foreground: #FFFFFF;
 
-  --secondary: oklch(0.27 0.008 250);
-  --secondary-foreground: oklch(0.92 0.005 250);
+  --secondary: #0B0F14;
+  --secondary-foreground: #E2E4E8;
 
-  --muted: oklch(0.24 0.006 250);
-  --muted-foreground: oklch(0.62 0.01 250);
+  --muted: #11161D;
+  --muted-foreground: #7A828C;
 
-  --accent: oklch(0.3 0.012 250);
-  --accent-foreground: oklch(0.95 0.005 250);
+  --accent: #161C24;
+  --accent-foreground: #E2E4E8;
 
-  --destructive: oklch(0.65 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: #FF4D4D; /* Warning Red */
+  --destructive-foreground: #FFFFFF;
 
-  --border: oklch(0.28 0.006 250);
-  /* #2f343a */
-  --border-strong: oklch(0.36 0.008 250);
-  --input: oklch(0.28 0.006 250);
-  --ring: oklch(0.78 0.16 195);
+  --border: #1C2430; /* Thin separators */
+  --border-strong: #263241; /* Subtle outlines */
+  --input: #1C2430;
+  --ring: #3B82F6;
 
-  /* Channel trace colors (MoTeC convention) */
-  --ch-speed: oklch(0.78 0.16 195);
-  /* cyan   */
-  --ch-throttle: oklch(0.78 0.2 145);
-  /* green  */
-  --ch-brake: oklch(0.66 0.24 28);
-  /* red    */
-  --ch-rpm: oklch(0.86 0.18 95);
-  /* amber  */
-  --ch-gear: oklch(0.92 0.005 250);
-  /* white  */
-  --ch-steer: oklch(0.7 0.22 320);
-  /* magenta*/
-  --ch-glat: oklch(0.76 0.18 50);
-  /* orange */
-  --ch-glong: oklch(0.72 0.18 260);
-  /* blue   */
-  --ch-default: oklch(0.72 0.05 250);
+  /* Channel trace colors (motorsport functional convention) */
+  --ch-speed: #3B82F6;      /* Telemetry Blue */
+  --ch-throttle: #00D17F;   /* Delta Green */
+  --ch-brake: #FF4D4D;      /* Warning Red */
+  --ch-rpm: #FFB800;        /* Warning Amber */
+  --ch-gear: #E2E4E8;       /* White */
+  --ch-steer: #8B5CF6;      /* Hybrid Purple */
+  --ch-glat: #FFB800;       /* Warning Amber */
+  --ch-glong: #3B82F6;      /* Telemetry Blue */
+  --ch-default: #7A828C;
 
-  --grid-major: oklch(0.32 0.006 250);
-  --grid-minor: oklch(0.24 0.006 250);
+  --grid-major: #1C2430;
+  --grid-minor: #11161D;
 
   --chart-1: var(--ch-speed);
   --chart-2: var(--ch-throttle);
@@ -138,8 +126,8 @@
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Inter Tight", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 .dark {

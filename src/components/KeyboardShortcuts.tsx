@@ -32,6 +32,30 @@ export function KeyboardShortcuts() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
 
+      // Workstation Keyboard-First Navigation Shortcuts: Ctrl+1 through Ctrl+4
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        if (e.key === "1") {
+          e.preventDefault();
+          router.navigate({ to: "/" });
+          return;
+        }
+        if (e.key === "2") {
+          e.preventDefault();
+          router.navigate({ to: "/live" });
+          return;
+        }
+        if (e.key === "3") {
+          e.preventDefault();
+          router.navigate({ to: "/sessions" });
+          return;
+        }
+        if (e.key === "4") {
+          e.preventDefault();
+          router.navigate({ to: "/ai-engineer" });
+          return;
+        }
+      }
+
       if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         setOpen(true);
@@ -75,17 +99,21 @@ export function KeyboardShortcuts() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md font-mono text-sm">
+      <DialogContent className="max-w-md font-mono text-sm bg-panel border border-border text-foreground">
         <DialogHeader>
-          <DialogTitle>Keyboard shortcuts</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Works on most pages. Disabled while typing in a field.
+          <DialogTitle className="font-mono text-xs uppercase tracking-wider text-primary">Workstation Shortcuts</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Fast keyboard-first controls. Disabled while typing in text inputs.
           </DialogDescription>
         </DialogHeader>
-        <ul className="space-y-2 text-xs">
-          <Shortcut keys={["Esc"]} desc="Go back, or home from landing" />
-          <Shortcut keys={["g", "h"]} desc="Go home (press g then h)" />
-          <Shortcut keys={["?"]} desc="Open this cheat sheet" />
+        <ul className="space-y-2 text-[11px] uppercase">
+          <Shortcut keys={["Ctrl", "1"]} desc="Launcher Landing Page" />
+          <Shortcut keys={["Ctrl", "2"]} desc="Live Telemetry Command" />
+          <Shortcut keys={["Ctrl", "3"]} desc="Analysis Workbench" />
+          <Shortcut keys={["Ctrl", "4"]} desc="AI Engineer Terminal" />
+          <Shortcut keys={["Ctrl", ","]} desc="System Settings dialog" />
+          <Shortcut keys={["Esc"]} desc="Go back / Exit panel" />
+          <Shortcut keys={["?"]} desc="Open this helper card" />
         </ul>
       </DialogContent>
     </Dialog>

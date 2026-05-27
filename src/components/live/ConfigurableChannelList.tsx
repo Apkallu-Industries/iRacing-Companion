@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { compileMathExpression, evaluateCompiledMathExpression } from "@/lib/math/evaluator";
@@ -363,7 +363,10 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
               <li
                 key={c.key}
                 className="flex items-center gap-2 px-2 py-1 text-[11px] cursor-pointer hover:bg-muted/60 transition-colors group"
-                onClick={() => toggleMode(c.key)}
+                onClick={() => {
+                  toggleMode(c.key);
+                  window.dispatchEvent(new CustomEvent('pitwall-contextual-channel', { detail: { channel: c.key } }));
+                }}
                 title={`Click to switch to ${isTrace ? "RAW" : "TRACE"} view`}
               >
                 <span

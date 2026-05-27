@@ -136,7 +136,10 @@ export function ChannelBrowser({ parsed }: { parsed: IbtParsed }) {
                     return (
                       <li key={name} className="flex items-center w-full group">
                         <button
-                          onClick={() => toggleChannel(name)}
+                          onClick={() => {
+                            toggleChannel(name);
+                            window.dispatchEvent(new CustomEvent('pitwall-contextual-channel', { detail: { channel: name } }));
+                          }}
                           title={cat?.desc ?? ch.desc ?? name}
                           className={`flex flex-1 items-center gap-2 px-2 py-1 text-left hover:bg-accent group/btn ${sel ? "bg-accent/60" : ""}`}
                         >
