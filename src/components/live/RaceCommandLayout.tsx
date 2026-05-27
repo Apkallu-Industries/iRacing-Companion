@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import type { Telemetry } from "@/lib/telemetry-types";
 import type { Sample } from "@/lib/useTelemetryBuffer";
 import { Activity, Shield, Thermometer, Zap, AlertCircle } from "lucide-react";
+import { getTrackMap, getCoordinatesAtPct, getSvgPathFromSpline } from "@/lib/track-maps";
 
 interface RaceCommandLayoutProps {
   t: Telemetry;
@@ -10,6 +11,7 @@ interface RaceCommandLayoutProps {
 
 export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
   const [timeStr, setTimeStr] = useState("17:35");
+  const [simulatedPct, setSimulatedPct] = useState(0);
 
   // Format real-time system clock
   useEffect(() => {
@@ -19,6 +21,16 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Loop a smooth progression for the simulated car projection when not actively connected
+  useEffect(() => {
+    if (!t.connected) {
+      const interval = setInterval(() => {
+        setSimulatedPct((prev) => (prev + 0.001) % 1.0);
+      }, 30); // smooth progression
+      return () => clearInterval(interval);
+    }
+  }, [t.connected]);
 
   // Dynamic values wired to real iRacing data
   const position = t.sof > 0 ? "14" : "-";
@@ -38,6 +50,26 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
   const s1Time = t.sectors?.s1 || "00.000";
   const s2Time = t.sectors?.s2 || "00.000";
   const s3Time = t.sectors?.s3 || "00.000";
+
+  // Resolve vector track map definition
+  const trackDef = getTrackMap(trackName);
+
+  // Resolve user current progress percentage
+  const lapDistPct = t.connected
+    ? (t.all?.LapDistPct ?? t.extras?.LapDistPct ?? 0)
+    : simulatedPct;
+
+  // Active competitors synchronized across the standings list and vector track map nodes
+  const competitors = [
+    { pos: 1, name: "Max V.", carNo: "1", color: "#FFB800", isUser: false, gap: "LDR", best: "3:28.450", last: "3:29.112", lap: 24, offset: 0.35 },
+    { pos: 2, name: "Lando N.", carNo: "4", color: "#FF6B35", isUser: false, gap: "+12.1s", best: "3:28.870", last: "3:29.350", lap: 24, offset: 0.28 },
+    { pos: 3, name: "Charles L.", carNo: "16", color: "#E63322", isUser: false, gap: "+18.2s", best: "3:29.300", last: "3:30.120", lap: 24, offset: 0.20 },
+    { pos: 4, name: "Oscar P.", carNo: "81", color: "#ffffff", isUser: false, gap: "+24.5s", best: "3:29.570", last: "3:29.880", lap: 23, offset: 0.12 },
+    { pos: 5, name: "Lewis H.", carNo: "44", color: "#ffffff", isUser: false, gap: "+29.8s", best: "3:29.930", last: "3:31.050", lap: 24, offset: 0.05 },
+    { pos: 6, name: "Dany M.", carNo: "6", color: "#00e676", isUser: true, gap: "+32.1s", best: bestLap, last: lastLap, lap: 23, offset: 0.0 },
+    { pos: 7, name: "Fernando A.", carNo: "14", color: "#ffffff", isUser: false, gap: "+35.6s", best: "3:31.100", last: "3:31.520", lap: 24, offset: -0.06 },
+    { pos: 8, name: "George R.", carNo: "63", color: "#ffffff", isUser: false, gap: "+41.2s", best: "3:31.570", last: "3:32.110", lap: 24, offset: -0.14 },
+  ];
 
   return (
     <div className="flex-1 min-h-0 bg-[#000000] text-[#E2E8F0] font-mono select-none flex flex-col p-2 gap-2 overflow-y-auto scrollbar-thin">
@@ -89,7 +121,7 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
 
       </div>
 
-      {/* 2. MIDDLE SPLIT: RUNNING STANDINGS TABLE (LEFT) & LE MANS MAP (RIGHT) */}
+      {/* 2. MIDDLE SPLIT: RUNNING STANDINGS TABLE (LEFT) & CIRCUIT MAP (RIGHT) */}
       <div className="flex-1 min-h-[350px] grid grid-cols-12 gap-2">
         
         {/* STANDINGS TABLE (Col span 7) */}
@@ -105,93 +137,29 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
           </div>
 
           <div className="flex-1 divide-y divide-[#1C2430]/40 overflow-y-auto text-[9.5px]">
-            {/* Row 1: Leader */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-[#FFB800]">P1</div>
-              <div className="col-span-3 font-semibold text-white">Max V.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">24</div>
-              <div className="col-span-2 text-[#7A828C] font-bold">LDR</div>
-              <div className="col-span-2 font-semibold text-[#FFB800]">3:28.450</div>
-              <div className="col-span-2 text-white">3:29.112</div>
-            </div>
+            {competitors.map((comp) => {
+              const rowClass = comp.isUser
+                ? "bg-[#00e676]/10 border-y border-[#00e676]/20 font-black text-[#00e676]"
+                : "hover:bg-[#111520]/45 items-center text-white";
+              
+              const posColor = comp.pos === 1 
+                ? "text-[#FFB800]" 
+                : comp.isUser 
+                  ? "text-[#00e676]" 
+                  : "text-white";
 
-            {/* Row 2 */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-white">P2</div>
-              <div className="col-span-3 font-semibold text-white">Lando N.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">24</div>
-              <div className="col-span-2 text-white">+0.420</div>
-              <div className="col-span-2">3:28.870</div>
-              <div className="col-span-2 text-white">3:29.350</div>
-            </div>
-
-            {/* Row 3 */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-white">P3</div>
-              <div className="col-span-3 font-semibold text-white">Charles L.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">24</div>
-              <div className="col-span-2 text-white">+0.850</div>
-              <div className="col-span-2">3:29.300</div>
-              <div className="col-span-2 text-white">3:30.120</div>
-            </div>
-
-            {/* Row 4 */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-white">P4</div>
-              <div className="col-span-3 font-semibold text-white">Oscar P.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">23</div>
-              <div className="col-span-2 text-white">+1.120</div>
-              <div className="col-span-2">3:29.570</div>
-              <div className="col-span-2 text-white">3:29.880</div>
-            </div>
-
-            {/* Row 5 */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-white">P5</div>
-              <div className="col-span-3 font-semibold text-white">Lewis H.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">24</div>
-              <div className="col-span-2 text-white">+1.480</div>
-              <div className="col-span-2">3:29.930</div>
-              <div className="col-span-2 text-white">3:31.050</div>
-            </div>
-
-            {/* Row 6: User Dany M (highlighted in Green) */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 bg-[#00e676]/10 border-y border-[#00e676]/20 items-center">
-              <div className="col-span-1 font-black text-[#00e676]">P6</div>
-              <div className="col-span-3 font-black text-[#00e676]">Dany M.</div>
-              <div className="col-span-1 text-[#FFB800] font-black">IN</div>
-              <div className="col-span-1">23</div>
-              <div className="col-span-2 text-[#00e676] font-bold">+2.140</div>
-              <div className="col-span-2 font-bold text-white">{bestLap}</div>
-              <div className="col-span-2 text-[#00e676] font-black">{lastLap}</div>
-            </div>
-
-            {/* Row 7 */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-white">P7</div>
-              <div className="col-span-3 font-semibold text-white">Fernando A.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">24</div>
-              <div className="col-span-2 text-white">+2.650</div>
-              <div className="col-span-2">3:31.100</div>
-              <div className="col-span-2 text-white">3:31.520</div>
-            </div>
-
-            {/* Row 8 */}
-            <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 hover:bg-[#111520]/45 items-center">
-              <div className="col-span-1 font-bold text-white">P8</div>
-              <div className="col-span-3 font-semibold text-white">George R.</div>
-              <div className="col-span-1 text-[#7A828C]">-</div>
-              <div className="col-span-1">24</div>
-              <div className="col-span-2 text-white">+3.120</div>
-              <div className="col-span-2">3:31.570</div>
-              <div className="col-span-2 text-white">3:32.110</div>
-            </div>
+              return (
+                <div key={comp.pos} className={`grid grid-cols-12 gap-1 px-2.5 py-1.5 items-center ${rowClass}`}>
+                  <div className={`col-span-1 font-bold ${posColor}`}>P{comp.pos}</div>
+                  <div className="col-span-3 font-semibold truncate">{comp.name}</div>
+                  <div className="col-span-1 text-[#7A828C]">{comp.isUser ? "IN" : "-"}</div>
+                  <div className="col-span-1">{comp.lap}</div>
+                  <div className="col-span-2 font-bold">{comp.gap}</div>
+                  <div className="col-span-2">{comp.best}</div>
+                  <div className="col-span-2 font-semibold">{comp.last}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -201,18 +169,18 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
           {/* Map Header */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col">
-              <span className="text-[11px] font-black text-white uppercase tracking-wider">{trackName}</span>
-              <span className="text-[8px] text-[#7A828C] uppercase tracking-widest mt-0.5">Circuit Layout Geometry</span>
+              <span className="text-[11px] font-black text-white uppercase tracking-wider">{trackDef.displayName}</span>
+              <span className="text-[8px] text-[#7A828C] uppercase tracking-widest mt-0.5">Authoritative Circuit Spline</span>
             </div>
             <span className="text-xs font-bold text-white tabular-nums">{timeStr}</span>
           </div>
 
-          {/* SVG Map of Circuit des 24 Heures du Mans */}
+          {/* SVG Map dynamically generated from vector coordinates spline with live projected markers */}
           <div className="flex-1 flex items-center justify-center my-3 relative h-[210px]">
-            <svg viewBox="0 0 220 220" className="w-[190px] h-[190px]">
-              {/* Le Mans outline path */}
+            <svg viewBox="-10 -10 220 220" className="w-[195px] h-[195px]">
+              {/* Circuit spline path (Rendered from our database) */}
               <path
-                d="M 120 20 C 135 25, 145 35, 155 45 C 165 55, 175 75, 185 95 C 190 105, 188 120, 185 135 C 182 145, 180 160, 185 175 C 183 185, 175 190, 160 185 C 145 180, 130 182, 115 188 C 100 192, 85 185, 75 175 C 68 168, 62 155, 60 140 C 58 130, 60 115, 60 100 C 60 85, 62 70, 65 55 C 68 45, 75 35, 85 30 C 95 25, 105 18, 120 20 Z"
+                d={getSvgPathFromSpline(trackDef.spline, 200, 200)}
                 fill="none"
                 stroke="rgba(122, 130, 140, 0.4)"
                 strokeWidth="4"
@@ -220,41 +188,68 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
                 strokeLinejoin="round"
               />
               
-              {/* Active drivers position markers */}
-              {/* Max V. P1 */}
-              <circle cx="120" cy="20" r="4.5" fill="#FFB800" />
-              <text x="120" y="22.5" fill="#000000" fontSize="6px" fontWeight="black" textAnchor="middle">1</text>
-              
-              {/* Charles L. P3 */}
-              <circle cx="165" cy="55" r="4.5" fill="#ffffff" />
-              <text x="165" y="57.5" fill="#000000" fontSize="6px" fontWeight="black" textAnchor="middle">3</text>
+              {/* Timing Line indicator */}
+              {trackDef.spline.length > 0 && (
+                <line 
+                  x1={trackDef.spline[0][0] * 200 - 4} 
+                  y1={trackDef.spline[0][1] * 200} 
+                  x2={trackDef.spline[0][0] * 200 + 4} 
+                  y2={trackDef.spline[0][1] * 200} 
+                  stroke="#FF4D4D" 
+                  strokeWidth="2.5" 
+                />
+              )}
 
-              {/* Lewis H. P5 */}
-              <circle cx="185" cy="175" r="4.5" fill="#ffffff" />
-              <text x="185" y="177.5" fill="#000000" fontSize="6px" fontWeight="black" textAnchor="middle">5</text>
+              {/* Dynamic competitor positions projected onto the authoritative spline */}
+              {competitors.map((comp) => {
+                // Determine target lap percentage based on offset relative to user position
+                const targetPct = (lapDistPct + comp.offset + 1.0) % 1.0;
+                const coords = getCoordinatesAtPct(trackDef.spline, targetPct);
+                const cx = coords.x * 200;
+                const cy = coords.y * 200;
 
-              {/* Dany M. P6 (User in glowing Green) */}
-              <circle cx="115" cy="188" r="5" fill="#00e676" className="shadow-[0_0_8px_#00e676]" />
-              <text x="115" y="190.5" fill="#000000" fontSize="6.5px" fontWeight="black" textAnchor="middle">6</text>
-
-              {/* Fernando A. P7 */}
-              <circle cx="65" cy="55" r="4.5" fill="#ffffff" />
-              <text x="65" y="57.5" fill="#000000" fontSize="6px" fontWeight="black" textAnchor="middle">7</text>
+                return (
+                  <g key={comp.pos}>
+                    {/* Glowing effect for active user (glowing green shadow) */}
+                    {comp.isUser && (
+                      <circle cx={cx} cy={cy} r="7.5" fill="#00e676" opacity="0.25" className="animate-pulse" />
+                    )}
+                    <circle 
+                      cx={cx} 
+                      cy={cy} 
+                      r={comp.isUser ? "5.5" : "4.5"} 
+                      fill={comp.color} 
+                      stroke="#0a0c10"
+                      strokeWidth="1"
+                    />
+                    <text 
+                      x={cx} 
+                      y={cy + 2.2} 
+                      fill="#000000" 
+                      fontSize={comp.isUser ? "6.5px" : "6px"} 
+                      fontWeight="black" 
+                      textAnchor="middle"
+                    >
+                      {comp.pos}
+                    </text>
+                  </g>
+                );
+              })}
             </svg>
 
             {/* Sector Markers overlay */}
             <div className="absolute left-2 bottom-2 bg-[#111520] border border-[#1C2430] rounded-sm px-1.5 py-0.5 text-[7.5px] text-[#7A828C] flex gap-2">
-              <span>S1: OK</span>
-              <span>S2: OK</span>
-              <span>S3: OK</span>
+              {trackDef.sectors.map((sec) => (
+                <span key={sec.id} className="font-bold">{sec.id}: <span className="text-[#00e676]">OK</span></span>
+              ))}
             </div>
           </div>
 
           {/* Track environment stats */}
           <div className="border-t border-[#1C2430]/60 pt-2 flex items-center justify-between text-[8px] text-[#7A828C] uppercase tracking-wider font-bold">
             <div className="flex gap-4">
-              <span>AIR: <span className="text-white font-black">22°C</span></span>
-              <span>TRACK: <span className="text-white font-black">31°C</span></span>
+              <span>AIR: <span className="text-white font-black">{t.airTempC ? t.airTempC.toFixed(0) + "°C" : "22°C"}</span></span>
+              <span>TRACK: <span className="text-white font-black">{t.trackTempC ? t.trackTempC.toFixed(0) + "°C" : "31°C"}</span></span>
             </div>
             <span className="px-1.5 py-0.5 rounded-xs bg-[#00e676]/10 text-[#00e676] border border-[#00e676]/20 font-black">DRY</span>
           </div>
