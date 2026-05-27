@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Unified UI Styles — combines layout density + color theme into
  * a single selectable style preset, matching the 5 design directions
  * from the UI-Styles.png reference.
@@ -11,7 +11,7 @@
  * individual tokens after selecting a style.
  */
 
-export type LayoutProfile = "motec" | "modern" | "studio" | "engineer" | "carbon" | "f1" | "indycar";
+export type LayoutProfile = "motec" | "modern" | "studio" | "engineer" | "carbon" | "f1" | "indycar" | "racecommand";
 
 export interface LayoutProfileMeta {
   id: LayoutProfile;
@@ -63,7 +63,7 @@ export const LAYOUT_PROFILES: LayoutProfileMeta[] = [
       "Carbon textures and red accents. Aggressive and performance focused. Built for race day.",
     swatches: ["#0c0c0f", "#141418", "#e63322", "#ff6b35"],
   },
-    {
+  {
     id: "f1",
     label: "Modern F1",
     subtitle: "High Performance. Precision.",
@@ -79,6 +79,14 @@ export const LAYOUT_PROFILES: LayoutProfileMeta[] = [
       "Dense race data: running order, 4-sector splits, fuel strategy, caution flags. Green live accents on deep dark.",
     swatches: ["#0a0c10", "#111520", "#00e676", "#ff6b35"],
   },
+  {
+    id: "racecommand",
+    label: "Proper Race Command",
+    subtitle: "Pit Wall Commander",
+    description:
+      "Full race command strategy deck. Standing positions tables, dynamic track relative maps, 4-corner tire gauges, and live electronics selectors.",
+    swatches: ["#05070a", "#0b0f14", "#00e676", "#3b82f6"],
+  },
 ];
 
 const LS_KEY = "pitwall.layout";
@@ -93,7 +101,7 @@ export function applyLayout(profile: LayoutProfile): void {
 export function loadSavedLayout(): LayoutProfile {
   if (typeof localStorage === "undefined") return "motec";
   const saved = localStorage.getItem(LS_KEY);
-  if (saved && (["motec", "modern", "studio", "engineer", "carbon", "f1", "indycar"] as string[]).includes(saved)) {
+  if (saved && (["motec", "modern", "studio", "engineer", "carbon", "f1", "indycar", "racecommand"] as string[]).includes(saved)) {
     return saved as LayoutProfile;
   }
   return "motec";

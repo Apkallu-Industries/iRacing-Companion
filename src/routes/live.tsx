@@ -37,6 +37,7 @@ import { F1SectorTable } from "@/components/live/F1SectorTable";
 import { F1TyreDisplay } from "@/components/live/F1TyreDisplay";
 import { F1QuickStats } from "@/components/live/F1QuickStats";
 import { F1SectorComparison } from "@/components/live/F1SectorComparison";
+import { RaceCommandLayout } from "@/components/live/RaceCommandLayout";
 
 import { WORKSPACE_PRESETS, TELEMETRY_INSTRUMENTS } from "@/components/instruments/registry";
 
@@ -73,6 +74,7 @@ function Dashboard() {
   const handleCursor = useCallback((c: CursorInfo | null) => setCursor(c), []);
   const { layout } = useTheme();
   const isF1Layout = (layout as string) === "f1";
+  const isRaceCommand = (layout as string) === "racecommand";
 
   // Active Workspace Preset
   const [activePreset, setActivePreset] = useState<keyof typeof WORKSPACE_PRESETS>("gt3");
@@ -125,7 +127,9 @@ function Dashboard() {
       <RpmBar rpm={t.rpm} warn={t.rpmShiftWarn} red={t.rpmShiftRedline} max={t.rpmMax} />
 
 
-      {isF1Layout ? (
+      {isRaceCommand ? (
+        <RaceCommandLayout t={t} samples={samples} />
+      ) : isF1Layout ? (
         /* ═══════════════ F1 LAYOUT ═══════════════ */
         <>
           {/* Top section: 3-column grid */}

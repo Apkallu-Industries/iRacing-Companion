@@ -397,6 +397,33 @@ export const INDYCAR_THEME: Required<ThemeMap> = {
   "grid-major": "#252a36",
   "grid-minor": "#181d28",
 };
+
+export const RACECOMMAND_THEME: Required<ThemeMap> = {
+  background: "#000000",
+  foreground: "#ffffff",
+  panel: "#0a0c10",
+  "panel-2": "#111520",
+  rail: "#05070a",
+  border: "#1C2430",
+  "border-strong": "#263241",
+  primary: "#00e676",
+  "primary-foreground": "#000000",
+  muted: "#111520",
+  "muted-foreground": "#7a828c",
+  accent: "#161C24",
+  destructive: "#FF4D4D",
+  "ch-speed": "#00e676",
+  "ch-throttle": "#00D17F",
+  "ch-brake": "#FF4D4D",
+  "ch-rpm": "#FFB800",
+  "ch-gear": "#ffffff",
+  "ch-steer": "#8B5CF6",
+  "ch-glat": "#FFB800",
+  "ch-glong": "#3B82F6",
+  "grid-major": "#1C2430",
+  "grid-minor": "#11161D",
+};
+
 /** Backward compat aliases */
 export const HIGH_CONTRAST_THEME = STUDIO_BLACK_THEME;
 export const SOLAR_THEME = CARBON_THEME;
@@ -409,6 +436,7 @@ export const PRESETS: { id: string; label: string; theme: Required<ThemeMap> }[]
   { id: "carbon",   label: "E - Carbon UI",        theme: CARBON_THEME },
   { id: "f1",       label: "F - Modern F1",        theme: F1_THEME },
   { id: "indycar",  label: "G - IndyCar/NASCAR",   theme: INDYCAR_THEME },
+  { id: "racecommand", label: "H - Proper Race Command", theme: RACECOMMAND_THEME },
 ];
 
 export function applyTheme(theme: ThemeMap) {
