@@ -64,6 +64,10 @@ class TelemetryRecorder {
       await this.db.collection("engineering_notes").createIndex({ session_id: 1, timestamp: -1 });
       await this.db.collection("notebook_bookmarks").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
       await this.db.collection("setup_snapshots").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
+
+      // Phase 13 garage multi-car parameters
+      await this.db.collection("telemetry_samples").createIndex({ car_number: 1, timestamp: 1 });
+      await this.db.collection("scanner_events").createIndex({ car_number: 1, timestamp: -1 });
     } catch (e) {
       console.warn(`[recorder] Index creation failed: ${e.message}`);
     }

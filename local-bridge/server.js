@@ -754,6 +754,51 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (urlPath === "/api/multi-car/sessions" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const sessions = await recorder.db
+        .collection("telemetry_sessions")
+        .find({ garage_sharing: true })
+        .sort({ start_time: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ sessions }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/multi-car/telemetry" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const carNumber = params.get("carNumber") || "unknown";
+      const telemetry = await recorder.db
+        .collection("telemetry_samples")
+        .find({ car_number: carNumber })
+        .sort({ timestamp: 1 })
+        .limit(100)
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ telemetry }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
   /* ────────────────────────────────────── Static File Serving */
 
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);

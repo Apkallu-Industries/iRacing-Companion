@@ -14,6 +14,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { IntelligenceDashboard } from "./IntelligenceDashboard";
 import { StrategicIntelligenceTab } from "./StrategicIntelligenceTab";
+import { StrategicSimulationTab } from "./StrategicSimulationTab";
 import {
   useSessions,
   useEventQuery,
@@ -213,7 +214,7 @@ export function HistoricalQueryPanel() {
 
   const [selectedSession, setSelectedSession] = useState<StoredSession | null>(null);
   const [showLaps, setShowLaps] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence" | "strategic">("sessions");
+  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence" | "strategic" | "simulation">("sessions");
 
   // Event query state
   const [queryMode,     setQueryMode]     = useState<"structured" | "tql">("tql");
@@ -312,7 +313,7 @@ export function HistoricalQueryPanel() {
 
       {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="flex shrink-0" style={{ borderBottom: "1px solid #1C2430" }}>
-        {(["sessions", "events", "intelligence", "strategic"] as const).map((tab) => (
+        {(["sessions", "events", "intelligence", "strategic", "simulation"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -557,6 +558,17 @@ export function HistoricalQueryPanel() {
       {activeTab === "strategic" && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#07090E]">
           <StrategicIntelligenceTab
+            sessionId={selectedSession?._id}
+            car={selectedSession?.car}
+            track={selectedSession?.track}
+          />
+        </div>
+      )}
+
+      {/* ── Simulation Tab ────────────────────────────────────────── */}
+      {activeTab === "simulation" && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#07090E]">
+          <StrategicSimulationTab
             sessionId={selectedSession?._id}
             car={selectedSession?.car}
             track={selectedSession?.track}
