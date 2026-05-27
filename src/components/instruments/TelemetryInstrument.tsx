@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Sliders, Maximize2, Sparkles, Volume2, Shield, Settings, Play, Pause, Loader2 } from "lucide-react";
+import { Sliders, Maximize2, Sparkles, Volume2, Shield, Settings, Play, Pause, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface TelemetryInstrumentProps {
@@ -66,6 +66,33 @@ export function TelemetryInstrument({
     }
   };
 
+  const handleDetach = () => {
+    let key = "inputs";
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes("brake")) key = "brakes";
+    else if (titleLower.includes("ers") || titleLower.includes("hybrid")) key = "ers";
+    else if (titleLower.includes("suspension") || titleLower.includes("chassis")) key = "chassis";
+    else if (titleLower.includes("tire") || titleLower.includes("grip")) key = "tires";
+
+    const url = `/detached/${key}`;
+    const w = window.open(url, `detached-${key}`, "width=520,height=400,resizable=yes");
+    if (w) {
+      toast.success(`Detached ${title} successfully. Window added to engineering array.`, {
+        icon: "⚡",
+        duration: 2500,
+        style: {
+          background: "#0B0F14",
+          border: "1px solid #1C2430",
+          color: "#fff",
+          fontFamily: "monospace",
+          fontSize: "10px",
+        }
+      });
+    } else {
+      toast.error("Multi-monitor detach blocked by browser window blocker.");
+    }
+  };
+
   return (
     <div
       className={`border bg-[#0B0F14] flex flex-col font-mono text-xs select-none transition-all duration-200 ${
@@ -125,6 +152,15 @@ export function TelemetryInstrument({
               <Sparkles className="h-3.5 w-3.5" />
             </button>
           )}
+
+          {/* Detach Window */}
+          <button
+            onClick={handleDetach}
+            className="p-1 rounded border border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white transition-colors cursor-pointer"
+            title="Detach instrument to external array"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
 
           {/* Full-width Toggle */}
           <button

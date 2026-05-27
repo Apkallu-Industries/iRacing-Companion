@@ -566,3 +566,71 @@
     animation: none !important;
   }
 }
+
+/* ================================================================
+   CALIBRATED ENGINEERING FOCUS MODES (Depth & Contrast Sync)
+   When a Focus Mode is triggered, unrelated layout elements desaturate
+   and dim, providing extreme cognitive clarity.
+   ================================================================ */
+
+.channel-trace,
+.telemetry-instrument,
+.layout-card,
+.min-h-\[260px\] {
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* --- BRAKE ANALYSIS FOCUS --- */
+.workspace-focus-brakes .hairline-b:not(:has(span[style*="brake"])):not(:has(span[style*="Brake"])):not(:has(span[style*="Speed"])):not(:has(span[style*="speed"])):not(:has(span[style*="Yaw"])):not(:has(span[style*="yaw"])) {
+  opacity: 0.26 !important;
+  filter: grayscale(80%) !important;
+}
+.workspace-focus-brakes .min-h-\[260px\]:not(:has([title*="Brake"])) {
+  opacity: 0.24 !important;
+  filter: grayscale(50%) blur(0.1px) !important;
+  pointer-events: none;
+}
+
+/* --- ERS HYBRID FOCUS --- */
+.workspace-focus-ers .hairline-b:not(:has(span[style*="Energy"])):not(:has(span[style*="ers"])):not(:has(span[style*="Mgu"])):not(:has(span[style*="mgu"])):not(:has(span[style*="Speed"])):not(:has(span[style*="speed"])) {
+  opacity: 0.26 !important;
+  filter: grayscale(80%) !important;
+}
+.workspace-focus-ers .min-h-\[260px\]:not(:has([title*="ERS"])) {
+  opacity: 0.24 !important;
+  filter: grayscale(50%) blur(0.1px) !important;
+  pointer-events: none;
+}
+
+/* --- CHASSIS & SUSPENSION FOCUS --- */
+.workspace-focus-chassis .hairline-b:not(:has(span[style*="suspension"])):not(:has(span[style*="damper"])):not(:has(span[style*="pitch"])):not(:has(span[style*="roll"])):not(:has(span[style*="heave"])):not(:has(span[style*="ride"])) {
+  opacity: 0.26 !important;
+  filter: grayscale(80%) !important;
+}
+.workspace-focus-chassis .min-h-\[260px\]:not(:has([title*="Chassis"])) {
+  opacity: 0.24 !important;
+  filter: grayscale(50%) blur(0.1px) !important;
+  pointer-events: none;
+}
+
+/* --- TIRE THERMAL FOCUS --- */
+.workspace-focus-tires .hairline-b:not(:has(span[style*="temp"])):not(:has(span[style*="press"])):not(:has(span[style*="wear"])):not(:has(span[style*="tire"])):not(:has(span[style*="grip"])) {
+  opacity: 0.26 !important;
+  filter: grayscale(80%) !important;
+}
+.workspace-focus-tires .min-h-\[260px\]:not(:has([title*="Tire"])) {
+  opacity: 0.24 !important;
+  filter: grayscale(50%) blur(0.1px) !important;
+  pointer-events: none;
+}
+
+/* --- DRIVER INPUTS FOCUS --- */
+.workspace-focus-inputs .hairline-b:not(:has(span[style*="Throttle"])):not(:has(span[style*="throttle"])):not(:has(span[style*="Brake"])):not(:has(span[style*="brake"])):not(:has(span[style*="Steer"])):not(:has(span[style*="steer"])) {
+  opacity: 0.26 !important;
+  filter: grayscale(80%) !important;
+}
+.workspace-focus-inputs .min-h-\[260px\]:not(:has([title*="Inputs"])) {
+  opacity: 0.24 !important;
+  filter: grayscale(50%) blur(0.1px) !important;
+  pointer-events: none;
+}

@@ -47,6 +47,10 @@ interface TelemetryRuntimeState {
   
   // Focus Mode Actions
   setFocusMode: (mode: FocusMode) => void;
+  
+  // Detached Replay Frame State (for child windows)
+  detachedTelemetryFrame: any | null;
+  setDetachedTelemetryFrame: (frame: any | null) => void;
 }
 
 export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get) => ({
@@ -59,6 +63,7 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
   events: [],
   activeEvent: null,
   focusMode: "none",
+  detachedTelemetryFrame: null,
 
   setCursorTick: (tick) => set({ cursorTick: tick }),
   setActiveLap: (lap) => set({ activeLap: lap }),
@@ -75,18 +80,88 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
     // Central Orchestration Trigger (Contextual Linking)
     set({ activeEvent: event, cursorTick: Math.round(event.timestampSec * 60) });
     
-    // Automatically switch active workspace preset matching event category
+    // Automatically switch active workspace preset and focus mode matching event category
     if (event.category === "inputs") {
-      set({ activePreset: "coach", selectedInstrument: "inputs" });
+      set({ activePreset: "coach", selectedInstrument: "inputs", focusMode: "inputs" });
     } else if (event.category === "thermal") {
-      set({ activePreset: "gt3", selectedInstrument: "tires" });
+      set({ activePreset: "gt3", selectedInstrument: "tires", focusMode: "brakes" });
     } else if (event.category === "hybrid") {
-      set({ activePreset: "gtp", selectedInstrument: "ers" });
+      set({ activePreset: "gtp", selectedInstrument: "ers", focusMode: "ers" });
     } else if (event.category === "dynamics") {
-      set({ activePreset: "aero", selectedInstrument: "chassis" });
+      set({ activePreset: "aero", selectedInstrument: "chassis", focusMode: "chassis" });
     }
   },
   
   clearEvents: () => set({ events: [], activeEvent: null }),
   setFocusMode: (mode) => set({ focusMode: mode }),
+  setDetachedTelemetryFrame: (frame) => set({ detachedTelemetryFrame: frame }),
 }));
+
+// ─── Broadcast Sync Engine ───────────────────────────────────────────────────
+
+const syncBC = typeof window !== "undefined" ? new BroadcastChannel("pitwall-runtime-sync") : null;
+let isIncomingSync = false;
+
+if (syncBC) {
+  syncBC.onmessage = (event) => {
+    const { type, payload } = event.data;
+    if (type === "SYNC_STATE") {
+      isIncomingSync = true;
+      const state = useTelemetryRuntimeStore.getState();
+      const updates: Partial<TelemetryRuntimeState> = {};
+
+      if (payload.cursorTick !== undefined && payload.cursorTick !== state.cursorTick) {
+        updates.cursorTick = payload.cursorTick;
+      }
+      if (payload.activeLap !== undefined && payload.activeLap !== state.activeLap) {
+        updates.activeLap = payload.activeLap;
+      }
+      if (payload.activePreset !== undefined && payload.activePreset !== state.activePreset) {
+        updates.activePreset = payload.activePreset;
+      }
+      if (payload.selectedInstrument !== undefined && payload.selectedInstrument !== state.selectedInstrument) {
+        updates.selectedInstrument = payload.selectedInstrument;
+      }
+      if (payload.focusMode !== undefined && payload.focusMode !== state.focusMode) {
+        updates.focusMode = payload.focusMode;
+      }
+      if (payload.isPlaying !== undefined && payload.isPlaying !== state.isPlaying) {
+        updates.isPlaying = payload.isPlaying;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        useTelemetryRuntimeStore.setState(updates);
+      }
+      isIncomingSync = false;
+    } else if (type === "REPLAY_FRAME") {
+      useTelemetryRuntimeStore.setState({ detachedTelemetryFrame: payload });
+    }
+  };
+
+  // Subscribe to local store changes to broadcast updates
+  useTelemetryRuntimeStore.subscribe((state) => {
+    if (isIncomingSync) return;
+    
+    syncBC.postMessage({
+      type: "SYNC_STATE",
+      payload: {
+        cursorTick: state.cursorTick,
+        activeLap: state.activeLap,
+        activePreset: state.activePreset,
+        selectedInstrument: state.selectedInstrument,
+        focusMode: state.focusMode,
+        isPlaying: state.isPlaying,
+      },
+    });
+  });
+}
+
+// Global broadcast trigger function to sync active computed frames
+export function broadcastTelemetryFrame(frame: any) {
+  if (syncBC && !isIncomingSync) {
+    syncBC.postMessage({
+      type: "REPLAY_FRAME",
+      payload: frame,
+    });
+  }
+}

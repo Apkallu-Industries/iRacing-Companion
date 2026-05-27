@@ -56,6 +56,31 @@ export function TelemetryEventTimeline() {
     }
   };
 
+  const getClassificationBadge = (event: TelemetryEvent) => {
+    let text = "DIAGNOSTIC";
+    let color = "text-[#7A828C] border-[#7A828C]/30 bg-[#7A828C]/10";
+    
+    if (event.category === "thermal") {
+      text = "STABILITY";
+      color = "text-[#FF4D4D] border-[#FF4D4D]/30 bg-[#FF4D4D]/10";
+    } else if (event.category === "hybrid") {
+      text = "HYBRID CORE";
+      color = "text-[#8B5CF6] border-[#8B5CF6]/30 bg-[#8B5CF6]/10";
+    } else if (event.category === "inputs") {
+      text = "PERFORMANCE";
+      color = "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10";
+    } else if (event.category === "dynamics") {
+      text = "AERO PLATFORM";
+      color = "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/10";
+    }
+    
+    return (
+      <span className={`text-[7px] font-black tracking-widest px-1 py-0.5 border rounded-xs uppercase ${color}`}>
+        {text}
+      </span>
+    );
+  };
+
   const getSeverityStyles = (severity: TelemetryEvent["severity"]) => {
     switch (severity) {
       case "critical": return "border-l-2 border-l-[#FF4D4D] bg-[#FF4D4D]/5";
@@ -95,24 +120,38 @@ export function TelemetryEventTimeline() {
                     {event.label}
                   </span>
                 </div>
-                <span className="text-[8px] text-[#7A828C] font-bold tabular-nums">
-                  t = {event.timestampSec.toFixed(2)}s {event.cornerNumber ? `· T${event.cornerNumber}` : ""}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {getClassificationBadge(event)}
+                  <span className="text-[8px] text-[#7A828C] font-bold tabular-nums">
+                    t = {event.timestampSec.toFixed(2)}s {event.cornerNumber ? `· T${event.cornerNumber}` : ""}
+                  </span>
+                </div>
               </div>
               
               <p className="text-[8.5px] leading-relaxed text-[#7A828C] select-text">
                 {event.description}
               </p>
 
-              <div className="mt-1.5 pt-1 border-t border-[#1C2430]/40 flex flex-wrap gap-1">
-                {event.associatedChannels.map((ch) => (
-                  <span
-                    key={ch}
-                    className="text-[7.5px] px-1 py-0.5 bg-[#05070A] border border-[#1C2430] text-[#3B82F6] rounded-xs font-bold"
-                  >
-                    {ch}
-                  </span>
-                ))}
+              <div className="mt-1.5 pt-1 border-t border-[#1C2430]/40 flex items-center justify-between">
+                <div className="flex flex-wrap gap-1">
+                  {event.associatedChannels.map((ch) => (
+                    <span
+                      key={ch}
+                      className="text-[7.5px] px-1 py-0.5 bg-[#05070A] border border-[#1C2430] text-[#3B82F6] rounded-xs font-bold"
+                    >
+                      {ch}
+                    </span>
+                  ))}
+                </div>
+                <span className={`text-[7px] font-black uppercase tracking-widest px-1 py-0.5 border rounded-xs ${
+                  event.severity === "critical"
+                    ? "text-[#FF4D4D] border-[#FF4D4D]/20 bg-[#FF4D4D]/5"
+                    : event.severity === "warning"
+                      ? "text-[#FFB800] border-[#FFB800]/20 bg-[#FFB800]/5"
+                      : "text-[#3B82F6] border-[#3B82F6]/20 bg-[#3B82F6]/5"
+                }`}>
+                  {event.severity}
+                </span>
               </div>
             </div>
           );

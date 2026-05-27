@@ -260,8 +260,32 @@ function createWindow() {
   mainWindow.on("maximize", saveWindowState);
   mainWindow.on("unmaximize", saveWindowState);
 
-  // All external links → user's default browser
+  // Intercept window opens: allow native child windows for our own local pages (detached views),
+  // while routing external links to the default system browser.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (
+      url.startsWith(BASE_URL) ||
+      url.startsWith("http://localhost") ||
+      url.startsWith("http://127.0.0.1") ||
+      url.startsWith("https://iracing-companion.lovable.app")
+    ) {
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          width: 520,
+          height: 400,
+          backgroundColor: "#05070A",
+          title: "Pit Wall Instrument Window",
+          autoHideMenuBar: true,
+          frame: true,
+          titleBarStyle: "default",
+          webPreferences: {
+            contextIsolation: true,
+            nodeIntegration: false,
+          },
+        },
+      };
+    }
     shell.openExternal(url);
     return { action: "deny" };
   });

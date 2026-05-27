@@ -110,10 +110,118 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
         ],
         series,
         hooks: {
+          draw: [
+            (u) => {
+              const ctx = u.ctx;
+              const sessionTime = parsed.channels["SessionTime"]?.data;
+              if (!sessionTime) return;
+
+              const refLapObj = refLap != null ? parsed.laps.find((l) => l.lap === refLap) : null;
+              const fromIdx = refLapObj ? refLapObj.startTick : 0;
+              const toIdx = refLapObj ? refLapObj.endTick : sessionTime.length - 1;
+
+              const valData = parsed.channels[name]?.data;
+              if (!valData) return;
+
+              let shadeStart: number | null = null;
+              let shadeType: "lockup" | "threshold" | "wheelspin" | "bottoming" | "hybrid_deploy" | "hybrid_regen" | null = null;
+
+              const getShadeColorAndLabel = (type: typeof shadeType) => {
+                switch (type) {
+                  case "lockup":
+                    return { color: "rgba(255, 77, 77, 0.2)", border: "#FF4D4D", label: "LOCKUP DETECTED" };
+                  case "threshold":
+                    return { color: "rgba(255, 184, 0, 0.12)", border: "#FFB800", label: "THRESHOLD ZONE" };
+                  case "wheelspin":
+                    return { color: "rgba(245, 158, 11, 0.15)", border: "#F59E0B", label: "WHEELSPIN REGION" };
+                  case "bottoming":
+                    return { color: "rgba(139, 92, 246, 0.15)", border: "#8B5CF6", label: "CHASSIS REB COMPRESSION" };
+                  case "hybrid_deploy":
+                    return { color: "rgba(139, 92, 246, 0.08)", border: "#8B5CF6", label: "MGU-K DEPLOY" };
+                  case "hybrid_regen":
+                    return { color: "rgba(0, 209, 127, 0.08)", border: "#00D17F", label: "MGU-K REGEN" };
+                  default:
+                    return { color: "rgba(0,0,0,0)", border: "transparent", label: "" };
+                }
+              };
+
+              const drawZone = (startIdx: number, endIdx: number, type: typeof shadeType) => {
+                const startX = Math.round(u.valToPos(sessionTime[fromIdx + startIdx] - sessionTime[fromIdx], "x"));
+                const endX = Math.round(u.valToPos(sessionTime[fromIdx + endIdx] - sessionTime[fromIdx], "x"));
+                const { color, border, label } = getShadeColorAndLabel(type);
+
+                // Paint background rectangle in the chart plot bounds
+                ctx.fillStyle = color;
+                ctx.fillRect(startX, u.bbox.top, endX - startX, u.bbox.height);
+
+                // Surgical vertical tick boundaries
+                ctx.strokeStyle = border;
+                ctx.lineWidth = 1.25;
+                ctx.beginPath();
+                ctx.moveTo(startX, u.bbox.top);
+                ctx.lineTo(startX, u.bbox.top + u.bbox.height);
+                ctx.moveTo(endX, u.bbox.top);
+                ctx.lineTo(endX, u.bbox.top + u.bbox.height);
+                ctx.stroke();
+
+                // Clean monospace label overlay
+                ctx.fillStyle = border;
+                ctx.font = "bold 8px IBM Plex Sans, monospace";
+                ctx.fillText(label, startX + 4, u.bbox.top + 10);
+              };
+
+              for (let i = 0; i < xs.length; i++) {
+                const tick = fromIdx + i;
+                let activeShade: typeof shadeType = null;
+
+                if (name === "Brake" || name.toLowerCase().includes("brakelinepress")) {
+                  const brakeVal = parsed.channels["Brake"]?.data[tick] ?? 0;
+                  const steering = parsed.channels["SteeringWheelAngle"]?.data[tick] ?? 0;
+                  if (brakeVal > 0.82 && Math.abs(steering * 57.3) > 40) {
+                    activeShade = "lockup";
+                  } else if (brakeVal > 0.80) {
+                    activeShade = "threshold";
+                  }
+                } else if (name === "Speed" || name.toLowerCase().includes("wheel") || name.toLowerCase().includes("speed")) {
+                  const lfSpeed = parsed.channels["LFspeed"]?.data[tick] ?? 0;
+                  const lrSpeed = parsed.channels["LRspeed"]?.data[tick] ?? 0;
+                  const throttle = parsed.channels["Throttle"]?.data[tick] ?? 0;
+                  if (throttle > 0.80 && Math.abs(lfSpeed - lrSpeed) > (lfSpeed * 0.12)) {
+                    activeShade = "wheelspin";
+                  }
+                } else if (name.toLowerCase().includes("ers") || name.toLowerCase().includes("mgu") || name === "EnergyStorePct" || name === "EnergyStoreTemp") {
+                  const deploy = parsed.channels["MgukDeploykW"]?.data[tick] ?? 0;
+                  const regen = parsed.channels["MgukRegenkW"]?.data[tick] ?? 0;
+                  if (deploy > 105) {
+                    activeShade = "hybrid_deploy";
+                  } else if (regen > 105) {
+                    activeShade = "hybrid_regen";
+                  }
+                } else if (name.toLowerCase().includes("ride") || name.toLowerCase().includes("damper") || name === "pitch" || name.toLowerCase().includes("accel")) {
+                  const pitchVal = parsed.channels["pitch"]?.data[tick] ?? 0;
+                  if (pitchVal < -0.018) {
+                    activeShade = "bottoming";
+                  }
+                }
+
+                if (activeShade !== shadeType) {
+                  if (shadeStart !== null && shadeType) {
+                    drawZone(shadeStart, i - 1, shadeType);
+                  }
+                  shadeStart = activeShade ? i : null;
+                  shadeType = activeShade;
+                }
+              }
+
+              if (shadeStart !== null && shadeType) {
+                drawZone(shadeStart, xs.length - 1, shadeType);
+              }
+            },
+          ],
           setCursor: [
             (u) => {
               const idx = u.cursor.idx;
-              if (idx != null) setCursorTick(from + idx);
+              if (idx != null) setCursorTick(fromIdx + idx);
             },
           ],
         },

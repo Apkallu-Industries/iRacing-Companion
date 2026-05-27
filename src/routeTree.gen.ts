@@ -24,6 +24,7 @@ import { Route as SessionsIndexRouteImport } from './routes/sessions.index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as SessionsIdRouteImport } from './routes/sessions.$id'
 import { Route as LabLapfileRouteImport } from './routes/lab.lapfile'
+import { Route as DetachedInstrumentRouteImport } from './routes/detached.$instrument'
 import { Route as ApiPublicOgShareTokenRouteImport } from './routes/api/public/og/share.$token'
 
 const TeamRoute = TeamRouteImport.update({
@@ -101,6 +102,11 @@ const LabLapfileRoute = LabLapfileRouteImport.update({
   path: '/lab/lapfile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DetachedInstrumentRoute = DetachedInstrumentRouteImport.update({
+  id: '/detached/$instrument',
+  path: '/detached/$instrument',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicOgShareTokenRoute = ApiPublicOgShareTokenRouteImport.update({
   id: '/api/public/og/share/$token',
   path: '/api/public/og/share/$token',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
+  '/detached/$instrument': typeof DetachedInstrumentRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/share/$token': typeof ShareTokenRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
+  '/detached/$instrument': typeof DetachedInstrumentRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/share/$token': typeof ShareTokenRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
+  '/detached/$instrument': typeof DetachedInstrumentRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/share/$token': typeof ShareTokenRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/team'
+    | '/detached/$instrument'
     | '/lab/lapfile'
     | '/sessions/$id'
     | '/share/$token'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/team'
+    | '/detached/$instrument'
     | '/lab/lapfile'
     | '/sessions/$id'
     | '/share/$token'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/team'
+    | '/detached/$instrument'
     | '/lab/lapfile'
     | '/sessions/$id'
     | '/share/$token'
@@ -231,6 +243,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TeamRoute: typeof TeamRoute
+  DetachedInstrumentRoute: typeof DetachedInstrumentRoute
   LabLapfileRoute: typeof LabLapfileRoute
   SessionsIdRoute: typeof SessionsIdRoute
   ShareTokenRoute: typeof ShareTokenRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabLapfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/detached/$instrument': {
+      id: '/detached/$instrument'
+      path: '/detached/$instrument'
+      fullPath: '/detached/$instrument'
+      preLoaderRoute: typeof DetachedInstrumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/og/share/$token': {
       id: '/api/public/og/share/$token'
       path: '/api/public/og/share/$token'
@@ -367,6 +387,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TeamRoute: TeamRoute,
+  DetachedInstrumentRoute: DetachedInstrumentRoute,
   LabLapfileRoute: LabLapfileRoute,
   SessionsIdRoute: SessionsIdRoute,
   ShareTokenRoute: ShareTokenRoute,
