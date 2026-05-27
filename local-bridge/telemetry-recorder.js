@@ -37,6 +37,7 @@ class TelemetryRecorder {
       await this.client.connect();
       this.db = this.client.db("iracing_companion");
       await this.ensureIndexes();
+      await this.seedDefaultProfiles();
       console.log("[recorder] Connected to MongoDB");
       return true;
     } catch (e) {
@@ -51,8 +52,116 @@ class TelemetryRecorder {
       await this.db.collection("telemetry_samples").createIndex({ session_id: 1, timestamp: 1 });
       await this.db.collection("telemetry_samples").createIndex({ session_id: 1, lap_number: 1 });
       await this.db.collection("laps").createIndex({ session_id: 1, lap_number: 1 });
+      
+      // Phase 10 collections
+      await this.db.collection("scanner_events").createIndex({ session_id: 1, timestamp: -1 });
+      await this.db.collection("scanner_events").createIndex({ track: 1, car: 1, category: 1, severity: 1, cornerNumber: 1 });
+      await this.db.collection("setup_changes").createIndex({ session_id: 1, timestamp: -1 });
+      await this.db.collection("session_notes").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
+      await this.db.collection("team_profiles").createIndex({ id: 1 }, { unique: true });
+
+      // Phase 11 collections
+      await this.db.collection("engineering_notes").createIndex({ session_id: 1, timestamp: -1 });
+      await this.db.collection("notebook_bookmarks").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
+      await this.db.collection("setup_snapshots").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
     } catch (e) {
       console.warn(`[recorder] Index creation failed: ${e.message}`);
+    }
+  }
+
+  async seedDefaultProfiles() {
+    try {
+      const count = await this.db.collection("team_profiles").countDocuments();
+      if (count > 0) return;
+
+      const defaultProfiles = [
+        {
+          id: "gt3",
+          label: "GT3 Category Profile",
+          subClass: "GT3 Grand Touring / Sprint-Enduro Class",
+          minOptimalTempC: 75,
+          maxOptimalTempC: 95,
+          criticalPitchLimitRad: -0.015,
+          wheelspinMismatchLimitPct: 0.12,
+          primaryFocus: "Tyre core carcass thermal growth, trail-brake release profiles, and mechanical bias migration.",
+          scannerSensitivities: {
+            brakeThreshold: 0.82,
+            durationSec: 0.15
+          },
+          heuristics: {
+            oversteerAdvice: "Soften rear anti-roll bar or raise front packer high-speed compression damping.",
+            understeerAdvice: "Shift initial brake bias forward, soften front spring rates, or lower front ride height.",
+            aeroAdvice: "Raise packers high-speed compression compression damping to slow deceleration pitch rake."
+          },
+          physicsModels: {
+            tireThermalGrowthRatio: 1.15,
+            aeroVacuumSensitivity: 0.45,
+            brakeMigrationRatio: 0.62,
+            ersWeightingFactor: 0.00
+          },
+          aiBriefingTone: "restrained, industrial, analytical, using high-fidelity motorsport dynamics terminology",
+          trackSpecificLogic: {}
+        },
+        {
+          id: "gtp",
+          label: "GTP/LMDh Hybrid Profile",
+          subClass: "Le Mans Daytona Hybrid / Prototype Class",
+          minOptimalTempC: 85,
+          maxOptimalTempC: 110,
+          criticalPitchLimitRad: -0.009,
+          wheelspinMismatchLimitPct: 0.08,
+          primaryFocus: "Hybrid battery SoC decay curves, underbody diffuser vacuum flow seal compression, and straightaway kW deploy sweeps.",
+          scannerSensitivities: {
+            brakeThreshold: 0.78,
+            durationSec: 0.10
+          },
+          heuristics: {
+            oversteerAdvice: "Soften rear rebound dampers to anchor the diffuser downforce seal under driven exit torque.",
+            understeerAdvice: "Recalibrate MGU-K exit harvest parameters to mitigate tire braking load transfer.",
+            aeroAdvice: "Increase packer mechanical packer stops by +1.5mm to restrict high-speed splitter Grounding."
+          },
+          physicsModels: {
+            tireThermalGrowthRatio: 1.35,
+            aeroVacuumSensitivity: 0.92,
+            brakeMigrationRatio: 0.78,
+            ersWeightingFactor: 0.88
+          },
+          aiBriefingTone: "highly technical, hybrid-energy focused, referencing state-of-charge decay curves and diffuser vacuum seals",
+          trackSpecificLogic: {}
+        },
+        {
+          id: "lemans",
+          label: "Low-Drag Le Mans Profile",
+          subClass: "Low-Downforce straightaway efficiency setting",
+          minOptimalTempC: 70,
+          maxOptimalTempC: 90,
+          criticalPitchLimitRad: -0.018,
+          wheelspinMismatchLimitPct: 0.14,
+          primaryFocus: "Aerodynamic lift-and-coast fuel burn efficiency, straightaway top-speed decay, and drag coefficient profiles.",
+          scannerSensitivities: {
+            brakeThreshold: 0.85,
+            durationSec: 0.20
+          },
+          heuristics: {
+            oversteerAdvice: "Slide wing angle to maximize rear horizontal flow drag profile recovery.",
+            understeerAdvice: "Raise mechanical rake by raising rear ride heights +1.0mm.",
+            aeroAdvice: "Optimize splitter endplates and adjust wing trim levels to preserve top-speed vector coefficients."
+          },
+          physicsModels: {
+            tireThermalGrowthRatio: 1.05,
+            aeroVacuumSensitivity: 0.35,
+            brakeMigrationRatio: 0.55,
+            ersWeightingFactor: 0.12
+          },
+          aiBriefingTone: "aerodynamically hyper-focused, analyzing drag coefficient profiles and lift-and-coast fuel efficiency",
+          trackSpecificLogic: {}
+        }
+      ];
+
+      await this.db.collection("team_profiles").insertMany(defaultProfiles);
+      console.log("[recorder] Seeded default team profiles into MongoDB");
+    } catch (e) {
+      console.warn(`[recorder] Seeding default profiles failed: ${e.message}`);
     }
   }
 

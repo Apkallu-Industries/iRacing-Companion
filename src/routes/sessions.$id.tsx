@@ -19,6 +19,7 @@ import type { IbtParsed } from "@/lib/ibt/types";
 import { WORKSPACE_PRESETS, TELEMETRY_INSTRUMENTS } from "@/components/instruments/registry";
 import { useTelemetryRuntimeStore, broadcastTelemetryFrame } from "@/lib/telemetryRuntimeStore";
 import { scanTelemetrySession } from "@/lib/telemetry/scanners";
+import { saveEvents } from "@/lib/session-intelligence/mongoSessionStore";
 
 import { TelemetryEventTimeline } from "@/components/workbench/TelemetryEventTimeline";
 import { ChannelBrowser } from "@/components/workbench/ChannelBrowser";
@@ -188,6 +189,45 @@ function WorkbenchPage() {
       const scanned = scanTelemetrySession(parsed);
       if (scanned.length > 0) {
         scanned.forEach((ev) => addEvent(ev));
+        
+        try {
+          const track = parsed.meta.trackDisplayName || parsed.meta.trackName || "unknown";
+          const car = parsed.meta.carName || "unknown";
+          const recordedAt = parsed.meta.recordedAt ? new Date(parsed.meta.recordedAt) : new Date();
+
+          const dbEvents = scanned.map(ev => {
+            const classificationMap: Record<string, string> = {
+              thermal: "STABILITY",
+              inputs: "PERFORMANCE",
+              dynamics: "AERO PLATFORM",
+              hybrid: "HYBRID CORE"
+            };
+            
+            const tick = Math.round(ev.timestampSec * 60);
+            const matchedLap = parsed.laps.find(l => tick >= l.startTick && tick <= l.endTick);
+            const lapNumber = matchedLap ? matchedLap.lap : 1;
+            
+            return {
+              timestamp: new Date(recordedAt.getTime() + ev.timestampSec * 1000).toISOString(),
+              track,
+              car,
+              category: ev.category,
+              classification: classificationMap[ev.category] || "STABILITY",
+              severity: ev.severity,
+              label: ev.label,
+              description: ev.description,
+              cornerNumber: ev.cornerNumber,
+              lapNumber,
+              metadata: ev.metadata ? { confidence: ev.metadata.confidence } : undefined,
+            };
+          });
+
+          saveEvents(dbEvents).catch(err => {
+            console.warn("Failed to sync scanned events to MongoDB:", err);
+          });
+        } catch (e) {
+          console.warn("Error preparing scanner events for sync:", e);
+        }
       } else {
         // High-fidelity fallback anomalies
         addEvent({

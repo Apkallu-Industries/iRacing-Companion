@@ -68,6 +68,31 @@ export interface EventQueryParams {
   category?: string;
   severity?: "critical" | "warning" | "info";
   corner?: number;
+  q?: string;
+}
+
+export interface StoredSetupChange {
+  _id?: string;
+  session_id?: string;
+  timestamp?: string;
+  lap_number: number;
+  change_type: string;
+  parameter: string;
+  delta: string;
+  consequences: string[];
+  notes: string;
+}
+
+export interface StoredSessionNote {
+  _id?: string;
+  session_id?: string;
+  timestamp?: string;
+  lap_number?: number;
+  corner_number?: number;
+  engineer_name: string;
+  notes: string;
+  linked_incident_id?: string;
+  replay_bookmark_sec?: number;
 }
 
 // ─── Core fetch utilities ─────────────────────────────────────────────────────
@@ -77,6 +102,21 @@ async function bridgeGet<T>(path: string): Promise<T | null> {
     const res = await fetch(`${BRIDGE_BASE}${path}`, {
       signal: AbortSignal.timeout(5000),
       cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return await res.json() as T;
+  } catch {
+    return null;
+  }
+}
+
+async function bridgePost<T>(path: string, body: any): Promise<T | null> {
+  try {
+    const res = await fetch(`${BRIDGE_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     return await res.json() as T;
@@ -114,21 +154,82 @@ export async function fetchLaps(sessionId: string): Promise<StoredLap[]> {
 }
 
 /**
- * Query scanner events across all sessions with filters.
- * This is the cross-session intelligence query.
+ * Query scanner events across all sessions with filters (TQL supported).
  */
 export async function fetchEvents(params: EventQueryParams = {}): Promise<StoredEvent[]> {
   const qs = new URLSearchParams();
-  if (params.track)    qs.set("track",    params.track);
-  if (params.car)      qs.set("car",      params.car);
-  if (params.category) qs.set("category", params.category);
-  if (params.severity) qs.set("severity", params.severity);
-  if (params.corner !== undefined) qs.set("corner", String(params.corner));
+  if (params.q) {
+    qs.set("q", params.q);
+  } else {
+    if (params.track)    qs.set("track",    params.track);
+    if (params.car)      qs.set("car",      params.car);
+    if (params.category) qs.set("category", params.category);
+    if (params.severity) qs.set("severity", params.severity);
+    if (params.corner !== undefined) qs.set("corner", String(params.corner));
+  }
 
   const result = await bridgeGet<{ events: StoredEvent[] }>(
     `/api/events${qs.toString() ? `?${qs}` : ""}`
   );
   return result?.events ?? [];
+}
+
+/**
+ * Persists scanned events to MongoDB scanner_events.
+ */
+export async function saveEvents(events: Omit<StoredEvent, "_id">[]): Promise<boolean> {
+  const result = await bridgePost<{ success: boolean }>("/api/events", { events });
+  return !!result?.success;
+}
+
+/**
+ * Fetch historical setup changes.
+ */
+export async function fetchSetupChanges(sessionId?: string): Promise<StoredSetupChange[]> {
+  const path = sessionId ? `/api/setup-changes?sessionId=${encodeURIComponent(sessionId)}` : "/api/setup-changes";
+  const result = await bridgeGet<{ changes: StoredSetupChange[] }>(path);
+  return result?.changes ?? [];
+}
+
+/**
+ * Persist a setup adjustment with consequences.
+ */
+export async function saveSetupChange(change: StoredSetupChange): Promise<boolean> {
+  const result = await bridgePost<{ success: boolean }>("/api/setup-changes", change);
+  return !!result?.success;
+}
+
+/**
+ * Fetch team profiles from MongoDB.
+ */
+export async function fetchTeamProfiles(): Promise<any[]> {
+  const result = await bridgeGet<{ profiles: any[] }>("/api/team-profiles");
+  return result?.profiles ?? [];
+}
+
+/**
+ * Persist a custom or updated team profile.
+ */
+export async function saveTeamProfile(profile: any): Promise<boolean> {
+  const result = await bridgePost<{ success: boolean }>("/api/team-profiles", profile);
+  return !!result?.success;
+}
+
+/**
+ * Fetch session notes.
+ */
+export async function fetchSessionNotes(sessionId?: string): Promise<StoredSessionNote[]> {
+  const path = sessionId ? `/api/session-notes?sessionId=${encodeURIComponent(sessionId)}` : "/api/session-notes";
+  const result = await bridgeGet<{ notes: StoredSessionNote[] }>(path);
+  return result?.notes ?? [];
+}
+
+/**
+ * Log a persistent engineering session note or bookmark.
+ */
+export async function saveSessionNote(note: StoredSessionNote): Promise<boolean> {
+  const result = await bridgePost<{ success: boolean }>("/api/session-notes", note);
+  return !!result?.success;
 }
 
 // ─── React hooks ─────────────────────────────────────────────────────────────

@@ -12,17 +12,24 @@
  */
 
 import { useState, useMemo } from "react";
+import { IntelligenceDashboard } from "./IntelligenceDashboard";
 import {
   useSessions,
   useEventQuery,
   useMongoStatus,
   formatSessionLabel,
   formatLapTime,
+  fetchLaps,
+  fetchSetupChanges,
+  saveSetupChange,
+  fetchSessionNotes,
+  saveSessionNote,
   type StoredSession,
   type StoredLap,
   type EventQueryParams,
+  type StoredSetupChange,
+  type StoredSessionNote,
 } from "@/lib/session-intelligence/mongoSessionStore";
-import { fetchLaps } from "@/lib/session-intelligence/mongoSessionStore";
 import {
   Database,
   Search,
@@ -205,9 +212,13 @@ export function HistoricalQueryPanel() {
 
   const [selectedSession, setSelectedSession] = useState<StoredSession | null>(null);
   const [showLaps, setShowLaps] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sessions" | "events">("sessions");
+  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence">("sessions");
 
   // Event query state
+  const [queryMode,     setQueryMode]     = useState<"structured" | "tql">("tql");
+  const [tqlQuery,      setTqlQuery]      = useState(
+    "find:\n  classification=STABILITY\n  severity>=warning"
+  );
   const [queryTrack,    setQueryTrack]    = useState("");
   const [queryCar,      setQueryCar]      = useState("");
   const [queryCategory, setQueryCategory] = useState<CategoryId | "">("");
@@ -215,13 +226,18 @@ export function HistoricalQueryPanel() {
   const [queryCorner,   setQueryCorner]   = useState("");
   const [hasQueried,    setHasQueried]    = useState(false);
 
-  const eventParams = useMemo<EventQueryParams>(() => ({
-    track:    queryTrack    || undefined,
-    car:      queryCar      || undefined,
-    category: queryCategory || undefined,
-    severity: (querySeverity as EventQueryParams["severity"]) || undefined,
-    corner:   queryCorner ? parseInt(queryCorner, 10) : undefined,
-  }), [queryTrack, queryCar, queryCategory, querySeverity, queryCorner]);
+  const eventParams = useMemo<EventQueryParams>(() => {
+    if (queryMode === "tql") {
+      return { q: tqlQuery };
+    }
+    return {
+      track:    queryTrack    || undefined,
+      car:      queryCar      || undefined,
+      category: queryCategory || undefined,
+      severity: (querySeverity as EventQueryParams["severity"]) || undefined,
+      corner:   queryCorner ? parseInt(queryCorner, 10) : undefined,
+    };
+  }, [queryMode, tqlQuery, queryTrack, queryCar, queryCategory, querySeverity, queryCorner]);
 
   const { events, loading: eventsLoading, query: runQuery } = useEventQuery({});
 
@@ -295,7 +311,7 @@ export function HistoricalQueryPanel() {
 
       {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="flex shrink-0" style={{ borderBottom: "1px solid #1C2430" }}>
-        {(["sessions", "events"] as const).map((tab) => (
+        {(["sessions", "events", "intelligence"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -345,11 +361,12 @@ export function HistoricalQueryPanel() {
                         onClick={() => setShowLaps((p) => !p)}
                       >
                         <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">
-                          LAP HISTORY
+                          LAP HISTORY & MEMORY STACK
                         </span>
                         <ChevronDown className="h-3 w-3 text-[#7A828C]" />
                       </div>
                       <LapTable sessionId={session._id} />
+                      <SessionMemorySection sessionId={session._id} />
                     </div>
                   )}
                 </div>
@@ -362,59 +379,95 @@ export function HistoricalQueryPanel() {
       {/* ── Events Tab ─────────────────────────────────────────────── */}
       {activeTab === "events" && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          {/* Query Mode Switcher */}
+          <div className="flex hairline-b bg-[#0B0F14]" style={{ borderBottom: "1px solid #1C2430" }}>
+            <button
+              onClick={() => setQueryMode("tql")}
+              className={`flex-1 py-1 text-[7.5px] font-bold uppercase tracking-wider transition-all ${
+                queryMode === "tql" ? "text-[#3B82F6] bg-[#05070A]" : "text-[#7A828C]"
+              }`}
+            >
+              TQL Terminal
+            </button>
+            <button
+              onClick={() => setQueryMode("structured")}
+              className={`flex-1 py-1 text-[7.5px] font-bold uppercase tracking-wider transition-all ${
+                queryMode === "structured" ? "text-[#3B82F6] bg-[#05070A]" : "text-[#7A828C]"
+              }`}
+            >
+              Structured Filters
+            </button>
+          </div>
+
           {/* Filter bar */}
           <div
             className="p-2 flex flex-col gap-1.5 shrink-0"
             style={{ borderBottom: "1px solid #1C2430", backgroundColor: "#080C10" }}
           >
-            <div className="grid grid-cols-2 gap-1.5">
-              <input
-                id="hist-filter-track"
-                style={inputStyle}
-                placeholder="TRACK (e.g. Spa)"
-                value={queryTrack}
-                onChange={(e) => setQueryTrack(e.target.value)}
+            {queryMode === "tql" ? (
+              <textarea
+                style={{
+                  ...inputStyle,
+                  height: "56px",
+                  resize: "none",
+                  whiteSpace: "pre",
+                }}
+                placeholder="find:&#10;  classification=STABILITY&#10;  severity>=warning"
+                value={tqlQuery}
+                onChange={(e) => setTqlQuery(e.target.value)}
               />
-              <input
-                id="hist-filter-car"
-                style={inputStyle}
-                placeholder="CAR (e.g. BMW M4 GT3)"
-                value={queryCar}
-                onChange={(e) => setQueryCar(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              <select
-                id="hist-filter-category"
-                style={inputStyle}
-                value={queryCategory}
-                onChange={(e) => setQueryCategory(e.target.value as CategoryId | "")}
-              >
-                <option value="">ALL CATEGORIES</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
-              <select
-                id="hist-filter-severity"
-                style={inputStyle}
-                value={querySeverity}
-                onChange={(e) => setQuerySeverity(e.target.value as typeof querySeverity)}
-              >
-                <option value="">ALL SEVERITY</option>
-                <option value="critical">CRITICAL</option>
-                <option value="warning">WARNING</option>
-                <option value="info">INFO</option>
-              </select>
-              <input
-                id="hist-filter-corner"
-                style={inputStyle}
-                placeholder="CORNER #"
-                value={queryCorner}
-                onChange={(e) => setQueryCorner(e.target.value)}
-                type="number"
-              />
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <input
+                    id="hist-filter-track"
+                    style={inputStyle}
+                    placeholder="TRACK (e.g. Spa)"
+                    value={queryTrack}
+                    onChange={(e) => setQueryTrack(e.target.value)}
+                  />
+                  <input
+                    id="hist-filter-car"
+                    style={inputStyle}
+                    placeholder="CAR (e.g. BMW M4 GT3)"
+                    value={queryCar}
+                    onChange={(e) => setQueryCar(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <select
+                    id="hist-filter-category"
+                    style={inputStyle}
+                    value={queryCategory}
+                    onChange={(e) => setQueryCategory(e.target.value as CategoryId | "")}
+                  >
+                    <option value="">ALL CATEGORIES</option>
+                    {CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    id="hist-filter-severity"
+                    style={inputStyle}
+                    value={querySeverity}
+                    onChange={(e) => setQuerySeverity(e.target.value as typeof querySeverity)}
+                  >
+                    <option value="">ALL SEVERITY</option>
+                    <option value="critical">CRITICAL</option>
+                    <option value="warning">WARNING</option>
+                    <option value="info">INFO</option>
+                  </select>
+                  <input
+                    id="hist-filter-corner"
+                    style={inputStyle}
+                    placeholder="CORNER #"
+                    value={queryCorner}
+                    onChange={(e) => setQueryCorner(e.target.value)}
+                    type="number"
+                  />
+                </div>
+              </>
+            )}
             <button
               id="hist-run-query"
               onClick={handleRunQuery}
@@ -430,7 +483,7 @@ export function HistoricalQueryPanel() {
           <div className="flex-1 overflow-y-auto">
             {!hasQueried ? (
               <div className="p-4 text-center text-[8.5px] text-[#3D4751]">
-                Set filters above and run a query to search across all recorded sessions.
+                Set query parameters above and trigger index matching.
               </div>
             ) : eventsLoading ? (
               <div className="p-3 text-[8px] text-[#7A828C] animate-pulse">QUERYING…</div>
@@ -487,6 +540,192 @@ export function HistoricalQueryPanel() {
           </div>
         </div>
       )}
+
+      {/* ── Intelligence Tab ───────────────────────────────────────── */}
+      {activeTab === "intelligence" && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#07090E]">
+          <IntelligenceDashboard
+            sessionId={selectedSession?._id}
+            carClass={selectedSession?.car}
+            trackName={selectedSession?.track}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Session Notes & Setup Changes Component ──────────────────────────────────────────
+
+function SessionMemorySection({ sessionId }: { sessionId: string }) {
+  const [notes, setNotes] = useState<StoredSessionNote[]>([]);
+  const [changes, setChanges] = useState<StoredSetupChange[]>([]);
+  
+  const [noteText, setNoteText] = useState("");
+  const [changeText, setChangeText] = useState("");
+  const [lapNum, setLapNum] = useState("");
+
+  const [loading, setLoading] = useState(true);
+
+  const loadData = async () => {
+    try {
+      const [n, c] = await Promise.all([
+        fetchSessionNotes(sessionId),
+        fetchSetupChanges(sessionId),
+      ]);
+      setNotes(n);
+      setChanges(c);
+    } catch (e) {
+      console.warn("Failed to load session memory:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [sessionId]);
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteText.trim()) return;
+    const ok = await saveSessionNote({
+      session_id: sessionId,
+      notes: noteText,
+      lap_number: lapNum ? parseInt(lapNum, 10) : undefined,
+      engineer_name: "Lead Engineer",
+    });
+    if (ok) {
+      setNoteText("");
+      loadData();
+    }
+  };
+
+  const handleAddChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeText.trim()) return;
+    const ok = await saveSetupChange({
+      session_id: sessionId,
+      lap_number: lapNum ? parseInt(lapNum, 10) : 0,
+      change_type: "general",
+      parameter: changeText,
+      delta: "",
+      consequences: [],
+      notes: "",
+    });
+    if (ok) {
+      setChangeText("");
+      loadData();
+    }
+  };
+
+  if (loading) return <div className="p-3 text-[8px] text-[#7A828C] font-mono">LOADING MEMORY STACK…</div>;
+
+  return (
+    <div className="grid grid-cols-2 gap-3 p-3 font-mono border-t border-[#1C2430] bg-[#05070A]">
+      {/* Team Notes */}
+      <div className="flex flex-col gap-2">
+        <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">TEAM NOTES</span>
+        <form onSubmit={handleAddNote} className="flex gap-1.5">
+          <input
+            style={{
+              backgroundColor: "#080C10",
+              border: "1px solid #1C2430",
+              color: "white",
+              fontSize: "8.5px",
+              padding: "4px 6px",
+              outline: "none",
+              flex: 1,
+            }}
+            placeholder="Type engineering note..."
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+          />
+          <input
+            style={{
+              backgroundColor: "#080C10",
+              border: "1px solid #1C2430",
+              color: "white",
+              fontSize: "8.5px",
+              padding: "4px 6px",
+              outline: "none",
+              width: "32px",
+              textAlign: "center",
+            }}
+            placeholder="L#"
+            value={lapNum}
+            onChange={(e) => setLapNum(e.target.value)}
+            type="number"
+          />
+          <button
+            type="submit"
+            className="px-2 bg-[#1C2430] border border-[#263241] text-[8px] font-bold text-[#E2E4E8] rounded-xs uppercase tracking-wider hover:opacity-85"
+          >
+            ADD
+          </button>
+        </form>
+        <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto mt-1">
+          {notes.length === 0 ? (
+            <span className="text-[8px] text-[#3D4751]">NO NOTES FOR THIS STINT</span>
+          ) : (
+            notes.map((note) => (
+              <div key={note._id} className="p-1.5 bg-[#080C10] border border-[#0D1117] rounded-xs flex flex-col gap-0.5">
+                <div className="flex items-center justify-between text-[7px] text-[#7A828C]">
+                  <span>{note.engineer_name}</span>
+                  {note.lap_number !== undefined && (
+                    <span className="text-[#3B82F6]">L{note.lap_number}</span>
+                  )}
+                </div>
+                <p className="text-[8px] text-white leading-relaxed">{note.notes}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Setup Changes */}
+      <div className="flex flex-col gap-2">
+        <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">SETUP GRAPH ADJUSTMENTS</span>
+        <form onSubmit={handleAddChange} className="flex gap-1.5">
+          <input
+            style={{
+              backgroundColor: "#080C10",
+              border: "1px solid #1C2430",
+              color: "white",
+              fontSize: "8.5px",
+              padding: "4px 6px",
+              outline: "none",
+              flex: 1,
+            }}
+            placeholder="e.g. +2 rear rebound"
+            value={changeText}
+            onChange={(e) => setChangeText(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="px-2 bg-[#1C2430] border border-[#263241] text-[8px] font-bold text-[#E2E4E8] rounded-xs uppercase tracking-wider hover:opacity-85"
+          >
+            LOG
+          </button>
+        </form>
+        <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto mt-1">
+          {changes.length === 0 ? (
+            <span className="text-[8px] text-[#3D4751]">NO SETUP CHANGES RECORDED</span>
+          ) : (
+            changes.map((change) => (
+              <div key={change._id} className="p-1.5 bg-[#080C10] border border-[#0D1117] rounded-xs flex flex-col gap-0.5">
+                <div className="flex items-center justify-between text-[7px] text-[#7A828C]">
+                  <span className="text-[#00D17F] font-bold">SETUP ADJUSTMENT</span>
+                  {change.lap_number !== undefined && (
+                    <span className="text-[#3B82F6]">L{change.lap_number}</span>
+                  )}
+                </div>
+                <p className="text-[8px] text-white">{change.parameter}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
