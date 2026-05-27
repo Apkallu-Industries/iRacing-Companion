@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/episodes.schema.json",
+  "title": "EngineeringEpisode",
+  "type": "object",
+  "required": [
+    "episodeId",
+    "title",
+    "startTime",
+    "isActive",
+    "precursorEvents",
+    "triggerConditions",
+    "progressionStages",
+    "mitigationAdvised",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "episodeId": {
+      "type": "string",
+      "pattern": "^eps_[a-f0-9]+$",
+      "description": "Unique episode identifier, prefixed with 'eps_'"
+    },
+    "title": {
+      "type": "string",
+      "description": "Descriptive title of the stateful handling sequence"
+    },
+    "startTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Flags if the handling cascade is currently active in the session"
+    },
+    "precursorEvents": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ENTRY_OVER_ROTATION",
+          "EXIT_UNDERSTEER",
+          "AERO_BOTTOM_OUT",
+          "BRAKE_LOCK_FRONT_LEFT",
+          "BRAKE_LOCK_FRONT_RIGHT",
+          "REAR_TRACTION_COLLAPSE",
+          "DIRTY_AIR_PUSH",
+          "THERMAL_REAR_OVERLOAD",
+          "HIGH_SPEED_HEAVE_SPIKE"
+        ]
+      }
+    },
+    "triggerConditions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Physical parameters or thresholds that initiated this cascade"
+    },
+    "progressionStages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stageIndex", "description", "detectedEventIds"],
+        "properties": {
+          "stageIndex": { "type": "integer" },
+          "description": { "type": "string" },
+          "detectedEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^evt_[a-f0-9]+$"
+            },
+            "description": "IDs of TelemetryEvents mapped to this stage"
+          }
+        }
+      }
+    },
+    "mitigationAdvised": {
+      "type": "string",
+      "description": "Mechanical adjustments or driver input cues recommended to break the cascade loop"
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

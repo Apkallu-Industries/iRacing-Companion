@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/events.schema.json",
+  "title": "TelemetryEvent",
+  "type": "object",
+  "required": [
+    "id",
+    "timestamp",
+    "lapNumber",
+    "sectorNumber",
+    "eventType",
+    "priority",
+    "triggerChannel",
+    "triggerValue",
+    "narrativeDescription",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^evt_[a-f0-9]+$",
+      "description": "Unique event identifier, prefixed with 'evt_'"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of the event trigger"
+    },
+    "lapNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The active lap number during which the event occurred"
+    },
+    "sectorNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Track sector number"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "ENTRY_OVER_ROTATION",
+        "EXIT_UNDERSTEER",
+        "AERO_BOTTOM_OUT",
+        "BRAKE_LOCK_FRONT_LEFT",
+        "BRAKE_LOCK_FRONT_RIGHT",
+        "REAR_TRACTION_COLLAPSE",
+        "DIRTY_AIR_PUSH",
+        "THERMAL_REAR_OVERLOAD",
+        "HIGH_SPEED_HEAVE_SPIKE"
+      ],
+      "description": "Classification from the standard RaceEventType taxonomy"
+    },
+    "priority": {
+      "type": "object",
+      "required": [
+        "severity",
+        "confidence",
+        "persistence",
+        "lapTimeImpactS",
+        "driverRiskRating"
+      ],
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": ["INFO", "ADVISORY", "WARNING", "CRITICAL"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Heuristic engine certainty rating"
+        },
+        "persistence": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of consecutive laps this identical anomaly has been active"
+        },
+        "lapTimeImpactS": {
+          "type": "number",
+          "description": "Projected cost of this specific event in seconds of lap time"
+        },
+        "driverRiskRating": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Risk score from 0 (negligible) to 10 (spin/crash risk)"
+        }
+      }
+    },
+    "triggerChannel": {
+      "type": "string",
+      "description": "The primary sensor channel or extra metric that exceeded critical bounds"
+    },
+    "triggerValue": {
+      "type": "number",
+      "description": "The actual value recorded by the trigger channel at the event tick"
+    },
+    "narrativeDescription": {
+      "type": "string",
+      "description": "Explain the physical event in precise, non-hallucinated engineering lingo"
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          },
+          "description": "Classify the mathematical origin of this event detection to preserve physical truth"
+        }
+      }
+    }
+  }
+}

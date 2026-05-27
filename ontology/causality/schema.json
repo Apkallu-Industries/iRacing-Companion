@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/causality.schema.json",
+  "title": "CausalityNode",
+  "type": "object",
+  "required": [
+    "nodeId",
+    "label",
+    "type",
+    "affectsNodes",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "nodeId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Unique causality node identifier, in snake_case"
+    },
+    "label": {
+      "type": "string",
+      "description": "Semantic display label (e.g., 'Diffuser Vacuum Stall')"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "condition",
+        "chassis_behavior",
+        "driver_input",
+        "aero_state",
+        "thermal_state"
+      ],
+      "description": "Functional domain of the node"
+    },
+    "affectsNodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["targetNodeId", "relationship", "strength"],
+        "properties": {
+          "targetNodeId": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "relationship": {
+            "type": "string",
+            "description": "Explains how the state transfers (e.g., 'STALLS_FLOW', 'INDUCES_SLIP')"
+          },
+          "strength": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          }
+        }
+      }
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

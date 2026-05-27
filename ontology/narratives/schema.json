@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/narratives.schema.json",
+  "title": "SessionNarrative",
+  "type": "object",
+  "required": [
+    "sessionId",
+    "trackEvolutionState",
+    "fuelLoadDecayState",
+    "driverConfidenceTrend",
+    "keyMechanicalNarrative",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "sessionId": {
+      "type": "string",
+      "pattern": "^ses_[a-f0-9]+$",
+      "description": "Unique session identifier, prefixed with 'ses_'"
+    },
+    "trackEvolutionState": {
+      "type": "string",
+      "enum": ["green", "rubbered_in", "greasy_hot", "abrasive"],
+      "description": "State of track friction rubbering and temperature"
+    },
+    "fuelLoadDecayState": {
+      "type": "string",
+      "enum": ["heavy_start", "stint_mid", "fuel_reserve"],
+      "description": "State of vehicle weight distribution based on fuel levels"
+    },
+    "driverConfidenceTrend": {
+      "type": "string",
+      "enum": ["improving", "stable", "decaying"],
+      "description": "Longitudinal safety and style confidence rating"
+    },
+    "keyMechanicalNarrative": {
+      "type": "string",
+      "description": "Summarized semantic description of mechanical stint evolution"
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

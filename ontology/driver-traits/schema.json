@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/driver-traits.schema.json",
+  "title": "DriverBehaviorTraits",
+  "type": "object",
+  "required": [
+    "cornerEntryRotationPreference",
+    "rearAxleStabilityTolerance",
+    "brakeReleaseStyle",
+    "throttleCommitmentConfidence",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "cornerEntryRotationPreference": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Yaw rate preference during high-G entry rotation phases"
+    },
+    "rearAxleStabilityTolerance": {
+      "type": "string",
+      "enum": ["aggressive", "neutral", "cautious"],
+      "description": "Tolerance for rear slip angle/oversteer spikes before driver corrects or backs off"
+    },
+    "brakeReleaseStyle": {
+      "type": "string",
+      "enum": ["fast_decay", "linear", "smooth_trail"],
+      "description": "Brake pressure decay trajectory on entry transition to apex"
+    },
+    "throttleCommitmentConfidence": {
+      "type": "string",
+      "enum": ["early", "progressive", "hesitant"],
+      "description": "Decisiveness and timing gradient when moving from brake-to-throttle exit phase"
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

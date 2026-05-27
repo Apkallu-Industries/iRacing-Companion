@@ -130,3 +130,7 @@ export function compileSessionReport(
     aero,
   };
 }
+
+export * from "./eventTaxonomy";
+export * from "./mechanicalReasoningEngine";
+

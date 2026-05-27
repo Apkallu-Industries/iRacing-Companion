@@ -4,6 +4,8 @@
  * Implements a formal taxonomy for vehicle states, behavior-centric Driver DNA,
  * temporal telemetry events, stateful engineering episodes (progressive instability sequences),
  * causality-aware motorsport reasoning nodes, session narratives, and auditable decision lineage tracing.
+ *
+ * Aligned with the Motorsport Ontology Kernel v1.0.0.
  */
 
 export enum RaceEventType {
@@ -32,6 +34,20 @@ export enum EngineeringPersonality {
 }
 
 /**
+ * Physics Truth Boundary Classification Tiers.
+ * Categorizes the mathematical and mechanical reliability of any event, trait, or recommendation.
+ */
+export type PhysicsTruthSourceType =
+  | "deterministic_physics"
+  | "historical_correlation"
+  | "behavioral_model"
+  | "probabilistic_projection";
+
+export interface PhysicsTruthBoundary {
+  sourceTypes: PhysicsTruthSourceType[];
+}
+
+/**
  * Race Event Priority Matrix.
  * Dictates cognitive load and prioritization filters for the pit-wall advisor.
  */
@@ -53,14 +69,15 @@ export interface DriverBehaviorTraits {
   rearAxleStabilityTolerance: "aggressive" | "neutral" | "cautious";
   brakeReleaseStyle: "fast_decay" | "linear" | "smooth_trail";
   throttleCommitmentConfidence: "early" | "progressive" | "hesitant";
+  physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 /**
  * Represent a structured, classified telemetry event.
  */
 export interface TelemetryEvent {
-  id: string;
-  timestamp: string;
+  id: string; // Must follow regex "^evt_[a-f0-9]+$"
+  timestamp: string; // ISO 8601 string
   lapNumber: number;
   sectorNumber: number;
   eventType: RaceEventType;
@@ -69,6 +86,7 @@ export interface TelemetryEvent {
   triggerChannel: string;
   triggerValue: number;
   narrativeDescription: string;
+  physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 /**
@@ -77,7 +95,7 @@ export interface TelemetryEvent {
  * (e.g. progressive rear tire saturation cascades over consecutive laps).
  */
 export interface EngineeringEpisode {
-  episodeId: string;
+  episodeId: string; // Must follow regex "^eps_[a-f0-9]+$"
   title: string;                 // e.g. "Rear Tire Thermal Saturation Cascade"
   startTime: string;
   endTime?: string;
@@ -87,9 +105,10 @@ export interface EngineeringEpisode {
   progressionStages: {
     stageIndex: number;
     description: string;
-    detectedEvents: TelemetryEvent[];
+    detectedEventIds: string[]; // Referencing the IDs of TelemetryEvent
   }[];
   mitigationAdvised: string;
+  physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 /**
@@ -97,14 +116,15 @@ export interface EngineeringEpisode {
  * Maps deterministic physical links between conditions, handling anomalies, and driver inputs.
  */
 export interface CausalityNode {
-  nodeId: string;
+  nodeId: string; // Must follow snake_case regex
   label: string;                  // e.g. "High Rear Rebound"
-  type: "condition" | "chassis_behavior" | "driver_input" | "aero_state";
+  type: "condition" | "chassis_behavior" | "driver_input" | "aero_state" | "thermal_state";
   affectsNodes: {
     targetNodeId: string;
-    relationship: string;         // e.g. "stalls under braking" or "increases temp"
+    relationship: string;         // e.g. "STALLS_DIFFUSER_FLOW" or "OVERLOADS_FRONT_AXLE"
     strength: "low" | "medium" | "high";
   }[];
+  physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 /**
@@ -113,11 +133,12 @@ export interface CausalityNode {
  * interact with driver inputs over the course of a session.
  */
 export interface SessionNarrative {
-  sessionId: string;
+  sessionId: string; // Must follow regex "^ses_[a-f0-9]+$"
   trackEvolutionState: "green" | "rubbered_in" | "greasy_hot" | "abrasive";
   fuelLoadDecayState: "heavy_start" | "stint_mid" | "fuel_reserve";
   driverConfidenceTrend: "improving" | "stable" | "decaying";
   keyMechanicalNarrative: string; // e.g. "Track rubbering masked entry over-rotation until rear tire thermal saturation on lap 18."
+  physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 /**
@@ -125,7 +146,7 @@ export interface SessionNarrative {
  * Provides a clean answer to: "WHY did the system make this setup/coaching suggestion?"
  */
 export interface RecommendationLineage {
-  recommendationId: string;
+  recommendationId: string; // Must follow regex "^rec_[a-f0-9]+$"
   timestamp: string;
   proposedAction: string;       // e.g. "Soften rear rebound dampers by -1 click"
   citationSource: string;       // e.g. "Tim McArthur Flowchart: Road Oversteer #1 (ARB)"
@@ -142,10 +163,11 @@ export interface RecommendationLineage {
   activeCorrelations: string[];
   
   /** Active stateful engineering episodes influencing this recommendation */
-  relatedEpisodes: string[];
+  relatedEpisodes: string[]; // Referencing the IDs of EngineeringEpisode
   
   /** Driver trait influence (The "Personalization") */
   driverTraitsInfluence: Partial<DriverBehaviorTraits>;
+  physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 /**
@@ -205,6 +227,9 @@ export function synthesizeDriverTraits(
     rearAxleStabilityTolerance: stability,
     brakeReleaseStyle: brakeStyle,
     throttleCommitmentConfidence: throttleStyle,
+    physicsTruthBoundary: {
+      sourceTypes: ["behavioral_model"]
+    }
   };
 }
 
@@ -218,7 +243,8 @@ export function traceDecisionLineage(
   evidence: RecommendationLineage["sensorEvidence"],
   correlations: string[],
   relatedEpisodes: string[],
-  traits: DriverBehaviorTraits
+  traits: DriverBehaviorTraits,
+  physicsTruthBoundary: PhysicsTruthBoundary
 ): RecommendationLineage {
   return {
     recommendationId: `rec_${Math.random().toString(36).substr(2, 9)}`,
@@ -233,5 +259,6 @@ export function traceDecisionLineage(
       cornerEntryRotationPreference: traits.cornerEntryRotationPreference,
       rearAxleStabilityTolerance: traits.rearAxleStabilityTolerance,
     },
+    physicsTruthBoundary,
   };
 }

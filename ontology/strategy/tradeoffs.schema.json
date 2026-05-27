@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/tradeoffs.schema.json",
+  "title": "SetupTradeoffEvaluation",
+  "type": "object",
+  "required": [
+    "proposedChange",
+    "primaryObjective",
+    "expectedGain",
+    "expectedCompromise",
+    "confidenceIndex",
+    "affectedCornerArchetypes",
+    "affectedDriverTraits",
+    "stintLifecycleForecast",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "proposedChange": {
+      "type": "string",
+      "description": "The exact adjustment proposed (e.g., 'Soften rear rebound -1 click')"
+    },
+    "primaryObjective": {
+      "type": "string",
+      "description": "What mechanical anomaly this change seeks to resolve (e.g., 'Stabilize rear platform under trail brake')"
+    },
+    "expectedGain": {
+      "type": "string",
+      "description": "The target physical gain (e.g., 'Increased rear contact patch vertical force')"
+    },
+    "expectedCompromise": {
+      "type": "string",
+      "description": "The cascading physical penalty (e.g., 'Reduced transient yaw response')"
+    },
+    "confidenceIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Confidence score of the tradeoff projection"
+    },
+    "affectedCornerArchetypes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "slow_hairpin",
+          "medium_chicanes",
+          "highspeed_sweeper",
+          "heavy_braking_zone",
+          "curb_strike_zone"
+        ]
+      }
+    },
+    "affectedDriverTraits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "cornerEntryRotationPreference",
+          "rearAxleStabilityTolerance",
+          "brakeReleaseStyle",
+          "throttleCommitmentConfidence"
+        ]
+      }
+    },
+    "stintLifecycleForecast": {
+      "type": "object",
+      "required": [
+        "fuelDecayImpact",
+        "thermalLifecycleTrend",
+        "gripBalanceShift"
+      ],
+      "properties": {
+        "fuelDecayImpact": {
+          "type": "string",
+          "description": "Impact as car gets lighter (e.g., 'Compounds entry oversteer as rake rises')"
+        },
+        "thermalLifecycleTrend": {
+          "type": "string",
+          "description": "Impact on tire heating lifecycle (e.g., 'Reduces carcass deflection heating rate by -8%')"
+        },
+        "gripBalanceShift": {
+          "type": "string",
+          "description": "Expected overall grip balance change (e.g., 'Shifts balance +1.2% forward')"
+        }
+      }
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

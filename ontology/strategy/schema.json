@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/strategy.schema.json",
+  "title": "RecommendationLineage",
+  "type": "object",
+  "required": [
+    "recommendationId",
+    "timestamp",
+    "proposedAction",
+    "citationSource",
+    "confidenceRating",
+    "sensorEvidence",
+    "activeCorrelations",
+    "relatedEpisodes",
+    "driverTraitsInfluence",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "recommendationId": {
+      "type": "string",
+      "pattern": "^rec_[a-f0-9]+$",
+      "description": "Unique recommendation identifier, prefixed with 'rec_'"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "proposedAction": {
+      "type": "string",
+      "description": "Concrete mechanical setup changes or driver coaching adjustments"
+    },
+    "citationSource": {
+      "type": "string",
+      "description": "Source citation mapping back to verified engineering manuals or flowchart rules"
+    },
+    "confidenceRating": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "sensorEvidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["channel", "value", "threshold"],
+        "properties": {
+          "channel": { "type": "string" },
+          "value": { "type": ["string", "number"] },
+          "threshold": { "type": ["string", "number"] }
+        }
+      }
+    },
+    "activeCorrelations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "relatedEpisodes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^eps_[a-f0-9]+$"
+      }
+    },
+    "driverTraitsInfluence": {
+      "type": "object",
+      "properties": {
+        "cornerEntryRotationPreference": { "type": "string", "enum": ["high", "medium", "low"] },
+        "rearAxleStabilityTolerance": { "type": "string", "enum": ["aggressive", "neutral", "cautious"] }
+      }
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
