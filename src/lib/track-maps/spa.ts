@@ -3,6 +3,10 @@ import type { TrackMapDefinition } from "./types";
 export const spaMap: TrackMapDefinition = {
   trackId: "spa",
   displayName: "Circuit de Spa-Francorchamps",
+  orientation: {
+    rotationDeg: 0,
+    mirrorX: false,
+  },
   spline: [
     [0.16, 0.72], // Start/Finish Line
     [0.14, 0.69], // Approach to La Source
@@ -48,9 +52,9 @@ export const spaMap: TrackMapDefinition = {
     [0.18, 0.74], // Bus Stop Left
   ],
   sectors: [
-    { id: "S1", name: "Sector 1 (Start to Kemmel End)", startPct: 0, endPct: 0.35 },
-    { id: "S2", name: "Sector 2 (Les Combes to Stavelot)", startPct: 0.35, endPct: 0.78 },
-    { id: "S3", name: "Sector 3 (Blanchimont to Finish)", startPct: 0.78, endPct: 1.0 },
+    { id: "S1", name: "Sector 1 (Start to Kemmel End)", startPct: 0.0, lengthPct: 0.35 },
+    { id: "S2", name: "Sector 2 (Les Combes to Stavelot)", startPct: 0.35, lengthPct: 0.43 },
+    { id: "S3", name: "Sector 3 (Blanchimont to Finish)", startPct: 0.78, lengthPct: 0.22 },
   ],
   corners: [
     { id: "T1", name: "La Source", pct: 0.05 },
@@ -62,4 +66,16 @@ export const spaMap: TrackMapDefinition = {
     { id: "T7", name: "Blanchimont", pct: 0.88 },
     { id: "T8", name: "Bus Stop Chicane", pct: 0.96 },
   ],
+  pitLane: {
+    spline: [
+      [0.20, 0.75], // Exits before Bus Stop chicane
+      [0.17, 0.72], // Speed limit marker
+      [0.15, 0.70], // Parallel crew wall
+      [0.13, 0.68], // Parallel pits
+      [0.14, 0.65], // Acceleration lane
+      [0.18, 0.68], // Merges after La Source hairpin
+    ],
+    mergePct: 0.08,
+    exitPct: 0.95,
+  },
 };

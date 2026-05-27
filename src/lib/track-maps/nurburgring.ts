@@ -3,6 +3,10 @@ import type { TrackMapDefinition } from "./types";
 export const nurburgringMap: TrackMapDefinition = {
   trackId: "nurburgring",
   displayName: "Nürburgring GP-Strecke",
+  orientation: {
+    rotationDeg: 0,
+    mirrorX: false,
+  },
   spline: [
     [0.48, 0.20], // Start/Finish Line
     [0.38, 0.20], // Start straight
@@ -39,9 +43,9 @@ export const nurburgringMap: TrackMapDefinition = {
     [0.52, 0.21], // Coca-Cola Chicane exit back to straight
   ],
   sectors: [
-    { id: "S1", name: "Sector 1 (Start to Valvoline)", startPct: 0, endPct: 0.34 },
-    { id: "S2", name: "Sector 2 (Valvoline to Schumacher S)", startPct: 0.34, endPct: 0.66 },
-    { id: "S3", name: "Sector 3 (Schumacher S to Finish)", startPct: 0.66, endPct: 1.0 },
+    { id: "S1", name: "Sector 1 (Start to Valvoline)", startPct: 0.0, lengthPct: 0.34 },
+    { id: "S2", name: "Sector 2 (Valvoline to Schumacher S)", startPct: 0.34, lengthPct: 0.32 },
+    { id: "S3", name: "Sector 3 (Schumacher S to Finish)", startPct: 0.66, lengthPct: 0.34 },
   ],
   corners: [
     { id: "T1", name: "Castrol S", pct: 0.11 },
@@ -51,4 +55,16 @@ export const nurburgringMap: TrackMapDefinition = {
     { id: "T5", name: "Schumacher S", pct: 0.68 },
     { id: "T6", name: "Coca-Cola Chicane", pct: 0.94 },
   ],
+  pitLane: {
+    spline: [
+      [0.61, 0.26], // Coca-Cola chicane entry
+      [0.57, 0.28], // Speed limit sign
+      [0.52, 0.21], // Crew speed limit lane
+      [0.48, 0.20], // Parallel pit lane
+      [0.38, 0.20], // Exit acceleration
+      [0.28, 0.20], // Rejoin start straight
+    ],
+    mergePct: 0.08,
+    exitPct: 0.96,
+  },
 };

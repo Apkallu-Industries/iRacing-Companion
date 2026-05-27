@@ -3,6 +3,10 @@ import type { TrackMapDefinition } from "./types";
 export const daytonaMap: TrackMapDefinition = {
   trackId: "daytona",
   displayName: "Daytona International Speedway - Road Course",
+  orientation: {
+    rotationDeg: 0,
+    mirrorX: false,
+  },
   spline: [
     [0.50, 0.85], // Start/Finish Line (Tri-oval)
     [0.60, 0.82], // Tri-oval banking
@@ -40,9 +44,9 @@ export const daytonaMap: TrackMapDefinition = {
     [0.58, 0.80],
   ],
   sectors: [
-    { id: "S1", name: "Sector 1 (Start to Infield Exit)", startPct: 0, endPct: 0.42 },
-    { id: "S2", name: "Sector 2 (Oval 2 to Bus Stop)", startPct: 0.42, endPct: 0.75 },
-    { id: "S3", name: "Sector 3 (Oval 4 to Finish)", startPct: 0.75, endPct: 1.0 },
+    { id: "S1", name: "Sector 1 (Start to Infield Exit)", startPct: 0.0, lengthPct: 0.42 },
+    { id: "S2", name: "Sector 2 (Oval 2 to Bus Stop)", startPct: 0.42, lengthPct: 0.33 },
+    { id: "S3", name: "Sector 3 (Oval 4 to Finish)", startPct: 0.75, lengthPct: 0.25 },
   ],
   corners: [
     { id: "T1", name: "Infield Turn 1", pct: 0.12 },
@@ -52,4 +56,16 @@ export const daytonaMap: TrackMapDefinition = {
     { id: "T5", name: "Bus Stop Chicane", pct: 0.68 },
     { id: "T6", name: "Oval Turn 3/4", pct: 0.84 },
   ],
+  pitLane: {
+    spline: [
+      [0.68, 0.74], // Oval exit pit entrance
+      [0.64, 0.76], // Speed limit line
+      [0.58, 0.80], // Pit boxes parallel tri-oval
+      [0.54, 0.82], // Exit lane
+      [0.60, 0.82], // Exit acceleration
+      [0.72, 0.77], // Main track rejoin at turn 1
+    ],
+    mergePct: 0.08,
+    exitPct: 0.92,
+  },
 };

@@ -3,6 +3,10 @@ import type { TrackMapDefinition } from "./types";
 export const lemansMap: TrackMapDefinition = {
   trackId: "lemans",
   displayName: "Circuit des 24 Heures du Mans",
+  orientation: {
+    rotationDeg: -15, // Rotate slightly for optimal screen layout
+    mirrorX: false,
+  },
   spline: [
     [0.35, 0.15], // Start/Finish Line
     [0.35, 0.11], // Dunlop Straight
@@ -31,7 +35,7 @@ export const lemansMap: TrackMapDefinition = {
     [0.81, 0.88], // Mulsanne Kink
     [0.82, 0.92], // Mulsanne Corner entry
     [0.80, 0.94], // Mulsanne Corner apex
-    [0.76, 0.91], // Mulsanne Straight Exit (towards Indianapolis)
+    [0.76, 0.91], // Mulsanne Straight Exit
     [0.65, 0.89],
     [0.54, 0.87],
     [0.43, 0.86], // Indianapolis approach
@@ -43,7 +47,7 @@ export const lemansMap: TrackMapDefinition = {
     [0.24, 0.74], // Arnage exit
     [0.23, 0.67], // Porsche Curves start
     [0.19, 0.61], // Curves Left
-    [0.17, 0.55], // Curves Right (Curve de la Chapelle)
+    [0.17, 0.55], // Curves Right
     [0.15, 0.49], // Curve Corvette
     [0.18, 0.43], // Porsche Curves exit
     [0.23, 0.38], // Maison Blanche
@@ -52,9 +56,9 @@ export const lemansMap: TrackMapDefinition = {
     [0.33, 0.20], // Ford Chicane Right
   ],
   sectors: [
-    { id: "S1", name: "Sector 1 (Start to Chicane 1)", startPct: 0, endPct: 0.33 },
-    { id: "S2", name: "Sector 2 (Chicane 1 to Mulsanne)", startPct: 0.33, endPct: 0.60 },
-    { id: "S3", name: "Sector 3 (Mulsanne to Finish)", startPct: 0.60, endPct: 1.0 },
+    { id: "S1", name: "Sector 1 (Start to Chicane 1)", startPct: 0.0, lengthPct: 0.33 },
+    { id: "S2", name: "Sector 2 (Chicane 1 to Mulsanne)", startPct: 0.33, lengthPct: 0.27 },
+    { id: "S3", name: "Sector 3 (Mulsanne to Finish)", startPct: 0.60, lengthPct: 0.40 },
   ],
   corners: [
     { id: "T1", name: "Dunlop Chicane", pct: 0.08 },
@@ -64,4 +68,16 @@ export const lemansMap: TrackMapDefinition = {
     { id: "T5", name: "Arnage", pct: 0.78 },
     { id: "T6", name: "Porsche Curves", pct: 0.88 },
   ],
+  pitLane: {
+    spline: [
+      [0.28, 0.32], // Ford Chicane pit entrance divergence
+      [0.31, 0.28], // Pit lane speed limit line
+      [0.34, 0.22], // Parallel pit lane
+      [0.34, 0.16], // Pit boxes/crew
+      [0.34, 0.10], // Acceleration out lane
+      [0.38, 0.05], // Main track rejoin (after Dunlop curve)
+    ],
+    mergePct: 0.08,
+    exitPct: 0.96,
+  },
 };

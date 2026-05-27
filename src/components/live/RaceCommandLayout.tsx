@@ -12,6 +12,10 @@ interface RaceCommandLayoutProps {
 export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
   const [timeStr, setTimeStr] = useState("17:35");
   const [simulatedPct, setSimulatedPct] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(2.2);
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const [trackedDriverPos, setTrackedDriverPos] = useState<number>(6); // Default Dany M. (team user)
+  const [isTrackingActive, setIsTrackingActive] = useState(true);
 
   // Format real-time system clock
   useEffect(() => {
@@ -70,6 +74,36 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
     { pos: 7, name: "Fernando A.", carNo: "14", color: "#ffffff", isUser: false, gap: "+35.6s", best: "3:31.100", last: "3:31.520", lap: 24, offset: -0.06 },
     { pos: 8, name: "George R.", carNo: "63", color: "#ffffff", isUser: false, gap: "+41.2s", best: "3:31.570", last: "3:32.110", lap: 24, offset: -0.14 },
   ];
+
+  // Resolve tracked driver coordinate center
+  const trackedDriver = competitors.find(c => c.pos === trackedDriverPos) ?? competitors[5];
+  const trackedTargetPct = (lapDistPct + trackedDriver.offset + 1.0) % 1.0;
+  
+  // Decide which spline is active for tracking center calculation (e.g. if driver enters pits)
+  let activeCenterSpline = trackDef.mainSpline;
+  if (trackDef.pitSpline && trackDef.exitPct !== undefined && trackDef.mergePct !== undefined) {
+    const isInsidePit = trackDef.exitPct > trackDef.mergePct
+      ? (trackedTargetPct >= trackDef.exitPct || trackedTargetPct <= trackDef.mergePct)
+      : (trackedTargetPct >= trackDef.exitPct && trackedTargetPct <= trackDef.mergePct);
+    
+    if (isInsidePit) {
+      activeCenterSpline = trackDef.pitSpline;
+    }
+  }
+
+  const centerCoords = getCoordinatesAtPct(activeCenterSpline, trackedTargetPct);
+  const cx = centerCoords.x * 200;
+  const cy = centerCoords.y * 200;
+
+  // ViewBox calculation based on follow snap settings
+  let viewBoxStr = "-10 -10 220 220";
+  if (isTrackingActive) {
+    const vbW = 200 / zoomLevel;
+    const vbH = 200 / zoomLevel;
+    const vbX = cx - vbW / 2;
+    const vbY = cy - vbH / 2;
+    viewBoxStr = `${vbX} ${vbY} ${vbW} ${vbH}`;
+  }
 
   return (
     <div className="flex-1 min-h-0 bg-[#000000] text-[#E2E8F0] font-mono select-none flex flex-col p-2 gap-2 overflow-y-auto scrollbar-thin">
@@ -138,20 +172,38 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
 
           <div className="flex-1 divide-y divide-[#1C2430]/40 overflow-y-auto text-[9.5px]">
             {competitors.map((comp) => {
+              const isTracked = trackedDriverPos === comp.pos && isTrackingActive;
+              
               const rowClass = comp.isUser
-                ? "bg-[#00e676]/10 border-y border-[#00e676]/20 font-black text-[#00e676]"
-                : "hover:bg-[#111520]/45 items-center text-white";
+                ? `bg-[#00e676]/10 border-y border-[#00e676]/20 font-black text-[#00e676] cursor-pointer hover:bg-[#00e676]/15 transition-colors ${isTracked ? "ring-1 ring-inset ring-[#00e676]" : ""}`
+                : `hover:bg-[#111520]/45 items-center text-white cursor-pointer transition-colors ${isTracked ? "bg-[#3b82f6]/10 ring-1 ring-inset ring-[#3b82f6]/40" : ""}`;
               
               const posColor = comp.pos === 1 
                 ? "text-[#FFB800]" 
                 : comp.isUser 
                   ? "text-[#00e676]" 
-                  : "text-white";
+                  : isTracked 
+                    ? "text-[#3b82f6]"
+                    : "text-white";
 
               return (
-                <div key={comp.pos} className={`grid grid-cols-12 gap-1 px-2.5 py-1.5 items-center ${rowClass}`}>
-                  <div className={`col-span-1 font-bold ${posColor}`}>P{comp.pos}</div>
-                  <div className="col-span-3 font-semibold truncate">{comp.name}</div>
+                <div 
+                  key={comp.pos} 
+                  className={`grid grid-cols-12 gap-1 px-2.5 py-1.5 items-center ${rowClass}`}
+                  onClick={() => {
+                    setTrackedDriverPos(comp.pos);
+                    setIsTrackingActive(true);
+                  }}
+                  title={`Click to snap camera to ${comp.name}`}
+                >
+                  <div className={`col-span-1 font-bold ${posColor} flex items-center gap-1`}>
+                    {isTracked && <span className="text-[7.5px] animate-pulse">⌖</span>}
+                    P{comp.pos}
+                  </div>
+                  <div className="col-span-3 font-semibold truncate flex items-center gap-1.5">
+                    <span className="truncate">{comp.name}</span>
+                    {comp.isUser && <span className="text-[7px] bg-[#00e676]/20 text-[#00e676] px-1 py-0.2 rounded-xs font-black">TEAM</span>}
+                  </div>
                   <div className="col-span-1 text-[#7A828C]">{comp.isUser ? "IN" : "-"}</div>
                   <div className="col-span-1">{comp.lap}</div>
                   <div className="col-span-2 font-bold">{comp.gap}</div>
@@ -176,65 +228,148 @@ export function RaceCommandLayout({ t, samples }: RaceCommandLayoutProps) {
           </div>
 
           {/* SVG Map dynamically generated from vector coordinates spline with live projected markers */}
-          <div className="flex-1 flex items-center justify-center my-3 relative h-[210px]">
-            <svg viewBox="-10 -10 220 220" className="w-[195px] h-[195px]">
-              {/* Circuit spline path (Rendered from our database) */}
-              <path
-                d={getSvgPathFromSpline(trackDef.spline, 200, 200)}
-                fill="none"
-                stroke="rgba(122, 130, 140, 0.4)"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              
-              {/* Timing Line indicator */}
-              {trackDef.spline.length > 0 && (
-                <line 
-                  x1={trackDef.spline[0][0] * 200 - 4} 
-                  y1={trackDef.spline[0][1] * 200} 
-                  x2={trackDef.spline[0][0] * 200 + 4} 
-                  y2={trackDef.spline[0][1] * 200} 
-                  stroke="#FF4D4D" 
-                  strokeWidth="2.5" 
+          <div className="flex-1 flex items-center justify-center my-3 relative h-[210px] overflow-hidden">
+            {/* Floating Map Controls HUD Deck */}
+            <div className="absolute right-2 top-0 flex flex-col gap-1 z-10 select-none">
+              <button 
+                onClick={() => {
+                  setZoomLevel(prev => Math.min(6.0, prev + 0.4));
+                  setIsTrackingActive(true); // Auto-activate lock when zooming in
+                }}
+                className="w-5 h-5 rounded-xs bg-[#111520]/85 border border-[#1C2430] text-[10px] font-black hover:bg-[#3b82f6]/25 hover:border-[#3b82f6]/50 text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+                title="Zoom In"
+              >
+                +
+              </button>
+              <button 
+                onClick={() => {
+                  const newZoom = Math.max(1.0, zoomLevel - 0.4);
+                  setZoomLevel(newZoom);
+                  if (newZoom <= 1.0) {
+                    setIsTrackingActive(false);
+                  }
+                }}
+                className="w-5 h-5 rounded-xs bg-[#111520]/85 border border-[#1C2430] text-[10px] font-black hover:bg-[#3b82f6]/25 hover:border-[#3b82f6]/50 text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+                title="Zoom Out"
+              >
+                -
+              </button>
+              <button 
+                onClick={() => setRotationAngle(prev => (prev - 15 + 360) % 360)}
+                className="w-5 h-5 rounded-xs bg-[#111520]/85 border border-[#1C2430] text-[9px] font-bold hover:bg-[#3b82f6]/25 hover:border-[#3b82f6]/50 text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+                title="Rotate View Left"
+              >
+                ↺
+              </button>
+              <button 
+                onClick={() => setRotationAngle(prev => (prev + 15) % 360)}
+                className="w-5 h-5 rounded-xs bg-[#111520]/85 border border-[#1C2430] text-[9px] font-bold hover:bg-[#3b82f6]/25 hover:border-[#3b82f6]/50 text-white flex items-center justify-center cursor-pointer transition-colors active:scale-95"
+                title="Rotate View Right"
+              >
+                ↻
+              </button>
+              <button 
+                onClick={() => {
+                  setIsTrackingActive(prev => !prev);
+                  if (!isTrackingActive) setZoomLevel(2.2); // reset standard lock zoom
+                }}
+                className={`w-5 h-5 rounded-xs border text-[9px] font-bold flex items-center justify-center cursor-pointer transition-colors active:scale-95 ${
+                  isTrackingActive 
+                    ? "bg-[#00e676]/15 border-[#00e676]/50 text-[#00e676]" 
+                    : "bg-[#111520]/85 border-[#1C2430] text-[#7A828C] hover:text-white"
+                }`}
+                title={isTrackingActive ? "Unlock Camera (Whole Track)" : "Lock Camera to Selected Driver"}
+              >
+                ⌖
+              </button>
+            </div>
+
+            <svg viewBox={viewBoxStr} className="w-[195px] h-[195px] transition-all duration-300 ease-out">
+              <g transform={`rotate(${rotationAngle}, ${isTrackingActive ? cx : 100}, ${isTrackingActive ? cy : 100})`}>
+                {/* Main circuit spline path (Rendered from our database) */}
+                <path
+                  d={getSvgPathFromSpline(trackDef.mainSpline, 200, 200)}
+                  fill="none"
+                  stroke="rgba(122, 130, 140, 0.4)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
-              )}
 
-              {/* Dynamic competitor positions projected onto the authoritative spline */}
-              {competitors.map((comp) => {
-                // Determine target lap percentage based on offset relative to user position
-                const targetPct = (lapDistPct + comp.offset + 1.0) % 1.0;
-                const coords = getCoordinatesAtPct(trackDef.spline, targetPct);
-                const cx = coords.x * 200;
-                const cy = coords.y * 200;
+                {/* Pit Lane spline path (If prebuilt for the circuit) */}
+                {trackDef.pitSpline && (
+                  <path
+                    d={getSvgPathFromSpline(trackDef.pitSpline, 200, 200)}
+                    fill="none"
+                    stroke="rgba(122, 130, 140, 0.25)"
+                    strokeWidth="2.5"
+                    strokeDasharray="3,3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+                
+                {/* Timing Line indicator */}
+                {trackDef.mainSpline.points.length > 0 && (
+                  <line 
+                    x1={trackDef.mainSpline.points[0][0] * 200 - 4} 
+                    y1={trackDef.mainSpline.points[0][1] * 200} 
+                    x2={trackDef.mainSpline.points[0][0] * 200 + 4} 
+                    y2={trackDef.mainSpline.points[0][1] * 200} 
+                    stroke="#FF4D4D" 
+                    strokeWidth="2.5" 
+                  />
+                )}
 
-                return (
-                  <g key={comp.pos}>
-                    {/* Glowing effect for active user (glowing green shadow) */}
-                    {comp.isUser && (
-                      <circle cx={cx} cy={cy} r="7.5" fill="#00e676" opacity="0.25" className="animate-pulse" />
-                    )}
-                    <circle 
-                      cx={cx} 
-                      cy={cy} 
-                      r={comp.isUser ? "5.5" : "4.5"} 
-                      fill={comp.color} 
-                      stroke="#0a0c10"
-                      strokeWidth="1"
-                    />
-                    <text 
-                      x={cx} 
-                      y={cy + 2.2} 
-                      fill="#000000" 
-                      fontSize={comp.isUser ? "6.5px" : "6px"} 
-                      fontWeight="black" 
-                      textAnchor="middle"
-                    >
-                      {comp.pos}
-                    </text>
-                  </g>
-                );
-              })}
+                {/* Dynamic competitor positions projected onto the authoritative spline */}
+                {competitors.map((comp) => {
+                  // Determine target lap percentage based on offset relative to user position
+                  const targetPct = (lapDistPct + comp.offset + 1.0) % 1.0;
+                  
+                  // Determine whether driver should be projected onto pit lane spline
+                  let activeSpline = trackDef.mainSpline;
+                  if (trackDef.pitSpline && trackDef.exitPct !== undefined && trackDef.mergePct !== undefined) {
+                    const isInsidePit = trackDef.exitPct > trackDef.mergePct
+                      ? (targetPct >= trackDef.exitPct || targetPct <= trackDef.mergePct) // wraps around finish line
+                      : (targetPct >= trackDef.exitPct && targetPct <= trackDef.mergePct);
+                    
+                    if (isInsidePit) {
+                      activeSpline = trackDef.pitSpline;
+                    }
+                  }
+
+                  const coords = getCoordinatesAtPct(activeSpline, targetPct);
+                  const cxComp = coords.x * 200;
+                  const cyComp = coords.y * 200;
+
+                  return (
+                    <g key={comp.pos} transform={`translate(${cxComp}, ${cyComp}) rotate(${-rotationAngle})`}>
+                      {/* Glowing effect for active user (glowing green shadow) */}
+                      {comp.isUser && (
+                        <circle cx="0" cy="0" r="7.5" fill="#00e676" opacity="0.25" className="animate-pulse" />
+                      )}
+                      <circle 
+                        cx="0" 
+                        cy="0" 
+                        r={comp.isUser ? "5.5" : "4.5"} 
+                        fill={comp.color} 
+                        stroke="#0a0c10"
+                        strokeWidth="1"
+                      />
+                      <text 
+                        x="0" 
+                        y="2.2" 
+                        fill="#000000" 
+                        fontSize={comp.isUser ? "6.5px" : "6px"} 
+                        fontWeight="black" 
+                        textAnchor="middle"
+                      >
+                        {comp.pos}
+                      </text>
+                    </g>
+                  );
+                })}
+              </g>
             </svg>
 
             {/* Sector Markers overlay */}

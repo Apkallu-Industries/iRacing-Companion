@@ -1,11 +1,18 @@
 import type { TrackMapDefinition } from "./types";
+import { prepareTrackMap, type PreparedTrackMap } from "./runtime";
 import { lemansMap } from "./lemans";
 import { spaMap } from "./spa";
 import { daytonaMap } from "./daytona";
 import { nurburgringMap } from "./nurburgring";
 
 export * from "./types";
-export * from "./projection";
+export * from "./runtime";
+
+// Pre-compile and prepare the static track splines at initialization
+export const PREPARED_LEMANS = prepareTrackMap(lemansMap);
+export const PREPARED_SPA = prepareTrackMap(spaMap);
+export const PREPARED_DAYTONA = prepareTrackMap(daytonaMap);
+export const PREPARED_NURBURGRING = prepareTrackMap(nurburgringMap);
 
 /**
  * Builds a smooth fallback oval spline representing general circuits
@@ -29,45 +36,47 @@ function buildFallbackSpline(): [number, number][] {
   return spline;
 }
 
-const fallbackMap: TrackMapDefinition = {
+const fallbackMapDef: TrackMapDefinition = {
   trackId: "generic_oval",
-  displayName: "Circuit Layout Geometry",
+  displayName: "UNMAPPED CIRCUIT",
   spline: buildFallbackSpline(),
   sectors: [
-    { id: "S1", name: "Sector 1", startPct: 0, endPct: 0.33 },
-    { id: "S2", name: "Sector 2", startPct: 0.33, endPct: 0.66 },
-    { id: "S3", name: "Sector 3", startPct: 0.66, endPct: 1.0 },
+    { id: "S1", name: "Sector 1", startPct: 0.0, lengthPct: 0.33 },
+    { id: "S2", name: "Sector 2", startPct: 0.33, lengthPct: 0.33 },
+    { id: "S3", name: "Sector 3", startPct: 0.66, lengthPct: 0.34 },
   ],
 };
 
+const PREPARED_FALLBACK = prepareTrackMap(fallbackMapDef);
+
 /**
- * Resolves a telemetry track name to its prebuilt vector definition.
+ * Resolves a telemetry track name to its prebuilt prepared vector definition.
  * Falls back to a realistic generic road course loop if not recognized.
  */
-export function getTrackMap(trackName?: string): TrackMapDefinition {
-  if (!trackName) return fallbackMap;
+export function getTrackMap(trackName?: string): PreparedTrackMap {
+  if (!trackName) return PREPARED_FALLBACK;
 
   const lowerName = trackName.toLowerCase();
 
-  if (lowerName.includes("mans") || lowerName.includes("sarthe") || lowerName.includes("sarthe")) {
-    return lemansMap;
+  if (lowerName.includes("mans") || lowerName.includes("sarthe")) {
+    return PREPARED_LEMANS;
   }
   
   if (lowerName.includes("spa") || lowerName.includes("francorchamps") || lowerName.includes("belgium")) {
-    return spaMap;
+    return PREPARED_SPA;
   }
 
   if (lowerName.includes("daytona")) {
-    return daytonaMap;
+    return PREPARED_DAYTONA;
   }
 
   if (lowerName.includes("nurburgring") || lowerName.includes("nürburgring") || lowerName.includes("nordschleife")) {
-    return nurburgringMap;
+    return PREPARED_NURBURGRING;
   }
 
-  // Graceful fallback with proper geometry
+  // Graceful fallback with proper geometry and name injected
   return {
-    ...fallbackMap,
-    displayName: trackName || "Circuit Layout Geometry",
+    ...PREPARED_FALLBACK,
+    displayName: trackName || "UNMAPPED CIRCUIT",
   };
 }
