@@ -5,7 +5,20 @@ export function MiniTrace({ values, color }: { values: number[]; color: string }
   const h = 20;
 
   if (values.length < 2) {
-    return <span className="inline-block w-[100px] text-[9px] text-zinc-600">...</span>;
+    // Render a premium, responsive flat dotted baseline trace all the way across the space
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-5 block opacity-20">
+        <line
+          x1="0"
+          y1={h / 2}
+          x2={w}
+          y2={h / 2}
+          stroke={color}
+          strokeWidth="1"
+          strokeDasharray="2,3"
+        />
+      </svg>
+    );
   }
 
   const min = Math.min(...values);
@@ -27,7 +40,7 @@ export function MiniTrace({ values, color }: { values: number[]; color: string }
   const gradId = `mg_${color.replace(/[^a-z0-9]/gi, "")}`;
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="block">
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-5 block">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.25" />

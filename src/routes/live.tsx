@@ -371,33 +371,34 @@ function Dashboard() {
                 />
               </div>
 
-              {/* Live Assistant Coach Panel */}
-              <div className="flex-1 min-h-0 overflow-y-auto bg-[#0B0F14] border-t border-[#1C2430]/40">
-                <LiveCoach t={t} />
+              {/* Real-time Incident Event Timeline */}
+              <div className="h-[200px] shrink-0 border-b border-[#1C2430]">
+                <TelemetryEventTimeline />
               </div>
 
-              {/* Real-time Incident Event Timeline */}
-              <div className="h-[250px] shrink-0 border-t border-[#1C2430]">
-                <TelemetryEventTimeline />
+              {/* Live Assistant Coach Panel (Moved to bottom of right rail for premium readability) */}
+              <div className="h-[320px] shrink-0 bg-[#0B0F14] overflow-y-auto border-t border-[#1C2430]/40">
+                <LiveCoach t={t} />
               </div>
             </section>
           </div>
 
           {/* 4. BOTTOM RAIL: TIMING & CONTROLS RAIL (packed tightly) */}
           <div className="border-t border-[#1C2430] bg-[#0B0F14] p-2 grid grid-cols-12 gap-2 text-[10px] uppercase font-mono tracking-wider shrink-0 select-none">
-            <div className="col-span-12 lg:col-span-2 flex flex-col justify-between">
+            {/* Column 1: Connection & Recording controls */}
+            <div className="col-span-12 lg:col-span-3 flex flex-col justify-between pr-2">
               {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
             </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2">
+
+            {/* Column 2: Gear Ratio Advisor (Top) and Reference Pace (Bottom) */}
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-2 border-l border-[#1C2430]/60 pl-2">
               <GearAdvisor t={t} samples={samples} />
-            </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2">
-              <AdvisorButton t={t} />
-            </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2">
               <LiveReference t={t} />
             </div>
-            <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between border-l border-[#1C2430]/60 pl-2 relative">
+
+            {/* Column 3: Telemetry Advisor (Top) and Driver Fingerprint (Bottom) */}
+            <div className="col-span-12 lg:col-span-5 flex flex-col gap-2 border-l border-[#1C2430]/60 pl-2 relative">
+              <AdvisorButton t={t} />
               <FingerprintUploadCard />
               <div className="mt-1 flex items-center justify-end">
                 <DesktopLapSync />

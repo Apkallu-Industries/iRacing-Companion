@@ -208,6 +208,7 @@ function WorkbenchPage() {
             const lapNumber = matchedLap ? matchedLap.lap : 1;
             
             return {
+              session_id: id,
               timestamp: new Date(recordedAt.getTime() + ev.timestampSec * 1000).toISOString(),
               track,
               car,

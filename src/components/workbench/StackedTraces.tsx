@@ -3,6 +3,7 @@ import uPlot from "uplot";
 import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench, colorForChannel } from "@/lib/store";
 import { useTelemetryRuntimeStore } from "@/lib/telemetryRuntimeStore";
+import { toast } from "sonner";
 
 function resolveColor(varName: string): string {
   // turn "var(--ch-speed)" into computed color

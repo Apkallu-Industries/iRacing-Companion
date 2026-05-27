@@ -31,6 +31,7 @@ import {
 import { classifyCornerArchetype, type CornerArchetype } from "@/lib/driver-model/cornerArchetypeLearner";
 import { predictNextTickInstability, type TelemetryTickFrame } from "@/lib/session-intelligence/predictiveEngine";
 import { calculateSetupAdviceConfidence } from "@/lib/session-intelligence/setupConfidence";
+import { type StoredSetupChange } from "@/lib/session-intelligence/mongoSessionStore";
 import { toast } from "sonner";
 
 interface IntelligenceDashboardProps {
@@ -116,10 +117,10 @@ export function IntelligenceDashboard({
   });
 
   // Simulated setup adjustments for confidence weighting
-  const setupHistory = [
-    { change_type: "Rear Rebound", notes: "stabilize exit traction, reduced oversteer slide, resolved entry bottoming" },
-    { change_type: "Rear Rebound", notes: "improved exit rotation" },
-    { change_type: "Rear Anti-Roll Bar", notes: "understeer sweep, compromised mid rotation" },
+  const setupHistory: StoredSetupChange[] = [
+    { change_type: "Rear Rebound", notes: "stabilize exit traction, reduced oversteer slide, resolved entry bottoming", lap_number: 5, parameter: "damping", delta: "-1 click", consequences: ["reduced slide"] },
+    { change_type: "Rear Rebound", notes: "improved exit rotation", lap_number: 12, parameter: "damping", delta: "-2 clicks", consequences: ["better rotation"] },
+    { change_type: "Rear Anti-Roll Bar", notes: "understeer sweep, compromised mid rotation", lap_number: 18, parameter: "arb", delta: "+1 click", consequences: ["understeer"] },
   ];
 
   const reboundConfidence = calculateSetupAdviceConfidence("Rear Rebound", setupHistory, "driver-01");

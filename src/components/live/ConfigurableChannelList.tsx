@@ -380,9 +380,11 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
                   {c.label}
                 </span>
                 {isTrace ? (
-                  <span className="ml-auto flex items-center gap-1.5">
-                    <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
-                    <span className="text-[7px] uppercase tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                  <span className="flex-1 mx-2 flex items-center gap-1.5 min-w-0">
+                    <div className="flex-1 h-5 overflow-hidden">
+                      <MiniTrace values={historyRef.current[c.key] ?? []} color={c.color} />
+                    </div>
+                    <span className="text-[7px] uppercase tracking-wider text-[#7A828C] opacity-0 group-hover:opacity-100 transition-opacity select-none flex-shrink-0">
                       trc
                     </span>
                   </span>

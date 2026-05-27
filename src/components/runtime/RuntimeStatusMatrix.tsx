@@ -68,7 +68,7 @@ function ServiceRow({
   service,
   isLast = false,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   name: string;
   service: ServiceState;
   isLast?: boolean;

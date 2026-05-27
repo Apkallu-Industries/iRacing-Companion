@@ -407,9 +407,9 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
     const cssW = wrap.clientWidth;
     const parentH = parent ? parent.clientHeight : 0;
     
-    // Keep the diagram square, scale to fit parents, but limit to 280px max for professional proportions.
+    // Keep the diagram square, scale to fit parents, but limit to 550px max for professional proportions.
     const cssH = parentH > 0 ? parentH : cssW;
-    const size = Math.max(120, Math.min(cssW, cssH, 280) - 16);
+    const size = Math.max(120, Math.min(cssW, cssH, 550) - 16);
 
     if (canvas.width !== Math.floor(size * dpr) || canvas.height !== Math.floor(size * dpr)) {
       canvas.width = Math.floor(size * dpr);
