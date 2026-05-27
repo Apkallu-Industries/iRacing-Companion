@@ -144,7 +144,7 @@ function WorkbenchPage() {
   }, []);
 
   // Synchronize playheads between useWorkbench and useTelemetryRuntimeStore (Priority 1)
-  const setStoreCursorTick = useTelemetryRuntimeStore((s) => s.setStoreCursorTick || s.setCursorTick);
+  const setStoreCursorTick = useTelemetryRuntimeStore((s) => s.setCursorTick);
   const storeCursorTick = useTelemetryRuntimeStore((s) => s.cursorTick);
   const { setCursorTick } = useWorkbench();
 
@@ -867,7 +867,7 @@ function WorkbenchPage() {
                                     return (
                                       <button
                                         key={key}
-                                        onClick={() => setActivePreset(key)}
+                                        onClick={() => setActivePreset(key as any)}
                                         className={`px-3 py-1 text-[9px] uppercase tracking-wider font-bold cursor-pointer ${
                                           isActive
                                             ? "bg-[#8B5CF6] text-white"

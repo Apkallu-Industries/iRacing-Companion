@@ -116,17 +116,14 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
               const sessionTime = parsed.channels["SessionTime"]?.data;
               if (!sessionTime) return;
 
-              const refLapObj = refLap != null ? parsed.laps.find((l) => l.lap === refLap) : null;
-              const fromIdx = refLapObj ? refLapObj.startTick : 0;
-              const toIdx = refLapObj ? refLapObj.endTick : sessionTime.length - 1;
-
               const valData = parsed.channels[name]?.data;
               if (!valData) return;
 
+              type AnomalyShade = "lockup" | "threshold" | "wheelspin" | "bottoming" | "hybrid_deploy" | "hybrid_regen" | null;
               let shadeStart: number | null = null;
-              let shadeType: "lockup" | "threshold" | "wheelspin" | "bottoming" | "hybrid_deploy" | "hybrid_regen" | null = null;
+              let shadeType: AnomalyShade = null;
 
-              const getShadeColorAndLabel = (type: typeof shadeType) => {
+              const getShadeColorAndLabel = (type: AnomalyShade) => {
                 switch (type) {
                   case "lockup":
                     return { color: "rgba(255, 77, 77, 0.2)", border: "#FF4D4D", label: "LOCKUP DETECTED" };
@@ -145,9 +142,9 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                 }
               };
 
-              const drawZone = (startIdx: number, endIdx: number, type: typeof shadeType) => {
-                const startX = Math.round(u.valToPos(sessionTime[fromIdx + startIdx] - sessionTime[fromIdx], "x"));
-                const endX = Math.round(u.valToPos(sessionTime[fromIdx + endIdx] - sessionTime[fromIdx], "x"));
+              const drawZone = (startIdx: number, endIdx: number, type: AnomalyShade) => {
+                const startX = Math.round(u.valToPos(sessionTime[from + startIdx] - sessionTime[from], "x"));
+                const endX = Math.round(u.valToPos(sessionTime[from + endIdx] - sessionTime[from], "x"));
                 const { color, border, label } = getShadeColorAndLabel(type);
 
                 // Paint background rectangle in the chart plot bounds
@@ -171,8 +168,8 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
               };
 
               for (let i = 0; i < xs.length; i++) {
-                const tick = fromIdx + i;
-                let activeShade: typeof shadeType = null;
+                const tick = from + i;
+                let activeShade: AnomalyShade = null;
 
                 if (name === "Brake" || name.toLowerCase().includes("brakelinepress")) {
                   const brakeVal = parsed.channels["Brake"]?.data[tick] ?? 0;
@@ -221,7 +218,7 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
           setCursor: [
             (u) => {
               const idx = u.cursor.idx;
-              if (idx != null) setCursorTick(fromIdx + idx);
+              if (idx != null) setCursorTick(from + idx);
             },
           ],
         },
