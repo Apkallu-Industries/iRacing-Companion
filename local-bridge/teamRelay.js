@@ -128,6 +128,10 @@ function publish(t, sessionData) {
     airTempC: t.liveAirTempC || t.airTempC || 0,
     trackWetness: t.trackWetness || 0,
 
+    // Phase 15 state variables
+    enduranceState: t.enduranceState || null,
+    adaptationState: t.adaptationState || null,
+
     // Bridge status
     timestamp: Date.now(),
     publishCount: ++publishCount,

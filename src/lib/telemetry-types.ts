@@ -1,6 +1,7 @@
 export interface Telemetry {
   connected: boolean;
   source: "live" | "simulated";
+  all?: any;
   session: string;
   track: string;
   car: string;

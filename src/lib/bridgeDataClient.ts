@@ -87,7 +87,19 @@ export class BridgeDataClient {
             if (data && data.type === "license") {
               this.emit({ type: "license", data });
             } else {
-              this.emit({ type: "telemetry", data: data as Partial<Telemetry> });
+              // Unpack multi-car namespace envelope if present, else fallback to legacy direct frame
+              let normalized = data;
+              if (data && typeof data === "object" && "payload" in data && typeof data.payload === "object") {
+                normalized = {
+                  ...data.payload,
+                  __meta: {
+                    carId: data.carId,
+                    teamId: data.teamId,
+                    driverId: data.driverId,
+                  },
+                };
+              }
+              this.emit({ type: "telemetry", data: normalized as Partial<Telemetry> });
             }
           } catch (e) {
             this.emit({ type: "error", data: e });

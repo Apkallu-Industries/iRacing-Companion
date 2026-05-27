@@ -1,4 +1,4 @@
-﻿/**
+/**
  * useTeamTelemetry — Supabase Realtime subscriber for multi-driver team telemetry.
  *
  * Subscribes to the shared team channel and returns a live map of
@@ -58,6 +58,22 @@ export interface DriverTelemetrySnapshot {
   // Environment
   trackTempC: number;
   trackWetness: number;
+
+  // Phase 15 states
+  enduranceState?: {
+    chassisFatigue: number;
+    brakeWear: number;
+    gearboxStress: number;
+    ersHealth: number;
+  } | null;
+  adaptationState?: {
+    event: string;
+    incomingDriver?: string;
+    currentLapInWindow?: number;
+    brakeBiteMismatchPct: number;
+    steeringJitterMismatchPct: number;
+    tireThermalGradientDelta: number;
+  } | null;
 
   // Meta
   timestamp: number;

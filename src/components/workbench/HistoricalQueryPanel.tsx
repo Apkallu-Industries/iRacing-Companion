@@ -16,6 +16,7 @@ import { IntelligenceDashboard } from "./IntelligenceDashboard";
 import { StrategicIntelligenceTab } from "./StrategicIntelligenceTab";
 import { StrategicSimulationTab } from "./StrategicSimulationTab";
 import { SandboxWorkstationTab } from "./SandboxWorkstationTab";
+import { EnduranceOperationsPanel } from "./EnduranceOperationsPanel";
 import {
   useSessions,
   useEventQuery,
@@ -215,7 +216,7 @@ export function HistoricalQueryPanel() {
 
   const [selectedSession, setSelectedSession] = useState<StoredSession | null>(null);
   const [showLaps, setShowLaps] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence" | "strategic" | "simulation" | "sandbox">("sessions");
+  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence" | "strategic" | "simulation" | "sandbox" | "endurance">("sessions");
 
   // Event query state
   const [queryMode,     setQueryMode]     = useState<"structured" | "tql">("tql");
@@ -314,7 +315,7 @@ export function HistoricalQueryPanel() {
 
       {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="flex shrink-0" style={{ borderBottom: "1px solid #1C2430" }}>
-        {(["sessions", "events", "intelligence", "strategic", "simulation", "sandbox"] as const).map((tab) => (
+        {(["sessions", "events", "intelligence", "strategic", "simulation", "sandbox", "endurance"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -581,6 +582,17 @@ export function HistoricalQueryPanel() {
       {activeTab === "sandbox" && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#07090E]">
           <SandboxWorkstationTab
+            sessionId={selectedSession?._id}
+            car={selectedSession?.car}
+            track={selectedSession?.track}
+          />
+        </div>
+      )}
+
+      {/* ── Endurance Tab ───────────────────────────────────────────── */}
+      {activeTab === "endurance" && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#07090E]">
+          <EnduranceOperationsPanel
             sessionId={selectedSession?._id}
             car={selectedSession?.car}
             track={selectedSession?.track}

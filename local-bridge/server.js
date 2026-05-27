@@ -26,6 +26,9 @@ const queryPlanner = require("./queryPlanner");
 const { Worker } = require("worker_threads");
 const simulationRuntime = require("./simulationRuntime");
 const observability = require("./observability");
+const carStateRuntime = require("./carStateRuntime");
+const driverSwapContinuity = require("./driverSwapContinuity");
+const pitStopRuntime = require("./pitStopRuntime");
 
 // Spawn and supervise isolated analytical worker thread
 let analyticalWorker = null;
@@ -997,6 +1000,21 @@ if (IRacingSDK) {
     currentLap = flat.Lap ?? 0;
     packetCount += 1;
 
+    // Phase 15 Endurance State calculations
+    carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
+    const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
+    
+    // Add cumulative metrics to frame
+    latest.enduranceState = carStateRuntime.getCurrentState();
+    if (swapReport) {
+      latest.adaptationState = swapReport;
+    }
+
+    // Periodically persist state to MongoDB (every 10s)
+    if (recorder && recorderConnected && packetCount % (TICK_HZ * 10) === 0) {
+      carStateRuntime.persistState(recorder.db, recorderSessionId, latest.carNumber);
+    }
+
     // Publish live frame tick to the Decoupled Runtime Event Bus
     runtimeBus.publish("FRAME_RECEIVED", latest);
 
@@ -1076,7 +1094,12 @@ setInterval(() => {
         client.send(binaryMsg);
       } else {
         if (!jsonMsg) {
-          jsonMsg = JSON.stringify(latest);
+          jsonMsg = JSON.stringify({
+            carId: latest.carNumber || "963",
+            teamId: "team_pitwall",
+            driverId: latest.driver || "driver_A",
+            payload: latest
+          });
         }
         client.send(jsonMsg);
       }
@@ -1097,7 +1120,12 @@ wss.on("connection", (ws) => {
     if (ws.isBinary) {
       ws.send(binaryEncoder.encodeTelemetry(latest));
     } else {
-      ws.send(JSON.stringify(latest));
+      ws.send(JSON.stringify({
+        carId: latest.carNumber || "963",
+        teamId: "team_pitwall",
+        driverId: latest.driver || "driver_A",
+        payload: latest
+      }));
     }
   }
 
