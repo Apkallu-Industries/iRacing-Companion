@@ -3,12 +3,6 @@
  *
  * Subscribes to the shared team channel and returns a live map of
  * carNumber → DriverTelemetrySnapshot, updated at ~2Hz per driver.
- *
- * Usage:
- *   const { drivers, connected } = useTeamTelemetry("LE-MANS-2026-A");
- *
- * Each driver's bridge publishes to this channel via teamRelay.js.
- * Drivers who haven't sent in >30s are marked as offline.
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -25,47 +19,62 @@ export interface TireCornerSnapshot {
   state: "cold" | "ok" | "hot";
 }
 
+export interface CarOperationalDigest {
+  sequenceId: number;
+  carId: string;
+  activeDriver: string;
+  projectedPitLap: number;
+  fatigueSummary: {
+    chassis: number;
+    gearbox: number;
+    brakes: number;
+    ersHealth: number;
+    aeroStability: number;
+  };
+  adaptationWindow: {
+    active: boolean;
+    currentLapInWindow: number;
+  };
+  strategyRisk: "LOW" | "MED" | "HIGH";
+  alerts: string[];
+}
+
 export interface DriverTelemetrySnapshot {
   /** Unique key — the car number string e.g. "44" */
   carNumber: string;
-  driverName: string;
   carName: string;
+  driverName: string;
 
-  // Lap
+  // Advisory operational state from authoritative bridge
+  carOperationalState?: Partial<CarOperationalDigest>;
+
+  // Advisory fallback/legacy fields for frontend component compatibility
   lastLapSec: number;
   lastLap: string;
   bestLap: string;
   deltaSec: number;
-
-  // Fuel
   fuelRemainingL: number;
   fuelBurnPerLap: number;
   lapsEstimated: number;
-
-  // Tires
   tires: {
     fl: TireCornerSnapshot;
     fr: TireCornerSnapshot;
     rl: TireCornerSnapshot;
     rr: TireCornerSnapshot;
   } | null;
-
-  // Motion
   speedKph: number;
   gear: number;
   rpm: number;
-
-  // Environment
   trackTempC: number;
   trackWetness: number;
 
-  // Phase 15 states
   enduranceState?: {
     chassisFatigue: number;
     brakeWear: number;
     gearboxStress: number;
     ersHealth: number;
   } | null;
+
   adaptationState?: {
     event: string;
     incomingDriver?: string;
@@ -102,7 +111,6 @@ export function useTeamTelemetry(teamCode: string | null): UseTeamTelemetryResul
   const [drivers, setDrivers] = useState<Map<string, DriverTelemetrySnapshot>>(new Map());
   const [connected, setConnected] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  // Staleness ticker — marks drivers offline after 30s silence
   const stalenessRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updateStaleness = useCallback(() => {
@@ -126,7 +134,6 @@ export function useTeamTelemetry(teamCode: string | null): UseTeamTelemetryResul
 
     const channelName = `team:${teamCode}`;
 
-    // Clean up any existing channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
@@ -138,15 +145,72 @@ export function useTeamTelemetry(teamCode: string | null): UseTeamTelemetryResul
     ch.on(
       "broadcast",
       { event: "telemetry" },
-      ({ payload }: { payload: Omit<DriverTelemetrySnapshot, "isOnline" | "staleness"> }) => {
+      ({ payload }: { payload: any }) => {
         if (!payload?.carNumber) return;
+
+        // Perform smart mapping from carOperationalState to legacy top-level properties
+        const opState = payload.carOperationalState as CarOperationalDigest | undefined;
+        const activeDriver = opState?.activeDriver || "Unknown Driver";
+        const brakesWear = opState?.fatigueSummary?.brakes ?? 100;
+
+        const mappedTeammate: DriverTelemetrySnapshot = {
+          carNumber: payload.carNumber,
+          carName: payload.carName || "Unknown Car",
+          driverName: activeDriver,
+          carOperationalState: opState,
+
+          // Populated advisory legacy fields from OperationalDigest where possible
+          lastLapSec: 0,
+          lastLap: "--:--.---",
+          bestLap: "--:--.---",
+          deltaSec: 0,
+          fuelRemainingL: 0,
+          fuelBurnPerLap: 0,
+          lapsEstimated: opState?.projectedPitLap ? Math.max(0, opState.projectedPitLap) : 0,
+          speedKph: 0,
+          gear: 0,
+          rpm: 0,
+          trackTempC: 0,
+          trackWetness: 0,
+
+          tires: opState?.fatigueSummary
+            ? {
+                fl: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
+                fr: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
+                rl: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
+                rr: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
+              }
+            : null,
+
+          enduranceState: opState?.fatigueSummary
+            ? {
+                chassisFatigue: opState.fatigueSummary.chassis,
+                brakeWear: opState.fatigueSummary.brakes,
+                gearboxStress: opState.fatigueSummary.gearbox,
+                ersHealth: opState.fatigueSummary.ersHealth,
+              }
+            : null,
+
+          adaptationState: opState?.adaptationWindow
+            ? {
+                event: opState.adaptationWindow.active ? "DRIVER_ADAPTATION_ACTIVE" : "DRIVER_ADAPTATION_INACTIVE",
+                incomingDriver: activeDriver,
+                currentLapInWindow: opState.adaptationWindow.currentLapInWindow,
+                brakeBiteMismatchPct: 0,
+                steeringJitterMismatchPct: 0,
+                tireThermalGradientDelta: 0,
+              }
+            : null,
+
+          timestamp: payload.timestamp || Date.now(),
+          publishCount: payload.publishCount || 1,
+          isOnline: true,
+          staleness: 0,
+        };
+
         setDrivers((prev) => {
           const next = new Map(prev);
-          next.set(payload.carNumber, {
-            ...payload,
-            isOnline: true,
-            staleness: 0,
-          });
+          next.set(payload.carNumber, mappedTeammate);
           return next;
         });
       }
@@ -157,8 +221,6 @@ export function useTeamTelemetry(teamCode: string | null): UseTeamTelemetryResul
     });
 
     channelRef.current = ch;
-
-    // Staleness ticker — run every 5s
     stalenessRef.current = setInterval(updateStaleness, 5_000);
 
     return () => {

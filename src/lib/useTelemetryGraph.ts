@@ -62,8 +62,8 @@ export function useTelemetryGraph(): TelemetryGraph {
     if (!localCar) return [];
     return Array.from(remoteCars.values()).map((rc) => ({
       carNumber: rc.carNumber,
-      speedDelta: Math.round(localCar.speedKph - rc.speedKph),
-      fuelDelta: Number((localCar.fuelRemainingL - rc.fuelRemainingL).toFixed(1)),
+      speedDelta: 0,
+      fuelDelta: 0,
     }));
   }, [localCar, remoteCars]);
 
@@ -75,8 +75,13 @@ export function useTelemetryGraph(): TelemetryGraph {
     if (localCar && (localCar as any).enduranceState) {
       return (localCar as any).enduranceState;
     }
-    if (activeRemoteCar?.enduranceState) {
-      return activeRemoteCar.enduranceState;
+    if (activeRemoteCar?.carOperationalState?.fatigueSummary) {
+      return {
+        chassisFatigue: activeRemoteCar.carOperationalState.fatigueSummary.chassis,
+        brakeWear: activeRemoteCar.carOperationalState.fatigueSummary.brakes,
+        gearboxStress: activeRemoteCar.carOperationalState.fatigueSummary.gearbox,
+        ersHealth: activeRemoteCar.carOperationalState.fatigueSummary.ersHealth,
+      };
     }
     // Baseline safe fallback wear state
     return {
@@ -91,8 +96,14 @@ export function useTelemetryGraph(): TelemetryGraph {
     if (localCar && (localCar as any).adaptationState) {
       return (localCar as any).adaptationState;
     }
-    if (activeRemoteCar?.adaptationState) {
-      return activeRemoteCar.adaptationState;
+    if (activeRemoteCar?.carOperationalState?.adaptationWindow) {
+      return {
+        event: activeRemoteCar.carOperationalState.adaptationWindow.active ? "DRIVER_ADAPTATION_ACTIVE" : "DRIVER_ADAPTATION_INACTIVE",
+        currentLapInWindow: activeRemoteCar.carOperationalState.adaptationWindow.currentLapInWindow,
+        brakeBiteMismatchPct: 0,
+        steeringJitterMismatchPct: 0,
+        tireThermalGradientDelta: 0,
+      };
     }
     return null;
   }, [localCar, activeRemoteCar]);

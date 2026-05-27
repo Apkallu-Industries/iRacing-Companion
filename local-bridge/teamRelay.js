@@ -15,6 +15,8 @@
 
 "use strict";
 
+const vehicleIdentityRuntime = require("./vehicleIdentityRuntime");
+
 let supabase = null;
 let channel = null;
 let isReady = false;
@@ -86,55 +88,16 @@ function init() {
 function publish(t, sessionData) {
   if (!isReady || !channel) return;
 
-  // Derive fuel burn per lap from FuelUsePerHour + last lap time
-  const burnPerLap =
-    t.fuelUsePerHour > 0 && t.lapLastLapTimeSec > 0
-      ? (t.fuelUsePerHour * t.lapLastLapTimeSec) / 3600
-      : t.lapsEstimated > 0
-      ? t.fuelRemainingL / t.lapsEstimated
-      : 0;
-
-  // Resolve driver name: env override → iRacing session name → "Unknown"
-  const driverName = DRIVER_NAME || t.driverName || "Unknown Driver";
+  const digest = vehicleIdentityRuntime.getOperationalDigest();
+  if (!digest) return;
 
   const payload = {
-    // Identity
     teamCode: TEAM_CODE,
-    driverName,
     carNumber: t.carNumber || "0",
     carName: t.car || "Unknown Car",
-
-    // Lap data
-    lastLapSec: t.lapLastLapTimeSec || 0,
-    lastLap: t.lastLap || "--:--.---",
-    bestLap: t.bestLap || "--:--.---",
-    deltaSec: t.deltaSec || 0,
-
-    // Fuel
-    fuelRemainingL: t.fuelRemainingL || 0,
-    fuelBurnPerLap: parseFloat(burnPerLap.toFixed(3)),
-    lapsEstimated: t.lapsEstimated || 0,
-
-    // Tires — send the per-corner snapshot
-    tires: t.tires || null,
-
-    // Motion
-    speedKph: Math.round(t.speedKph || 0),
-    gear: t.gear || 0,
-    rpm: Math.round(t.rpm || 0),
-
-    // Environment
-    trackTempC: t.liveTrackTempC || t.trackTempC || 0,
-    airTempC: t.liveAirTempC || t.airTempC || 0,
-    trackWetness: t.trackWetness || 0,
-
-    // Phase 15 state variables
-    enduranceState: t.enduranceState || null,
-    adaptationState: t.adaptationState || null,
-
-    // Bridge status
     timestamp: Date.now(),
     publishCount: ++publishCount,
+    carOperationalState: digest
   };
 
   channel

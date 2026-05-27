@@ -29,6 +29,7 @@ const observability = require("./observability");
 const carStateRuntime = require("./carStateRuntime");
 const driverSwapContinuity = require("./driverSwapContinuity");
 const pitStopRuntime = require("./pitStopRuntime");
+const vehicleIdentityRuntime = require("./vehicleIdentityRuntime");
 
 // Spawn and supervise isolated analytical worker thread
 let analyticalWorker = null;
@@ -984,6 +985,17 @@ if (IRacingSDK) {
           driver: me.UserName ?? "unknown",
           sessionInfoYaml: "",
         });
+        vehicleIdentityRuntime.initializeSession({
+          carId: me.CarScreenName ?? "unknown",
+          carNumber: me.CarNumber ?? "0",
+          carName: me.CarScreenName ?? "Unknown Car",
+          teamId: process.env.TEAM_CODE || "local",
+          driverId: me.UserName ?? "unknown",
+          env: {
+            trackTempC: weekend?.WeekendOptions?.TrackTemp ?? 0,
+            airTempC: weekend?.WeekendOptions?.AirTemp ?? 0,
+          }
+        });
       } else {
         // Stop recording when iRacing disconnects
         stopRecordingSession();
@@ -1004,15 +1016,21 @@ if (IRacingSDK) {
     carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
     const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
     
-    // Add cumulative metrics to frame
-    latest.enduranceState = carStateRuntime.getCurrentState();
+    // Authoritative Ingest to produce deterministic nextState & sequences
+    const enduranceState = carStateRuntime.getCurrentState();
+    const nextState = vehicleIdentityRuntime.ingestFrame(latest, enduranceState, swapReport, currentLap);
+    
+    // Add authoritative state to frame projection
+    latest.carOperationalState = nextState;
+    latest.enduranceState = enduranceState;
     if (swapReport) {
       latest.adaptationState = swapReport;
     }
 
-    // Periodically persist state to MongoDB (every 10s)
+    // Periodically persist coherent state snapshot & deltas to MongoDB (every 10s)
     if (recorder && recorderConnected && packetCount % (TICK_HZ * 10) === 0) {
-      carStateRuntime.persistState(recorder.db, recorderSessionId, latest.carNumber);
+      vehicleIdentityRuntime.persistSnapshot(recorder.db, recorderSessionId);
+      vehicleIdentityRuntime.flushDeltasToMongo(recorder.db, recorderSessionId);
     }
 
     // Publish live frame tick to the Decoupled Runtime Event Bus

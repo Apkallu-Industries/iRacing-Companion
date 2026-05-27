@@ -313,14 +313,14 @@ export function LiveCoach({ t }: { t: Telemetry }) {
         {/* Body grid */}
         <div className="flex-1 p-3 flex gap-3 overflow-hidden min-h-0 bg-panel-2 items-center">
           {/* Large Avatar of Coach */}
-          <div className="w-24 h-24 flex-shrink-0 relative">
+          <div className="w-72 h-72 flex-shrink-0 relative">
             <img
               src="/images/coach-avatar.png"
               alt="AI Coach"
               className="w-full h-full object-cover rounded border border-border/80 shadow-lg"
             />
             {/* Pulsing indicator in corner of avatar showing active state */}
-            <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-emerald-500 border border-background animate-pulse" />
+            <span className="absolute bottom-1 right-1 size-3.5 rounded-full bg-emerald-500 border border-background animate-pulse" />
           </div>
 
           {/* Coach Message Bubble */}
@@ -382,18 +382,22 @@ export function LiveCoach({ t }: { t: Telemetry }) {
 
   return (
     <div className={`bg-panel-2 ring-1 ${call ? style.ring : "ring-white/5"} rounded-lg p-4`}>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">
-          <img
-            src="/images/coach-avatar.png"
-            alt="AI Coach"
-            className="h-7 w-7 rounded-sm object-cover ring-1 ring-border"
-          />
-          AI Coach
-          <span className="flex items-center gap-1 text-[8px] text-emerald-400">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            LIVE COACH
-          </span>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-foreground font-semibold">
+          <div className="relative">
+            <img
+              src="/images/coach-avatar.png"
+              alt="AI Coach"
+              className="h-36 w-36 rounded-md object-cover ring-2 ring-border shadow-md"
+            />
+            <span className="absolute bottom-0 right-0 size-3 rounded-full bg-emerald-500 border border-background animate-pulse" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span>AI Coach</span>
+            <span className="flex items-center gap-1 text-[8px] text-emerald-400 font-bold">
+              LIVE COACH
+            </span>
+          </div>
         </h2>
         <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground">
           {!user && <span className="text-racing-orange">Sign in to save PBs</span>}
@@ -460,11 +464,11 @@ export function LiveCoach({ t }: { t: Telemetry }) {
             )}
           </div>
           {/* Avatar + message layout (F1 reference style) */}
-          <div className="flex gap-3 mt-1">
+          <div className="flex gap-4 mt-2 items-center">
             <img
               src="/images/coach-avatar.png"
               alt="AI Coach"
-              className="h-16 w-16 rounded-sm object-cover ring-1 ring-border flex-shrink-0"
+              className="h-64 w-64 rounded-md object-cover ring-2 ring-border shadow-lg flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
               <div className={`text-sm font-semibold leading-tight ${style.text}`}>{call.headline}</div>

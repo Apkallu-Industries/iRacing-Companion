@@ -6,15 +6,6 @@
  * MUTATION INVARIANT: Only this module may write to CarOperationalState.
  * All downstream entities (React, Supabase, MongoDB, AI workers) are READ-ONLY
  * consumers of state projections emitted by this engine.
- *
- * Key capabilities:
- *   - Monotonic sequenceId (causal ordering authority)
- *   - SHA-256 stateHash (corruption + branch verification)
- *   - adaptationEpochId (UUID boundary per driver swap)
- *   - Stint continuity (tire life, fuel, lap counters across swaps)
- *   - Strategy context (undercut risk, window projection)
- *   - Event-sourced CarOperationalDelta log (persistent + in-memory ring)
- *   - MongoDB persistence to car_states, car_state_history, car_operational_deltas
  */
 
 "use strict";
@@ -25,8 +16,38 @@ const crypto = require("crypto");
 const SCHEMA_VERSION = 2;
 
 // ─── Ring buffer limits ─────────────────────────────────────────────────────────
-const DELTA_RING_LIMIT = 500;          // in-memory recent delta events
+const DELTA_RING_LIMIT = 500;
 const HISTORY_INTERVAL_MS = 10_000;   // write car_state_history every 10 seconds
+
+/**
+ * Deep-copies an object and sorts keys recursively, filtering out volatile
+ * transport fields to ensure a stable canonical state representation for hashing.
+ */
+function canonicalize(obj) {
+  if (obj === null || typeof obj !== "object") {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(canonicalize);
+  }
+  const sortedKeys = Object.keys(obj).sort();
+  const result = {};
+  for (const key of sortedKeys) {
+    if (
+      key === "relayState" ||
+      key === "timestamp" ||
+      key === "recorded_at" ||
+      key === "updated_at" ||
+      key === "lastUpdated" ||
+      key === "remoteLatencyMs" ||
+      key === "stateHash"
+    ) {
+      continue;
+    }
+    result[key] = canonicalize(obj[key]);
+  }
+  return result;
+}
 
 class VehicleIdentityRuntime {
   constructor() {
@@ -34,27 +55,18 @@ class VehicleIdentityRuntime {
     this._state = null;
     this._deltaRing = [];
     this._lastHistoryFlush = 0;
-    this._snapshotIntervalTicks = 0;
+    this._inPitPrev = false;
+    this._pitEntryBrakeWear = null;
   }
 
-  // ─── Public: initialize state from scratch (called on first iRacing connect) ──
-
   /**
-   * Initialize the CarOperationalState for a new session.
-   * Must be called before any updateFromFrame() calls.
-   *
-   * @param {object} opts
-   * @param {string} opts.carId      - iRacing CarIdx string (e.g. "963")
-   * @param {string} opts.carNumber  - Race number (e.g. "04")
-   * @param {string} opts.carName    - Visual name (e.g. "Porsche 963 GTP")
-   * @param {string} opts.teamId     - Team Code (e.g. "PITWALL-X8F2")
-   * @param {string} opts.driverId   - Initial driver name
-   * @param {object} opts.env        - Environment context (track temps, BOP, etc.)
+   * Initializes the CarOperationalState for a new session.
+   * Pure assignment with initial state calculation.
    */
   initializeSession({ carId, carNumber, carName, teamId, driverId, env = {} }) {
     this._sequenceId = 0;
 
-    this._state = {
+    const initialState = {
       schemaVersion: SCHEMA_VERSION,
       sequenceId: 0,
       stateHash: "",
@@ -80,7 +92,7 @@ class VehicleIdentityRuntime {
         projectedPitLap: 0,
       },
 
-      // Cumulative fatigue (sourced from carStateRuntime sub-calculations)
+      // Cumulative fatigue
       cumulativeFatigue: {
         chassis: 0,
         gearbox: 0,
@@ -124,8 +136,8 @@ class VehicleIdentityRuntime {
       },
     };
 
-    // Seal with initial hash
-    this._state.stateHash = this._computeHash(this._state);
+    initialState.stateHash = this._computeHash(initialState);
+    this._state = Object.freeze(initialState);
 
     console.log(
       `[vehicle-identity] Session initialized — Car: ${carNumber} | Driver: ${driverId} | EpochID: ${this._state.adaptationEpochId}`
@@ -134,151 +146,301 @@ class VehicleIdentityRuntime {
     return this._state;
   }
 
-  // ─── Public: frame-level update (called every 60Hz tick) ──────────────────────
-
   /**
-   * Absorbs a mapped telemetry frame and the endurance/swap sub-states
-   * to produce the next CarOperationalState.
-   *
-   * ONLY this method writes to this._state.
-   *
-   * @param {object} t               - Mapped telemetry frame (from mapTelemetry())
-   * @param {object} enduranceState  - Output of carStateRuntime.getCurrentState()
-   * @param {object} swapReport      - Output of driverSwapContinuity.detectSwapAndTrackAdaptation()
-   * @param {number} lapNumber       - Current lap number
+   * Pure state reducer: ingests a frame and returns a structurally coherent next state.
    */
-  updateFromFrame(t, enduranceState, swapReport, lapNumber) {
+  ingestFrame(t, enduranceState, swapReport, lapNumber) {
     if (!this._state) return null;
 
-    const prevDriver = this._state.activeDriverId;
+    const prevState = this._state;
+    const prevDriver = prevState.activeDriverId;
     const incomingDriver = t.driver || t.driverName || prevDriver;
 
-    // ── Driver Swap Detection ────────────────────────────────────────────────
-    const swapDetected = prevDriver && prevDriver !== incomingDriver && prevDriver !== "Unknown Driver";
-    if (swapDetected) {
-      this._handleDriverSwap(prevDriver, incomingDriver, lapNumber, t);
-    }
-
-    // ── Advance sequence ─────────────────────────────────────────────────────
+    // Increment strictly monotonic sequenceId (bridge-owned)
     this._sequenceId += 1;
-    this._state.sequenceId = this._sequenceId;
 
-    // ── Update active driver ─────────────────────────────────────────────────
-    this._state.activeDriverId = incomingDriver;
+    // Detect driver swap
+    const swapDetected = prevDriver && prevDriver !== incomingDriver && prevDriver !== "Unknown Driver";
 
-    // ── Stint continuity ─────────────────────────────────────────────────────
-    const stintLap = lapNumber - this._state.currentStint.lapStart;
-    this._state.currentStint.lapsCompleted = Math.max(0, stintLap);
-    this._state.currentStint.fuelVolumeL = t.fuelRemainingL || 0;
+    // Build the new drivers array non-destructively
+    let nextPreviousDrivers = [...prevState.previousDrivers];
+    if (swapDetected && prevDriver && !nextPreviousDrivers.includes(prevDriver)) {
+      nextPreviousDrivers.push(prevDriver);
+    }
 
+    // Epoch ID
+    const nextEpochId = swapDetected ? this._generateEpochId() : prevState.adaptationEpochId;
+
+    // Stint Continuity & Swap logic
+    const nextStintNumber = swapDetected ? prevState.currentStint.stintNumber + 1 : prevState.currentStint.stintNumber;
+    const nextLapStart = swapDetected ? lapNumber : prevState.currentStint.lapStart;
+    const nextLapsCompleted = Math.max(0, lapNumber - nextLapStart);
+
+    let nextFuelBurnPerLap = prevState.currentStint.fuelBurnPerLap;
     if (t.fuelBurnPerLap && t.fuelBurnPerLap > 0) {
-      this._state.currentStint.fuelBurnPerLap = t.fuelBurnPerLap;
+      nextFuelBurnPerLap = t.fuelBurnPerLap;
     }
-    if (this._state.currentStint.fuelBurnPerLap > 0 && this._state.currentStint.fuelVolumeL > 0) {
-      const lapsRemaining = this._state.currentStint.fuelVolumeL / this._state.currentStint.fuelBurnPerLap;
-      this._state.currentStint.projectedPitLap = Math.floor(lapNumber + lapsRemaining);
-    }
+    const fuelVolumeL = t.fuelRemainingL || 0;
+    const lapsRemaining = nextFuelBurnPerLap > 0 && fuelVolumeL > 0 ? fuelVolumeL / nextFuelBurnPerLap : 0;
+    const nextProjectedPitLap = lapsRemaining > 0 ? Math.floor(lapNumber + lapsRemaining) : prevState.currentStint.projectedPitLap;
 
-    // ── Cumulative fatigue (absorb from carStateRuntime sub-engine) ──────────
+    const nextStint = {
+      stintNumber: nextStintNumber,
+      lapStart: nextLapStart,
+      lapsCompleted: nextLapsCompleted,
+      fuelVolumeL,
+      fuelBurnPerLap: nextFuelBurnPerLap,
+      projectedPitLap: nextProjectedPitLap,
+    };
+
+    // Cumulative Fatigue (Preserved across driver swaps)
+    let nextFatigue = { ...prevState.cumulativeFatigue };
     if (enduranceState) {
-      this._state.cumulativeFatigue.chassis = enduranceState.chassisFatigue || 0;
-      this._state.cumulativeFatigue.gearbox = enduranceState.gearboxStress || 0;
-      this._state.cumulativeFatigue.brakes  = enduranceState.brakeWear ?? 100;
-      this._state.cumulativeFatigue.ersHealth = enduranceState.ersHealth ?? 100;
-
-      // Aero stability approximation: inverse of cumulative instability count
       const instability = enduranceState.cumulativeInstability || 0;
-      this._state.cumulativeFatigue.aeroStability = Math.max(0, 100 - instability * 0.5);
-    }
-
-    // ── Adaptation state (absorb from driverSwapContinuity sub-engine) ───────
-    if (swapReport) {
-      this._state.adaptationState = {
-        active: swapReport.event === "DRIVER_ADAPTATION_ACTIVE",
-        currentLapInWindow: swapReport.currentLapInWindow || 0,
-        steeringJitterPct: swapReport.steeringJitterMismatchPct || 0,
-        brakeBiteDeltaPct: swapReport.brakeBiteMismatchPct || 0,
-        thermalGradientDeltaC: swapReport.tireThermalGradientDelta || 0,
+      nextFatigue = {
+        chassis: enduranceState.chassisFatigue || 0,
+        gearbox: enduranceState.gearboxStress || 0,
+        brakes: enduranceState.brakeWear ?? 100,
+        ersHealth: enduranceState.ersHealth ?? 100,
+        aeroStability: Math.max(0, 100 - instability * 0.5),
       };
-    } else if (!swapDetected) {
-      // Outside adaptation windows, gradually decay active flag
-      this._state.adaptationState.active = false;
     }
 
-    // ── Strategy context ─────────────────────────────────────────────────────
-    this._updateStrategyContext(t, lapNumber);
+    // Driver Adaptation (Reset fully on driver swap, updated via swapReport otherwise)
+    let nextAdaptation = {
+      active: false,
+      currentLapInWindow: 0,
+      steeringJitterPct: 0,
+      brakeBiteDeltaPct: 0,
+      thermalGradientDeltaC: 0,
+    };
 
-    // ── Environment context ──────────────────────────────────────────────────
-    this._state.environmentContext.trackTempC = t.liveTrackTempC || t.trackTempC || 0;
-    this._state.environmentContext.airTempC   = t.liveAirTempC   || t.airTempC   || 0;
-    this._state.environmentContext.rainLevel  = t.trackWetness   || 0;
+    if (!swapDetected) {
+      if (swapReport) {
+        nextAdaptation = {
+          active: swapReport.event === "DRIVER_ADAPTATION_ACTIVE",
+          currentLapInWindow: swapReport.currentLapInWindow || 0,
+          steeringJitterPct: swapReport.steeringJitterMismatchPct || 0,
+          brakeBiteDeltaPct: swapReport.brakeBiteMismatchPct || 0,
+          thermalGradientDeltaC: swapReport.tireThermalGradientDelta || 0,
+        };
+      } else {
+        // Carry forward previous state if not swapped and no active window reset trigger
+        nextAdaptation = {
+          ...prevState.adaptationState,
+          active: false, // Gradually decay active window flag outside report windows
+        };
+      }
+    }
 
-    // ── Relay sync metadata ──────────────────────────────────────────────────
-    this._state.relayState.lastUpdated = Date.now();
+    // Strategy Context
+    const burnPerLap = nextFuelBurnPerLap || 2.8;
+    const reserveLaps = burnPerLap > 0 ? 1.5 / burnPerLap : 1;
+    const targetWindowMin = Math.floor(lapNumber + lapsRemaining - reserveLaps - 1);
+    const targetWindowMax = Math.floor(lapNumber + lapsRemaining);
 
-    // ── Pit stop detection (tire reset on stationary + pit surface) ───────────
+    let undercutRisk = "LOW";
+    if (nextFatigue.brakes < 35) {
+      undercutRisk = "HIGH";
+    } else if (nextFatigue.brakes < 60) {
+      undercutRisk = "MED";
+    }
+
+    const nextStrategy = {
+      targetWindowMin: Math.max(0, targetWindowMin),
+      targetWindowMax: Math.max(0, targetWindowMax),
+      undercutRisk,
+      teammateOverlapMinutes: prevState.strategyState.teammateOverlapMinutes || 0,
+    };
+
+    // Environment
+    const nextEnv = {
+      ...prevState.environmentContext,
+      trackTempC: t.liveTrackTempC || t.trackTempC || 0,
+      airTempC: t.liveAirTempC || t.airTempC || 0,
+      rainLevel: t.trackWetness || 0,
+    };
+
+    // Relay sync
+    const nextRelay = {
+      localAuthority: true,
+      remoteLatencyMs: 0,
+      lastUpdated: Date.now(),
+    };
+
+    // Construct nextState object immutably
+    const nextState = {
+      schemaVersion: SCHEMA_VERSION,
+      sequenceId: this._sequenceId,
+      stateHash: "",
+
+      carId: prevState.carId,
+      carNumber: prevState.carNumber,
+      carName: prevState.carName,
+      teamId: prevState.teamId,
+
+      activeDriverId: incomingDriver,
+      adaptationEpochId: nextEpochId,
+      previousDrivers: nextPreviousDrivers,
+
+      currentStint: nextStint,
+      cumulativeFatigue: nextFatigue,
+      adaptationState: nextAdaptation,
+      strategyState: nextStrategy,
+      environmentContext: nextEnv,
+      relayState: nextRelay,
+    };
+
+    // Compute hash
+    nextState.stateHash = this._computeHash(nextState);
+
+    // Apply Freeze to ensure strict immutability invariant
+    this._state = Object.freeze(nextState);
+
+    // Side-effects (Deltas & pit stop detection)
+    if (swapDetected) {
+      this._emitDelta({
+        timestamp: Date.now(),
+        lapNumber,
+        sequenceId: this._sequenceId,
+        type: "DRIVER_SWAP",
+        payload: {
+          from: prevDriver,
+          to: incomingDriver,
+          details: `Stint ${nextStintNumber} begins at Lap ${lapNumber} | EpochID: ${nextEpochId}`,
+        },
+      });
+      console.log(`[vehicle-identity] DRIVER SWAP: ${prevDriver} → ${incomingDriver} at Lap ${lapNumber}`);
+    }
+
     this._detectPitEvent(t, lapNumber);
-
-    // ── Compute state hash (SHA-256 of deterministic core fields) ────────────
-    this._state.stateHash = this._computeHash(this._state);
 
     return this._state;
   }
 
-  // ─── Public: getters ──────────────────────────────────────────────────────────
+  /**
+   * Backwards-compatibility wrapper for ingestFrame.
+   */
+  updateFromFrame(t, enduranceState, swapReport, lapNumber) {
+    return this.ingestFrame(t, enduranceState, swapReport, lapNumber);
+  }
 
   /**
-   * Returns the current read-only snapshot of CarOperationalState.
-   * Callers MUST NOT mutate the returned object.
+   * Apply an operational delta cleanly and immutably.
+   */
+  applyDelta(delta) {
+    if (!this._state || !delta) return this._state;
+
+    this._sequenceId += 1;
+
+    const nextState = {
+      ...this._state,
+      sequenceId: this._sequenceId,
+      relayState: {
+        ...this._state.relayState,
+        lastUpdated: Date.now(),
+      },
+    };
+
+    nextState.stateHash = this._computeHash(nextState);
+    this._state = Object.freeze(nextState);
+
+    this._emitDelta({
+      timestamp: Date.now(),
+      lapNumber: delta.lapNumber || 0,
+      sequenceId: this._sequenceId,
+      type: delta.type || "GENERIC_DELTA",
+      payload: delta.payload || {},
+    });
+
+    return this._state;
+  }
+
+  /**
+   * Returns a deeply-frozen copy (snapshot) of the current state.
+   */
+  snapshot() {
+    return JSON.parse(JSON.stringify(this._state));
+  }
+
+  /**
+   * Serializes the current state representation.
+   */
+  serialize() {
+    return JSON.stringify({
+      sequenceId: this._sequenceId,
+      state: this._state,
+      deltaRing: this._deltaRing,
+    });
+  }
+
+  /**
+   * Restores runtime authority from a given snapshot doc.
+   */
+  restoreFromSnapshot(snapshotDoc) {
+    if (!snapshotDoc) return;
+    this._state = Object.freeze(JSON.parse(JSON.stringify(snapshotDoc)));
+    this._sequenceId = this._state.sequenceId || 0;
+  }
+
+  /**
+   * Returns the current read-only projection of CarOperationalState.
    */
   getState() {
     return this._state;
   }
 
   /**
-   * Returns the compressed relay digest for Supabase broadcasting.
-   * Strips raw physics arrays and dense intermediate channels.
+   * Generates the highly optimized and lightweight OperationalDigest.
    */
-  getRelayDigest() {
+  getOperationalDigest() {
     if (!this._state) return null;
 
+    const alerts = [];
+    if (this._state.strategyState.undercutRisk === "HIGH") {
+      alerts.push("HIGH_UNDERCUT_RISK");
+    }
+    if (this._state.cumulativeFatigue.brakes < 35) {
+      alerts.push("LOW_BRAKE_PAD_LIFE");
+    }
+    if (this._state.cumulativeFatigue.ersHealth < 60) {
+      alerts.push("CRITICAL_ERS_DEGRADATION");
+    }
+
     return {
-      schemaVersion: this._state.schemaVersion,
       sequenceId: this._state.sequenceId,
-      stateHash: this._state.stateHash,
       carId: this._state.carId,
-      carNumber: this._state.carNumber,
-      carName: this._state.carName,
-      teamId: this._state.teamId,
-      activeDriverId: this._state.activeDriverId,
-      adaptationEpochId: this._state.adaptationEpochId,
-      previousDrivers: this._state.previousDrivers,
-      currentStint: this._state.currentStint,
-      cumulativeFatigue: this._state.cumulativeFatigue,
-      adaptationState: this._state.adaptationState,
-      strategyState: this._state.strategyState,
-      relayState: this._state.relayState,
-      // environment stripped of simBuild/bopVersion for bandwidth
-      environmentContext: {
-        trackTempC: this._state.environmentContext.trackTempC,
-        airTempC: this._state.environmentContext.airTempC,
-        rainLevel: this._state.environmentContext.rainLevel,
+      activeDriver: this._state.activeDriverId,
+      projectedPitLap: this._state.currentStint.projectedPitLap,
+      fatigueSummary: {
+        chassis: Math.round(this._state.cumulativeFatigue.chassis),
+        gearbox: Math.round(this._state.cumulativeFatigue.gearbox),
+        brakes: Math.round(this._state.cumulativeFatigue.brakes),
+        ersHealth: Math.round(this._state.cumulativeFatigue.ersHealth),
+        aeroStability: Math.round(this._state.cumulativeFatigue.aeroStability),
       },
+      adaptationWindow: {
+        active: this._state.adaptationState.active,
+        currentLapInWindow: this._state.adaptationState.currentLapInWindow,
+      },
+      strategyRisk: this._state.strategyState.undercutRisk,
+      alerts,
     };
   }
 
   /**
-   * Returns the most recent delta events (in-memory ring).
+   * Compressed relay digest for Supabase broadcasting.
    */
+  getRelayDigest() {
+    return this.getOperationalDigest();
+  }
+
   getRecentDeltas(limit = 20) {
     return this._deltaRing.slice(-limit);
   }
 
-  // ─── Public: MongoDB persistence ──────────────────────────────────────────────
-
   /**
-   * Persists the current CarOperationalState snapshot to MongoDB car_states.
-   * Also writes a timestamped entry to car_state_history every 10 seconds.
+   * Persists the current snapshot to MongoDB in a robust non-blocking pattern.
    */
   async persistSnapshot(db, sessionId) {
     if (!db || !this._state) return;
@@ -287,14 +449,12 @@ class VehicleIdentityRuntime {
     const stateDoc = this._buildPersistenceDoc(sessionId, this._state);
 
     try {
-      // Upsert the active car_states document
       await db.collection("car_states").updateOne(
         { session_id: stateDoc.session_id, car_number: this._state.carNumber },
         { $set: stateDoc },
         { upsert: true }
       );
 
-      // Write history snapshot at 10-second intervals (not 60Hz)
       if (now - this._lastHistoryFlush >= HISTORY_INTERVAL_MS) {
         this._lastHistoryFlush = now;
         await db
@@ -306,9 +466,6 @@ class VehicleIdentityRuntime {
     }
   }
 
-  /**
-   * Writes all pending delta events from the in-memory ring to MongoDB.
-   */
   async flushDeltasToMongo(db, sessionId) {
     if (!db || this._deltaRing.length === 0) return;
 
@@ -334,69 +491,24 @@ class VehicleIdentityRuntime {
     }
   }
 
-  // ─── Private: driver swap handler ─────────────────────────────────────────────
-
-  _handleDriverSwap(outgoing, incoming, lapNumber, t) {
-    console.log(
-      `[vehicle-identity] DRIVER SWAP: ${outgoing} → ${incoming} at Lap ${lapNumber}`
-    );
-
-    // Register outgoing driver in history
-    if (outgoing && !this._state.previousDrivers.includes(outgoing)) {
-      this._state.previousDrivers.push(outgoing);
-    }
-
-    // Generate new adaptation epoch boundary
-    this._state.adaptationEpochId = this._generateEpochId();
-
-    // Advance stint counter
-    const newStintNumber = this._state.currentStint.stintNumber + 1;
-    this._state.currentStint = {
-      stintNumber: newStintNumber,
-      lapStart: lapNumber,
-      lapsCompleted: 0,
-      fuelVolumeL: t.fuelRemainingL || 0,
-      fuelBurnPerLap: this._state.currentStint.fuelBurnPerLap, // carry forward burn rate
-      projectedPitLap: this._state.currentStint.projectedPitLap,
-    };
-
-    // Emit delta event
-    this._emitDelta({
-      timestamp: Date.now(),
-      lapNumber,
-      sequenceId: this._sequenceId,
-      type: "DRIVER_SWAP",
-      payload: {
-        from: outgoing,
-        to: incoming,
-        details: `Stint ${newStintNumber} begins at Lap ${lapNumber} | EpochID: ${this._state.adaptationEpochId}`,
-      },
-    });
-  }
-
-  // ─── Private: pit detection ────────────────────────────────────────────────────
-
   _detectPitEvent(t, lapNumber) {
-    // iRacing PlayerTrackSurface === 1 means pit stall stationary
     const inPit = t.all?.PlayerTrackSurface === 1 && (t.speedKph || 0) < 1;
 
     if (inPit && !this._inPitPrev) {
-      // Entered pit stall
       this._emitDelta({
         timestamp: Date.now(),
         lapNumber,
         sequenceId: this._sequenceId,
         type: "FUEL_REFUEL",
         payload: {
-          from: `${this._state.currentStint.fuelVolumeL.toFixed(1)}L (entry)`,
+          from: `${(this._state?.currentStint?.fuelVolumeL || 0).toFixed(1)}L (entry)`,
           details: "Pit stall entry detected",
         },
       });
     }
 
     if (!inPit && this._inPitPrev) {
-      // Exiting pit — detect tire reset (wear reset indicates new set)
-      const brakeWearAfter = this._state.cumulativeFatigue.brakes;
+      const brakeWearAfter = this._state?.cumulativeFatigue?.brakes ?? 100;
       const brakeWearBefore = this._pitEntryBrakeWear || brakeWearAfter;
       const tireChanged = brakeWearAfter > brakeWearBefore + 10;
 
@@ -426,34 +538,9 @@ class VehicleIdentityRuntime {
       });
     }
 
-    this._pitEntryBrakeWear = inPit ? this._state.cumulativeFatigue.brakes : this._pitEntryBrakeWear;
+    this._pitEntryBrakeWear = inPit ? (this._state?.cumulativeFatigue?.brakes ?? 100) : this._pitEntryBrakeWear;
     this._inPitPrev = inPit;
   }
-
-  // ─── Private: strategy context updater ────────────────────────────────────────
-
-  _updateStrategyContext(t, lapNumber) {
-    const burnPerLap = this._state.currentStint.fuelBurnPerLap || 2.8;
-    const fuelRemaining = t.fuelRemainingL || 0;
-    const lapsRemaining = burnPerLap > 0 ? fuelRemaining / burnPerLap : 0;
-
-    // Reserve window: 1.5L safety reserve
-    const reserveLaps = burnPerLap > 0 ? 1.5 / burnPerLap : 1;
-    this._state.strategyState.targetWindowMin = Math.floor(lapNumber + lapsRemaining - reserveLaps - 1);
-    this._state.strategyState.targetWindowMax = Math.floor(lapNumber + lapsRemaining);
-
-    // Undercut risk heuristic: based on tire wear level
-    const brakeWear = this._state.cumulativeFatigue.brakes;
-    if (brakeWear < 35) {
-      this._state.strategyState.undercutRisk = "HIGH";
-    } else if (brakeWear < 60) {
-      this._state.strategyState.undercutRisk = "MED";
-    } else {
-      this._state.strategyState.undercutRisk = "LOW";
-    }
-  }
-
-  // ─── Private: delta ring emitter ──────────────────────────────────────────────
 
   _emitDelta(delta) {
     this._deltaRing.push(delta);
@@ -462,35 +549,20 @@ class VehicleIdentityRuntime {
     }
   }
 
-  // ─── Private: SHA-256 state hash ──────────────────────────────────────────────
-
   _computeHash(state) {
-    const hashable = {
-      sequenceId: state.sequenceId,
-      carId: state.carId,
-      activeDriverId: state.activeDriverId,
-      adaptationEpochId: state.adaptationEpochId,
-      stintNumber: state.currentStint?.stintNumber,
-      lapsCompleted: state.currentStint?.lapsCompleted,
-      brakes: state.cumulativeFatigue?.brakes,
-      chassis: state.cumulativeFatigue?.chassis,
-    };
+    const canonical = canonicalize(state);
     return crypto
       .createHash("sha256")
-      .update(JSON.stringify(hashable))
+      .update(JSON.stringify(canonical))
       .digest("hex")
-      .slice(0, 16); // 64-bit prefix is sufficient for integrity checks
+      .slice(0, 16);
   }
-
-  // ─── Private: adaptation epoch UUID generator ─────────────────────────────────
 
   _generateEpochId() {
     return crypto.randomUUID
       ? crypto.randomUUID()
       : crypto.randomBytes(16).toString("hex");
   }
-
-  // ─── Private: build MongoDB persistence doc ───────────────────────────────────
 
   _buildPersistenceDoc(sessionId, state) {
     let sid = sessionId;
