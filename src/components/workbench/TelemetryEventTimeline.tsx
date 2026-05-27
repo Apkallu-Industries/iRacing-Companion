@@ -100,7 +100,7 @@ export function TelemetryEventTimeline() {
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-[#05070A]">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-1.5 bg-[#05070A]">
         {events.map((event) => {
           const isActive = activeEvent?.id === event.id;
           return (

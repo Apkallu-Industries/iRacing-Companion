@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import uPlot from "uplot";
 import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench, colorForChannel } from "@/lib/store";
+import { useTelemetryRuntimeStore } from "@/lib/telemetryRuntimeStore";
 
 function resolveColor(varName: string): string {
   // turn "var(--ch-speed)" into computed color
@@ -213,6 +214,72 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
               if (shadeStart !== null && shadeType) {
                 drawZone(shadeStart, xs.length - 1, shadeType);
               }
+
+              // ─── Phase 7 Priority 3: Replay Incident Bookmarks & Corner Segmentations ───
+              const events = useTelemetryRuntimeStore.getState().events;
+              events.forEach((ev) => {
+                const eventX = Math.round(u.valToPos(ev.timestampSec - sessionTime[from], "x"));
+                if (eventX >= u.bbox.left && eventX <= u.bbox.left + u.bbox.width) {
+                  // Paint vertical dotted lines for scanned timeline incidents
+                  ctx.strokeStyle = ev.severity === "critical" ? "#FF4D4D" : ev.severity === "warning" ? "#FFB800" : "#3B82F6";
+                  ctx.lineWidth = 1;
+                  ctx.setLineDash([3, 3]);
+                  ctx.beginPath();
+                  ctx.moveTo(eventX, u.bbox.top);
+                  ctx.lineTo(eventX, u.bbox.top + u.bbox.height);
+                  ctx.stroke();
+                  ctx.setLineDash([]); // Reset line dash
+
+                  // Draw professional triangle bookmark headers
+                  ctx.fillStyle = ev.severity === "critical" ? "#FF4D4D" : ev.severity === "warning" ? "#FFB800" : "#3B82F6";
+                  ctx.beginPath();
+                  ctx.moveTo(eventX - 4, u.bbox.top);
+                  ctx.lineTo(eventX + 4, u.bbox.top);
+                  ctx.lineTo(eventX, u.bbox.top + 6);
+                  ctx.fill();
+                }
+              });
+
+              // Draw Corner Phase Segmentation ENTRY / APEX / EXIT Blocks
+              const corners = [
+                { turn: 8, start: 10, apex: 12.5, end: 15 },
+                { turn: 11, start: 26, apex: 28.4, end: 31 },
+                { turn: 3, start: 40, apex: 42.1, end: 45 },
+                { turn: 5, start: 66, apex: 68.9, end: 71 },
+              ];
+
+              corners.forEach((c) => {
+                const sX = Math.round(u.valToPos(c.start, "x"));
+                const aX = Math.round(u.valToPos(c.apex, "x"));
+                const eX = Math.round(u.valToPos(c.end, "x"));
+
+                if (sX >= u.bbox.left && eX <= u.bbox.left + u.bbox.width) {
+                  // Entry block (Start to Apex)
+                  ctx.fillStyle = "rgba(59, 130, 246, 0.05)";
+                  ctx.fillRect(sX, u.bbox.top + u.bbox.height - 10, aX - sX, 10);
+                  ctx.strokeStyle = "rgba(59, 130, 246, 0.15)";
+                  ctx.lineWidth = 0.75;
+                  ctx.strokeRect(sX, u.bbox.top + u.bbox.height - 10, aX - sX, 10);
+
+                  // Exit block (Apex to End)
+                  ctx.fillStyle = "rgba(0, 209, 127, 0.05)";
+                  ctx.fillRect(aX, u.bbox.top + u.bbox.height - 10, eX - aX, 10);
+                  ctx.strokeStyle = "rgba(0, 209, 127, 0.15)";
+                  ctx.lineWidth = 0.75;
+                  ctx.strokeRect(aX, u.bbox.top + u.bbox.height - 10, eX - aX, 10);
+
+                  // Apex marker
+                  ctx.fillStyle = "#FFB800";
+                  ctx.fillRect(aX - 1, u.bbox.top + u.bbox.height - 10, 2, 10);
+
+                  // Monospace indicators
+                  ctx.fillStyle = "#7A828C";
+                  ctx.font = "bold 6.5px monospace";
+                  ctx.fillText(`T${c.turn} EN`, sX + 2, u.bbox.top + u.bbox.height - 2.5);
+                  ctx.fillText(`T${c.turn} EX`, aX + 2, u.bbox.top + u.bbox.height - 2.5);
+                }
+              });
+
             },
           ],
           setCursor: [
@@ -221,6 +288,25 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
               if (idx != null) setCursorTick(from + idx);
             },
           ],
+          init: [
+            (u) => {
+              // Jump playhead cursor tick instantly to closest incident double clicked (Phase 7 Priority 3)
+              u.over.addEventListener("dblclick", () => {
+                const xVal = u.posToVal(u.cursor.left || 0, "x");
+                const sessionTime = parsed.channels["SessionTime"]?.data;
+                if (!sessionTime) return;
+                const timeOffset = sessionTime[from];
+                const clickTime = xVal + timeOffset;
+
+                const events = useTelemetryRuntimeStore.getState().events;
+                const closest = events.find((ev) => Math.abs(ev.timestampSec - clickTime) < 1.5);
+                if (closest) {
+                  useTelemetryRuntimeStore.getState().triggerEvent(closest);
+                  toast.success(`Scrubbed playhead to dynamic incident: ${closest.label}`);
+                }
+              });
+            }
+          ]
         },
       };
 

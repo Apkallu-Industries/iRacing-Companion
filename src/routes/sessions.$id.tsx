@@ -17,7 +17,7 @@ import { ResizablePanelGroup as ResizablePanelGroupRaw, ResizablePanel, Resizabl
 const ResizablePanelGroup = ResizablePanelGroupRaw as any;
 import type { IbtParsed } from "@/lib/ibt/types";
 import { WORKSPACE_PRESETS, TELEMETRY_INSTRUMENTS } from "@/components/instruments/registry";
-import { useTelemetryRuntimeStore } from "@/lib/telemetryRuntimeStore";
+import { useTelemetryRuntimeStore, broadcastTelemetryFrame } from "@/lib/telemetryRuntimeStore";
 import { scanTelemetrySession } from "@/lib/telemetry/scanners";
 
 import { TelemetryEventTimeline } from "@/components/workbench/TelemetryEventTimeline";
@@ -148,26 +148,35 @@ function WorkbenchPage() {
   const storeCursorTick = useTelemetryRuntimeStore((s) => s.cursorTick);
   const { setCursorTick } = useWorkbench();
 
+  // Optimized high-frequency playhead sync using requestAnimationFrame (Phase 7 Priority 1)
   useEffect(() => {
+    let rAFId: number;
     if (cursorTick !== storeCursorTick) {
-      setStoreCursorTick(cursorTick);
+      rAFId = requestAnimationFrame(() => {
+        setStoreCursorTick(cursorTick);
+      });
     }
+    return () => cancelAnimationFrame(rAFId);
   }, [cursorTick, storeCursorTick, setStoreCursorTick]);
 
   useEffect(() => {
+    let rAFId: number;
     if (storeCursorTick !== cursorTick) {
-      setCursorTick(storeCursorTick);
-    }
-  }, [storeCursorTick, cursorTick, setCursorTick]);
-
-  // Broadcast active computed frame on playhead tick changes (Priority 1)
-  useEffect(() => {
-    if (parsed) {
-      const frame = getReplayTelemetry(parsed, cursorTick);
-      import("@/lib/telemetryRuntimeStore").then((m) => {
-        m.broadcastTelemetryFrame(frame);
+      rAFId = requestAnimationFrame(() => {
+        setCursorTick(storeCursorTick);
       });
     }
+    return () => cancelAnimationFrame(rAFId);
+  }, [storeCursorTick, cursorTick, setCursorTick]);
+
+  // Broadcast active computed frame on playhead tick changes using rAF (Phase 7 Priority 1)
+  useEffect(() => {
+    if (!parsed) return;
+    const rAFId = requestAnimationFrame(() => {
+      const frame = getReplayTelemetry(parsed, cursorTick);
+      broadcastTelemetryFrame(frame);
+    });
+    return () => cancelAnimationFrame(rAFId);
   }, [cursorTick, parsed]);
 
   // Hook to scan parsed session and populate timeline events (Priority 4)
@@ -918,8 +927,8 @@ function WorkbenchPage() {
                             </div>
 
                             {/* Active Specialized telemetry instruments (Replay mode) */}
-                            <div className="flex-1 p-2 overflow-y-auto bg-[#05070A]">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="flex-1 p-1.5 overflow-y-auto bg-[#05070A]">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                 {WORKSPACE_PRESETS[activePreset].instruments.map((instrumentKey) => {
                                   const InstrumentComponent = TELEMETRY_INSTRUMENTS[instrumentKey];
                                   return (

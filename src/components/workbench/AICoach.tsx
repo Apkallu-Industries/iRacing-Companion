@@ -251,7 +251,7 @@ export function AICoach({
 
       {/* Body */}
       {!collapsed && (
-        <div className="max-h-96 overflow-y-auto px-4 py-3 bg-[#05070A]">
+        <div className="max-h-96 overflow-y-auto px-2 py-2 bg-[#05070A]">
           {mode === "copilot" ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-[9px] leading-relaxed">
               
@@ -321,6 +321,32 @@ export function AICoach({
                   <span className="text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2 block tracking-wider flex items-center gap-1.5">
                     <ShieldAlert className="h-3.5 w-3.5 text-[#FFB800]" /> CAUSAL PERFORMANCE TIMELINE
                   </span>
+
+                  {/* Proactive Stint Predictions Alerts (Phase 7 Priority 4) */}
+                  {stintPrognosis.isThreatActive && (
+                    <div className="mb-2 bg-[#FF4D4D]/10 border border-[#FF4D4D]/30 p-1.5 rounded-sm flex items-start gap-1.5 text-[#FF4D4D] animate-pulse">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold uppercase tracking-wider block text-[7.5px]">PROACTIVE STRATEGY ALERT: THERMAL THREAT ACTIVE</span>
+                        <p className="text-[7.2px] leading-tight mt-0.5">
+                          Front-right tyre core temperature growth curve projects friction saturation (+{TEAM_PROFILES[activeProfile].maxOptimalTempC}°C limit) on Lap {stintPrognosis.projectedBlowoutLap}. Estimated pace loss: +0.280s. Slide initial bias forward +0.5%.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!stintPrognosis.isThreatActive && activeProfile === "gtp" && stintPrognosis.exhaustionLapERS < 25 && (
+                    <div className="mb-2 bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 p-1.5 rounded-sm flex items-start gap-1.5 text-[#8B5CF6] animate-pulse">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold uppercase tracking-wider block text-[7.5px]">PROACTIVE STRATEGY ALERT: MGU-K DEPLETION WARNING</span>
+                        <p className="text-[7.2px] leading-tight mt-0.5">
+                          MGU-K straightaway torque deploy decay projects battery state-of-charge exhaustion on Lap {stintPrognosis.exhaustionLapERS}. Soften rear rebound clicks to secure vertical exit downforce.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-white whitespace-pre-wrap select-text text-[8.2px] leading-relaxed">
                     {causalGraph.rootCauseNarrative}
                   </p>
