@@ -49,28 +49,54 @@ export function calculateSetupAdviceConfidence(
     const negativeWords = ["worse", "understeer", "oversteer", "worsened", "loose", "stall"];
 
     let changeScore = 0;
+    let closedLoopOverride = false;
 
-    if (change.notes) {
-      const notesLower = change.notes.toLowerCase();
-      positiveWords.forEach((pw) => {
-        if (notesLower.includes(pw)) changeScore += 1;
-      });
-      negativeWords.forEach((nw) => {
-        if (notesLower.includes(nw)) changeScore -= 1;
+    // 1. Parse empirical Closed-Loop Feedback shifts if present
+    if (change.consequences && change.consequences.length > 0) {
+      change.consequences.forEach((c) => {
+        if (c.startsWith("CONFIDENCE_SHIFT:")) {
+          const shiftVal = parseInt(c.split(":")[1]);
+          if (!isNaN(shiftVal)) {
+            changeScore += shiftVal;
+            closedLoopOverride = true;
+          }
+        }
       });
     }
 
-    if (change.consequences && change.consequences.length > 0) {
-      change.consequences.forEach((c) => {
-        consequencesEvaluated.push(c);
-        const lowerC = c.toLowerCase();
+    // 2. Fall back to standard keyword keyword evaluations if no closed-loop override was registered
+    if (!closedLoopOverride) {
+      if (change.notes) {
+        const notesLower = change.notes.toLowerCase();
         positiveWords.forEach((pw) => {
-          if (lowerC.includes(pw)) changeScore += 2;
+          if (notesLower.includes(pw)) changeScore += 1;
         });
         negativeWords.forEach((nw) => {
-          if (lowerC.includes(nw)) changeScore -= 2;
+          if (notesLower.includes(nw)) changeScore -= 1;
         });
-      });
+      }
+
+      if (change.consequences && change.consequences.length > 0) {
+        change.consequences.forEach((c) => {
+          consequencesEvaluated.push(c);
+          const lowerC = c.toLowerCase();
+          positiveWords.forEach((pw) => {
+            if (lowerC.includes(pw)) changeScore += 2;
+          });
+          negativeWords.forEach((nw) => {
+            if (lowerC.includes(nw)) changeScore -= 2;
+          });
+        });
+      }
+    } else {
+      // Record closed-loop outcomes in evaluated consequences
+      if (change.consequences) {
+        change.consequences.forEach((c) => {
+          if (c.startsWith("OUTCOME_STATUS:") || c.startsWith("PACE_DELTA:")) {
+            consequencesEvaluated.push(c);
+          }
+        });
+      }
     }
 
     if (changeScore >= 0) {

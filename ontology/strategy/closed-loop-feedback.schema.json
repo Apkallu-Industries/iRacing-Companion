@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/closed-loop-feedback.schema.json",
+  "title": "ClosedLoopFeedback",
+  "type": "object",
+  "required": [
+    "expectedGainMet",
+    "compromiseWorseThanForecast",
+    "empiricalPaceGainS",
+    "confidenceDelta",
+    "confidenceAttribution",
+    "validationStatus",
+    "feedbackNarrative",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "expectedGainMet": {
+      "type": "boolean",
+      "description": "True if post-intervention telemetry metrics confirmed target improvement"
+    },
+    "compromiseWorseThanForecast": {
+      "type": "boolean",
+      "description": "True if cascading penalties exceeded predicted tradeoff margins"
+    },
+    "empiricalPaceGainS": {
+      "type": "number",
+      "description": "Measured average lap time pace improvement (negative is faster)"
+    },
+    "confidenceDelta": {
+      "type": "integer",
+      "minimum": -30,
+      "maximum": 15,
+      "description": "Dynamic weight shift applied to future recommendations (+ for success, - for failure)"
+    },
+    "confidenceAttribution": {
+      "type": "object",
+      "required": [
+        "setupContribution",
+        "environmentContribution",
+        "driverAdaptation",
+        "stochasticVariance"
+      ],
+      "properties": {
+        "setupContribution": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Attributed percentage of the gain due strictly to the mechanical setup change"
+        },
+        "environmentContribution": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Attributed percentage of the gain due to fuel burn-off, track rubber, or track temp drops"
+        },
+        "driverAdaptation": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Attributed percentage of the gain due to smoother driver steering or brake decay gradients"
+        },
+        "stochasticVariance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Attributed percentage of the gain due to traffic, tow, or random sector noise"
+        }
+      }
+    },
+    "validationStatus": {
+      "type": "string",
+      "enum": ["SUCCESS_VERIFIED", "COMPROMISED_FAIL", "INCONCLUSIVE_NO_DATA"],
+      "description": "Overall status of the closed-loop evaluation"
+    },
+    "feedbackNarrative": {
+      "type": "string",
+      "description": "Narrative summarizing observed pre vs post behavior differences"
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

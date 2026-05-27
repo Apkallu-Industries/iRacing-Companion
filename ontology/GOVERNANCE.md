@@ -46,31 +46,6 @@ To prevent AI hallucination, setup overreach, and engineering credibility decay,
 
 ---
 
-## 4. Versioning & Evolution Policy
-
-The Motorsport Ontology Kernel adheres to **Strict Semantic Versioning (SemVer 2.0.0)**.
-
-### 4.1 Version Schema (`MAJOR.MINOR.PATCH`)
-* **PATCH**: Non-functional schema changes, typo corrections, or documentation updates (e.g., `1.0.0` -> `1.0.1`).
-* **MINOR**: Backward-compatible schema additions (e.g., adding an optional property to a schema, introducing a new non-breaking event type to the `RaceEventType` catalog) (e.g., `1.0.0` -> `1.1.0`).
-* **MAJOR**: Breaking schema changes, field removals, property renames, or structural adjustments that break existing data parsing logic or replay engines (e.g., `1.0.0` -> `2.0.0`).
-
-### 4.2 Controlled Evolution (Change Review Board)
-Any proposed change to the ontology kernel must go through a formal Change Review:
-1. **Schema Check**: Proposed changes must be mapped inside `/ontology/<layer>/schema.json`.
-2. **Translation Gateway**: If a field is renamed or removed in a `MAJOR` version, a backward-compatibility translation wrapper *must* be added to the ingest layer to translate historical telemetry storage into the current version.
-
-### 4.3 Deprecation Policy
-1. **Phase 1: Soft Deprecation** (Minor Version Release):
-   * Add the `"deprecated": true` attribute to the JSON Schema.
-   * Mark TypeScript interfaces with the `@deprecated` JSDoc annotation.
-   * Emit descriptive warnings in development logs detailing the migration path.
-2. **Phase 2: Hard Removal** (Next Major Version Release):
-   * The field is removed from the active schema.
-   * The translation gateway maps any historical data still using this field to the replacement field or falls back gracefully.
-
----
-
 ## 5. The Unification Doctrine (Permanent Architecture)
 
 Every setup recommendation must originate from live semantic telemetry evidence, causal reasoning, driver behavior context, and session evolution state. 
@@ -90,3 +65,33 @@ Every arbitrated setup adjustment must simulate and log:
 2. **Expected Compromise**: Cascading physical penalty (e.g., increased drag, high-speed aerodynamic balance shift, rear instability on turn-in).
 3. **Corner Archetype Influence**: Where on the track the effect is most pronounced (e.g., slow-speed hairpins, high-speed sweepers, curb compression zones).
 4. **Session Lifecycle Projection**: How the change interacts with stint evolution variables (fuel decay weight, track rubber buildup, carcass thermal wear).
+
+---
+
+## 7. Closed-Loop Learning & Heuristic Validation
+
+To close the loop, the operating system kernel mandates empirical outcome validation for all recommendations. Closed-loop validation compares on-car telemetry before and after an applied mechanical adjustment to evaluate dynamic outcome reality.
+
+### 7.1 Dynamic Stabilization Horizon Matrix
+Setup adjustments require different evaluation timelines for tyres, aerodynamics, and mechanical spring compliance to settle into stable envelopes. The validation window must be calculated dynamically:
+
+| Adjustment Category | Target Stabilization Horizon | Justification |
+|---|---|---|
+| **Differential Preload** | 2 laps | Instant lock-slip stabilization; minimal carcass thermal lag. |
+| **Tyre Pressures** | 2–3 laps | Requires rolling tread friction cycles to stabilize tire carcass spring rates. |
+| **Aero Rake / Wings** | 3–5 laps | Dynamic heave stabilization across high-speed compression and low-speed pitch sectors. |
+| **Ride Heights / Packers** | 3–5 laps | Grounding occurrence statistics require sector-by-sector compression passes. |
+| **Spring Rates / Dampers** | 4–6 laps | Requires multi-lap driver adaptation, spring settlement, and carcass equilibrium. |
+
+### 7.2 Correlation Contamination Safeguards (Confidence Attribution)
+To prevent the system from learning false engineering lessons, every validation outcome must isolate the isolated setup impact by attributing pace and stability changes across co-factors:
+- **`setupContribution`**: The isolated mechanical effect of the change.
+- **`environmentContribution`**: Pace variations originating from track rubbering, wind, or track temp drops.
+- **`driverAdaptation`**: Pace variations originating from smoother steering and brake release gradients.
+- **`stochasticVariance`**: Placebos, traffic margins, and random sector variances.
+
+### 7.3 Epistemological Protection against Physics Mutation
+The operating system kernel strictly prohibits automatic heuristic mutation. The engine must never silently rewrite or generate core physics formulas. Adaptive learning is strictly confined to:
+* Calibrating recommendation confidence weights based on attribution feedback.
+* Storing audited historical outcomes in the session lineage.
+* Proposing major heuristic adjustments to human engineers for review.

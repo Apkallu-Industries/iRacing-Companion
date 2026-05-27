@@ -133,4 +133,6 @@ export function compileSessionReport(
 
 export * from "./eventTaxonomy";
 export * from "./mechanicalReasoningEngine";
+export * from "./closedLoopLearning";
+
 
