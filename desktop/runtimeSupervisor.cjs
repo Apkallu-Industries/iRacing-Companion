@@ -215,6 +215,59 @@ async function probeLocalAI() {
   console.log("[supervisor] No local AI server detected → cloud fallback");
 }
 
+// ─── Operational Workstation States ──────────────────────────────────────────
+
+/** @type {"RUNNING"|"DEGRADED"|"RECOVERING"|"FAILED"|"OFFLINE"} */
+let supervisorState = "OFFLINE";
+let bridgeStatus = "offline";
+let watchdogInterval = null;
+let mongoRecoveryRetries = 0;
+const MAX_RECOVERY_RETRIES = 3;
+
+/**
+ * Resilient supervisor watchdog loop. Runs every 3 seconds to probe services,
+ * isolate faults, and trigger automated self-healing recoveries.
+ */
+function startWatchdogLoop() {
+  if (watchdogInterval) clearInterval(watchdogInterval);
+
+  watchdogInterval = setInterval(async () => {
+    // 1. Probe MongoDB port
+    const mongoListening = await isPortListening(MONGO_PORT, 400);
+    if (!mongoListening && mongoStatus === "active") {
+      console.warn("[supervisor] MongoDB port disconnected. Attempting self-healing recovery…");
+      mongoStatus = "error";
+      if (mongoRecoveryRetries < MAX_RECOVERY_RETRIES) {
+        mongoRecoveryRetries++;
+        supervisorState = "RECOVERING";
+        await ensureMongoDB();
+      } else {
+        mongoStatus = "unavailable";
+        console.error("[supervisor] Maximum MongoDB recovery retries exceeded. Marking service degraded.");
+      }
+    } else if (mongoListening) {
+      mongoStatus = "active";
+      mongoUri = `mongodb://localhost:${MONGO_PORT}`;
+      mongoRecoveryRetries = 0; // Reset retries on successful connection
+    }
+
+    // 2. Probe Local Bridge (port 3001)
+    const bridgeListening = await isPortListening(3001, 400);
+    bridgeStatus = bridgeListening ? "online" : "offline";
+
+    // 3. Resolve unified supervisor workspace state
+    if (mongoStatus === "starting") {
+      supervisorState = "RECOVERING";
+    } else if (bridgeStatus === "offline") {
+      supervisorState = "FAILED";
+    } else if (mongoStatus === "unavailable" || mongoStatus === "error") {
+      supervisorState = "DEGRADED";
+    } else {
+      supervisorState = "RUNNING";
+    }
+  }, 3000);
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -225,6 +278,7 @@ async function probeLocalAI() {
 async function init() {
   if (initialized) return;
   initialized = true;
+  supervisorState = "RECOVERING";
   console.log("[supervisor] Initializing runtime services…");
 
   // Run MongoDB and AI probe in parallel
@@ -233,7 +287,10 @@ async function init() {
     probeLocalAI(),
   ]);
 
-  console.log(`[supervisor] Init complete — MongoDB: ${mongoStatus} | AI: ${aiMode}`);
+  // Start active supervision watchdog
+  startWatchdogLoop();
+
+  console.log(`[supervisor] Init complete — State: ${supervisorState} | MongoDB: ${mongoStatus} | AI: ${aiMode}`);
 }
 
 /**
@@ -249,6 +306,7 @@ async function refreshAiMode() {
  */
 async function ensureMongoDBNow() {
   initialized = true; // prevent re-init guard
+  mongoRecoveryRetries = 0;
   await ensureMongoDB();
   return { mongoStatus, mongoUri };
 }
@@ -258,6 +316,8 @@ async function ensureMongoDBNow() {
  */
 function getStatus() {
   return {
+    supervisorState,
+    bridgeStatus,
     mongoStatus,
     mongoUri,
     aiMode,
@@ -291,9 +351,13 @@ function getAiEndpoint() {
 }
 
 /**
- * Graceful shutdown — nothing to tear down (MongoDB is a service).
+ * Graceful shutdown — cleans up watchdog intervals.
  */
 async function shutdown() {
+  if (watchdogInterval) {
+    clearInterval(watchdogInterval);
+  }
+  supervisorState = "OFFLINE";
   console.log("[supervisor] Shutdown complete");
 }
 

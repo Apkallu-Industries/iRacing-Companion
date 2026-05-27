@@ -21,6 +21,11 @@ export class ReplayCacheEngine {
   private cacheSize: number;
   private ringIndex = 0;
 
+  // Virtual Timeline configuration parameters
+  private playheadTick = 0;
+  private lookbehindTicks = 5000;
+  private lookaheadTicks = 10000;
+
   constructor(cacheSize = 20000) {
     this.cacheSize = cacheSize;
     this.frameRingBuffer = new Array(cacheSize);
@@ -30,10 +35,40 @@ export class ReplayCacheEngine {
   }
 
   /**
+   * Updates the virtual playhead focus pointer and sweeps out-of-bounds cache elements.
+   */
+  public setPlayheadTick(tick: number): void {
+    this.playheadTick = tick;
+    this.evictOutOfBounds();
+  }
+
+  /**
+   * Sweeps and evicts tick caches sitting outside our sliding window bounds.
+   */
+  private evictOutOfBounds(): void {
+    const minTick = this.playheadTick - this.lookbehindTicks;
+    const maxTick = this.playheadTick + this.lookaheadTicks;
+
+    for (const [tick, idx] of this.tickIndexMap.entries()) {
+      if (tick < minTick || tick > maxTick) {
+        this.tickIndexMap.delete(tick);
+        this.derivedSignalCache.delete(tick);
+        this.eventOverlayCache.delete(tick);
+        this.frameRingBuffer[idx] = null as any;
+      }
+    }
+  }
+
+  /**
    * Pushes a frame into the virtualized ring buffer, clearing old mappings
    * and dynamically computing derived signals.
    */
   public pushFrame(frame: TelemetryFrame): void {
+    // Automatically advance playhead on new frames in live acquisition mode
+    if (frame.tick > this.playheadTick) {
+      this.playheadTick = frame.tick;
+    }
+
     const oldFrame = this.frameRingBuffer[this.ringIndex];
     if (oldFrame) {
       this.tickIndexMap.delete(oldFrame.tick);
@@ -54,6 +89,11 @@ export class ReplayCacheEngine {
     });
 
     this.ringIndex = (this.ringIndex + 1) % this.cacheSize;
+
+    // Run active virtualization sweeps to protect browser memory footprint
+    if (this.tickIndexMap.size % 200 === 0) {
+      this.evictOutOfBounds();
+    }
   }
 
   /**
@@ -94,6 +134,7 @@ export class ReplayCacheEngine {
     this.derivedSignalCache.clear();
     this.eventOverlayCache.clear();
     this.ringIndex = 0;
+    this.playheadTick = 0;
   }
 
   /**
@@ -106,6 +147,7 @@ export class ReplayCacheEngine {
       derivedCached: this.derivedSignalCache.size,
       overlaysCached: this.eventOverlayCache.size,
       estimatedMemoryUsageBytes: this.tickIndexMap.size * 312,
+      playheadTick: this.playheadTick
     };
   }
 }
@@ -128,6 +170,7 @@ export class ReplayTimelineCoordinator {
 
   public setTick(tick: number): number {
     this.currentTick = Math.max(0, Math.min(this.totalTicks - 1, tick));
+    this.cache.setPlayheadTick(this.currentTick);
     return this.currentTick;
   }
 

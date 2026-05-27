@@ -19,6 +19,53 @@ const teamRelay = require("./teamRelay");
 const { TelemetryRecorder } = require("./telemetry-recorder");
 const { parseTelemetryQuery } = require("./query-parser");
 
+// Import Phase 13 & 14 Deterministic Runtime & Simulation components
+const runtimeBus = require("./runtimeBus");
+const binaryEncoder = require("./binaryEncoder");
+const queryPlanner = require("./queryPlanner");
+const { Worker } = require("worker_threads");
+const simulationRuntime = require("./simulationRuntime");
+const observability = require("./observability");
+
+// Spawn and supervise isolated analytical worker thread
+let analyticalWorker = null;
+let previousFrame = null;
+
+function startAnalyticalWorker() {
+  try {
+    const workerPath = path.join(__dirname, "workers", "analyticalWorker.js");
+    analyticalWorker = new Worker(workerPath);
+    console.log("[bridge] Analytical worker thread spawned successfully.");
+
+    analyticalWorker.on("message", (msg) => {
+      const { type, payload } = msg;
+      if (type === "PREDICTION_RESULT") {
+        runtimeBus.publish("PREDICTION_WARNING", payload.prediction);
+      } else if (type === "STRATEGY_RESULT") {
+        runtimeBus.publish("STINT_UPDATED", payload.strategy);
+      } else if (type === "ERROR") {
+        console.warn("[analytical-worker] Isolated thread error:", payload.message);
+      }
+    });
+
+    analyticalWorker.on("error", (err) => {
+      console.error("[analytical-worker] Thread crashed:", err.message);
+      setTimeout(startAnalyticalWorker, 2000); // Auto-reboot after 2s
+    });
+
+    analyticalWorker.on("exit", (code) => {
+      if (code !== 0) {
+        console.warn(`[analytical-worker] Exited with code ${code}. Rebooting thread…`);
+        setTimeout(startAnalyticalWorker, 2000);
+      }
+    });
+  } catch (e) {
+    console.error("[analytical-worker] Failed to initialize worker thread:", e.message);
+  }
+}
+
+startAnalyticalWorker();
+
 // Load .env from local-bridge directory (TEAM_CODE, SUPABASE_URL, etc.)
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
@@ -295,12 +342,22 @@ const server = http.createServer(async (req, res) => {
         if (params.get("corner"))   filter.cornerNumber = parseInt(params.get("corner"), 10);
       }
 
-      const events = await recorder.db
+      // Shape and optimize query using Phase 13 QueryPlanner
+      const planned = queryPlanner.plan({ filter, projection }, recorderSessionId);
+
+      const cursor = recorder.db
         .collection("scanner_events")
-        .find(filter, { projection })
+        .find(planned.filter, { projection: planned.projection });
+
+      if (planned.hint) {
+        cursor.hint(planned.hint);
+      }
+
+      const events = await cursor
         .sort({ timestamp: -1 })
-        .limit(50)
+        .limit(planned.limit)
         .toArray();
+
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ events }));
     } catch (e) {
@@ -799,6 +856,65 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (urlPath === "/api/sandbox/simulate" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      const startQueryTime = Date.now();
+      try {
+        const payload = JSON.parse(body);
+        const { sessionId, adjustments } = payload;
+        const { ObjectId } = require("mongodb");
+        
+        if (!sessionId) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "sessionId is required for scenario cloning" }));
+          return;
+        }
+
+        const sid = ObjectId.isValid(sessionId) ? new ObjectId(sessionId) : sessionId;
+
+        // Fetch baseline telemetry ticks from indexed collection
+        const samples = await recorder.db
+          .collection("telemetry_samples")
+          .find({ session_id: sid })
+          .sort({ timestamp: 1 })
+          .toArray();
+
+        // Run counterfactual physical stint simulation using our Physics layer
+        const counterfactual = simulationRuntime.simulateCounterfactualStint(samples, adjustments || {});
+
+        // Log query planning performance to our self-monitoring observability tracker
+        observability.recordQueryLatency(Date.now() - startQueryTime);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          success: true,
+          count: counterfactual.length,
+          counterfactual
+        }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/observability/metrics" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      success: true,
+      metrics: observability.getMetrics()
+    }));
+    return;
+  }
+
   /* ────────────────────────────────────── Static File Serving */
 
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
@@ -881,6 +997,38 @@ if (IRacingSDK) {
     currentLap = flat.Lap ?? 0;
     packetCount += 1;
 
+    // Publish live frame tick to the Decoupled Runtime Event Bus
+    runtimeBus.publish("FRAME_RECEIVED", latest);
+
+    // Delegate high-frequency calculations to the isolated analytical worker
+    if (analyticalWorker) {
+      const currentTick = {
+        tick: latest.tick || packetCount,
+        speedMps: latest.speedKph / 3.6,
+        brake: latest.brake,
+        throttle: latest.throttle,
+        steeringWheelAngle: (latest.steeringDeg * Math.PI) / 180,
+        yawRate: latest.yawRate || latest.all?.YawRate || 0,
+        pitch: latest.all?.Pitch || 0,
+        roll: latest.all?.Roll || 0,
+        mgukDeploykW: latest.all?.MgukDeploykW || 0,
+        frontLeftDeflection: latest.all?.LFshockDefl || latest.all?.LFshockDefl_ST || 0,
+        rearRightSpeedMps: latest.all?.RRspeed || 0,
+        rearLeftSpeedMps: latest.all?.LRspeed || 0
+      };
+
+      analyticalWorker.postMessage({
+        type: "PROCESS_TICK",
+        payload: {
+          current: currentTick,
+          previous: previousFrame || currentTick,
+          hz: TICK_HZ
+        }
+      });
+
+      previousFrame = currentTick;
+    }
+
     // ─── Telemetry Recording ─────────────────────────────────────────────────────
     if (recorder && recorderConnected) {
       // Record 60Hz sample
@@ -912,11 +1060,28 @@ if (IRacingSDK) {
   }, 1000 / TICK_HZ);
 }
 
-// 60Hz local WebSocket broadcast
+// 60Hz local WebSocket broadcast (Binary & JSON adaptive transport)
 setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
-  const msg = JSON.stringify(latest);
-  for (const client of wss.clients) if (client.readyState === 1) client.send(msg);
+
+  let jsonMsg = null;
+  let binaryMsg = null;
+
+  for (const client of wss.clients) {
+    if (client.readyState === 1) {
+      if (client.isBinary) {
+        if (!binaryMsg) {
+          binaryMsg = binaryEncoder.encodeTelemetry(latest);
+        }
+        client.send(binaryMsg);
+      } else {
+        if (!jsonMsg) {
+          jsonMsg = JSON.stringify(latest);
+        }
+        client.send(jsonMsg);
+      }
+    }
+  }
 }, 1000 / TICK_HZ);
 
 // 2Hz team relay publish (Supabase Realtime — no-op if TEAM_CODE not set)
@@ -928,7 +1093,30 @@ setInterval(() => {
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
   ws.send(JSON.stringify({ type: "license", ...activeLicense }));
-  if (latest) ws.send(JSON.stringify(latest));
+  if (latest) {
+    if (ws.isBinary) {
+      ws.send(binaryEncoder.encodeTelemetry(latest));
+    } else {
+      ws.send(JSON.stringify(latest));
+    }
+  }
+
+  // Handle client-initiated WebSocket messages for protocol negotiation
+  ws.on("message", (msg) => {
+    try {
+      const payloadStr = msg.toString().trim();
+      if (payloadStr === "protocol:binary") {
+        ws.isBinary = true;
+        console.log("[bridge] WebSocket connection upgraded to binary protocol");
+      } else if (payloadStr === "protocol:json") {
+        ws.isBinary = false;
+        console.log("[bridge] WebSocket connection downgraded to json protocol");
+      }
+    } catch (e) {
+      console.warn("[bridge] Error parsing WebSocket message:", e.message);
+    }
+  });
+
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
 
