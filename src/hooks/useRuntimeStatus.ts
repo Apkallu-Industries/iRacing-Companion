@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { probeLocalAi, type AiMode } from "@/lib/ai/localAiRouter";
 
 export type ServiceStatus = "initializing" | "active" | "degraded" | "offline";
 
@@ -30,6 +31,10 @@ export interface RuntimeStatus {
   aiEngine: ServiceState;
   sessionStore: ServiceState;
   workstation: ServiceState;
+  /** MongoDB recording service */
+  mongoDB: ServiceState;
+  /** Local AI inference server (LM Studio / Ollama) */
+  localAi: ServiceState & { aiMode: AiMode };
   /** True when all critical services have resolved (active or offline — not initializing) */
   settled: boolean;
   /** True when bridge + sessionStore are active */
@@ -42,7 +47,8 @@ export interface RuntimeStatus {
   advance: () => void;
 }
 
-const BRIDGE_HEALTH_URL = "http://localhost:3001/health";
+const BRIDGE_HEALTH_URL  = "http://localhost:3001/health";
+const BRIDGE_MONGO_URL   = "http://localhost:3001/api/mongo/status";
 const AI_HEALTH_URL = "https://generativelanguage.googleapis.com/";
 const POLL_INTERVAL_MS = 2000;
 const SETTLED_TIMEOUT_MS = 8000; // Auto-advance after 8s regardless
@@ -108,6 +114,20 @@ function checkSessionStore(): boolean {
   }
 }
 
+async function probeMongoDB(): Promise<{ connected: boolean; sampleCount: number; sessionId: string | null }> {
+  try {
+    const res = await fetch(BRIDGE_MONGO_URL, {
+      signal: AbortSignal.timeout(1500),
+      cache: "no-store",
+    });
+    if (!res.ok) return { connected: false, sampleCount: 0, sessionId: null };
+    const data = await res.json() as { connected: boolean; sampleCount: number; sessionId: string | null };
+    return data;
+  } catch {
+    return { connected: false, sampleCount: 0, sessionId: null };
+  }
+}
+
 const INITIAL_SERVICE: ServiceState = {
   status: "initializing",
   label: "INITIALIZING",
@@ -120,6 +140,8 @@ export function useRuntimeStatus(): RuntimeStatus {
   const [aiEngine, setAiEngine] = useState<ServiceState>({ ...INITIAL_SERVICE });
   const [sessionStore, setSessionStore] = useState<ServiceState>({ ...INITIAL_SERVICE });
   const [workstation, setWorkstation] = useState<ServiceState>({ ...INITIAL_SERVICE });
+  const [mongoDB, setMongoDB] = useState<ServiceState>({ ...INITIAL_SERVICE });
+  const [localAi, setLocalAi] = useState<ServiceState & { aiMode: AiMode }>({ ...INITIAL_SERVICE, aiMode: "cloud" });
   const [mode, setMode] = useState<"workstation" | "portable" | "unknown">("unknown");
   const [advanced, setAdvanced] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -225,6 +247,31 @@ export function useRuntimeStatus(): RuntimeStatus {
       lastCheckedAt: now(),
     });
 
+    // ── MongoDB probe (via bridge endpoint) ──
+    const mongoResult = await probeMongoDB();
+    setMongoDB({
+      status: mongoResult.connected ? "active" : "offline",
+      label: mongoResult.connected ? "RECORDING" : "OFFLINE",
+      detail: mongoResult.connected
+        ? `mongodb://localhost:27017 · ${mongoResult.sampleCount} samples · session ${mongoResult.sessionId?.slice(-6) ?? ""}`
+        : "MongoDB not connected — telemetry recording disabled",
+      lastCheckedAt: now(),
+    });
+
+    // ── Local AI probe (LM Studio / Ollama) ──
+    const aiRouterState = await probeLocalAi();
+    setLocalAi({
+      status: aiRouterState.mode !== "cloud" ? "active" : "offline",
+      label: aiRouterState.mode !== "cloud"
+        ? aiRouterState.mode === "lmstudio" ? "LM STUDIO" : "OLLAMA"
+        : "CLOUD FALLBACK",
+      detail: aiRouterState.mode !== "cloud"
+        ? `Local inference · ${aiRouterState.modelName ?? "model detected"}`
+        : "No local AI server detected — using cloud Gemini",
+      aiMode: aiRouterState.mode,
+      lastCheckedAt: now(),
+    });
+
     // Auto-advance after timeout
     if (!advancedRef.current && now() - startedAt.current >= SETTLED_TIMEOUT_MS) {
       advance();
@@ -264,6 +311,8 @@ export function useRuntimeStatus(): RuntimeStatus {
     aiEngine,
     sessionStore,
     workstation,
+    mongoDB,
+    localAi,
     settled: allSettled || advanced,
     ready,
     mode,

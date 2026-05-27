@@ -8,16 +8,69 @@
     "dev": "electron . --dev",
     "sync-bridge": "node ./scripts/copy-bridge.js",
     "prestart": "node ./scripts/copy-bridge.js",
-    "prepackage": "node ./scripts/copy-bridge.js",
-    "package": "electron-packager . \"Pit Wall\" --platform=win32 --arch=x64 --out=dist --overwrite --app-version=$npm_package_version --ignore=desktop/dist --ignore=desktop/node_modules",
-    "package:dir": "electron-packager . \"Pit Wall\" --platform=win32 --arch=x64 --out=dist --overwrite --no-prune",
-    "postpackage": "node ./scripts/remove-bridge.js"
+    "dist": "node ./scripts/copy-bridge.js && electron-builder --win --x64",
+    "dist:dir": "node ./scripts/copy-bridge.js && electron-builder --win --x64 --dir",
+    "dist:portable": "node ./scripts/copy-bridge.js && electron-builder --win --x64 --config.win.target=portable"
+  },
+  "build": {
+    "appId": "industries.apkallu.pitwall",
+    "productName": "Pit Wall",
+    "copyright": "Copyright © 2025 Apkallu Industries",
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist-installer"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "runtimeSupervisor.cjs",
+      "package.json",
+      "assets/**/*",
+      "!node_modules/**",
+      "!dist-installer/**",
+      "!bridge/**"
+    ],
+    "extraResources": [
+      {
+        "from": "bridge",
+        "to": "bridge",
+        "filter": [
+          "**/*",
+          "!node_modules/.cache/**"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pit Wall",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "nodeGypRebuild": false,
+    "npmRebuild": false
   },
   "private": true,
   "author": "Apkallu Industries",
   "license": "UNLICENSED",
   "devDependencies": {
-    "@electron/packager": "^20.0.0",
-    "electron": "^31.7.7"
+    "electron": "^31.7.7",
+    "electron-builder": "^25.1.8"
   }
 }

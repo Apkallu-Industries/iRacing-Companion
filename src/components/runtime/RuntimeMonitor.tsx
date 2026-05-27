@@ -21,6 +21,8 @@ import {
   ExternalLink,
   X,
   ChevronDown,
+  Brain,
+  PlayCircle,
 } from "lucide-react";
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
@@ -151,8 +153,19 @@ export function RuntimeMonitor() {
     if (isElectron && (window as any).pitWallRuntime?.restartBridge) {
       await (window as any).pitWallRuntime.restartBridge();
     } else {
-      // Fallback: navigate to bridge health page
       window.open("http://localhost:3001", "_blank");
+    }
+  };
+
+  const handleEnsureMongoDB = async () => {
+    if (isElectron && (window as any).pitWallRuntime?.ensureMongoDB) {
+      await (window as any).pitWallRuntime.ensureMongoDB();
+    }
+  };
+
+  const handleRefreshAiMode = async () => {
+    if (isElectron && (window as any).pitWallRuntime?.refreshAiMode) {
+      await (window as any).pitWallRuntime.refreshAiMode();
     }
   };
 
@@ -253,7 +266,19 @@ export function RuntimeMonitor() {
             detail={status.iracing.detail}
           />
           <MonitorRow
-            label="AI ENGINE"
+            label="MONGODB"
+            icon={Database}
+            status={status.mongoDB.status}
+            detail={status.mongoDB.detail}
+          />
+          <MonitorRow
+            label="LOCAL AI"
+            icon={Brain}
+            status={status.localAi.status}
+            detail={status.localAi.detail}
+          />
+          <MonitorRow
+            label="CLOUD AI ENGINE"
             icon={Cpu}
             status={status.aiEngine.status}
             detail={status.aiEngine.detail}
@@ -307,21 +332,39 @@ export function RuntimeMonitor() {
               </div>
             </div>
 
-            {/* Bridge controls */}
-            <div className="flex items-center gap-2 pt-1" style={{ borderTop: "1px solid #1C2430" }}>
+            {/* Bridge + MongoDB + AI controls */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1" style={{ borderTop: "1px solid #1C2430" }}>
               <button
                 id="runtime-restart-bridge"
                 onClick={handleRestartBridge}
                 className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[8px] font-bold uppercase tracking-wider transition-all hover:opacity-80"
-                style={{
-                  backgroundColor: "#1C2430",
-                  color: "#7A828C",
-                  border: "1px solid #263241",
-                }}
+                style={{ backgroundColor: "#1C2430", color: "#7A828C", border: "1px solid #263241" }}
               >
                 <RefreshCw className="h-2.5 w-2.5" />
-                Restart Bridge
+                Bridge
               </button>
+              {isElectron && (
+                <>
+                  <button
+                    id="runtime-ensure-mongodb"
+                    onClick={handleEnsureMongoDB}
+                    className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[8px] font-bold uppercase tracking-wider transition-all hover:opacity-80"
+                    style={{ backgroundColor: "#1C2430", color: "#7A828C", border: "1px solid #263241" }}
+                  >
+                    <PlayCircle className="h-2.5 w-2.5" />
+                    Start MongoDB
+                  </button>
+                  <button
+                    id="runtime-refresh-ai"
+                    onClick={handleRefreshAiMode}
+                    className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[8px] font-bold uppercase tracking-wider transition-all hover:opacity-80"
+                    style={{ backgroundColor: "#1C2430", color: "#7A828C", border: "1px solid #263241" }}
+                  >
+                    <Brain className="h-2.5 w-2.5" />
+                    Probe AI
+                  </button>
+                </>
+              )}
               <span className="text-[7.5px] text-[#3D4751] uppercase tracking-widest ml-auto">
                 {isElectron ? "ELECTRON RUNTIME" : "BROWSER RUNTIME"}
               </span>

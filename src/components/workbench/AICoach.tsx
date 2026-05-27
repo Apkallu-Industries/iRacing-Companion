@@ -8,6 +8,7 @@ import { computeCausalGraph } from "@/lib/session-intelligence/causalGraph";
 import { TEAM_PROFILES, type TeamKnowledgeProfile } from "@/lib/session-intelligence/profiles";
 import { simulateSetupAdjustment, type SetupAdjustment } from "@/lib/session-intelligence/simulation";
 import { compileStintPrognosis } from "@/lib/session-intelligence/forecasting";
+import { useLocalAiRouter, getAiModeLabel } from "@/lib/ai/localAiRouter";
 import {
   Brain,
   Sparkles,
@@ -78,6 +79,9 @@ export function AICoach({
   const [historyMatches, setHistoryMatches] = useState<number | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [ttsError, setTtsError] = useState<string | null>(null);
+
+  // Local AI mode detection (LM Studio / Ollama / Cloud)
+  const aiRouter = useLocalAiRouter();
 
   // Phase 6 States
   const [activeProfile, setActiveProfile] = useState<"gt3" | "gtp" | "lemans">("gt3");
@@ -194,6 +198,30 @@ export function AICoach({
           <span>RACE ENGINEERING COPILOT CONSOLE</span>
           {collapsed ? <ChevronUp className="h-3 w-3 text-[#7A828C]" /> : <ChevronDown className="h-3 w-3 text-[#7A828C]" />}
         </button>
+
+        {/* AI Inference Mode indicator */}
+        <div
+          className="flex items-center gap-1 rounded-xs px-1.5 py-0.5 shrink-0"
+          style={{
+            backgroundColor: aiRouter.mode !== "cloud" ? "rgba(0,209,127,0.08)" : "rgba(59,130,246,0.08)",
+            border: `1px solid ${aiRouter.mode !== "cloud" ? "rgba(0,209,127,0.2)" : "rgba(59,130,246,0.2)"}`,
+          }}
+          title={aiRouter.modelName ? `Model: ${aiRouter.modelName}` : undefined}
+        >
+          <span
+            className="size-1.5 rounded-full shrink-0"
+            style={{
+              backgroundColor: aiRouter.mode !== "cloud" ? "#00D17F" : "#3B82F6",
+              boxShadow: aiRouter.mode !== "cloud" ? "0 0 4px #00D17F" : "none",
+            }}
+          />
+          <span
+            className="font-mono text-[7.5px] font-black uppercase tracking-widest"
+            style={{ color: aiRouter.mode !== "cloud" ? "#00D17F" : "#3B82F6" }}
+          >
+            {aiRouter.probing ? "PROBING…" : getAiModeLabel(aiRouter.mode)}
+          </span>
+        </div>
 
         {!collapsed && (
           <>

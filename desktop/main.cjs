@@ -16,6 +16,7 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const os = require("os");
+const supervisor = require("./runtimeSupervisor.cjs");
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -173,12 +174,22 @@ function startBridge() {
   writeBridgeLog(`[desktop] Starting bridge (restart #${bridgeRestartCount}) from: ${BRIDGE_DIR}`);
 
   // Inherit parent env so MONGODB_URI, LOVABLE_API_KEY etc. flow through
+  // Inject runtime environment so the bridge can connect to MongoDB and
+  // knows which local AI endpoint to use for narrative generation.
+  const mongoUri    = supervisor.getMongoUri();
+  const aiEndpoint  = supervisor.getAiEndpoint();
+  const aiMode      = supervisor.getAiMode();
+
   bridgeProc = spawn(process.execPath, [serverPath], {
     cwd: BRIDGE_DIR,
     env: {
       ...process.env,
       ELECTRON_RUN_AS_NODE: "1",
       NODE_ENV: isDev ? "development" : "production",
+      // Telemetry persistence — injected by supervisor after MongoDB probe
+      MONGO_URI:         mongoUri    ?? "",
+      PITWALL_AI_MODE:   aiMode      ?? "cloud",
+      PITWALL_AI_ENDPOINT: aiEndpoint ?? "",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -541,6 +552,7 @@ ipcMain.handle("get-app-info", () => ({
 ipcMain.handle("get-runtime-manifest", () => {
   const os_module = require("os");
   const displays = screen.getAllDisplays();
+  const svStatus = supervisor.getStatus();
   return {
     hostname: os_module.hostname(),
     platform: os_module.platform(),
@@ -557,7 +569,29 @@ ipcMain.handle("get-runtime-manifest", () => {
     isDev,
     monitorCount: displays.length,
     workstationMode: true,
+    // Runtime Supervisor services
+    mongoStatus:  svStatus.mongoStatus,
+    mongoUri:     svStatus.mongoUri,
+    aiMode:       svStatus.aiMode,
+    aiEndpoint:   svStatus.aiEndpoint,
   };
+});
+
+/** Trigger MongoDB service start from the RuntimeMonitor UI */
+ipcMain.handle("ensure-mongodb", async () => {
+  const result = await supervisor.ensureMongoDBNow();
+  // Restart bridge so it picks up the new MONGO_URI
+  if (result.mongoStatus === "active" && bridgeProc) {
+    bridgeRestartCount = 0;
+    stopBridge();
+    setTimeout(startBridge, 500);
+  }
+  return result;
+});
+
+/** Re-probe local AI inference servers from the RuntimeMonitor UI */
+ipcMain.handle("refresh-ai-mode", async () => {
+  return supervisor.refreshAiMode();
 });
 
 /**
@@ -617,6 +651,10 @@ app.whenReady().then(async () => {
   // Force dark mode to match the UI
   nativeTheme.themeSource = "dark";
 
+  // Initialize runtime supervisor FIRST — it probes MongoDB and local AI
+  // before the bridge spawns so MONGO_URI is available for injection.
+  await supervisor.init();
+
   startBridge();
   buildMenu();
 
@@ -637,6 +675,7 @@ app.whenReady().then(async () => {
 app.on("before-quit", () => {
   saveWindowState();
   stopBridge();
+  supervisor.shutdown();
 });
 
 app.on("window-all-closed", () => {

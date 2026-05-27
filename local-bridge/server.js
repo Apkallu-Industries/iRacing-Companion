@@ -16,9 +16,57 @@ const path = require("path");
 const { WebSocketServer } = require("ws");
 const licensing = require("./licensing");
 const teamRelay = require("./teamRelay");
+const { TelemetryRecorder } = require("./telemetry-recorder");
 
 // Load .env from local-bridge directory (TEAM_CODE, SUPABASE_URL, etc.)
 require("dotenv").config({ path: path.join(__dirname, ".env") });
+
+// ─── MongoDB Telemetry Recorder ───────────────────────────────────────────────────
+
+// MONGO_URI is injected by the Electron Runtime Supervisor via env.
+// If absent, recording silently degrades — bridge still works without MongoDB.
+const MONGO_URI = process.env.MONGO_URI || null;
+const USER_ID   = process.env.PITWALL_USER_ID || "local";
+
+/** @type {import('./telemetry-recorder').TelemetryRecorder | null} */
+let recorder = null;
+let recorderConnected = false;
+let recorderSampleCount = 0;
+let recorderSessionId = null;
+let lastRecordedLap = -1;
+
+/**
+ * Start a MongoDB recording session when iRacing connects.
+ * Safe to call multiple times — creates a new recorder each connection.
+ */
+async function startRecordingSession(sessionInfo) {
+  if (!MONGO_URI) return;
+  try {
+    if (recorder) await recorder.close();
+  } catch {}
+
+  recorder = new TelemetryRecorder(MONGO_URI, USER_ID, sessionInfo);
+  recorderConnected = await recorder.connect();
+  if (recorderConnected) {
+    recorderSessionId = await recorder.startSession(Object.keys(latest || {}));
+    recorderSampleCount = 0;
+    lastRecordedLap = -1;
+    console.log("[bridge] Telemetry recording started → MongoDB");
+  }
+}
+
+async function stopRecordingSession() {
+  if (!recorder) return;
+  try {
+    await recorder.close();
+    console.log(`[bridge] Telemetry recording ended — ${recorderSampleCount} samples recorded`);
+  } catch (e) {
+    console.warn("[bridge] Recorder close error:", e.message);
+  }
+  recorder = null;
+  recorderConnected = false;
+  recorderSessionId = null;
+}
 
 let IRacingSDK = null;
 try {
@@ -89,7 +137,7 @@ const MIME = {
 
 /* ───────────────────────────────────────── HTTP server (static PWA) */
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
 
   // Set CORS headers
@@ -152,7 +200,96 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  /* ───────────────────────────────────────── Static File Serving */
+  /* ─────────────────────────────────────────── MongoDB Status API */
+
+  if (urlPath === "/api/mongo/status" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      connected: recorderConnected,
+      uri: MONGO_URI ? MONGO_URI.replace(/:([^@]+)@/, ":***@") : null,
+      sessionId: recorderSessionId ? recorderSessionId.toString() : null,
+      sampleCount: recorderSampleCount,
+    }));
+    return;
+  }
+
+  if (urlPath === "/api/sessions" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    // Expose recent sessions for the HistoricalQueryPanel
+    // (recorder.db is the MongoClient db instance)
+    try {
+      const sessions = await recorder.db
+        .collection("telemetry_sessions")
+        .find({}, { projection: { session_info_yaml: 0 } })
+        .sort({ start_time: -1 })
+        .limit(20)
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ sessions }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/sessions/laps" && req.method === "GET") {
+    const sessionId = new URL(req.url, `http://localhost`).searchParams.get("sessionId");
+    if (!recorder || !recorderConnected || !sessionId) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected or no sessionId" }));
+      return;
+    }
+    try {
+      const { ObjectId } = require("mongodb");
+      const laps = await recorder.db
+        .collection("laps")
+        .find({ session_id: new ObjectId(sessionId) })
+        .sort({ lap_number: 1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ laps }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/events" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const filter = {};
+      if (params.get("track"))    filter.track    = params.get("track");
+      if (params.get("car"))      filter.car      = params.get("car");
+      if (params.get("category")) filter.category = params.get("category");
+      if (params.get("severity")) filter.severity = params.get("severity");
+      if (params.get("corner"))   filter.cornerNumber = parseInt(params.get("corner"), 10);
+      const events = await recorder.db
+        .collection("scanner_events")
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .limit(50)
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ events }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  /* ────────────────────────────────────── Static File Serving */
 
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
 
@@ -195,6 +332,7 @@ server.listen(PORT, () => {
 
 let latest = null;
 let packetCount = 0;
+let currentLap = 0;
 
 if (IRacingSDK) {
   const iracing = new IRacingSDK({ autoEnableTelemetry: true });
@@ -205,6 +343,22 @@ if (IRacingSDK) {
     if (connected !== wasConnected) {
       console.log(connected ? "[bridge] iRacing connected" : "[bridge] iRacing disconnected");
       wasConnected = connected;
+      if (connected) {
+        // Start recording session when iRacing connects
+        const sessionData = iracing.getSessionData();
+        const weekend = sessionData?.WeekendInfo;
+        const driverInfo = sessionData?.DriverInfo;
+        const me = driverInfo?.Drivers?.[driverInfo?.DriverCarIdx] ?? {};
+        startRecordingSession({
+          track:  weekend?.TrackDisplayName ?? "unknown",
+          car:    me.CarScreenName ?? "unknown",
+          driver: me.UserName ?? "unknown",
+          sessionInfoYaml: "",
+        });
+      } else {
+        // Stop recording when iRacing disconnects
+        stopRecordingSession();
+      }
     }
     if (!connected || !iracing.waitForData(1000 / TICK_HZ)) return;
     const flat = flattenTelemetry(iracing.getTelemetry());
@@ -214,7 +368,30 @@ if (IRacingSDK) {
     }
     latest = mapTelemetry(flat, iracing.getSessionData());
     latest.all = flat;
+    currentLap = flat.Lap ?? 0;
     packetCount += 1;
+
+    // ─── Telemetry Recording ─────────────────────────────────────────────────────
+    if (recorder && recorderConnected) {
+      // Record 60Hz sample
+      recorder.recordSample(flat, currentLap);
+      recorderSampleCount++;
+
+      // Record completed lap metadata
+      const lapTime = flat.LapLastLapTime ?? 0;
+      if (currentLap > lastRecordedLap && lapTime > 0 && currentLap > 0) {
+        lastRecordedLap = currentLap;
+        recorder.recordLap(
+          currentLap,
+          lapTime,
+          flat.FuelLevel ?? 0,
+          flat.TrackTemp ?? 0,
+          flat.AirTemp ?? 0,
+        );
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
     if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
       console.log(
         `[bridge] live packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
@@ -245,9 +422,9 @@ wss.on("connection", (ws) => {
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
 
-// Graceful shutdown — close Supabase channel cleanly
-process.on("SIGINT",  () => { teamRelay.disconnect(); process.exit(0); });
-process.on("SIGTERM", () => { teamRelay.disconnect(); process.exit(0); });
+// Graceful shutdown — close recorder and Supabase channel cleanly
+process.on("SIGINT",  async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
+process.on("SIGTERM", async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
 
 function printNetworkUrls(port) {
   try {

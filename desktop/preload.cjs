@@ -46,6 +46,12 @@ contextBridge.exposeInMainWorld("pitWallRuntime", {
   /** Triggers a clean bridge restart (stops → waits 300ms → starts again) */
   restartBridge: () => ipcRenderer.invoke("restart-bridge"),
 
+  /** Triggers MongoDB service start (idempotent — safe to call if already running) */
+  ensureMongoDB: () => ipcRenderer.invoke("ensure-mongodb"),
+
+  /** Re-probes LM Studio / Ollama and returns the current AI mode */
+  refreshAiMode: () => ipcRenderer.invoke("refresh-ai-mode"),
+
   // ── App Info ──────────────────────────────────────────────────────────────
   
   /** Returns app version, isDev flag, platform, dashboardUrl */
