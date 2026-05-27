@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, ChevronDown, Wrench, Search } from "lucide-react";
+import { ChevronRight, ChevronDown, Wrench, Search, Sparkles } from "lucide-react";
 import type { IbtParsed } from "@/lib/ibt/types";
 import { parseCarSetup, type SetupNode } from "@/lib/ibt/setup";
 
@@ -119,6 +119,10 @@ export function SetupSheet({ parsed }: { parsed: IbtParsed }) {
   const f = filter.trim().toLowerCase();
   const totalParams = Object.keys(setup.flat).length;
 
+  const handleAskAI = () => {
+    window.location.href = "/ai-engineer?analyzeSetup=true";
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-panel">
       <div className="hairline-b flex items-center gap-2 px-3 py-1.5">
@@ -128,7 +132,14 @@ export function SetupSheet({ parsed }: { parsed: IbtParsed }) {
           {totalParams} params
           {setup.updateCount != null ? ` · update #${setup.updateCount}` : ""}
         </span>
-        <div className="ml-auto flex items-center gap-1.5 rounded-sm border border-border bg-rail px-2">
+        <button
+          onClick={handleAskAI}
+          className="ml-auto flex items-center gap-1.5 border border-border hover:bg-[#1E293B] hover:text-white bg-[#0F172A] text-slate-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-mono shrink-0 transition-colors cursor-pointer"
+        >
+          <Sparkles className="h-3 w-3 text-[#3B82F6] animate-pulse" />
+          Ask AI
+        </button>
+        <div className="flex items-center gap-1.5 rounded-sm border border-border bg-rail px-2">
           <Search className="h-3 w-3 text-muted-foreground" />
           <input
             value={filter}

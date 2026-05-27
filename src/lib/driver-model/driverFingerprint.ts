@@ -9,6 +9,7 @@ import { type BrakeSignatureMetrics } from "./brakeSignature";
 import { type ThrottleSignatureMetrics } from "./throttleRelease";
 import { type SteeringSignatureMetrics } from "./steeringAggression";
 import { type DriverConsistencyMetrics } from "./consistencyModel";
+import { type DriverBehaviorTraits, synthesizeDriverTraits } from "../session-intelligence/eventTaxonomy";
 
 export type DriverClass =
   | "AGGRESSIVE_TRAILBRAKER"
@@ -32,6 +33,9 @@ export interface DriverFingerprint {
   driverClass: DriverClass;
   overallRating: number; // calculated mechanical rating out of 100
   focusAreas: string[];
+
+  /** Behavior-centric Driver DNA Traits (Ontology Layer) */
+  behaviorTraits?: DriverBehaviorTraits;
 }
 
 /**
@@ -89,6 +93,15 @@ export function generateDriverFingerprint(
   const inputSmoothness = (steering.steeringSmoothnessIndex * 0.5) + (Math.max(0, 100 - brake.lockupTendencyIndex * 150) * 0.5);
   const overallRating = (consistency.overallConsistencyScore * 0.6) + (inputSmoothness * 0.4);
 
+  // 3. Synthesize behavior-centric Driver DNA traits (Ontology Layer)
+  const behaviorTraits = synthesizeDriverTraits(
+    brake.averageBrakeGradient,
+    brake.trailBrakeDurationSec,
+    steering.steeringSmoothnessIndex,
+    throttle.throttleExitGradient,
+    0.28 // Baseline average yaw rate
+  );
+
   return {
     driverId,
     driverName,
@@ -102,5 +115,6 @@ export function generateDriverFingerprint(
     driverClass,
     overallRating: parseFloat(Math.min(100, Math.max(0, overallRating)).toFixed(1)),
     focusAreas,
+    behaviorTraits,
   };
 }

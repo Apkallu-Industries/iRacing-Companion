@@ -13,12 +13,15 @@ import {
   BookOpen,
   Activity,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { useWorkbench } from "@/lib/store";
 import { resolveLLMUrl } from "@/lib/llm";
 import { toast } from "sonner";
+import { parseCarSetup } from "@/lib/ibt/setup";
+import { SETUP_BIBLE } from "@/lib/advisor.knowledge";
 
 export const Route = createFileRoute("/ai-engineer")({
   head: () => ({
@@ -58,6 +61,16 @@ interface SetupItem {
 
 function AIEngineerTerminal() {
   const t = useTelemetry();
+  const parsedWorkbench = useWorkbench((state) => state.parsed);
+  const parsedSetup = React.useMemo(() => {
+    if (!parsedWorkbench?.meta?.sessionInfoYaml) return null;
+    try {
+      return parseCarSetup(parsedWorkbench.meta.sessionInfoYaml);
+    } catch {
+      return null;
+    }
+  }, [parsedWorkbench]);
+
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
   const [cmdInput, setCmdInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -213,16 +226,8 @@ function AIEngineerTerminal() {
     }, 1100);
   };
 
-  const handleCommandSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cmdInput.trim() || loading) return;
-
-    const cmd = cmdInput.trim();
-    setCmdInput("");
-    addEngineLog("SYSTEM", `> ENGINE_CMD: ${cmd}`);
-
+  const sendPrompt = async (cmd: string) => {
     setLoading(true);
-
     try {
       // Direct command routing
       if (cmd.toLowerCase() === "/stint") {
@@ -256,6 +261,18 @@ function AIEngineerTerminal() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (llmApiKey) headers["Authorization"] = `Bearer ${llmApiKey}`;
 
+      let setupContextStr = "";
+      if (parsedSetup) {
+        setupContextStr = "\nActual Parsed iRacing Setup Parameters:\n" +
+          Object.entries(parsedSetup.flat)
+            .map(([k, v]) => `- ${k}: ${v}`)
+            .join("\n");
+      } else {
+        setupContextStr = `
+      - Damper status: Rebound Front 12 clicks, Bump Front 8 clicks, Rebound Rear 10 clicks, Bump Rear 6 clicks.
+      - Cold tire pressure targets: FL 24.5, FR 24.8, RL 24.2, RR 24.5.`;
+      }
+
       const contextPrompt = `You are a motorsport race engineer on the pit wall for a professional GT3/GTP race team.
       The driver has typed a command: "${cmd}".
       Current telemetry session state:
@@ -263,14 +280,31 @@ function AIEngineerTerminal() {
       - Car: ${activeCar}
       - Speed: ${t.speedKph} kph
       - Active Sector bests: S1 ${t.sectors.s1 ?? "--.---"} | S2 ${t.sectors.s2 ?? "--.---"} | S3 ${t.sectors.s3 ?? "--.---"}
-      - Damper status: Rebound Front 12 clicks, Bump Front 8 clicks, Rebound Rear 10 clicks, Bump Rear 6 clicks.
-      - Cold tire pressure targets: FL 24.5, FR 24.8, RL 24.2, RR 24.5.
+      ${setupContextStr}
+ 
+      === TRUSTED MOTORSPORT SETUP KNOWLEDGE ===
+      Your mechanical recommendations, calculations, and stint analysis MUST be strictly and exclusively derived from the trusted guidelines, priority hierarchy, and chapters of Tim McArthur's book "Learn to setup your race car" and accompanying flowcharts detailed in the knowledge base below.
+      
+      Do NOT invent rules, parameters, or advice that contradicts or goes beyond this book. Every single recommendation must draw its authority strictly from the chapters on Weight, Springs, ARBs, Tire Pressures, Camber, Caster, Toe, Gearing, Dampers, Differential, and Aerodynamics of this text.
+      
+      KEY TEXTBOOK PRINCIPLES TO ENFORCE:
+      - Tire Pressures as Springs: One pound (1 psi) of air pressure is equal to 15–25 lbs of spring rate. Re-balance corner springs after pressure moves.
+      - Tire Temp Targets: Achieve uniform temperature across all three points of the tire (inner, middle, outer) *while in the corner* (middle optimized by pressure, inner/outer by camber).
+      - Springs bottoming: Softest springs possible without bottoming the chassis on track or suspension on bump-stops/packers.
+      - Weight loss: Consuming fuel loses rear weight at roughly 8 pounds for every gallon of fuel burned.
+      - Dampers: Springs dictate *how much* weight is transferred; dampers dictate *how and when* that weight is transferred. Front compression dictates entry turn-in grip; rear rebound dictates entry braking connection (softer = more planted).
+      - Differential: Power map is on-throttle; Coast map is off-throttle. High preload = sharp/twitchy, low preload = smooth/forgiving.
+      - Antiroll Bars: Softer ARB on an end = more grip to that end. Pulls inside wheel up, reducing inside grip but keeping chassis level. Excellent tool to equalize left-to-right side tire temperatures.
 
+      --- AUTHORITATIVE SETUP BIBLE ---
+      ${SETUP_BIBLE}
+      ==========================================
+ 
       Based on this telemetry, provide a professional, dense, and tactical motorsport engineering response.
       Use exactly this log layout format (do not use markdown paragraphs, use mechanical lists instead):
       [OBSERVATION] (Identify telemetry anomalies, instability, slide slip, damper spikes, tire overheating)
-      [RECOMMENDATION] (List Spring/Damper/Tire pressure clicks or driving style tweaks explicitly)
-
+      [RECOMMENDATION] (List Spring/Damper/Tire pressure clicks or driving style tweaks explicitly, citing the specific textbook chapter/flowchart, e.g. "Tim McArthur Flowchart: Road Understeer #1 (ARB)" or "eBook: ch. TIRE PRESSURES")
+ 
       Be concise, technical, and authoritative. Speak like a pro-team engineer.`;
 
       const res = await fetch(url, {
@@ -325,6 +359,36 @@ function AIEngineerTerminal() {
       setLoading(false);
     }
   };
+
+  const handleCommandSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cmdInput.trim() || loading) return;
+
+    const cmd = cmdInput.trim();
+    setCmdInput("");
+    addEngineLog("SYSTEM", `> ENGINE_CMD: ${cmd}`);
+    await sendPrompt(cmd);
+  };
+
+  // Automatic setup analysis on route entry via query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("analyzeSetup") === "true") {
+      // Clear parameter from URL so it doesn't run again on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      const autoRun = async () => {
+        addSystemLog("PIT WALL COMMS PROTOCOL: AUTOMATIC VEHICLE SETUP HANDSHAKE INITIALIZED.");
+        // Small delay to allow initial setup logs to draw nicely
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        
+        const autoCmd = "Please analyze my parsed setup and suggest baseline handling optimizations.";
+        addEngineLog("SYSTEM", `> ENGINE_CMD: ${autoCmd}`);
+        await sendPrompt(autoCmd);
+      };
+      autoRun();
+    }
+  }, [parsedSetup]);
 
   const speakLastRecom = async () => {
     if (speaking) return;
