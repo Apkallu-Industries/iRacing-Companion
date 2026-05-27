@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RuntimeRouteImport } from './routes/runtime'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
@@ -40,6 +41,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RuntimeRoute = RuntimeRouteImport.update({
+  id: '/runtime',
+  path: '/runtime',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoadmapRoute = RoadmapRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
   '/roadmap': typeof RoadmapRoute
+  '/runtime': typeof RuntimeRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
   '/roadmap': typeof RoadmapRoute
+  '/runtime': typeof RuntimeRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
   '/roadmap': typeof RoadmapRoute
+  '/runtime': typeof RuntimeRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/live'
     | '/roadmap'
+    | '/runtime'
     | '/settings'
     | '/sitemap.xml'
     | '/team'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/live'
     | '/roadmap'
+    | '/runtime'
     | '/settings'
     | '/sitemap.xml'
     | '/team'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/live'
     | '/roadmap'
+    | '/runtime'
     | '/settings'
     | '/sitemap.xml'
     | '/team'
@@ -240,6 +252,7 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   LiveRoute: typeof LiveRoute
   RoadmapRoute: typeof RoadmapRoute
+  RuntimeRoute: typeof RuntimeRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TeamRoute: typeof TeamRoute
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/runtime': {
+      id: '/runtime'
+      path: '/runtime'
+      fullPath: '/runtime'
+      preLoaderRoute: typeof RuntimeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/roadmap': {
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   LiveRoute: LiveRoute,
   RoadmapRoute: RoadmapRoute,
+  RuntimeRoute: RuntimeRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TeamRoute: TeamRoute,

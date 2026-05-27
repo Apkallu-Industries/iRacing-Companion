@@ -11,7 +11,7 @@
  *   Dev (--dev) → loads http://127.0.0.1:8080 (local Vite dev server)
  */
 
-const { app, BrowserWindow, shell, Menu, Tray, dialog, ipcMain, nativeTheme } = require("electron");
+const { app, BrowserWindow, shell, Menu, Tray, dialog, ipcMain, nativeTheme, screen } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -40,7 +40,9 @@ const CLOUD_URL = "https://iracing-companion.lovable.app";
 
 // Start with a sensible default; resolveUrl() will update it before the window opens.
 let BASE_URL    = isDev ? VITE_URL : BRIDGE_UI;
-let DASHBOARD_URL = `${BASE_URL}/live`;
+// Electron opens the /runtime boot sequence first; the RuntimeStatusMatrix
+// component navigates to /live once services are confirmed ready.
+let DASHBOARD_URL = `${BASE_URL}/runtime`;
 
 /**
  * Probe a URL with a short timeout. Returns true if the server is up.
@@ -66,9 +68,9 @@ async function isReachable(url, timeoutMs = 1500) {
  */
 async function resolveUrl() {
   if (isDev) {
-    // Dev mode: always use Vite
+    // Dev mode: always use Vite — load /runtime for boot sequence
     BASE_URL      = VITE_URL;
-    DASHBOARD_URL = `${VITE_URL}/live`;
+    DASHBOARD_URL = `${VITE_URL}/runtime`;
     console.log(`[desktop] dev mode → ${DASHBOARD_URL}`);
     return;
   }
@@ -78,20 +80,20 @@ async function resolveUrl() {
 
   if (await isReachable(VITE_URL)) {
     BASE_URL      = VITE_URL;
-    DASHBOARD_URL = `${VITE_URL}/live`;
+    DASHBOARD_URL = `${VITE_URL}/runtime`;
     console.log(`[desktop] local Vite dev server detected → ${DASHBOARD_URL}`);
     return;
   }
 
   if (await isReachable(BRIDGE_UI)) {
     BASE_URL      = BRIDGE_UI;
-    DASHBOARD_URL = `${BRIDGE_UI}/live`;
+    DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
     console.log(`[desktop] bridge HTTP server detected → ${DASHBOARD_URL}`);
     return;
   }
 
   BASE_URL      = CLOUD_URL;
-  DASHBOARD_URL = `${CLOUD_URL}/live`;
+  DASHBOARD_URL = `${CLOUD_URL}/live`; // Cloud fallback skips boot sequence
   console.log(`[desktop] ⚠️  no local server found, falling back to cloud → ${DASHBOARD_URL}`);
 }
 
@@ -112,6 +114,26 @@ let tray = null;
 let bridgeProc = null;
 let bridgeRestartCount = 0;
 let bridgeStatus = "starting"; // 'starting' | 'running' | 'crashed'
+
+/**
+ * Emit bridge status change events to the renderer so the UI
+ * can update its RuntimeMonitor without polling.
+ */
+function emitBridgeStatusToRenderer(status) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("bridge-status-changed", status);
+  }
+}
+
+/**
+ * Update the main window title to reflect bridge status.
+ */
+function updateWindowTitle() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const hostname = require("os").hostname();
+  const statusEmoji = bridgeStatus === "running" ? "●" : bridgeStatus === "crashed" ? "✕" : "◎";
+  mainWindow.setTitle(`Pit Wall Workstation ${statusEmoji} ${bridgeStatus.toUpperCase()} · ${hostname}`);
+}
 
 let windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximized: false };
 try {
@@ -163,6 +185,8 @@ function startBridge() {
 
   bridgeStatus = "running";
   updateTray();
+  emitBridgeStatusToRenderer("running");
+  updateWindowTitle();
 
   bridgeProc.stdout.on("data", (b) => {
     const line = b.toString().trim();
@@ -183,6 +207,8 @@ function startBridge() {
     bridgeLogStream?.end();
     bridgeLogStream = null;
     updateTray();
+    emitBridgeStatusToRenderer(bridgeStatus);
+    updateWindowTitle();
 
     // Auto-restart on crash (up to 5 times, with back-off)
     if (code !== 0 && bridgeRestartCount < 5) {
@@ -217,6 +243,7 @@ function saveWindowState() {
 // ─── Main window ──────────────────────────────────────────────────────────────
 
 function createWindow() {
+  const hostname = require("os").hostname();
   mainWindow = new BrowserWindow({
     width: windowState.width,
     height: windowState.height,
@@ -225,7 +252,7 @@ function createWindow() {
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: "#09090b",
-    title: "Pit Wall Desktop",
+    title: `Pit Wall Workstation · ${hostname}`,
     titleBarStyle: "hidden",
     titleBarOverlay: {
       color: "#09090b",
@@ -238,6 +265,8 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      // Preload script exposes window.pitWallRuntime via contextBridge
+      preload: path.join(__dirname, "preload.cjs"),
       // Allow audio output device selection (setSinkId) — requires this flag
       experimentalFeatures: true,
     },
@@ -503,6 +532,84 @@ ipcMain.handle("get-app-info", () => ({
   dashboardUrl: DASHBOARD_URL,
   bridgeDir: BRIDGE_DIR,
 }));
+
+// ─── Workstation Runtime IPC ──────────────────────────────────────────────────
+
+/**
+ * Returns the full machine identity manifest for the RuntimeMonitor / RuntimeStatusMatrix.
+ */
+ipcMain.handle("get-runtime-manifest", () => {
+  const os_module = require("os");
+  const displays = screen.getAllDisplays();
+  return {
+    hostname: os_module.hostname(),
+    platform: os_module.platform(),
+    arch: os_module.arch(),
+    cpuModel: os_module.cpus()[0]?.model ?? "Unknown CPU",
+    cpuCores: os_module.cpus().length,
+    totalRamGb: (os_module.totalmem() / 1e9).toFixed(1),
+    freeRamGb: (os_module.freemem() / 1e9).toFixed(1),
+    uptimeSec: Math.round(os_module.uptime()),
+    bridgeDir: BRIDGE_DIR,
+    bridgeStatus,
+    bridgeRestarts: bridgeRestartCount,
+    appVersion: APP_VERSION,
+    isDev,
+    monitorCount: displays.length,
+    workstationMode: true,
+  };
+});
+
+/**
+ * Returns all connected display bounds and work areas.
+ * Enables the UI to show a monitor layout picker for instrument placement.
+ */
+ipcMain.handle("get-monitor-layout", () => {
+  const displays = screen.getAllDisplays();
+  const primary = screen.getPrimaryDisplay();
+  return displays.map((d) => ({
+    id: d.id,
+    isPrimary: d.id === primary.id,
+    bounds: d.bounds,
+    workArea: d.workArea,
+    scaleFactor: d.scaleFactor,
+    label: d.id === primary.id ? "Primary Display" : `External Display ${d.id}`,
+  }));
+});
+
+/**
+ * Opens a properly-configured detached instrument window.
+ * Sizes are calibrated per instrument type for optimal data density.
+ */
+const INSTRUMENT_SIZES = {
+  timing:      { width: 900,  height: 640 },
+  tires:       { width: 800,  height: 600 },
+  hybrid:      { width: 800,  height: 560 },
+  strategy:    { width: 900,  height: 600 },
+  telemetry:   { width: 1200, height: 720 },
+  engineering: { width: 1440, height: 900 },
+};
+
+ipcMain.handle("open-instrument-window", (_event, { type, url }) => {
+  const size = INSTRUMENT_SIZES[type] ?? { width: 900, height: 640 };
+  const win = new BrowserWindow({
+    width: size.width,
+    height: size.height,
+    backgroundColor: "#05070A",
+    title: `Pit Wall · ${String(type).toUpperCase()} MONITOR`,
+    autoHideMenuBar: true,
+    frame: true,
+    titleBarStyle: "default",
+    alwaysOnTop: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.cjs"),
+    },
+  });
+  win.loadURL(url || `${BASE_URL}/detached/${type}`);
+  return { ok: true, type };
+});
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 

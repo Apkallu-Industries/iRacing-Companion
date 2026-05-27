@@ -1,4 +1,4 @@
-﻿import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Activity, LogOut, Settings, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ThemeEditor } from "@/components/ThemeEditor";
@@ -8,6 +8,7 @@ import { VoiceSettings } from "@/components/VoiceSettings";
 import { BackButton } from "@/components/BackButton";
 import { HeaderBreadcrumbs } from "@/components/HeaderBreadcrumbs";
 import { useTelemetry } from "@/lib/useTelemetry";
+import { RuntimeMonitor } from "@/components/runtime/RuntimeMonitor";
 
 export function AppHeader({ children }: { children?: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -49,6 +50,8 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
             </span>
           )}
         </Link>
+        {/* Runtime Monitor — Workstation service health indicator */}
+        <RuntimeMonitor />
         <Link
           to="/team"
           className={`flex items-center gap-1.5 rounded-sm px-2 py-1 transition-all group ${
