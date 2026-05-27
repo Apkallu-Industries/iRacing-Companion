@@ -722,6 +722,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (urlPath === "/api/intelligence/correlations" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const track = params.get("track") || "unknown";
+      const car = params.get("car") || "unknown";
+      const ambient = parseFloat(params.get("ambient") || "20");
+      const rebound = parseInt(params.get("rebound") || "0", 10);
+      const laps = parseInt(params.get("laps") || "0", 10);
+
+      // Query historical setup changes and scanner events to feed the correlation builder
+      const [changes, events] = await Promise.all([
+        recorder.db.collection("setup_changes").find({}).limit(50).toArray(),
+        recorder.db.collection("scanner_events").find({}).limit(100).toArray()
+      ]);
+
+      const { calculateSessionCorrelations } = require("../src/lib/session-intelligence/correlationEngine");
+      const correlation = calculateSessionCorrelations(track, car, rebound, ambient, laps, changes, events);
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ correlation }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
   /* ────────────────────────────────────── Static File Serving */
 
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);

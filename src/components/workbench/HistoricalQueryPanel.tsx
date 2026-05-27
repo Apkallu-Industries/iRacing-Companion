@@ -11,8 +11,9 @@
  * the transition from session-reactive to session-learnable.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { IntelligenceDashboard } from "./IntelligenceDashboard";
+import { StrategicIntelligenceTab } from "./StrategicIntelligenceTab";
 import {
   useSessions,
   useEventQuery,
@@ -212,7 +213,7 @@ export function HistoricalQueryPanel() {
 
   const [selectedSession, setSelectedSession] = useState<StoredSession | null>(null);
   const [showLaps, setShowLaps] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence">("sessions");
+  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence" | "strategic">("sessions");
 
   // Event query state
   const [queryMode,     setQueryMode]     = useState<"structured" | "tql">("tql");
@@ -311,7 +312,7 @@ export function HistoricalQueryPanel() {
 
       {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="flex shrink-0" style={{ borderBottom: "1px solid #1C2430" }}>
-        {(["sessions", "events", "intelligence"] as const).map((tab) => (
+        {(["sessions", "events", "intelligence", "strategic"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -548,6 +549,17 @@ export function HistoricalQueryPanel() {
             sessionId={selectedSession?._id}
             carClass={selectedSession?.car}
             trackName={selectedSession?.track}
+          />
+        </div>
+      )}
+
+      {/* ── Strategic Tab ─────────────────────────────────────────── */}
+      {activeTab === "strategic" && (
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 bg-[#07090E]">
+          <StrategicIntelligenceTab
+            sessionId={selectedSession?._id}
+            car={selectedSession?.car}
+            track={selectedSession?.track}
           />
         </div>
       )}
