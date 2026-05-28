@@ -243,6 +243,60 @@ function LandingPage() {
         </div>
       </nav>
 
+      {/* ── HERO BANNER SECTION ── */}
+      <section className="w-full max-w-[1700px] mx-auto px-4 md:px-8 pt-6 relative z-10 select-none">
+        <div className="border border-[#1C2430] bg-[#0B0F14] overflow-hidden rounded-sm flex flex-col md:flex-row items-center gap-6 p-6 md:p-8 relative">
+          {/* Glassmorphic lighting background */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#3B82F6] opacity-[0.06] rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#00D17F] opacity-[0.04] rounded-full blur-[100px] pointer-events-none" />
+
+          {/* Left Hero Content */}
+          <div className="flex-1 flex flex-col items-start gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-mono tracking-widest text-[#00D17F] bg-[#00D17F]/10 border border-[#00D17F]/20 px-2 py-0.5 font-bold uppercase">
+                Now Live
+              </span>
+              <span className="text-[9px] font-mono tracking-widest text-[#7A828C] bg-[#11161D] px-2 py-0.5 border border-[#1C2430]">
+                Desktop Suite v1.2.0
+              </span>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans">
+              Enter the <span className="text-[#3B82F6]">Pit Wall</span>
+            </h1>
+            <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg">
+              Stream high-fidelity 60Hz live iRacing telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-3">
+              <Link
+                to="/live"
+                className="inline-flex items-center justify-center gap-2 rounded-sm bg-[#00D17F] hover:bg-[#00B86F] px-6 py-3 font-mono text-xs uppercase font-bold text-zinc-950 transition-all shadow-[0_0_20px_rgba(0,209,127,0.25)] hover:scale-105 cursor-pointer"
+              >
+                <Gauge className="h-4 w-4" />
+                Enter Pit Wall
+              </Link>
+              <Link
+                to="/roadmap"
+                className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] px-5 py-3 font-mono text-xs uppercase font-bold text-white transition-all cursor-pointer"
+              >
+                <Rocket className="h-4 w-4" />
+                Get Desktop Installer
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Hero Image */}
+          <div className="flex-1 w-full max-w-[650px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-2xl">
+            {/* Glow border gradient effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#3B82F6]/20 via-transparent to-[#00D17F]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <img
+              src="/hero.png"
+              alt="Pit Wall Telemetry Dashboard"
+              className="w-full h-auto object-cover transform group-hover:scale-[1.02] transition-transform duration-500"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* ── MAIN WORKSPACE CONTAINER ── */}
       <section className="flex-1 w-full max-w-[1700px] mx-auto px-4 md:px-8 py-6 grid lg:grid-cols-12 gap-5 items-stretch relative z-10">
         
