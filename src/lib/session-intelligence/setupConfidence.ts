@@ -23,7 +23,9 @@ export interface SetupConfidenceRating {
 export function calculateSetupAdviceConfidence(
   changeType: string,
   previousChanges: StoredSetupChange[],
-  currentDriverId: string
+  currentDriverId: string,
+  currentTrack?: string,
+  currentCar?: string
 ): SetupConfidenceRating {
   // Filter for matching historical adjustments
   const matches = previousChanges.filter(
@@ -98,6 +100,38 @@ export function calculateSetupAdviceConfidence(
         });
       }
     }
+
+    // 3. Stage 9: Apply Contextual Similarity Weighting to prevent cross-context contamination
+    let contextualWeight = 1.0;
+    if (currentTrack || currentCar) {
+      const notesLower = change.notes?.toLowerCase() || "";
+      const consLower = change.consequences?.join(" ")?.toLowerCase() || "";
+      
+      if (currentTrack) {
+        const trackNorm = currentTrack.toLowerCase();
+        // If historical note declares a track, verify match
+        if (notesLower.includes("track:") || consLower.includes("track:") || notesLower.includes("audit_lineage:")) {
+          const hasTrackMatch = notesLower.includes(trackNorm) || consLower.includes(trackNorm);
+          if (!hasTrackMatch) {
+            contextualWeight -= 0.35; // penalty for different track layout environment
+          }
+        }
+      }
+
+      if (currentCar) {
+        const carNorm = currentCar.toLowerCase();
+        // If historical note declares a car class, verify match
+        if (notesLower.includes("car:") || consLower.includes("car:") || notesLower.includes("audit_lineage:")) {
+          const hasCarMatch = notesLower.includes(carNorm) || consLower.includes(carNorm);
+          if (!hasCarMatch) {
+            contextualWeight -= 0.35; // penalty for different vehicle behavior class
+          }
+        }
+      }
+    }
+
+    // Multiply changeScore by contextual similarity weight [0.1, 1.0]
+    changeScore = Math.round(changeScore * Math.max(0.1, contextualWeight));
 
     if (changeScore >= 0) {
       positiveImpacts++;

@@ -1,4 +1,4 @@
-﻿import {
+import {
   createContext,
   useCallback,
   useContext,
@@ -60,6 +60,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     if (hydratedFor.current === user.id) return;
     hydratedFor.current = user.id;
+
+    // Skip remote preferences query for mock local developer user
+    if (user.id === "local-user-id") return;
+
     supabase
       .from("user_preferences")
       .select("theme")
@@ -76,7 +80,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const persist = useCallback(
     (next: ThemeMap) => {
       saveLocalTheme(next);
-      if (!user) return;
+      if (!user || user.id === "local-user-id") return;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         supabase
@@ -117,7 +121,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     setThemeState(DARK_THEME);
     saveLocalTheme(null);
-    if (user) {
+    if (user && user.id !== "local-user-id") {
       supabase
         .from("user_preferences")
         .upsert(

@@ -112,7 +112,7 @@ function SharedLapPage() {
           <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <Activity className="h-4 w-4" />
           </div>
-          <span className="font-mono text-sm tracking-wider">APEXTRACE</span>
+          <span className="font-mono text-sm tracking-wider">PIT WALL</span>
           <span className="rounded-sm border border-border-strong px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
             Shared lap · read-only
           </span>

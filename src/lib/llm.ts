@@ -53,12 +53,24 @@ export function resolveLLMUrl(baseUrl: string): string {
   let url = baseUrl.trim().replace(/\/$/, "");
   if (!url) return "http://localhost:1234/api/v1/chat";
 
-  // If the user already pasted the full endpoint, just use it
-  if (url.endsWith("/chat/completions") || url.endsWith("/chat")) {
+  // If the user already pasted a full endpoint, just use it
+  if (
+    url.endsWith("/chat/completions") ||
+    url.endsWith("/chat") ||
+    url.endsWith("/v1/chat")
+  ) {
     return url;
   }
 
-  // If they provided a base URL without /v1 namespace, append /v1
+  // Handle LM Studio v0.4+ /api/v1/chat completions endpoint
+  if (url.includes("/api")) {
+    if (!url.includes("/v1")) {
+      url = `${url}/v1`;
+    }
+    return `${url}/chat`;
+  }
+
+  // Handle Ollama and standard /v1/chat/completions endpoints
   if (!url.includes("/v1")) {
     url = `${url}/v1`;
   }

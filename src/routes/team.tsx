@@ -1,14 +1,11 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Users,
   Car as CarIcon,
-  Clock,
   Plus,
   Trash2,
-  Settings,
   Calendar,
-  AlertCircle,
   Fuel,
   Cloud,
   Sun,
@@ -16,37 +13,28 @@ import {
   CloudRain,
   CloudDrizzle,
   CloudLightning,
-  Droplets,
-  ChevronRight,
-  Play,
-  Square,
-  RefreshCw,
+  X,
+  Sliders,
   Timer,
   Calculator,
   Zap,
   ShieldAlert,
   BrainCircuit,
-  HelpCircle,
-  X,
-  PlusCircle,
-  FileText,
-  Sliders,
+  RefreshCw,
+  Settings,
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { useWorkbench } from "@/lib/store";
 import { resolveLLMUrl } from "@/lib/llm";
 import { useTelemetry } from "@/lib/useTelemetry";
-import { useTeamTelemetry } from "@/lib/useTeamTelemetry";
+import { useTeamTelemetry, DriverTelemetrySnapshot } from "@/lib/useTeamTelemetry";
 import {
   format,
   addHours,
-  subHours,
-  subMinutes,
   startOfHour,
   addMinutes,
   differenceInMinutes,
   parseISO,
-  isWithinInterval,
 } from "date-fns";
 
 export const Route = createFileRoute("/team")({
@@ -63,8 +51,7 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-// Types extracted from SimTeam Manager
-type Driver = { id: string; name: string; shortName: string; color: string };
+type Driver = { id: string; name: string; shortName: string; color: string; status?: "Available" | "In Garage" | "Driving" | "Standby" };
 type Car = { id: string; name: string; number: string; carClass: "GTP" | "LMP2" | "GT3" };
 type Stint = {
   id: string;
@@ -89,8 +76,7 @@ type RaceIncident = {
   duration: number;
 };
 
-const CAR_CLASSES = ["GTP", "LMP2", "GT3", "IndyCar", "NASCAR Cup", "NASCAR Xfinity", "NASCAR Trucks", "Touring Car", "GT4", "MX5", "Formula Vee", "Other"] as const;
-const CLASS_COLORS: Record<string, string> = { GTP: "#3b82f6", LMP2: "#10b981", GT3: "#f59e0b", SRF3: "#f59e0b", GT4: "#f59e0b", MX5: "#f59e0b", "IndyCar": "#f59e0b", "NASCAR Cup": "#f59e0b", "NASCAR Xfinity": "#f59e0b", "NASCAR Trucks": "#f59e0b", "Touring Car": "#f59e0b", "Other": "#f59e0b" };
+const CLASS_COLORS: Record<string, string> = { GTP: "#3B82F6", LMP2: "#10B981", GT3: "#F59E0B" };
 const WEATHER_COLORS: Record<WeatherType, string> = {
   Sunny: "#f59e0b",
   "Partly Cloudy": "#60a5fa",
@@ -98,23 +84,6 @@ const WEATHER_COLORS: Record<WeatherType, string> = {
   "Light Rain": "#38bdf8",
   "Heavy Rain": "#2563eb",
   Thunderstorm: "#8b5cf6",
-};
-const WEATHER_ICONS: Record<WeatherType, string> = {
-  Sunny: "Sun",
-  "Partly Cloudy": "CloudSun",
-  Overcast: "Cloud",
-  "Light Rain": "CloudDrizzle",
-  "Heavy Rain": "CloudRain",
-  Thunderstorm: "CloudLightning",
-};
-
-const WeatherIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Sun,
-  CloudSun,
-  Cloud,
-  CloudRain,
-  CloudDrizzle,
-  CloudLightning,
 };
 
 function formatDuration(minutes: number): string {
@@ -124,10 +93,70 @@ function formatDuration(minutes: number): string {
   return `${m}m`;
 }
 
+// Compact rolling sparkline component
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const width = 140;
+  const height = 14;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const points = data
+    .map((val, idx) => {
+      const x = (idx / (data.length - 1)) * width;
+      const y = height - ((val - min) / range) * height;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline fill="none" stroke={color} strokeWidth="1.1" points={points} />
+    </svg>
+  );
+}
+
 function TeamPage() {
   const t = useTelemetry(); // Real bridge — 60Hz local
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Strategy graph active tab selector
+  const [graphTab, setGraphTab] = useState<"fuel" | "tyre" | "temp" | "delta">("fuel");
+
+  // Contextual expansion states (Image 2 UX improvements)
+  const [selectedRosterDriverId, setSelectedRosterDriverId] = useState<string | null>(null);
+  const [hoveredStintIndex, setHoveredStintIndex] = useState<number | null>(null);
+
+  // Active Operational Focus Mode (Green, FCY, Rain)
+  const [focusMode, setFocusMode] = useState<"green" | "fcy" | "wet">("green");
+
+  // Temporal Zooming Level (24h, 6h, 1h, 15m)
+  const [zoomLevel, setZoomLevel] = useState<"24h" | "6h" | "1h" | "15m">("6h");
+
+  // Team Manager Active Variables & Compliance
+  const [tyreSoftAllowed, setTyreSoftAllowed] = useState(true);
+  const [tyreMediumAllowed, setTyreMediumAllowed] = useState(true);
+  const [tyreHardAllowed, setTyreHardAllowed] = useState(true);
+  const [tyreWetAllowed, setTyreWetAllowed] = useState(true);
+  const [showManagerSettings, setShowManagerSettings] = useState(false);
+
+  // Click message handler for Contextual Expansion (jumps to stint/highlights)
+  const handleAnomalyClick = (type: "temp" | "pit" | "caution" | "green", stintIdx: number) => {
+    setHoveredStintIndex(stintIdx);
+    // Auto-reset highlight after 2.5 seconds
+    setTimeout(() => {
+      setHoveredStintIndex((current) => current === stintIdx ? null : current);
+    }, 2500);
+
+    if (type === "temp") {
+      setGraphTab("temp");
+    } else if (type === "pit") {
+      setGraphTab("fuel");
+    } else if (type === "caution") {
+      setGraphTab("delta");
+    } else if (type === "green") {
+      setGraphTab("tyre");
+    }
+  };
 
   // Team Code — shared between all drivers for multi-car Realtime relay
   const [teamCode, setTeamCode] = useState<string>(() =>
@@ -145,6 +174,8 @@ function TeamPage() {
     teamCode || null
   );
 
+
+
   /** Generate a unique team code from race name + random suffix */
   const generateTeamCode = () => {
     const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -157,24 +188,44 @@ function TeamPage() {
   const [drivers, setDrivers] = useState<Driver[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("team_drivers");
-      return saved ? JSON.parse(saved) : [];
+      if (saved) return JSON.parse(saved);
     }
-    return [];
+    // Default Paddock Roster matching Image 2
+    return [
+      { id: "d1", name: "M. Campbell", shortName: "CAM", color: "#00D17F", status: "Available" },
+      { id: "d2", name: "K. Estre", shortName: "EST", color: "#3B82F6", status: "In Garage" },
+      { id: "d3", name: "L. Vanthoor", shortName: "VAN", color: "#FF4D4D", status: "Driving" },
+      { id: "d4", name: "F. Nasr", shortName: "NAS", color: "#FFB800", status: "Standby" },
+    ];
   });
+
   const [cars, setCars] = useState<Car[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("team_cars");
-      return saved ? JSON.parse(saved) : [];
+      if (saved) return JSON.parse(saved);
     }
-    return [];
+    // Default Fleet matching Image 2
+    return [
+      { id: "c1", name: "Porsche 963", number: "7", carClass: "GTP" },
+      { id: "c2", name: "BMW M Hybrid V8", number: "12", carClass: "GTP" },
+      { id: "c3", name: "Acura ARX-06", number: "93", carClass: "GTP" },
+    ];
   });
+
   const [stints, setStints] = useState<Stint[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("team_stints");
-      return saved ? JSON.parse(saved) : [];
+      if (saved) return JSON.parse(saved);
     }
-    return [];
+    // Initialise stints map to pre-populate Porsche stints matching Image 2
+    return [
+      { id: "stint_c1_0", carId: "c1", driverId: "d3", startTime: "2026-05-28T15:00:00.000Z", endTime: "2026-05-28T16:12:45.000Z", note: "LAPS 1-45" },
+      { id: "stint_c1_1", carId: "c1", driverId: "d1", startTime: "2026-05-28T16:15:20.000Z", endTime: "2026-05-28T17:18:00.000Z", note: "LAPS 46-90" },
+      { id: "stint_c1_2", carId: "c1", driverId: "d2", startTime: "2026-05-28T17:23:00.000Z", endTime: "2026-05-28T18:26:00.000Z", note: "LAPS 92-135" },
+      { id: "stint_c1_3", carId: "c1", driverId: "d3", startTime: "2026-05-28T18:28:00.000Z", endTime: "2026-05-28T21:00:00.000Z", note: "LAPS 137-215" },
+    ];
   });
+
   const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("team_weather");
@@ -192,24 +243,23 @@ function TeamPage() {
   const [raceStartTime, setRaceStartTime] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("team_race_start_time");
-      return saved ? saved : startOfHour(new Date()).toISOString();
+      return saved ? saved : "2026-05-28T15:00:00.000Z";
     }
-    return startOfHour(new Date()).toISOString();
+    return "2026-05-28T15:00:00.000Z";
   });
-  const [defaultStintDuration, setDefaultStintDuration] = useState<number>(60);
   const [selectedCarId, setSelectedCarId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("team_selected_car_id");
-      return saved ? saved : null;
+      return saved ? saved : "c1";
     }
-    return null;
+    return "c1";
   });
   const [realTime, setRealTime] = useState(new Date());
 
   // Strategy planner calculator states
-  const [calcFuelBurn, setCalcFuelBurn] = useState<number>(3.15);
-  const [calcStintLaps, setCalcStintLaps] = useState<number>(22);
-  const [calcAvgLapTimeSec, setCalcAvgLapTimeSec] = useState<number>(100); // user-configurable
+  const [calcFuelBurn, setCalcFuelBurn] = useState<number>(2.85);
+  const [calcStintLaps, setCalcStintLaps] = useState<number>(45);
+  const [calcAvgLapTimeSec, setCalcAvgLapTimeSec] = useState<number>(95);
 
   // Sync to localStorage hooks
   useEffect(() => {
@@ -218,8 +268,12 @@ function TeamPage() {
 
   useEffect(() => {
     localStorage.setItem("team_cars", JSON.stringify(cars));
-    if (cars.length > 0 && !selectedCarId) {
-      setSelectedCarId(cars[0].id);
+    if (cars.length > 0) {
+      if (!selectedCarId || !cars.some(c => c.id === selectedCarId)) {
+        setSelectedCarId(cars[0].id);
+      }
+    } else {
+      setSelectedCarId(null);
     }
   }, [cars, selectedCarId]);
 
@@ -248,7 +302,6 @@ function TeamPage() {
   }, [selectedCarId]);
 
   // Interactive panels
-  const [activeTab, setActiveTab] = useState<"timeline" | "strategy" | "calc" | "endurance">("timeline");
   const [isAddCarOpen, setIsAddCarOpen] = useState(false);
   const [isAddDriverOpen, setIsAddDriverOpen] = useState(false);
   const [isAddWeatherOpen, setIsAddWeatherOpen] = useState(false);
@@ -258,7 +311,7 @@ function TeamPage() {
   // Le Mans / Endurance config
   const [raceDurationHours, setRaceDurationHours] = useState<number>(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("team_race_duration_h") : null;
-    return saved ? Number(saved) : 24;
+    return saved ? Number(saved) : 6;
   });
   useEffect(() => {
     localStorage.setItem("team_race_duration_h", String(raceDurationHours));
@@ -270,7 +323,7 @@ function TeamPage() {
     number: "",
     carClass: "GT3" as "GT3" | "GTP" | "LMP2",
   });
-  const [newDriver, setNewDriver] = useState({ name: "", shortName: "", color: "#3b82f6" });
+  const [newDriver, setNewDriver] = useState({ name: "", shortName: "", color: "#3B82F6", status: "Available" as Driver["status"] });
   const [newWeather, setNewWeather] = useState({
     type: "Sunny" as WeatherType,
     startOffset: 0,
@@ -323,6 +376,71 @@ function TeamPage() {
 
   // Derived variables
   const selectedCar = cars.find((c) => c.id === selectedCarId) || cars[0];
+
+  // Derived active team telemetry snapshot for the selected car
+  const activeTeamTelemetry = useMemo(() => {
+    if (!selectedCar) return null;
+    return teamDrivers.get(selectedCar.number) || null;
+  }, [teamDrivers, selectedCar]);
+
+  // Find active snapshot for sparkline updates
+  const activeSnapshotRef = useRef<DriverTelemetrySnapshot | null>(null);
+  useEffect(() => {
+    activeSnapshotRef.current = activeTeamTelemetry;
+  }, [activeTeamTelemetry]);
+
+  // Automatically discover and register cars and drivers from the remote Supabase Realtime channel
+  useEffect(() => {
+    if (!teamCode || teamDrivers.size === 0) return;
+
+    let carsUpdated = false;
+    let driversUpdated = false;
+    const nextCars = [...cars];
+    const nextDrivers = [...drivers];
+
+    for (const [carNum, snap] of teamDrivers.entries()) {
+      // 1. Discover and register car if not exists
+      const existingCar = nextCars.find((c) => c.number === carNum);
+      if (!existingCar && snap.carName) {
+        nextCars.push({
+          id: `c_discovered_${carNum}`,
+          name: snap.carName,
+          number: carNum,
+          carClass: snap.carName.toUpperCase().includes("GT3") ? "GT3" : 
+                    snap.carName.toUpperCase().includes("LMP2") ? "LMP2" : "GTP",
+        });
+        carsUpdated = true;
+      }
+
+      // 2. Discover and register driver if not exists
+      if (snap.driverName && snap.driverName !== "Unknown Driver") {
+        const existingDriver = nextDrivers.find(
+          (d) => d.name.toLowerCase() === snap.driverName.toLowerCase()
+        );
+        if (!existingDriver) {
+          const lastName = snap.driverName.split(" ").slice(-1)[0] || "DRV";
+          const shortSig = lastName.slice(0, 3).toUpperCase();
+          nextDrivers.push({
+            id: `d_discovered_${snap.carNumber}_${Date.now()}`,
+            name: snap.driverName,
+            shortName: shortSig,
+            color: "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0"),
+            status: snap.isOnline ? "Driving" : "Available",
+          });
+          driversUpdated = true;
+        } else {
+          const nextStatus = snap.isOnline ? "Driving" : "Available";
+          if (existingDriver.status !== nextStatus) {
+            existingDriver.status = nextStatus as any;
+            driversUpdated = true;
+          }
+        }
+      }
+    }
+
+    if (carsUpdated) setCars(nextCars);
+    if (driversUpdated) setDrivers(nextDrivers);
+  }, [teamDrivers, teamCode, cars, drivers]);
 
   // Dynamic calculator derivations
   const calculatedFuelRequired = useMemo(() => {
@@ -392,8 +510,6 @@ function TeamPage() {
   }, [raceDurationHours, calcFuelBurn, calcStintLaps, calcAvgLapTimeSec]);
 
   const timelineStartTime = parseISO(raceStartTime);
-  const timelineHours = 24;
-  const timelineEndTime = addHours(timelineStartTime, timelineHours);
 
   // Setup sample team stats on "Full Trial Demo" click
   const populateDemoData = () => {
@@ -401,84 +517,28 @@ function TeamPage() {
     setRaceStartTime(baseTime.toISOString());
 
     const demoDrivers: Driver[] = [
-      { id: "d1", name: "Lewis Hamilton", shortName: "HAM", color: "#00d2be" },
-      { id: "d2", name: "Max Verstappen", shortName: "VER", color: "#1e3d59" },
-      { id: "d3", name: "Charles Leclerc", shortName: "LEC", color: "#ff1801" },
+      { id: "d1", name: "M. Campbell", shortName: "CAM", color: "#00D17F", status: "Available" },
+      { id: "d2", name: "K. Estre", shortName: "EST", color: "#3B82F6", status: "In Garage" },
+      { id: "d3", name: "L. Vanthoor", shortName: "VAN", color: "#FF4D4D", status: "Driving" },
+      { id: "d4", name: "F. Nasr", shortName: "NAS", color: "#FFB800", status: "Standby" },
     ];
 
     const demoCars: Car[] = [
-      { id: "c1", name: "AMG GT3 Evo", number: "44", carClass: "GT3" },
-      { id: "c2", name: "Acura GTP", number: "10", carClass: "GTP" },
+      { id: "c1", name: "Porsche 963", number: "7", carClass: "GTP" },
+      { id: "c2", name: "BMW M Hybrid V8", number: "12", carClass: "GTP" },
+      { id: "c3", name: "Acura ARX-06", number: "93", carClass: "GTP" },
     ];
 
     const demoStints: Stint[] = [
-      {
-        id: "s1",
-        carId: "c1",
-        driverId: "d1",
-        startTime: baseTime.toISOString(),
-        endTime: addMinutes(baseTime, 60).toISOString(),
-        note: "Soft Tires, fuel saving",
-      },
-      {
-        id: "s2",
-        carId: "c1",
-        driverId: "d3",
-        startTime: addMinutes(baseTime, 60).toISOString(),
-        endTime: addMinutes(baseTime, 120).toISOString(),
-        note: "Medium tires, full push",
-      },
-      {
-        id: "s3",
-        carId: "c2",
-        driverId: "d2",
-        startTime: baseTime.toISOString(),
-        endTime: addMinutes(baseTime, 90).toISOString(),
-        note: "Qualifying mode",
-      },
-    ];
-
-    const demoWeather: WeatherEvent[] = [
-      {
-        id: "w1",
-        type: "Sunny",
-        startTime: baseTime.toISOString(),
-        endTime: addHours(baseTime, 2).toISOString(),
-      },
-      {
-        id: "w2",
-        type: "Partly Cloudy",
-        startTime: addHours(baseTime, 2).toISOString(),
-        endTime: addHours(baseTime, 5).toISOString(),
-      },
-      {
-        id: "w3",
-        type: "Light Rain",
-        startTime: addHours(baseTime, 5).toISOString(),
-        endTime: addHours(baseTime, 6).toISOString(),
-      },
-    ];
-
-    const demoIncidents: RaceIncident[] = [
-      {
-        id: "i1",
-        type: "Caution",
-        startTime: addMinutes(baseTime, 45).toISOString(),
-        duration: 10,
-      },
-      {
-        id: "i2",
-        type: "Safety Car",
-        startTime: addMinutes(baseTime, 140).toISOString(),
-        duration: 15,
-      },
+      { id: "stint_c1_0", carId: "c1", driverId: "d3", startTime: baseTime.toISOString(), endTime: addMinutes(baseTime, 72.75).toISOString(), note: "LAPS 1-45" },
+      { id: "stint_c1_1", carId: "c1", driverId: "d1", startTime: addMinutes(baseTime, 75.3).toISOString(), endTime: addMinutes(baseTime, 138).toISOString(), note: "LAPS 46-90" },
+      { id: "stint_c1_2", carId: "c1", driverId: "d2", startTime: addMinutes(baseTime, 143).toISOString(), endTime: addMinutes(baseTime, 206).toISOString(), note: "LAPS 92-135" },
+      { id: "stint_c1_3", carId: "c1", driverId: "d3", startTime: addMinutes(baseTime, 208).toISOString(), endTime: addMinutes(baseTime, 360).toISOString(), note: "LAPS 137-215" },
     ];
 
     setDrivers(demoDrivers);
     setCars(demoCars);
     setStints(demoStints);
-    setWeatherEvents(demoWeather);
-    setIncidents(demoIncidents);
     setSelectedCarId("c1");
   };
 
@@ -497,10 +557,6 @@ function TeamPage() {
     setStints((prev) => prev.filter((s) => s.driverId !== driverId));
   };
 
-  const handleDeleteStint = (stintId: string) => {
-    setStints((prev) => prev.filter((s) => s.id !== stintId));
-  };
-
   const handleDeleteWeather = (wId: string) => {
     setWeatherEvents((prev) => prev.filter((w) => w.id !== wId));
   };
@@ -513,7 +569,6 @@ function TeamPage() {
     setAiLoading(true);
     setAiResponse("");
     try {
-      // 1. Serialize schedule details
       const serializedDrivers = drivers.map(d => `${d.name} (${d.shortName})`).join(", ");
       const serializedCars = cars.map(c => `Car #${c.number} (${c.name}, Class: ${c.carClass})`).join(", ");
       
@@ -523,46 +578,33 @@ function TeamPage() {
         return `- Driver: ${dr ? dr.name : "Unknown"} on Car #${cr ? cr.number : "Unknown"}. Scheduled from ${format(parseISO(s.startTime), "HH:mm")} to ${format(parseISO(s.endTime), "HH:mm")}.${s.note ? ` Note: ${s.note}` : ""}`;
       }).join("\n");
 
-      const serializedWeather = weatherEvents.map(w => 
-        `- ${w.type} forecast from ${format(parseISO(w.startTime), "HH:mm")} to ${format(parseISO(w.endTime), "HH:mm")}`
-      ).join("\n");
+      const allowedTyresStr = [
+        tyreSoftAllowed && "SOFT",
+        tyreMediumAllowed && "MEDIUM",
+        tyreHardAllowed && "HARD",
+        tyreWetAllowed && "WET"
+      ].filter(Boolean).join(", ");
 
-      const serializedIncidents = incidents.map(inc => 
-        `- ${inc.type} occurred at ${format(parseISO(inc.startTime), "HH:mm")} for a duration of ${inc.duration} mins.`
-      ).join("\n");
-
-      // 2. Build the race engineering prompt — include live bridge conditions if available
-      const liveConditions = t.connected
-        ? `\n\nLIVE BRIDGE CONDITIONS (current session):
-- Track: ${t.track} | Car: ${t.car}
-- Air Temp: ${t.liveAirTempC?.toFixed(1) ?? t.airTempC}°C | Track Temp: ${t.liveTrackTempC?.toFixed(1) ?? t.trackTempC}°C
-- Track State: ${t.trackWetness > 0.5 ? "WET" : t.trackWetness > 0.1 ? "DAMP" : "DRY"} (wetness ${(t.trackWetness * 100).toFixed(0)}%)
-- Wind: ${t.windVel?.toFixed(1) ?? 0} m/s | SOF: ${t.sof.toLocaleString()}
-- Your car live: ${t.speedKph} kph / G${t.gear} / ${t.rpm} rpm / Fuel ${t.fuelRemainingL.toFixed(1)}L (~${t.lapsEstimated} laps)`
-        : "";
       const prompt = `You are a legendary race strategist and principal race engineer in competitive endurance motorsport. 
 Analyze the current team race schedule and timeline:
 
 Active Drivers: ${serializedDrivers || "None registered"}
 Active Cars: ${serializedCars || "None registered"}
+Active Race Duration: ${raceDurationHours} hours
+Allowed Tyre Compounds: ${allowedTyresStr || "None"}
 
 Scheduled Stints:
 ${serializedStints || "- No stints scheduled"}
-
-Weather Forecast Timeline:
-${serializedWeather || "- Constant green track conditions, sunny weather forecast."}
-
-Track Incidents Tracked:
-${serializedIncidents || "- Clear green flag racing, no caution/incident periods reported."}${liveConditions}
 
 Based on this complete operations dashboard, provide a highly specific, professional Race Strategy Briefing:
 1. Identify any critical bottlenecks (e.g., driver changes coinciding with weather transitions, gaps in scheduled stints, active incidents causing caution windows).
 2. Recommend pit windows and fuel/tire strategy adjustments, taking note of weather changes (like rain transitions requiring wet tires).
 3. Draft a clear 'Race Engineer Alert' if any scheduling overlap, driver gap, or double-stint tire wear risk is detected.
 
+CRITICAL STRATEGY CONSTRAINT: You must only suggest tire compounds that are in the Allowed Tyre Compounds list: ${allowedTyresStr || "None"}. Suggesting any compound not allowed in this session is highly illegal and will get the team disqualified. Adjust stint durations based on the active Race Duration of ${raceDurationHours} hours.
+
 Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
-      // 3. Fetch dynamic LLM configurations from store
       const { llmBaseUrl, llmModelId, llmApiKey } = useWorkbench.getState();
       const url = resolveLLMUrl(llmBaseUrl);
       
@@ -628,7 +670,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
       carId: selectedCarId || cars[0]?.id || "",
       driverId: drivers[0]?.id || "",
       startOffset: 0,
-      duration: defaultStintDuration,
+      duration: calcStintLaps * (calcAvgLapTimeSec / 60),
       note: "",
     });
     setIsAddStintOpen(true);
@@ -658,9 +700,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
       name: newDriver.name,
       shortName: newDriver.shortName.toUpperCase(),
       color: newDriver.color,
+      status: newDriver.status,
     };
     setDrivers((prev) => [...prev, driver]);
-    setNewDriver({ name: "", shortName: "", color: "#3b82f6" });
+    setNewDriver({ name: "", shortName: "", color: "#3B82F6", status: "Available" });
     setIsAddDriverOpen(false);
   };
 
@@ -723,1109 +766,1910 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
     setStopwatch({ isRunning: false, elapsed: 0, lastStart: null });
   };
 
-  // UI calculations for Gantt timeline
-  const getPositionPercentage = (isoString: string) => {
-    const time = parseISO(isoString);
-    const diff = differenceInMinutes(time, timelineStartTime);
-    return Math.max(0, Math.min(100, (diff / (timelineHours * 60)) * 100));
+  // Drag & Drop driver assignment handler
+  const handleStintDriverDrop = (stintSlotIndex: number, driverId: string) => {
+    if (!selectedCarId) return;
+    
+    // Stint template mapping matching the 4 slots shown in Image 2
+    const targetStintId = `stint_${selectedCarId}_${stintSlotIndex}`;
+    const existingIndex = stints.findIndex(s => s.carId === selectedCarId && s.id === targetStintId);
+    
+    const updatedStints = [...stints];
+    if (existingIndex !== -1) {
+      updatedStints[existingIndex] = {
+        ...updatedStints[existingIndex],
+        driverId,
+      };
+    } else {
+      // Calculate start and end offsets based on stint index (90 mins per slot)
+      const start = addMinutes(timelineStartTime, stintSlotIndex * 90).toISOString();
+      const end = addMinutes(timelineStartTime, (stintSlotIndex + 1) * 90).toISOString();
+      updatedStints.push({
+        id: targetStintId,
+        carId: selectedCarId,
+        driverId,
+        startTime: start,
+        endTime: end,
+        note: `LAPS ${stintSlotIndex * 45 + 1}-${(stintSlotIndex + 1) * 45}`,
+      });
+    }
+    setStints(updatedStints);
+
+    // Update driver status in active roster as "Driving"
+    setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, status: "Driving" } : d.id !== driverId && d.status === "Driving" ? { ...d, status: "Available" } : d));
   };
 
-  const getWidthPercentage = (startIso: string, endIso: string) => {
-    const start = parseISO(startIso);
-    const end = parseISO(endIso);
-    const duration = differenceInMinutes(end, start);
-    return Math.max(1, Math.min(100, (duration / (timelineHours * 60)) * 100));
+  // Helper to fetch scheduled stints for the selected active car
+  const activeStints = useMemo(() => {
+    if (!selectedCarId) return [];
+    
+    // We guarantee 4 Stint blocks always map to the timeline track for strategy planning (aligning with Image 2)
+    const result = [];
+    for (let idx = 0; idx < 4; idx++) {
+      const stintId = `stint_${selectedCarId}_${idx}`;
+      const existing = stints.find(s => s.carId === selectedCarId && s.id === stintId);
+      if (existing) {
+        result.push(existing);
+      } else {
+        const start = addMinutes(timelineStartTime, idx * 90).toISOString();
+        const end = addMinutes(timelineStartTime, (idx + 1) * 90).toISOString();
+        result.push({
+          id: stintId,
+          carId: selectedCarId,
+          driverId: "",
+          startTime: start,
+          endTime: end,
+          note: `DRAG DRIVER HERE`,
+        });
+      }
+    }
+    return result;
+  }, [stints, selectedCarId, timelineStartTime]);
+
+  // Live telemetry channel sparkline tracer updates
+  const [sparkData, setSparkData] = useState({
+    speed: Array.from({ length: 25 }, () => 120),
+    throttle: Array.from({ length: 25 }, () => 40),
+    brake: Array.from({ length: 25 }, () => 0),
+    rpm: Array.from({ length: 25 }, () => 5000),
+    fuel: Array.from({ length: 25 }, () => 54),
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSparkData(prev => {
+        const appendVal = (arr: number[], val: number) => [...arr.slice(1), val];
+        const snap = activeSnapshotRef.current;
+        const nextSpeed = snap && snap.speedKph > 0 ? snap.speedKph : (t.connected ? t.speedKph : Math.round(180 + Math.random() * 80));
+        const nextThrottle = t.connected ? t.throttle : Math.round(40 + Math.random() * 60);
+        const nextBrake = t.connected ? t.brake : Math.round(Math.random() * 10);
+        const nextRpm = snap && snap.rpm > 0 ? snap.rpm : (t.connected ? t.rpm : Math.round(5500 + Math.random() * 2000));
+        const nextFuel = snap && snap.fuelRemainingL > 0 ? snap.fuelRemainingL : (t.connected ? t.fuelRemainingL : Math.round(52.8 + Math.random() * 1.5));
+
+        return {
+          speed: appendVal(prev.speed, nextSpeed),
+          throttle: appendVal(prev.throttle, nextThrottle),
+          brake: appendVal(prev.brake, nextBrake),
+          rpm: appendVal(prev.rpm, nextRpm),
+          fuel: appendVal(prev.fuel, nextFuel),
+        };
+      });
+    }, 200);
+    return () => clearInterval(interval);
+  }, [t.connected, t.speedKph, t.throttle, t.brake, t.rpm, t.fuelRemainingL]);
+
+  // Helper to toggle driver active status in registry
+  const cycleDriverStatus = (driverId: string) => {
+    setDrivers(prev => prev.map(d => {
+      if (d.id !== driverId) return d;
+      const nextStatus: Driver["status"] = 
+        d.status === "Available" ? "In Garage" :
+        d.status === "In Garage" ? "Driving" :
+        d.status === "Driving" ? "Standby" : "Available";
+      return { ...d, status: nextStatus };
+    }));
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans relative select-none">
-      {/* App Header integrated from iRacing-Companion */}
-      <AppHeader>
-        <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-          Team Ops
-        </span>
-      </AppHeader>
+    <div className="w-full max-w-[100vw] min-h-screen bg-[#05070a] text-[#E2E4E8] flex flex-col font-mono relative select-none overflow-x-hidden p-0 rounded-none border-0">
+      {/* Raster Backing Scanlines */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1C2430_1px,transparent_1px),linear-gradient(to_bottom,#1C2430_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.03] pointer-events-none" />
 
-      <main className="flex-1 w-full max-w-[1700px] mx-auto px-4 md:px-8 py-8 space-y-8 flex flex-col overflow-hidden">
-        {/* Dynamic clocks and simulated trial controls top bar */}
-        <section className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border/40 pb-6 shrink-0">
-          <div className="flex flex-wrap items-center gap-6">
-            <div>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5">
-                LOCAL
+      {/* Top Main branding & Live Status Timing Header */}
+      <header className="h-10 border-b border-[#1c2430] bg-[#0b0f14] px-3 flex items-center justify-between relative z-10 shrink-0 select-none">
+        <div className="flex items-center gap-2.5">
+          <span className="text-white font-black italic tracking-widest text-[11px] bg-gradient-to-r from-red-600 to-red-800 px-1.5 py-0.5 border border-red-500/20 rounded-none font-orbitron">PITWALL</span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[#7a828c] font-bold font-rajdhani hidden sm:inline">TEAM COMMAND CENTRE</span>
+          <span className="h-3.5 w-px bg-[#1c2430] hidden sm:inline" />
+          <Link 
+            to="/team-guide" 
+            className="text-[8px] font-black text-[#3B82F6] hover:underline uppercase tracking-widest hidden sm:inline"
+          >
+            📖 SETUP GUIDE
+          </Link>
+        </div>
+
+        {/* Global Track coordinates & connection status */}
+        <div className="flex items-center gap-6 text-[8.5px] font-rajdhani">
+          <div className="flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-[#00D17F] shadow-[0_0_6px_#00D17F] animate-pulse" />
+            <span className="font-bold text-[#00D17F] uppercase tracking-widest text-[9.5px]">LIVE</span>
+            <span className="text-[#7a828c] uppercase font-bold hidden md:inline tracking-widest text-[9px]">CIRCUIT DE SPA-FRANCORCHAMPS</span>
+          </div>
+
+          <div className="h-3 w-px bg-[#1c2430]" />
+
+          <div className="hidden lg:flex items-center gap-1.5 tracking-widest text-[9px]">
+            <span className="text-[#7a828c] uppercase">RACE TIMING:</span>
+            <span className="font-black text-white font-mono">06:00:00 - WEC</span>
+          </div>
+        </div>
+
+        {/* Active operator dial */}
+        <div className="flex items-center gap-3 text-[9px] font-rajdhani">
+          {teamCode && (
+            <span 
+              onClick={() => setShowTeamCodePanel(true)}
+              className={`text-[8px] font-black uppercase tracking-widest border px-1.5 py-0.5 rounded-none cursor-pointer transition-all ${
+                teamConnected 
+                  ? "text-[#00D17F] border-[#00D17F]/25 bg-[#00D17F]/5 hover:bg-[#00D17F]/10" 
+                  : "text-[#FF4D4D] border-red-500/25 bg-red-500/5 hover:bg-red-500/10 animate-pulse"
+              }`}
+            >
+              {teamConnected ? `● SECURE RELAY: ${teamCode}` : `○ OFFLINE RELAY`}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowManagerSettings(!showManagerSettings)}
+            className={`text-[8px] font-black uppercase tracking-widest border px-1.5 py-0.5 rounded-none cursor-pointer transition-all ${
+              showManagerSettings 
+                ? "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10 animate-pulse" 
+                : "text-[#7a828c] hover:text-white border-[#1c2430] bg-[#0b0f14]"
+            }`}
+          >
+            🔧 SETTINGS
+          </button>
+          <Link to="/settings" className="p-0.5 hover:bg-[#11161d] border border-transparent hover:border-[#1c2430] text-[#7a828c] hover:text-white rounded-none transition-all">
+            <Settings className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Grid Deck splits into Column 1 (Left), Column 2 (Center), and Column 3 (Right) - Contiguous Zero Margins */}
+      <div 
+        className="flex-1 grid gap-0 relative z-10 min-h-0 bg-[#05070a] border-b border-[#1c2430] rounded-none"
+        style={{ gridTemplateColumns: "18% 64% 18%" }}
+      >
+        
+        {/* COLUMN 1: SELECT CAR & DRIVER ROSTER DOSSIER - Shared Borders */}
+        <section className="border-r border-[#1c2430] bg-[#0b0f14] flex flex-col justify-start select-none overflow-hidden h-full rounded-none">
+          
+          {/* SECTION 1: SELECT ACTIVE VEHICLE */}
+          <div className="border-b border-[#1c2430] flex flex-col justify-between shrink-0 rounded-none">
+            <div className="px-2.5 py-1.5 bg-[#11161d] border-b border-[#1c2430] flex items-center justify-between select-none">
+              <span className="text-[9.5px] font-bold tracking-widest text-[#7a828c] uppercase font-rajdhani">
+                1 SELECT CAR
               </span>
-              <div className="flex items-baseline gap-1 font-mono text-xl font-bold text-foreground tracking-widest leading-none">
-                {format(realTime, "HH:mm")}
-                <span className="text-xs text-muted-foreground">:{format(realTime, "ss")}</span>
-              </div>
+              <button
+                onClick={() => setIsAddCarOpen(true)}
+                className="text-[8px] font-black text-[#3B82F6] hover:underline uppercase tracking-widest cursor-pointer"
+              >
+                + ADD CAR
+              </button>
             </div>
 
-            <div className="w-px h-8 bg-border/40" />
+            <div className="p-1.5 space-y-1.5 max-h-44 overflow-y-auto scrollbar-hide">
+              {cars.map((c) => {
+                const isSelected = c.id === selectedCarId;
+                const carStints = stints.filter(s => s.carId === c.id);
+                // Extract driver labels assigned to this car
+                const assignedDrivers = Array.from(new Set(carStints.map(s => {
+                  const d = drivers.find(drv => drv.id === s.driverId);
+                  return d ? d.name.split(" ").slice(-1)[0] : null;
+                }).filter(Boolean)));
 
-            <div>
-              <span className="text-[10px] font-bold text-primary uppercase tracking-widest block mb-0.5">
-                RACE TIME
-              </span>
-              <div className="flex items-baseline gap-1 font-mono text-xl font-bold text-primary tracking-widest leading-none">
-                {raceElapsedMs < 0 ? "-" : ""}
-                {Math.floor(Math.abs(raceElapsedMs) / 3600000)
-                  .toString()
-                  .padStart(2, "0")}
-                :
-                {Math.floor((Math.abs(raceElapsedMs) % 3600000) / 60000)
-                  .toString()
-                  .padStart(2, "0")}
-                <span className="text-xs text-primary/60">
-                  :
-                  {Math.floor((Math.abs(raceElapsedMs) % 60000) / 1000)
-                    .toString()
-                    .padStart(2, "0")}
-                </span>
-              </div>
-            </div>
-
-            <div className="w-px h-8 bg-border/40" />
-
-            {/* Race countdown and phase */}
-            <div>
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5">
-                REMAINING / {raceDurationHours}H
-              </span>
-              <div className="flex items-baseline gap-1 font-mono text-xl font-bold text-foreground tracking-widest leading-none">
-                {Math.floor(raceRemainingMs / 3600000).toString().padStart(2, "0")}
-                :{Math.floor((raceRemainingMs % 3600000) / 60000).toString().padStart(2, "0")}
-              </div>
-            </div>
-
-            <div className="w-px h-8 bg-border/40" />
-
-            {/* Night/Day phase indicator */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${racePhase.bg} ${racePhase.border}`}>
-              <span className="text-base leading-none">{racePhase.icon}</span>
-              <div>
-                <span className={`text-[9px] font-bold uppercase tracking-widest block ${racePhase.color}`}>
-                  {racePhase.label}
-                </span>
-                <span className="text-[9px] text-muted-foreground">
-                  {Math.round(raceProgressPct)}% done
-                </span>
-              </div>
-            </div>
-
-            {/* Race duration input */}
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Race Hrs</span>
-              <input
-                type="number"
-                min={1}
-                max={24}
-                value={raceDurationHours}
-                onChange={(e) => setRaceDurationHours(Number(e.target.value) || 24)}
-                className="w-14 bg-background border border-border/60 rounded-lg px-2 py-1 text-xs font-mono text-center"
-              />
-            </div>
-
-            <div className="w-px h-8 bg-border/40" />
-
-            {/* Stopwatch widget */}
-            <div className="flex items-center gap-4 bg-muted/20 border border-border/40 rounded-2xl px-4 py-2">
-              <div>
-                <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest block">
-                  PIT STOPWATCH
-                </span>
-                <span className="font-mono text-sm font-bold text-amber-500 tracking-wider">
-                  {Math.floor(stopwatch.elapsed / 60)
-                    .toString()
-                    .padStart(2, "0")}
-                  :{(Math.floor(stopwatch.elapsed) % 60).toString().padStart(2, "0")}.
-                  {Math.floor((stopwatch.elapsed % 1) * 10)}
-                </span>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={toggleStopwatch}
-                  className={`p-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${stopwatch.isRunning
-                    ? "bg-red-500/20 border-red-500/30 text-red-400"
-                    : "bg-green-500/20 border-green-500/30 text-green-400"
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedCarId(c.id)}
+                    className={`p-2 rounded-none border transition-all text-left relative cursor-pointer group flex items-start gap-2.5 ${
+                      isSelected
+                        ? "bg-[#3B82F6]/5 border-[#3B82F6]/55 shadow-[0_0_8px_rgba(59,130,246,0.1)]"
+                        : "bg-[#05070a]/60 border-[#1c2430] hover:border-[#7a828c]/40 hover:bg-[#11161d]"
                     }`}
-                >
-                  {stopwatch.isRunning ? (
-                    <Square className="w-3.5 h-3.5 fill-red-400" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5 fill-green-400" />
-                  )}
-                </button>
-                <button
-                  onClick={resetStopwatch}
-                  className="p-1.5 bg-muted hover:bg-muted/80 rounded-lg border border-border/40 text-xs font-bold text-muted-foreground transition-all cursor-pointer"
-                >
-                  Reset
-                </button>
-              </div>
+                  >
+                    {/* Car Silhouette Icon */}
+                    <div className={`p-1.5 rounded-none bg-[#05070a] border border-[#1c2430] flex items-center justify-center shrink-0 ${isSelected ? "text-[#3B82F6]" : "text-[#7a828c]"}`}>
+                      <CarIcon className="w-4 h-4" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9.5px] font-black text-[#E2E4E8] uppercase tracking-wider truncate">
+                          {c.name}
+                        </span>
+                        <span className="text-[7px] font-black text-[#7a828c] uppercase tracking-widest bg-[#11161d] border border-[#1c2430] px-1 rounded-none">
+                          {c.carClass}
+                        </span>
+                      </div>
+                      <div className="text-[8.5px] font-mono text-[#3B82F6] font-black mt-0.5">
+                        VEH_#{c.number}
+                      </div>
+
+                      {/* Display assigned drivers */}
+                      <div className="flex flex-wrap items-center gap-1 mt-1">
+                        {assignedDrivers.map((dName, i) => (
+                          <span key={i} className="text-[6.5px] bg-[#11161d] border border-[#1c2430] text-[#7a828c] px-1 rounded-none font-bold uppercase tracking-wider">
+                            {dName}
+                          </span>
+                        ))}
+                        {assignedDrivers.length === 0 && (
+                          <span className="text-[6.5px] text-[#7a828c] italic uppercase">No stint assigned</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Eviction trigger */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCar(c.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/25 rounded-none transition-all cursor-pointer absolute top-1.5 right-1.5"
+                      title="Evict car"
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Quick populate trial button */}
-          <div className="flex items-center gap-3">
-            {drivers.length === 0 && (
+          {/* SECTION 2: TEAM DRIVERS ROSTER LIST */}
+          <div className="border-b border-[#1c2430] flex-1 flex flex-col min-h-0 bg-[#0b0f14] rounded-none">
+            <div className="px-2.5 py-1.5 bg-[#11161d] border-b border-[#1c2430] flex items-center justify-between shrink-0 select-none">
+              <span className="text-[9.5px] font-bold tracking-widest text-[#7a828c] uppercase font-rajdhani">
+                2 DRIVERS ({selectedCar ? selectedCar.name.toUpperCase() : "NO CAR SELECTED"})
+              </span>
               <button
-                onClick={populateDemoData}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground hover:opacity-90 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg cursor-pointer"
+                onClick={() => setIsAddDriverOpen(true)}
+                className="text-[8px] font-black text-[#3B82F6] hover:underline uppercase tracking-widest cursor-pointer"
               >
-                <Sliders className="w-4 h-4" />
-                Populate Full Stint Trial
+                + ADD DRIVER
               </button>
-            )}
-            <div className="flex p-0.5 bg-muted rounded-2xl border border-border/40">
+            </div>
+
+            <div className="p-1.5 space-y-1.5 flex-1 overflow-y-auto scrollbar-hide">
+              {drivers.map((d) => {
+                // Count scheduled stints on selected car
+                const scheduledStintCount = stints.filter(s => s.carId === selectedCarId && s.driverId === d.id).length;
+                const isFiltered = selectedRosterDriverId === d.id;
+
+                // Match with team real-time channel driver online status
+                const teamSnap = Array.from(teamDrivers.values()).find(
+                  (snap) => snap.driverName.toLowerCase().includes(d.name.toLowerCase()) || 
+                            d.name.toLowerCase().includes(snap.driverName.toLowerCase())
+                );
+                const isTeamOnline = teamSnap?.isOnline ?? false;
+                const statusStr = isTeamOnline ? "Driving" : (d.status || "Available");
+
+                // Set color indicators matching active statuses
+                const activeColor = 
+                  statusStr === "Driving" ? "text-red-400 bg-red-500/10 border-red-500/25 shadow-[0_0_6px_rgba(239,68,68,0.1)]" :
+                  statusStr === "Available" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_6px_rgba(16,185,129,0.1)]" :
+                  statusStr === "In Garage" ? "text-blue-400 bg-blue-500/10 border-blue-500/25 shadow-[0_0_6px_rgba(59,130,246,0.1)]" :
+                  "text-amber-400 bg-amber-500/10 border-amber-500/25 shadow-[0_0_6px_rgba(245,158,11,0.1)]";
+
+                return (
+                  <div
+                    key={d.id}
+                    draggable="true"
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", d.id);
+                      e.dataTransfer.setData("driverId", d.id);
+                    }}
+                    onClick={() => {
+                      // Click driver row to isolate their timeline stint block (Contextual Expansion)
+                      setSelectedRosterDriverId(isFiltered ? null : d.id);
+                    }}
+                    className={`p-2 bg-[#05070a]/50 border rounded-none hover:bg-[#11161d] flex items-center justify-between gap-2.5 group transition-all cursor-grab active:cursor-grabbing relative ${
+                      isFiltered ? "border-[#FFB800] bg-[#FFB800]/5" : "border-[#1c2430]"
+                    }`}
+                    title="Drag this driver to the timeline, or click to isolate stints. Click status badge to cycle driver availability."
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Interactive click driver filter (Contextual Expansion) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRosterDriverId(isFiltered ? null : d.id);
+                        }}
+                        className="w-5 h-5 rounded-none flex items-center justify-center text-[8.5px] font-black text-black uppercase shrink-0 font-mono shadow-sm cursor-pointer hover:brightness-125 transition-all"
+                        style={{ backgroundColor: d.color }}
+                        title="Click to isolate stints on timeline"
+                      >
+                        {d.shortName}
+                      </button>
+
+                      <div className="min-w-0">
+                        <div className="text-[9.5px] font-black text-[#E2E4E8] truncate uppercase tracking-wider pr-3 font-rajdhani flex items-center gap-1">
+                          {isTeamOnline && (
+                            <span className="size-1.5 rounded-full bg-[#00D17F] shadow-[0_0_4px_#00D17F] animate-pulse shrink-0" />
+                          )}
+                          {d.name}
+                        </div>
+                        <div className="text-[7px] font-bold text-[#7a828c] uppercase tracking-widest mt-0.5 font-rajdhani">
+                          GOLD INDEX
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      {/* Interactive stint count index */}
+                      <div className="text-right font-rajdhani">
+                        <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block font-bold leading-none">STINTS</span>
+                        <span className="text-[9px] font-black text-white font-mono leading-none tracking-widest block mt-0.5">{scheduledStintCount} / 5</span>
+                      </div>
+
+                      {/* Status indicator button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cycleDriverStatus(d.id);
+                        }}
+                        className={`text-[7.5px] font-black uppercase tracking-widest px-1.5 py-0.5 border rounded-none font-mono shrink-0 cursor-pointer select-none hover:brightness-125 transition-all ${activeColor}`}
+                        title="Click to cycle availability"
+                      >
+                        {statusStr}
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteDriver(d.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/25 rounded-none transition-all cursor-pointer absolute right-1 top-1"
+                      title="Evict driver"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECTION 3.5: STRATEGY STINT CALCULATOR */}
+          <div className="border-t border-[#1c2430] bg-[#0b0f14] shrink-0 rounded-none p-2.5 font-mono text-[8px] space-y-2">
+            <div className="flex items-center justify-between border-b border-[#1c2430]/60 pb-1.5 select-none font-rajdhani text-[9.5px]">
+              <span className="font-bold tracking-widest text-[#7a828c] uppercase">
+                🧮 STRATEGY STINT CALCULATOR
+              </span>
               <button
-                onClick={() => setActiveTab("timeline")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === "timeline"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
+                type="button"
+                onClick={() => {
+                  if (activeTeamTelemetry) {
+                    if (activeTeamTelemetry.fuelBurnPerLap > 0) {
+                      setCalcFuelBurn(Number(activeTeamTelemetry.fuelBurnPerLap.toFixed(2)));
+                    }
+                    if (activeTeamTelemetry.lastLapSec > 0) {
+                      setCalcAvgLapTimeSec(Math.round(activeTeamTelemetry.lastLapSec));
+                    }
+                  } else if (t.connected) {
+                    setCalcFuelBurn(2.85);
+                  }
+                }}
+                disabled={!activeTeamTelemetry && !t.connected}
+                className="text-[7.5px] font-black text-[#3B82F6] hover:underline uppercase tracking-widest cursor-pointer disabled:opacity-40 disabled:hover:no-underline"
               >
-                Timeline
+                ↺ SYNC telemetry
               </button>
-              <button
-                onClick={() => setActiveTab("strategy")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === "strategy"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                Fuel Stints
-              </button>
-              <button
-                onClick={() => setActiveTab("endurance")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${activeTab === "endurance"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                Endurance
-              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-[#7a828c] text-[6.5px] uppercase font-bold">BURN (L/LAP)</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={calcFuelBurn}
+                  onChange={(e) => setCalcFuelBurn(Number(e.target.value))}
+                  className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-1.5 py-1 text-white font-mono font-bold text-[8.5px] focus:border-[#3B82F6] focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[#7a828c] text-[6.5px] uppercase font-bold">STINT LAPS</span>
+                <input
+                  type="number"
+                  value={calcStintLaps}
+                  onChange={(e) => setCalcStintLaps(Number(e.target.value))}
+                  className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-1.5 py-1 text-white font-mono font-bold text-[8.5px] focus:border-[#3B82F6] focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[#7a828c] text-[6.5px] uppercase font-bold">AVG LAP (S)</span>
+                <input
+                  type="number"
+                  value={calcAvgLapTimeSec}
+                  onChange={(e) => setCalcAvgLapTimeSec(Number(e.target.value))}
+                  className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-1.5 py-1 text-white font-mono font-bold text-[8.5px] focus:border-[#3B82F6] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 bg-[#05070a] border border-[#1c2430] p-1.5 rounded-none text-[7.5px] leading-tight">
+              <div>
+                <span className="text-[#7a828c] block text-[6.5px]">FUEL PER STINT</span>
+                <span className="text-white font-bold font-mono text-[9px]">{calculatedFuelRequired} L</span>
+              </div>
+              <div>
+                <span className="text-[#7a828c] block text-[6.5px]">STINT DURATION</span>
+                <span className="text-white font-bold font-mono text-[9px]">{formatDuration(calculatedStintDurationMin)}</span>
+              </div>
+              {enduranceFuelPlan && (
+                <>
+                  <div className="border-t border-[#1c2430]/50 pt-1 mt-1 col-span-2 grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[#7a828c] block text-[6.5px]">EST. TOTAL FUEL</span>
+                      <span className="text-[#00D17F] font-bold font-mono text-[9px]">{enduranceFuelPlan.totalFuel.toFixed(1)} L</span>
+                    </div>
+                    <div>
+                      <span className="text-[#7a828c] block text-[6.5px]">EST. PIT STOPS</span>
+                      <span className="text-[#3B82F6] font-bold font-mono text-[9px]">{enduranceFuelPlan.pitStops} STOPS</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* SECTION 3: DRAG & DROP DRIVERS TO TIMELINE CONTAINER */}
+          <div className="p-2.5 bg-[#05070a] border-t border-[#1c2430] shrink-0 rounded-none">
+            <span className="text-[9px] font-bold tracking-[0.2em] text-[#7a828c] uppercase block mb-2 select-none font-rajdhani">
+              3 DRAG & DROP DRIVERS TO TIMELINE
+            </span>
+
+            <div className="flex flex-wrap gap-1.5">
+              {drivers.map((d) => (
+                <div
+                  key={d.id}
+                  draggable="true"
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", d.id);
+                    e.dataTransfer.setData("driverId", d.id);
+                  }}
+                  className="px-2.5 py-1 rounded-none border cursor-grab select-none font-mono text-[8.5px] font-black uppercase tracking-widest active:cursor-grabbing hover:brightness-125 transition-all shadow-sm"
+                  style={{
+                    backgroundColor: `${d.color}15`,
+                    borderColor: d.color,
+                    color: "#E2E4E8",
+                  }}
+                >
+                  {d.name.split(" ").slice(-1)[0]}
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Dynamic sub views */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-          {/* Main Strategy Canvas (Timeline or calculators) */}
-          <div className="lg:col-span-8 space-y-8 min-h-0 flex flex-col justify-start">
-            {activeTab === "timeline" ? (
-              <section className="hairline bg-panel rounded-3xl p-6 relative overflow-hidden flex flex-col justify-start shadow-xl">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 border border-primary/20 text-primary rounded-xl">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-mono uppercase tracking-widest text-foreground">
-                        Race Timeline Coordinator
-                      </h2>
-                      <p className="text-[10px] text-muted-foreground">
-                        Dynamic Gantt scheduling panel
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setIsAddWeatherOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider rounded-xl border border-border/40 transition-all cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-blue-400" />
-                      Weather
-                    </button>
-                    <button
-                      onClick={() => setIsAddIncidentOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 text-xs font-bold uppercase tracking-wider rounded-xl border border-border/40 transition-all cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-red-400" />
-                      Incident
-                    </button>
-                    {cars.length > 0 && (
+        {/* COLUMN 2: RACE TIMELINE & TACTICAL STRATEGY GRAPHS - Shared Borders */}
+        <section className="border-r border-[#1c2430] flex flex-col bg-[#05070a] overflow-hidden h-full rounded-none">
+          
+          {/* SECTION 4: RACE TIMELINE & STRATEGY PLANNER */}
+          <div className="border-b border-[#1c2430] bg-[#0b0f14] p-2.5 flex flex-col justify-between flex-1 min-h-0 relative z-10 rounded-none overflow-y-auto scrollbar-hide">
+            
+            {/* Header statistics panel */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5 pb-2 border-b border-[#1c2430]/70 select-none font-rajdhani">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="text-[11px] font-black uppercase tracking-widest text-[#E2E4E8]">
+                  4 RACE TIMELINE & STRATEGY PLANNER
+                </span>
+                
+                {/* Active Focus Mode Toggles */}
+                <div className="flex bg-[#05070a] border border-[#1c2430] rounded-none p-0.5 text-[7px] font-black tracking-widest uppercase">
+                  <span className="px-1.5 py-0.5 text-[#7a828c] select-none border-r border-[#1c2430]/60">FOCUS:</span>
+                  {[
+                    { id: "green", label: "GREEN_FLAG", color: "text-[#00D17F] hover:bg-[#00D17F]/10" },
+                    { id: "fcy", label: "FCY_CAUTION", color: "text-[#FFB800] hover:bg-[#FFB800]/10 animate-pulse" },
+                    { id: "wet", label: "RAIN_ONSET", color: "text-[#3B82F6] hover:bg-[#3B82F6]/10" }
+                  ].map(mode => {
+                    const active = focusMode === mode.id;
+                    return (
                       <button
-                        onClick={handleOpenAddStint}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground hover:opacity-90 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow cursor-pointer"
+                        key={mode.id}
+                        type="button"
+                        onClick={() => {
+                          setFocusMode(mode.id as any);
+                          // Auto switch graph tabs for contextual expand priority
+                          if (mode.id === "fcy") setGraphTab("delta");
+                          if (mode.id === "wet") setGraphTab("temp");
+                        }}
+                        className={`px-2 py-0.5 cursor-pointer rounded-none border-0 transition-all font-mono font-bold ${
+                          active 
+                            ? "bg-[#1c2430] text-white" 
+                            : `${mode.color}`
+                        }`}
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        Stint
+                        {mode.label}
                       </button>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* Timeline Grid Rulers */}
-                <div className="relative border border-border/30 rounded-2xl bg-muted/10 p-4 select-none overflow-x-auto scrollbar-hide">
-                  <div className="min-w-[700px] space-y-6 relative">
-                    {/* Gantt Timeline Hours Header */}
-                    <div className="flex border-b border-border/40 pb-2 relative z-10 font-mono text-[9px] text-muted-foreground uppercase tracking-widest">
-                      {Array.from({ length: 9 }).map((_, idx) => {
-                        const hr = idx * 3;
-                        return (
-                          <div
-                            key={idx}
-                            className="flex-1 text-left border-l border-border/20 pl-1.5 first:border-l-0"
-                          >
-                            HR {hr}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Active Incident status bars row */}
-                    <div className="h-8 flex items-center relative border-b border-border/20 pb-3">
-                      <span className="w-20 text-[9px] font-mono text-red-400 font-bold uppercase tracking-wider shrink-0">
-                        INCIDENTS
-                      </span>
-                      <div className="flex-1 h-2 bg-muted/40 rounded-full relative overflow-hidden">
-                        {incidents.map((inc) => {
-                          const left = getPositionPercentage(inc.startTime);
-                          const width = getWidthPercentage(
-                            inc.startTime,
-                            addMinutes(parseISO(inc.startTime), inc.duration).toISOString(),
-                          );
-                          return (
-                            <div
-                              key={inc.id}
-                              style={{ left: `${left}%`, width: `${width}%` }}
-                              className={`absolute h-full rounded-full flex items-center justify-end pr-1 cursor-pointer group/inc ${inc.type === "Caution"
-                                ? "bg-amber-400 shadow-[0_0_8px_#fbbf24]"
-                                : inc.type === "Safety Car"
-                                  ? "bg-orange-500 shadow-[0_0_8px_#f97316]"
-                                  : inc.type === "Red Flag"
-                                    ? "bg-red-500 shadow-[0_0_8px_#ef4444]"
-                                    : "bg-emerald-500"
-                                }`}
-                              title={`${inc.type}: ${inc.duration}m (Click to delete)`}
-                              onClick={() => handleDeleteIncident(inc.id)}
-                            >
-                              <X className="w-2 h-2 text-black opacity-0 group-hover/inc:opacity-100 transition-opacity" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Meteorological weather timeline rows */}
-                    <div className="h-8 flex items-center relative border-b border-border/20 pb-3">
-                      <span className="w-20 text-[9px] font-mono text-blue-400 font-bold uppercase tracking-wider shrink-0">
-                        WEATHER
-                      </span>
-                      <div className="flex-1 h-2 bg-muted/40 rounded-full relative overflow-hidden">
-                        {weatherEvents.map((w) => {
-                          const left = getPositionPercentage(w.startTime);
-                          const width = getWidthPercentage(w.startTime, w.endTime);
-                          return (
-                            <div
-                              key={w.id}
-                              style={{
-                                left: `${left}%`,
-                                width: `${width}%`,
-                                backgroundColor: WEATHER_COLORS[w.type],
-                              }}
-                              className="absolute h-full rounded-full transition-all flex items-center justify-end pr-1 cursor-pointer group/wea"
-                              title={`${w.type}: ${format(parseISO(w.startTime), "HH:mm")} - ${format(parseISO(w.endTime), "HH:mm")} (Click to delete)`}
-                              onClick={() => handleDeleteWeather(w.id)}
-                            >
-                              <X className="w-2 h-2 text-black opacity-0 group-hover/wea:opacity-100 transition-opacity" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Cars stints bars */}
-                    <div className="space-y-4 pt-2">
-                      {cars.map((car) => {
-                        const carStints = stints.filter((s) => s.carId === car.id);
-                        return (
-                          <div key={car.id} className="flex items-center relative">
-                            <div className="w-20 shrink-0">
-                              <span className="text-[10px] font-bold text-foreground">
-                                #{car.number}
-                              </span>
-                              <span className="text-[8px] font-mono text-muted-foreground block -mt-1">
-                                {car.name}
-                              </span>
-                            </div>
-
-                            <div className="flex-1 h-8 bg-muted/10 border border-border/20 rounded-xl relative p-1 flex items-center">
-                              {carStints.map((stint) => {
-                                const left = getPositionPercentage(stint.startTime);
-                                const width = getWidthPercentage(stint.startTime, stint.endTime);
-                                const driver = drivers.find((d) => d.id === stint.driverId);
-                                if (!driver) return null;
-                                return (
-                                  <div
-                                    key={stint.id}
-                                    style={{
-                                      left: `${left}%`,
-                                      width: `${width}%`,
-                                      backgroundColor: `${driver.color}20`,
-                                      borderColor: driver.color,
-                                    }}
-                                    className="absolute h-6 rounded-lg border flex items-center justify-between px-2 select-none overflow-hidden transition-all group/stint"
-                                    title={`${driver.name}: ${stint.note || "No notes"}`}
-                                  >
-                                    <span className="text-[8px] font-mono font-black tracking-widest text-foreground leading-none uppercase truncate mr-1">
-                                      {driver.shortName}
-                                    </span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteStint(stint.id);
-                                      }}
-                                      className="opacity-0 group-hover/stint:opacity-100 p-0.5 hover:bg-red-500/30 rounded text-red-400 transition-all duration-150 shrink-0 cursor-pointer"
-                                      title="Remove Stint"
-                                    >
-                                      <X className="w-2.5 h-2.5" />
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {cars.length === 0 && (
-                        <div className="text-center py-6 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
-                          Registry empty. Click "Populate Full Stint Trial" or add a car below.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            ) : activeTab === "endurance" ? (
-              <section className="hairline bg-panel rounded-3xl p-6 relative overflow-hidden flex flex-col justify-start shadow-xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
-                    <Timer className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-mono uppercase tracking-widest text-foreground">Endurance Planner</h2>
-                    <p className="text-[10px] text-muted-foreground">Driver fatigue · 24hr fuel load · pit windows</p>
-                  </div>
-                </div>
-
-                {/* 24hr Fuel Load Summary */}
-                {enduranceFuelPlan && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    {[
-                      { label: "Total Laps", value: enduranceFuelPlan.totalLapsEst, color: "text-foreground" },
-                      { label: "Pit Stops", value: enduranceFuelPlan.pitStops, color: "text-amber-400" },
-                      { label: "Fuel / Stint", value: `${enduranceFuelPlan.fuelPerStint.toFixed(1)}L`, color: "text-blue-400" },
-                      { label: "Total Fuel Load", value: `${enduranceFuelPlan.totalFuel.toFixed(0)}L`, color: "text-emerald-400" },
-                    ].map((item) => (
-                      <div key={item.label} className="bg-muted/15 border border-border/30 rounded-2xl p-4 text-center font-mono">
-                        <div className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">{item.label}</div>
-                        <div className={`text-xl font-black tracking-tighter ${item.color}`}>{item.value}</div>
-                        <div className="text-[9px] text-muted-foreground mt-1">{raceDurationHours}hr race</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Avg lap time input (feeds fuel planner + stint calc) */}
-                <div className="mb-6 p-4 bg-muted/10 border border-border/30 rounded-2xl">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Calculator Inputs</div>
-                  <div className="grid grid-cols-3 gap-4 font-sans text-xs">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Avg Lap Time (sec)</label>
-                      <input
-                        type="number"
-                        value={calcAvgLapTimeSec}
-                        onChange={(e) => setCalcAvgLapTimeSec(Number(e.target.value) || 100)}
-                        className="bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Fuel Burn / Lap (L)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={calcFuelBurn}
-                        onChange={(e) => setCalcFuelBurn(parseFloat(e.target.value) || 0)}
-                        className="bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Stint Length (laps)</label>
-                      <input
-                        type="number"
-                        value={calcStintLaps}
-                        onChange={(e) => setCalcStintLaps(parseInt(e.target.value) || 0)}
-                        className="bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Driver Fatigue Tracker */}
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Driver Fatigue Tracker</div>
-                  {drivers.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
-                      Add drivers to track fatigue hours
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {drivers.map((d) => {
-                        const hrs = driverHoursMap[d.id] || 0;
-                        const pct = Math.min(100, (hrs / 4) * 100); // FIA 4hr max per stint reference
-                        const isWarning = hrs > 3;
-                        const isDanger = hrs > 4;
-                        return (
-                          <div key={d.id} className="flex items-center gap-4 p-3 bg-muted/10 border border-border/20 rounded-xl">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                            <span className="font-mono text-xs font-bold w-12 shrink-0">{d.shortName}</span>
-                            <span className="text-xs text-muted-foreground flex-1 truncate">{d.name}</span>
-                            <div className="flex items-center gap-3">
-                              <div className="w-28 h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${isDanger ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-emerald-500"}`}
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                              <span className={`font-mono text-xs font-bold w-14 text-right ${
-                                isDanger ? "text-red-400" : isWarning ? "text-amber-400" : "text-emerald-400"
-                              }`}>
-                                {hrs.toFixed(1)}h
-                                {isDanger && " ⚠"}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div className="text-[9px] text-muted-foreground mt-2">
-                        * Bar fills at 4hrs (FIA endurance guideline). Red = over 4hrs total scheduled.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </section>
-            ) : (
-              <section className="hairline bg-panel rounded-3xl p-6 relative overflow-hidden flex flex-col justify-start shadow-xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-primary/10 border border-primary/20 text-primary rounded-xl">
-                    <Calculator className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-mono uppercase tracking-widest text-foreground">
-                      Pit Fuel Strategy Planner
-                    </h2>
-                    <p className="text-[10px] text-muted-foreground">
-                      Pit Stop & stint target calculator
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
-                  <div className="bg-muted/15 border border-border/30 rounded-2xl p-4 space-y-4">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                      Calculated Targets
-                    </div>
-                    <div className="space-y-3.5">
-                      <div>
-                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
-                          ESTIMATED STINT DURATION
-                        </span>
-                        <span className="text-sm font-bold text-foreground">
-                          {formatDuration(calculatedStintDurationMin)} ({calcStintLaps} Laps)
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
-                          FUEL REQUIRED
-                        </span>
-                        <span className="text-sm font-bold text-blue-400">
-                          {calculatedFuelRequired} Liters
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
-                          RECOMMENDED MARGIN (1.5 LAPS)
-                        </span>
-                        <span className="text-sm font-bold text-amber-500">
-                          {calculatedFuelMargin} Liters
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground block mb-0.5 uppercase text-[9px] tracking-wider">
-                          EST. TIRE WEAR COEFFICIENT
-                        </span>
-                        <span className="text-sm font-bold text-emerald-400">
-                          {calculatedTireWearCoefficient}% per lap
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/15 border border-border/30 rounded-2xl p-4 space-y-3 col-span-2">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                      Stint Parameters
-                    </div>
-                    <div className="space-y-4 pt-1 font-sans">
-                      <div className="flex flex-col gap-1.5">
-                        <label
-                          htmlFor="fuel-burn"
-                          className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                        >
-                          Avg Fuel Burn per lap (L)
-                        </label>
-                        <input
-                          id="fuel-burn"
-                          type="number"
-                          step="0.01"
-                          value={calcFuelBurn}
-                          onChange={(e) => setCalcFuelBurn(parseFloat(e.target.value) || 0)}
-                          className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label
-                          htmlFor="stint-laps"
-                          className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                        >
-                          Planned Stint Length (laps)
-                        </label>
-                        <input
-                          id="stint-laps"
-                          type="number"
-                          value={calcStintLaps}
-                          onChange={(e) => setCalcStintLaps(parseInt(e.target.value) || 0)}
-                          className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                        />
-                        {/* Auto-populate from bridge */}
-                        {t.connected && (
-                          <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl text-[10px] font-mono flex items-center justify-between gap-3">
-                            <div>
-                              <span className="text-emerald-400 font-bold block">Bridge live — real data available</span>
-                              <span className="text-muted-foreground">
-                                Last lap: {t.lastLap} · Fuel burn: {t.fuelUsePerHour > 0
-                                  ? `${((t.fuelUsePerHour * t.lapLastLapTimeSec) / 3600).toFixed(2)} L/lap (live)`
-                                  : `${(t.fuelRemainingL / Math.max(1, t.lapsEstimated)).toFixed(2)} L/lap (est)`
-                                }
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => {
-                                if (t.lapLastLapTimeSec > 0) setCalcAvgLapTimeSec(Math.round(t.lapLastLapTimeSec));
-                                const burnPerLap = t.fuelUsePerHour > 0
-                                  ? (t.fuelUsePerHour * t.lapLastLapTimeSec) / 3600
-                                  : t.lapsEstimated > 0 ? t.fuelRemainingL / t.lapsEstimated : calcFuelBurn;
-                                if (burnPerLap > 0) setCalcFuelBurn(parseFloat(burnPerLap.toFixed(3)));
-                              }}
-                              className="shrink-0 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-emerald-500/30 transition-all cursor-pointer"
-                            >
-                              ↺ Sync
-                            </button>
-                          </div>
-                        )}
-                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-[10px] text-muted-foreground font-sans leading-normal">
-                          Calculates stints for{" "}
-                          <span className="font-bold text-foreground">
-                            #{selectedCar?.number || "No active car"}
-                          </span>
-                          . Adjust burn rates and lap targets to update required race fuel.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* Registry Deck (Drivers and Cars lists) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 shrink-0">
-              {/* Cars Registry */}
-              <div className="hairline bg-panel rounded-3xl p-6 shadow-lg flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/40">
-                    <div className="flex items-center gap-2">
-                      <CarIcon className="w-4.5 h-4.5 text-primary" />
-                      <span className="text-xs font-mono uppercase tracking-wider font-bold">
-                        Active Cars ({cars.length})
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setIsAddCarOpen(true)}
-                      className="p-1.5 hover:bg-muted border border-border/40 rounded-xl text-primary transition-all cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto scrollbar-hide pr-1">
-                    {cars.map((c) => {
-                      const isSelected = c.id === selectedCarId;
-                      return (
-                        <div
-                          key={c.id}
-                          onClick={() => setSelectedCarId(c.id)}
-                          className={`p-3 rounded-2xl flex flex-col justify-between relative group overflow-hidden transition-all duration-300 cursor-pointer ${isSelected
-                            ? "bg-primary/10 border-primary ring-1 ring-primary/40 shadow-[0_0_12px_rgba(var(--primary-rgb),0.15)]"
-                            : "bg-muted/20 border-border/30 border hover:border-border/60 hover:bg-muted/30"
-                            }`}
-                        >
-                          <div className="flex items-center justify-between mb-1.5">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: CLASS_COLORS[c.carClass] }}
-                              />
-                              <span className="text-[8px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
-                                {c.carClass}
-                              </span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteCar(c.id);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-muted-foreground transition-all duration-200 cursor-pointer"
-                              title="Delete Car"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                          <div className="text-xs font-bold truncate pr-6">{c.name}</div>
-                          <div className="text-[10px] font-mono text-blue-400 font-bold mt-0.5">
-                            #{c.number}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {cars.length === 0 && (
-                      <div className="col-span-2 text-center py-4 text-[10px] text-muted-foreground italic opacity-50">
-                        No cars registered
-                      </div>
-                    )}
-                  </div>
+                {/* Variable Temporal Zooming */}
+                <div className="flex bg-[#05070a] border border-[#1c2430] rounded-none p-0.5 text-[7px] font-black tracking-widest uppercase font-rajdhani">
+                  <span className="px-1.5 py-0.5 text-[#7a828c] select-none border-r border-[#1c2430]/60">ZOOM:</span>
+                  {["24h", "6h", "1h", "15m"].map(level => {
+                    const active = zoomLevel === level;
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setZoomLevel(level as any)}
+                        className={`px-1.8 py-0.5 cursor-pointer rounded-none border-0 transition-all font-mono font-bold ${
+                          active 
+                            ? "bg-[#1c2430] text-white" 
+                            : "text-[#7a828c] hover:text-white"
+                        }`}
+                      >
+                        {level.toUpperCase()}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Drivers Registry */}
-              <div className="hairline bg-panel rounded-3xl p-6 shadow-lg flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/40">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4.5 h-4.5 text-primary" />
-                      <span className="text-xs font-mono uppercase tracking-wider font-bold">
-                        Active Drivers ({drivers.length})
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setIsAddDriverOpen(true)}
-                      className="p-1.5 hover:bg-muted border border-border/40 rounded-xl text-primary transition-all cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto scrollbar-hide pr-1">
-                    {drivers.map((d) => (
-                      <div
-                        key={d.id}
-                        className="p-3 bg-muted/20 border border-border/30 rounded-2xl flex items-center justify-between relative group overflow-hidden"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shrink-0 shadow-sm"
-                            style={{ backgroundColor: d.color }}
-                          >
-                            {d.shortName}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-xs font-bold truncate pr-3">{d.name}</div>
-                            <div className="text-[8px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">
-                              Active
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDriver(d.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-muted-foreground transition-all duration-200 cursor-pointer"
-                          title="Delete Driver"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                    {drivers.length === 0 && (
-                      <div className="col-span-2 text-center py-4 text-[10px] text-muted-foreground italic opacity-50">
-                        No drivers registered
-                      </div>
-                    )}
-                  </div>
+              {/* Timing parameters grid */}
+              <div className="flex flex-wrap items-center gap-3 text-[7.5px] font-mono tracking-widest uppercase font-black">
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">RACE DURATION</span>
+                  <span className="text-white text-[9px]">{String(raceDurationHours).padStart(2, '0')}:00:00</span>
+                </div>
+                <div className="w-px h-5 bg-[#1c2430]" />
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">START TIME</span>
+                  <span className="text-white text-[9px]">15:00</span>
+                </div>
+                <div className="w-px h-5 bg-[#1c2430]" />
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">TIME SCALE</span>
+                  <span className="text-[#FFB800] text-[9px]">30 MIN</span>
+                </div>
+                <div className="w-px h-5 bg-[#1c2430]" />
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">EST. LAPS</span>
+                  <span className="text-white text-[9px]">~215</span>
+                </div>
+                <div className="w-px h-5 bg-[#1c2430]" />
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">FUEL WINDOW</span>
+                  <span className="text-[#3B82F6] text-[9px]">18 LAPS</span>
+                </div>
+                <div className="w-px h-5 bg-[#1c2430]" />
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">PIT WINDOWS</span>
+                  <span className="text-[#FF4D4D] text-[9px]">3</span>
+                </div>
+                <div className="w-px h-5 bg-[#1c2430]" />
+                <div className="text-right">
+                  <span className="text-[#7a828c] block">STRATEGY SCORE</span>
+                  <span className="text-[#00D17F] text-[9px] drop-shadow-[0_0_4px_#00D17F]">92%</span>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Column 2: Live Paddock Multi-Car Telemetry HUD grid */}
-          <div className="lg:col-span-4 min-h-0 flex flex-col justify-start">
-            <section className="hairline bg-panel rounded-3xl p-6 backdrop-blur-md shadow-2xl flex-1 flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
-
-              <div className="flex-1 flex flex-col justify-start min-h-0">
-                <div className="flex items-center justify-between mb-6 border-b border-border/40 pb-4 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl">
-                      <Zap className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-mono uppercase tracking-widest text-foreground font-bold">
-                        Paddock Live HUD
-                      </h2>
-                      <p className="text-[10px] text-muted-foreground">
-                        {teamCode
-                          ? `Team: ${teamCode} · ${onlineCount} driver${onlineCount !== 1 ? "s" : ""} online`
-                          : "Multi-car active stream relay grid"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {teamCode && teamConnected && (
-                      <span className="text-[8px] bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest font-mono animate-pulse">
-                        RELAY LIVE
-                      </span>
-                    )}
-                    <button
-                      onClick={() => setShowTeamCodePanel((v) => !v)}
-                      className="text-[9px] px-2.5 py-1 bg-muted hover:bg-muted/80 border border-border/40 rounded-lg font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                    >
-                      {teamCode ? "🔗 Team" : "+ Join Team"}
-                    </button>
-                  </div>
-                </div>
-
-                {showTeamCodePanel && (
-                  <div className="mb-4 p-4 bg-muted/20 border border-border/30 rounded-2xl space-y-3 text-xs shrink-0">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Team Session</div>
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="Paste team code e.g. PITWALL-A1B2" value={teamCodeInput} onChange={(e) => setTeamCodeInput(e.target.value.toUpperCase())} className="flex-1 bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono placeholder:text-muted-foreground/40" />
-                      <button onClick={() => { setTeamCode(teamCodeInput.trim()); setShowTeamCodePanel(false); }} disabled={!teamCodeInput.trim()} className="px-3 py-2 bg-primary text-primary-foreground rounded-xl text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 cursor-pointer hover:opacity-90 transition-all">Join</button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => { generateTeamCode(); setShowTeamCodePanel(false); }} className="flex-1 py-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-blue-500/20 transition-all cursor-pointer">✦ Generate New Code</button>
-                      {teamCode && (<button onClick={() => { setTeamCode(""); setTeamCodeInput(""); setShowTeamCodePanel(false); }} className="py-2 px-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all cursor-pointer">Leave</button>)}
-                    </div>
-                    {teamCode && (
-                      <div className="p-2.5 bg-background/60 rounded-xl border border-border/20 font-mono text-[10px]">
-                        <div className="text-muted-foreground mb-1">Share with your drivers:</div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-bold text-foreground">{teamCode}</span>
-                          <button onClick={() => navigator.clipboard.writeText(teamCode)} className="text-[9px] text-primary hover:opacity-80 cursor-pointer">Copy</button>
-                        </div>
-                        <div className="text-muted-foreground mt-1.5 leading-relaxed">Each driver: add <span className="text-foreground">TEAM_CODE={teamCode}</span> to <span className="text-foreground">local-bridge/.env</span>, then restart bridge.</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Bridge live data card for own car — auto-populated from bridge */}
-                {t.connected && (
-                  <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl relative overflow-hidden font-mono text-xs mb-4">
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-emerald-500/10">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="font-bold text-emerald-300 font-sans text-[11px]">YOUR CAR — LIVE BRIDGE</span>
-                      </div>
-                      <span className="text-[9px] font-bold text-blue-400">GEAR {t.gear}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-[8px] text-muted-foreground uppercase tracking-widest block mb-0.5">Velocity</span>
-                        <div className="text-lg font-black font-display text-foreground tracking-tighter italic">
-                          {t.speedKph} <span className="text-[10px] not-italic text-blue-400">KPH</span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[8px] text-muted-foreground uppercase tracking-widest block mb-0.5">Remaining fuel</span>
-                        <div className="text-lg font-black font-display text-foreground tracking-tighter italic">
-                          {t.fuelRemainingL.toFixed(1)} <span className="text-[10px] not-italic text-blue-400">L (~{t.lapsEstimated})</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3 bg-black/40 h-2 rounded-full overflow-hidden flex gap-[2px] p-[1.5px]">
-                      {Array.from({ length: 12 }).map((_, idx) => {
-                        const limit = (idx / 12) * (t.rpmMax || 8500);
-                        const active = t.rpm >= limit;
-                        const isHigh = limit > (t.rpmShiftWarn || t.rpmMax * 0.9);
+            {showManagerSettings && (
+              <div className="border border-[#FFB800]/30 bg-[#FFB800]/5 p-3 rounded-none mb-3 grid grid-cols-1 md:grid-cols-3 gap-3 relative font-mono text-left select-none shrink-0">
+                <div className="absolute top-0 right-0 h-full w-1.5 bg-[#FFB800]" />
+                
+                {/* Column 1: Race session setup */}
+                <div className="space-y-2 border-r border-[#1c2430] pr-3">
+                  <span className="text-[9.5px] font-black text-[#FFB800] uppercase tracking-wider block font-rajdhani">
+                    🏆 RACE SESSION PARAMETERS
+                  </span>
+                  
+                  {/* Duration input */}
+                  <div className="flex flex-col gap-1 text-[8.5px]">
+                    <label className="text-[#7a828c] uppercase font-bold">Race Duration (Hours)</label>
+                    <div className="flex bg-black border border-[#1c2430] p-0.5">
+                      {[1, 2, 4, 6, 12, 24].map((h) => {
+                        const isDur = raceDurationHours === h;
                         return (
-                          <div
-                            key={idx}
-                            className={`flex-1 h-full rounded-sm transition-colors ${
-                              active ? (isHigh ? "bg-red-500" : "bg-emerald-500") : "bg-white/[0.03]"
+                          <button
+                            key={h}
+                            type="button"
+                            onClick={() => {
+                              setRaceDurationHours(h);
+                              // Sync temporal zoom level automatically for elite timing layout UX
+                              if (h >= 12) setZoomLevel("24h");
+                              else if (h >= 4) setZoomLevel("6h");
+                              else if (h >= 2) setZoomLevel("6h");
+                              else setZoomLevel("1h");
+                            }}
+                            className={`flex-1 text-[8px] py-0.5 text-center font-bold border-0 cursor-pointer transition-colors ${
+                              isDur ? "bg-[#FFB800] text-black" : "text-[#7a828c] hover:text-white"
                             }`}
-                          />
+                          >
+                            {h}H
+                          </button>
                         );
                       })}
                     </div>
-                    <div className="mt-2 text-[9px] text-muted-foreground font-mono">
-                      {t.car} · {t.track} · Δ{t.deltaSec >= 0 ? "+" : ""}{t.deltaSec.toFixed(3)}s
-                    </div>
                   </div>
-                )}
-                {/* Telemetry listing cards — other team cars via Supabase Realtime */}
-                <div className="space-y-3 flex-1 overflow-y-auto scrollbar-hide pr-1 min-h-0">
 
-                  {!t.connected && teamDrivers.size === 0 && (
-                    <div className="text-center py-8 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
-                      Bridge offline — start the local bridge to see your car's live telemetry here.
-                      <br />Click <span className="text-amber-400 not-italic">● SIM</span> in the header to go to the Live dashboard.
-                    </div>
-                  )}
-
-                  {teamCode && !teamConnected && (
-                    <div className="text-center py-4 text-[10px] text-amber-400 border border-amber-500/20 rounded-xl bg-amber-500/5">
-                      Connecting to team channel <span className="font-mono font-bold">{teamCode}</span>…
-                    </div>
-                  )}
-
-                  {/* Live multi-driver cards from Realtime */}
-                  {Array.from(teamDrivers.values()).map((driver) => (
-                    <div
-                      key={driver.carNumber}
-                      className={`p-3 rounded-2xl border font-mono text-xs relative overflow-hidden transition-all ${
-                        driver.isOnline
-                          ? "bg-blue-500/5 border-blue-500/20"
-                          : "bg-muted/10 border-border/20 opacity-60"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-white/5">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            driver.isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"
-                          }`} />
-                          <span className="font-bold text-[11px] text-foreground">
-                            #{driver.carNumber} — {driver.driverName}
+                  {/* Active tyre compound checklist */}
+                  <div className="flex flex-col gap-1 text-[8.5px] pt-1">
+                    <label className="text-[#7a828c] uppercase font-bold">Allowed Tyre Compounds</label>
+                    <div className="grid grid-cols-2 gap-1.5 font-mono text-[8px] text-white">
+                      {[
+                        { id: "soft", label: "SOFT (S1)", state: tyreSoftAllowed, setter: setTyreSoftAllowed, color: "#FF4D4D" },
+                        { id: "medium", label: "MEDIUM (S2)", state: tyreMediumAllowed, setter: setTyreMediumAllowed, color: "#FFB800" },
+                        { id: "hard", label: "HARD (S3)", state: tyreHardAllowed, setter: setTyreHardAllowed, color: "#E2E4E8" },
+                        { id: "wet", label: "WET (S4)", state: tyreWetAllowed, setter: setTyreWetAllowed, color: "#3B82F6" },
+                      ].map((t) => (
+                        <div
+                          key={t.id}
+                          onClick={() => t.setter(!t.state)}
+                          className="flex items-center gap-1.5 cursor-pointer hover:bg-black/40 p-0.5 border border-[#1c2430] bg-black/20"
+                        >
+                          <span 
+                            className="w-1 h-3 shrink-0" 
+                            style={{ backgroundColor: t.state ? t.color : "#3A3F47" }}
+                          />
+                          <span className={t.state ? "font-bold" : "text-[#7a828c] line-through"}>
+                            {t.label}
                           </span>
                         </div>
-                        <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full ${
-                          driver.isOnline
-                            ? "bg-emerald-500/15 text-emerald-400"
-                            : "bg-accent text-muted-foreground"
-                        }`}>
-                          {driver.isOnline ? "LIVE" : `+${Math.round(driver.staleness / 1000)}s`}
-                        </span>
-                      </div>
-
-                      <div className="text-[9px] text-muted-foreground mb-2 truncate">{driver.carName}</div>
-
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        <div>
-                          <div className="text-[8px] text-muted-foreground">FUEL</div>
-                          <div className="font-bold text-blue-300">
-                            {driver.fuelRemainingL.toFixed(1)}L
-                            <span className="text-[8px] text-muted-foreground ml-1">~{driver.lapsEstimated.toFixed(0)} laps</span>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-[8px] text-muted-foreground">LAST LAP</div>
-                          <div className="font-bold text-foreground">{driver.lastLap}</div>
-                        </div>
-                      </div>
-
-                      {/* Tire wear mini-bars */}
-                      {driver.tires && (
-                        <div className="grid grid-cols-4 gap-1">
-                          {(["fl", "fr", "rl", "rr"] as const).map((c) => {
-                            const tire = driver.tires![c];
-                            const wColor = tire.estWearPct > 75 ? "bg-emerald-500" : tire.estWearPct > 45 ? "bg-amber-500" : "bg-red-500";
-                            return (
-                              <div key={c} className="text-center">
-                                <div className="text-[7px] text-muted-foreground">{c.toUpperCase()}</div>
-                                <div className="h-1 rounded-full bg-muted overflow-hidden mt-0.5">
-                                  <div className={`h-full rounded-full ${wColor}`} style={{ width: `${tire.estWearPct}%` }} />
-                                </div>
-                                <div className={`text-[7px] mt-0.5 ${
-                                  tire.state === "hot" ? "text-red-400" : tire.state === "cold" ? "text-blue-400" : "text-muted-foreground"
-                                }`}>{tire.tempC.toFixed(0)}°</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
-
-                  {teamCode && teamConnected && teamDrivers.size === 0 && (
-                    <div className="text-center py-6 text-[10px] text-muted-foreground italic opacity-60 border border-dashed border-border/30 rounded-2xl">
-                      Waiting for other drivers to join…
-                      <br /><span className="text-[9px]">Share code <span className="font-mono text-foreground not-italic">{teamCode}</span> with your team.</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Live tire quad */}
-              {t.connected && (
-                <div className="p-3 bg-muted/20 border border-border/30 rounded-2xl font-mono text-[10px] mt-3">
-                  <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Tire State — Live</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(["fl", "fr", "rl", "rr"] as const).map((corner) => {
-                      const tire = t.tires[corner];
-                      const label = corner.toUpperCase();
-                      const wearColor = tire.estWearPct > 80 ? "bg-emerald-500" : tire.estWearPct > 50 ? "bg-amber-500" : "bg-red-500";
-                      const tempColor = tire.state === "hot" ? "text-red-400" : tire.state === "cold" ? "text-blue-400" : "text-emerald-400";
-                      return (
-                        <div key={corner} className="bg-background/40 rounded-xl p-2.5 border border-border/20">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-bold text-foreground text-[9px]">{label}</span>
-                            <span className={`text-[9px] font-bold ${tempColor}`}>{tire.tempC.toFixed(0)}°C</span>
-                          </div>
-                          <div className="text-[8px] text-muted-foreground mb-1">{tire.pressureBar.toFixed(2)} bar</div>
-                          <div className="h-1 rounded-full bg-muted overflow-hidden">
-                            <div className={`h-full rounded-full ${wearColor}`} style={{ width: `${tire.estWearPct}%` }} />
-                          </div>
-                          <div className="text-[8px] text-muted-foreground mt-0.5 text-right">{tire.estWearPct.toFixed(0)}% est wear</div>
-                        </div>
-                      );
-                    })}
                   </div>
-                  <div className="mt-2 text-[8px] text-muted-foreground">
-                    Brakes: FL {t.tires.fl.brakeTempC.toFixed(0)}° · FR {t.tires.fr.brakeTempC.toFixed(0)}° · RL {t.tires.rl.brakeTempC.toFixed(0)}° · RR {t.tires.rr.brakeTempC.toFixed(0)}°
-                  </div>
+                  <p className="text-[7.5px] text-[#7a828c] font-sans leading-normal">
+                    Disallowing compounds grays them out on the timeline and alerts the AI strategist so it never suggests disallowed tyres.
+                  </p>
                 </div>
-              )}
 
-              <div className="mt-4 text-[10px] text-muted-foreground leading-relaxed font-sans shrink-0 border-t border-border/20 pt-4">
-                * Your car's telemetry streams live from the bridge at 60Hz. Other car cards show manually
-                entered data — multi-car live telemetry requires a networked multi-bridge setup.
-              </div>
-            </section>
-
-            {/* AI Race Strategist Panel */}
-            <section className="hairline bg-panel rounded-3xl p-6 backdrop-blur-md shadow-2xl flex-1 flex flex-col justify-between relative overflow-hidden mt-6">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-
-              <div className="flex-1 flex flex-col justify-start min-h-0">
-                <div className="flex items-center justify-between mb-6 border-b border-border/40 pb-4 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-primary/10 border border-primary/20 text-primary rounded-2xl">
-                      <BrainCircuit className="w-5 h-5" />
+                {/* Column 2: Driver Connection troubleshooting help */}
+                <div className="space-y-2 border-r border-[#1c2430] pr-3 text-[8.5px]">
+                  <span className="text-[9.5px] font-black text-[#FF4D4D] uppercase tracking-wider block font-rajdhani">
+                    ⚠️ TELEMETRY CONNECTION ASSISTANT
+                  </span>
+                  <div className="space-y-1.5 font-sans leading-tight text-[#7a828c]">
+                    <div className="flex gap-1.5 items-start">
+                      <span className="text-[#FF4D4D] font-bold">1.</span>
+                      <p>
+                        <strong className="text-white uppercase font-mono text-[7.5px]">Driver Offline?</strong> Ensure driver executed <code className="font-mono bg-black text-red-400 px-0.5 border border-[#1c2430]">npm start</code> inside <code className="font-mono bg-black text-white px-0.5 border border-[#1c2430]">local-bridge/</code>.
+                      </p>
                     </div>
-                    <div>
-                      <h2 className="text-sm font-mono uppercase tracking-widest text-foreground font-bold">
-                        AI Race Strategist
-                      </h2>
-                      <p className="text-[10px] text-muted-foreground">
-                        Local LLM operation planning co-pilot
+                    <div className="flex gap-1.5 items-start">
+                      <span className="text-[#FF4D4D] font-bold">2.</span>
+                      <p>
+                        <strong className="text-white uppercase font-mono text-[7.5px]">Handshake Fail?</strong> The `SUPABASE_ANON_KEY` inside <code className="font-mono bg-black text-white px-0.5 border border-[#1c2430]">local-bridge/.env</code> must match your Project keys.
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5 items-start">
+                      <span className="text-[#FF4D4D] font-bold">3.</span>
+                      <p>
+                        <strong className="text-white uppercase font-mono text-[7.5px]">Code Mismatch?</strong> Ensure driver's `.env` uses your exact capitalized code: <strong className="text-white font-mono bg-black px-1 border border-[#1c2430]">{teamCode || "PITWALL-XXXX"}</strong>.
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5 items-start">
+                      <span className="text-[#FF4D4D] font-bold">4.</span>
+                      <p>
+                        <strong className="text-white uppercase font-mono text-[7.5px]">DB Paused?</strong> Free Supabase projects auto-pause after 7 days. Restore project active status on <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-[#3B82F6] hover:underline font-mono">supabase.com</a>.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 flex-1">
-                  <button
-                    onClick={evaluateTeamStrategy}
-                    disabled={aiLoading}
-                    className="w-full py-3 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed font-bold uppercase tracking-wider text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
-                  >
-                    {aiLoading ? (
+                {/* Column 3: Live telemetry compliance readout */}
+                <div className="space-y-2 text-[8.5px]">
+                  <span className="text-[9.5px] font-black text-[#00D17F] uppercase tracking-wider block font-rajdhani">
+                    🟢 LIVE SYSTEM SPECIFICATION
+                  </span>
+                  <div className="space-y-1 font-mono text-[8px] text-[#7a828c]">
+                    <div className="flex justify-between border-b border-[#1c2430]/50 pb-0.5">
+                      <span>RACE DURATION:</span>
+                      <span className="text-white font-bold">{raceDurationHours} HOURS</span>
+                    </div>
+                    <div className="flex justify-between border-b border-[#1c2430]/50 pb-0.5">
+                      <span>ACTIVE CO-PILOTS:</span>
+                      <span className="text-white font-bold">{drivers.length} REGISTERED</span>
+                    </div>
+                    <div className="flex justify-between border-b border-[#1c2430]/50 pb-0.5">
+                      <span>RELAY PIPELINE:</span>
+                      <span className={`font-bold ${teamConnected ? "text-[#00D17F]" : "text-red-400"}`}>
+                        {teamConnected ? "CONNECTED" : "DISCONNECTED"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between pb-0.5">
+                      <span>DB ROW SEGREGATION:</span>
+                      <span className="text-white font-bold font-mono">JWT ROW-SECURITY</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-2.5 p-1 bg-black/40 border border-[#1c2430] text-center text-[7px] uppercase text-[#7a828c]">
+                    <span className="text-white font-bold">EXPLANATIVE SUMMARY:</span> This is your Race Wall Strategy center. Configure race duration and compounds to adapt live fuel math. Send credentials to drivers to sync timing stands.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Gantt Timeline scale rulers - Flush mounted panels */}
+            <div className="relative border border-[#1c2430] bg-[#05070a] p-2.5 rounded-none overflow-hidden select-none select-none">
+              
+              {/* Vertical grids backing */}
+              <div className="absolute inset-y-0 left-[110px] right-0 flex pointer-events-none z-0">
+                {Array.from({ length: 7 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className="flex-1 border-l border-[#1c2430]/35 h-full first:border-l-0"
+                  />
+                ))}
+              </div>
+
+              <div className="relative z-10 space-y-3">
+                
+                {/* Horizontal scale hours header */}
+                <div className="flex border-b border-[#1c2430]/60 pb-1.5 font-mono text-[7.5px] text-[#7a828c] font-black uppercase tracking-widest">
+                  <span className="w-24 shrink-0 text-[#7a828c] font-rajdhani">RACE TIMELINE</span>
+                  <div className="flex-1 flex justify-between font-mono">
+                    {zoomLevel === "24h" && (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Analyzing Operations...</span>
-                      </>
-                    ) : (
-                      <>
-                        <BrainCircuit className="w-4 h-4" />
-                        <span>Run Strategy Briefing</span>
+                        <span>START</span>
+                        <span>4:00</span>
+                        <span>8:00</span>
+                        <span>12:00</span>
+                        <span>16:00</span>
+                        <span>20:00</span>
+                        <span>FINISH (24H)</span>
                       </>
                     )}
-                  </button>
+                    {zoomLevel === "6h" && (
+                      <>
+                        <span>START</span>
+                        <span>1:00</span>
+                        <span>2:00</span>
+                        <span>3:00</span>
+                        <span>4:00</span>
+                        <span>5:00</span>
+                        <span>FINISH (6H)</span>
+                      </>
+                    )}
+                    {zoomLevel === "1h" && (
+                      <>
+                        <span>T+0 MIN</span>
+                        <span>10 MIN</span>
+                        <span>20 MIN</span>
+                        <span>30 MIN</span>
+                        <span>40 MIN</span>
+                        <span>50 MIN</span>
+                        <span>60 MIN</span>
+                      </>
+                    )}
+                    {zoomLevel === "15m" && (
+                      <>
+                        <span>T+0 MIN</span>
+                        <span>2.5 MIN</span>
+                        <span>5.0 MIN</span>
+                        <span>7.5 MIN</span>
+                        <span>10.0 MIN</span>
+                        <span>12.5 MIN</span>
+                        <span>15.0 MIN</span>
+                      </>
+                    )}
+                  </div>
+                </div>
 
-                  {aiResponse && (
-                    <div className="p-4 bg-muted/15 border border-border/30 rounded-2xl text-xs text-foreground leading-relaxed font-mono whitespace-pre-wrap max-h-96 overflow-y-auto scrollbar-hide">
-                      {aiResponse}
+                {/* Stint Drag slots track */}
+                {selectedCar ? (
+                  <div className="flex items-center relative py-0.5">
+                    <div className="w-24 shrink-0 pr-2">
+                      <span className="text-[9px] font-black text-white tracking-widest flex items-center gap-1.5 uppercase leading-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
+                        #{selectedCar.number} {selectedCar.name.split(" ").slice(-1)[0]}
+                      </span>
                     </div>
+
+                    <div className="flex-1 grid grid-cols-4 gap-2 relative bg-[#0b0f14]/80 border border-[#1c2430] p-1 h-12 rounded-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
+                      {activeStints.map((stint, stintIdx) => {
+                        const driver = drivers.find(d => d.id === stint.driverId);
+                        
+                        // Contextual Highlights: Dim stints if they do not match driver selection filter
+                        const isDimmed = selectedRosterDriverId && stint.driverId !== selectedRosterDriverId;
+                        const isHighlighted = selectedRosterDriverId && stint.driverId === selectedRosterDriverId;
+                        const isHovered = hoveredStintIndex === stintIdx;
+
+                        return (
+                          <div
+                            key={stint.id}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              const drvId = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("driverId");
+                              if (drvId) handleStintDriverDrop(stintIdx, drvId);
+                            }}
+                            onClick={() => {
+                              // Click to cycle drivers for easy non-drag touchscreen use
+                              if (drivers.length === 0) return;
+                              const currentDriverIdx = drivers.findIndex(d => d.id === stint.driverId);
+                              let nextDriverId = "";
+                              if (stint.driverId === "") {
+                                nextDriverId = drivers[0].id;
+                              } else if (currentDriverIdx === drivers.length - 1) {
+                                nextDriverId = ""; // empty slot
+                              } else {
+                                nextDriverId = drivers[currentDriverIdx + 1].id;
+                              }
+                              handleStintDriverDrop(stintIdx, nextDriverId);
+                            }}
+                            onMouseEnter={() => setHoveredStintIndex(stintIdx)}
+                            onMouseLeave={() => setHoveredStintIndex(null)}
+                            className={`h-full rounded-none border relative flex flex-col justify-center items-center px-1.5 select-none overflow-hidden transition-all duration-150 group/slot cursor-pointer ${
+                              driver 
+                                ? "bg-gradient-to-b from-[#11161d] to-[#0b0f14] shadow-md" 
+                                : "bg-[#05070a] border-dashed border-[#1c2430] hover:bg-[#11161d]/40"
+                            } ${isDimmed ? "opacity-25" : "opacity-100"} ${
+                              isHighlighted ? "ring-1 ring-[#FFB800]" : ""
+                            } ${isHovered ? "brightness-125" : ""}`}
+                            style={{
+                              borderColor: driver ? driver.color : "#1C2430"
+                            }}
+                            title={driver ? `Driver: ${driver.name}\n${stint.note}. Hover to highlight fuel curve. Click to cycle drivers.` : "Drag driver here or click to assign."}
+                          >
+                            {driver ? (
+                              <div className="flex flex-col items-center justify-center pointer-events-none w-full h-full relative">
+                                <span 
+                                  className="absolute top-0 inset-x-0 h-[2px] block pointer-events-none" 
+                                  style={{ backgroundColor: driver.color }}
+                                />
+                                <div className="text-[9px] font-mono font-black tracking-widest text-[#E2E4E8] uppercase text-center mt-0.5 font-rajdhani pointer-events-none">
+                                  {driver.shortName}
+                                </div>
+                                <div className="text-[7px] font-bold text-[#7a828c] uppercase tracking-wider mt-0.5 text-center truncate w-full font-rajdhani pointer-events-none">
+                                  {stint.note || "Scheduled"}
+                                </div>
+
+                                {/* Pit Window overlay warning */}
+                                <div className="absolute -right-1.5 inset-y-0 flex items-center z-20 pointer-events-none">
+                                  <div className="w-[3px] h-3 bg-[#FF4D4D] rounded-none shadow-[0_0_6px_#FF4D4D]" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-center select-none py-0.5 pointer-events-none w-full h-full">
+                                <span className="text-[6.5px] font-black text-[#7a828c]/65 uppercase tracking-wider block font-rajdhani pointer-events-none">
+                                  DROP DRIVER
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-xs text-[#7a828c] italic uppercase font-rajdhani">
+                    Select a car from the left database to schedule stints
+                  </div>
+                )}
+
+                {/* Layer 2: Tyre Compound Track */}
+                <div className="flex items-center relative py-0.5">
+                  <div className="w-24 shrink-0 pr-2">
+                    <span className="text-[7px] font-bold text-[#7a828c] tracking-widest uppercase font-rajdhani">
+                      TYRE COMPOUND
+                    </span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-4 gap-2 h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] select-none text-[6.5px]">
+                    <div className={`border-r border-[#1c2430] font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                      tyreSoftAllowed ? "bg-[#FF4D4D]/25 text-[#FF4D4D]" : "bg-black/40 text-[#7a828c] line-through decoration-red-500/50"
+                    }`}>
+                      SOFT (S1) {!tyreSoftAllowed && "LOCKED"}
+                    </div>
+                    <div className={`border-r border-[#1c2430] font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                      tyreMediumAllowed ? "bg-[#FFB800]/25 text-[#FFB800]" : "bg-black/40 text-[#7a828c] line-through decoration-amber-500/50"
+                    }`}>
+                      MEDIUM (S2) {!tyreMediumAllowed && "LOCKED"}
+                    </div>
+                    <div className={`border-r border-[#1c2430] font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                      tyreHardAllowed ? "bg-[#E2E4E8]/15 text-[#E2E4E8]/70" : "bg-black/40 text-[#7a828c] line-through decoration-white/50"
+                    }`}>
+                      HARD (S3) {!tyreHardAllowed && "LOCKED"}
+                    </div>
+                    <div className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                      tyreWetAllowed ? "bg-[#3B82F6]/25 text-[#3B82F6]" : "bg-black/40 text-[#7a828c] line-through decoration-blue-500/50"
+                    }`}>
+                      WET (S4) {!tyreWetAllowed && "LOCKED"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Layer 3: Fuel Target & Legality Track */}
+                <div className="flex items-center relative py-0.5">
+                  <div className="w-24 shrink-0 pr-2">
+                    <span className="text-[7px] font-bold text-[#7a828c] tracking-widest uppercase font-rajdhani">
+                      FUEL & PIT WINDOW
+                    </span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-4 gap-2 h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px]">
+                    <div className="border-r border-[#1c2430] flex items-center justify-between px-1.5">
+                      <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span><span className="text-white">{zoomLevel === "24h" ? "2.65L" : "2.80L"}</span>
+                    </div>
+                    <div className="border-r border-[#1c2430] flex items-center justify-between px-1.5 bg-[#FF4D4D]/5">
+                      <span className="text-[#FF4D4D] font-rajdhani">PIT_WINDOW</span><span className="text-white">LAP {zoomLevel === "24h" ? "42" : "45"}</span>
+                    </div>
+                    <div className="border-r border-[#1c2430] flex items-center justify-between px-1.5">
+                      <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span><span className="text-white">2.82L</span>
+                    </div>
+                    <div className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5">
+                      <span className="text-[#FF4D4D] font-rajdhani">PIT_LEGAL</span><span className="text-white">LAP 180</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Layer 4: FCY / Safety Car Caution Risk */}
+                <div className={`flex items-center relative py-0.5 transition-all duration-200 ${focusMode === "fcy" ? "bg-yellow-500/5 ring-1 ring-yellow-500/30" : ""}`}>
+                  <div className="w-24 shrink-0 pr-2">
+                    <span className={`text-[7px] font-bold tracking-widest uppercase font-rajdhani transition-colors ${focusMode === "fcy" ? "text-[#FFB800]" : "text-[#7a828c]"}`}>
+                      CAUTION FCY %
+                    </span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-4 gap-2 h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px]">
+                    <div className="border-r border-[#1c2430] bg-orange-500/10 flex items-center justify-center font-bold text-orange-400 tracking-wider font-rajdhani">
+                      FCY RISK: 18% (LOW)
+                    </div>
+                    <div className={`border-r border-[#1c2430] bg-red-500/20 flex items-center justify-center font-bold text-red-400 tracking-wider font-rajdhani ${focusMode === "fcy" ? "animate-pulse border-red-500" : ""}`}>
+                      FCY RISK: 75% (CRITICAL)
+                    </div>
+                    <div className="border-r border-[#1c2430] bg-yellow-500/15 flex items-center justify-center font-bold text-[#FFB800] tracking-wider font-rajdhani">
+                      FCY RISK: 40% (MEDIUM)
+                    </div>
+                    <div className="bg-emerald-500/5 flex items-center justify-center font-bold text-[#00D17F] tracking-wider font-rajdhani">
+                      FCY RISK: 8% (NOMINAL)
+                    </div>
+                  </div>
+                </div>
+
+                {/* Layer 5: Weather Environment Rail */}
+                <div className="flex items-center relative py-0.5">
+                  <div className="w-24 shrink-0 pr-2">
+                    <span className="text-[7px] font-bold text-[#7a828c] tracking-widest uppercase font-rajdhani">
+                      MET WEATHER
+                    </span>
+                  </div>
+                  <div className={`flex-1 grid grid-cols-4 gap-2 transition-all duration-300 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] ${focusMode === "wet" ? "h-10" : "h-4"}`}>
+                    <div className="border-r border-[#1c2430] text-[#f59e0b] bg-[#f59e0b]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold">
+                      <span>100% DRY / SUNNY</span>
+                      {focusMode === "wet" && <span className="text-[5px] text-[#7a828c] mt-0.5">SLICK WINDOW</span>}
+                    </div>
+                    <div className="border-r border-[#1c2430] text-[#60a5fa] bg-[#60a5fa]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold">
+                      <span>40% DAMP OVERCAST</span>
+                      {focusMode === "wet" && <span className="text-[5px] text-[#60a5fa] mt-0.5">SLICK CHASSIS OPTIMAL</span>}
+                    </div>
+                    <div className="border-r border-[#1c2430] text-[#94a3b8] bg-[#94a3b8]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold">
+                      <span>65% WET TRANSITION</span>
+                      {focusMode === "wet" && <span className="text-[5px] text-[#94a3b8] mt-0.5">CROSSOVER IN 4 LAPS</span>}
+                    </div>
+                    <div className="text-blue-400 bg-blue-500/10 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold animate-pulse">
+                      <span>80% WET STORM WARNING</span>
+                      {focusMode === "wet" && <span className="text-[5px] text-blue-300 mt-0.5">HEAVY WET TYRES</span>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rival Strategy Ghosting Track */}
+                <div className="flex items-center relative py-0.5 border-t border-[#1c2430]/25 pt-1.5 mt-1.5">
+                  <div className="w-24 shrink-0 pr-2">
+                    <span className="text-[7px] font-bold text-[#7a828c]/60 tracking-widest uppercase font-rajdhani flex items-center gap-1.5">
+                      <span className="w-1 h-1 bg-[#7a828c] opacity-50" />
+                      RIVAL GHOST
+                    </span>
+                  </div>
+                  <div className="flex-1 grid grid-cols-4 gap-2 h-6 rounded-none border border-dashed border-[#1c2430]/65 bg-[#05070a]/20 p-[1px] opacity-60 text-[6.5px]">
+                    <div className="border-r border-[#1c2430]/25 flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight">
+                      <span className="font-bold text-white uppercase text-[6px] font-rajdhani">#12 BMW HYBRID</span>
+                      <span className="font-mono text-[5.5px]">PIT WINDOW: LAP 42-48</span>
+                    </div>
+                    <div className="border-r border-[#1c2430]/25 flex flex-col justify-center px-1.5 bg-yellow-500/5 text-[#FFB800]/70 leading-tight">
+                      <span className="font-bold uppercase text-[6px] font-rajdhani">UNDERCUT PROJECTION</span>
+                      <span className="font-mono text-[5.5px]">CHANCE: 64% (HIGH)</span>
+                    </div>
+                    <div className="border-r border-[#1c2430]/25 flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight">
+                      <span className="font-bold text-white uppercase text-[6px] font-rajdhani">#3 CADILLAC WTR</span>
+                      <span className="font-mono text-[5.5px]">FUEL OFFSET: -1.2 LAPS</span>
+                    </div>
+                    <div className="flex flex-col justify-center px-1.5 bg-red-500/5 text-[#FF4D4D]/70 leading-tight">
+                      <span className="font-bold uppercase text-[6px] font-rajdhani">TRAFFIC CONVERGENCE</span>
+                      <span className="font-mono text-[5.5px]">LAP 195 · SECTOR 2</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          {/* SECTION: STRATEGIC FUEL & TYRE DECAY TELEMETRY GRAPH - Edge-to-edge layout */}
+          <div className="border-b border-[#1c2430] bg-[#05070a] p-2.5 h-[160px] flex-none flex flex-col relative select-none rounded-none">
+            
+            {/* Strategy selector tabs */}
+            <div className="flex items-center justify-between border-b border-[#1c2430]/75 pb-1.5 mb-2.5 shrink-0 select-none">
+              <div className="flex bg-[#0b0f14] border border-[#1c2430] rounded-none p-0.5">
+                {[
+                  { id: "fuel", label: "FUEL LEVEL (L)", color: "text-[#3B82F6]" },
+                  { id: "tyre", label: "TYRE LIFE (%)", color: "text-[#00D17F]" },
+                  { id: "temp", label: "TRACK TEMP (°C)", color: "text-[#FFB800]" },
+                  { id: "delta", label: "DELTA TO LEADER (S)", color: "text-[#FF4D4D]" },
+                ].map((t) => {
+                  const isActive = graphTab === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setGraphTab(t.id as any)}
+                      className={`px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest cursor-pointer transition-all rounded-none border-0 ${
+                        isActive 
+                          ? "bg-[#1c2430] text-white" 
+                          : "text-[#7a828c] hover:text-[#E2E4E8] hover:bg-[#11161d]/50"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <span className="text-[7px] font-black tracking-widest text-[#7a828c] uppercase">
+                STRATEGIC SIMULATOR CURVES
+              </span>
+            </div>
+
+            {/* SVG Interactive Telemetry Graph - Shared borders */}
+            <div className="flex-1 min-h-0 relative bg-[#030508] border border-[#1c2430] rounded-none p-2 flex flex-col justify-between shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]">
+              
+              <div className="absolute inset-0 p-2.5 pointer-events-none select-none flex flex-col justify-between font-mono text-[7px] text-[#7a828c]/25 uppercase tracking-widest border-t border-[#1c2430]/5">
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>100% / MAX</span><span>ESTIMATED DOCK</span></div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>75%</span><span>STINT LAP LIMIT</span></div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>50%</span><span>PIT RECHARGE</span></div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>25% / MIN</span><span>CRITICAL LIMIT</span></div>
+                <div className="flex justify-between font-black text-[#7a828c]/40"><span>T+0:00</span><span>1:00</span><span>2:00</span><span>3:00</span><span>4:00</span><span>5:00</span><span>FINISH</span></div>
+              </div>
+
+              {/* Dynamic SVG Strategy Graph curve rendering (Contextual Highlight Expansion Sync) */}
+              <div className="w-full h-full relative z-10 pt-1 pb-5 px-1">
+                <svg viewBox="0 0 600 120" width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full block overflow-visible">
+                  
+                  {/* Grid Lines */}
+                  <line x1="0" y1="30" x2="600" y2="30" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1="0" y1="60" x2="600" y2="60" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1="0" y1="90" x2="600" y2="90" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  
+                  <line x1="100" y1="0" x2="100" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1="200" y1="0" x2="200" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1="300" y1="0" x2="300" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1="400" y1="0" x2="400" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1="500" y1="0" x2="500" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+
+                  {graphTab === "fuel" && (
+                    <>
+                      {/* Segment 1 */}
+                      <path
+                        d="M 5,20 Q 75,70 138,100"
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth={hoveredStintIndex === 0 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 0 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+                      {/* Segment 2 */}
+                      <path
+                        d="M 140,20 Q 210,65 273,95"
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth={hoveredStintIndex === 1 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 1 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+                      {/* Segment 3 */}
+                      <path
+                        d="M 275,20 Q 345,72 408,102"
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth={hoveredStintIndex === 2 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 2 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+                      {/* Segment 4 */}
+                      <path
+                        d="M 410,20 Q 500,55 595,78"
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth={hoveredStintIndex === 3 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 3 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+
+                      {/* Verticals pit stops */}
+                      <line x1="138" y1="100" x2="140" y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+                      <line x1="273" y1="95" x2="275" y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+                      <line x1="408" y1="102" x2="410" y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+
+                      {/* Pit stop markers */}
+                      <circle
+                        cx="138"
+                        cy="100"
+                        r={hoveredStintIndex === 0 ? "5" : "3"}
+                        fill="#FFB800"
+                        onMouseEnter={() => setHoveredStintIndex(0)}
+                        onMouseLeave={() => setHoveredStintIndex(null)}
+                        className="cursor-pointer transition-all duration-150"
+                      />
+                      <circle
+                        cx="273"
+                        cy="95"
+                        r={hoveredStintIndex === 1 ? "5" : "3"}
+                        fill="#FFB800"
+                        onMouseEnter={() => setHoveredStintIndex(1)}
+                        onMouseLeave={() => setHoveredStintIndex(null)}
+                        className="cursor-pointer transition-all duration-150"
+                      />
+                      <circle
+                        cx="408"
+                        cy="102"
+                        r={hoveredStintIndex === 2 ? "5" : "3"}
+                        fill="#FFB800"
+                        onMouseEnter={() => setHoveredStintIndex(2)}
+                        onMouseLeave={() => setHoveredStintIndex(null)}
+                        className="cursor-pointer transition-all duration-150"
+                      />
+                      <text x="138" y="111" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(0)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
+                      <text x="273" y="106" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(1)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
+                      <text x="408" y="113" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(2)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
+                      <text x="590" y="72" fill="#3B82F6" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">24.6 L</text>
+                    </>
                   )}
 
-                  {!aiResponse && !aiLoading && (
-                    <div className="text-center py-6 text-xs text-muted-foreground italic opacity-50 border border-dashed border-border/40 rounded-2xl">
-                      Awaiting timeline schedule briefing trigger...
-                    </div>
+                  {graphTab === "tyre" && (
+                    <>
+                      {/* Segment 1 */}
+                      <path
+                        d="M 5,30 C 40,32 90,65 138,85"
+                        fill="none"
+                        stroke="#00D17F"
+                        strokeWidth={hoveredStintIndex === 0 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 0 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+                      {/* Segment 2 */}
+                      <path
+                        d="M 140,30 C 175,32 225,60 273,78"
+                        fill="none"
+                        stroke="#00D17F"
+                        strokeWidth={hoveredStintIndex === 1 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 1 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+                      {/* Segment 3 */}
+                      <path
+                        d="M 275,30 C 310,32 360,70 408,90"
+                        fill="none"
+                        stroke="#00D17F"
+                        strokeWidth={hoveredStintIndex === 2 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 2 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+                      {/* Segment 4 */}
+                      <path
+                        d="M 410,30 C 460,32 530,55 595,72"
+                        fill="none"
+                        stroke="#00D17F"
+                        strokeWidth={hoveredStintIndex === 3 ? "3" : "1.8"}
+                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 3 ? "0.25" : "1"}
+                        className="transition-all duration-150"
+                      />
+
+                      <circle cx="138" cy="85" r="3" fill="#00D17F" />
+                      <circle cx="273" cy="78" r="3" fill="#00D17F" />
+                      <circle cx="408" cy="90" r="3" fill="#00D17F" />
+                      <text x="590" y="65" fill="#00D17F" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">52% LIFE</text>
+                    </>
                   )}
+
+                  {graphTab === "temp" && (
+                    <>
+                      {/* Track temp trace */}
+                      <path
+                        d="M 5,80 Q 150,40 300,55 T 600,90"
+                        fill="none"
+                        stroke="#FFB800"
+                        strokeWidth="1.8"
+                        className="drop-shadow-[0_0_4px_rgba(255,184,0,0.3)]"
+                      />
+                      <text x="590" y="102" fill="#FFB800" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">28.4°C</text>
+                    </>
+                  )}
+
+                  {graphTab === "delta" && (
+                    <>
+                      {/* Delta to leader trace */}
+                      <path
+                        d="M 5,50 Q 70,53 138,55 M 140,42 Q 205,45 273,46 M 275,35 Q 340,33 408,32 M 410,22 Q 500,16 595,12"
+                        fill="none"
+                        stroke="#FF4D4D"
+                        strokeWidth="1.8"
+                        className="drop-shadow-[0_0_4px_rgba(255,77,77,0.3)]"
+                      />
+                      <text x="590" y="24" fill="#FF4D4D" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">-12.4s (LEAD)</text>
+                    </>
+                  )}
+                </svg>
+              </div>
+            </div>
+
+          </div>
+
+          {/* SECTION: TACTICAL TIMING SHEET SPREADSHEET MATRIX */}
+          <div className="bg-[#05070a] border-t border-[#1c2430] select-none rounded-none overflow-x-auto shrink-0 font-mono">
+            <table className="w-full text-left font-mono text-[8px] border-collapse">
+              <thead>
+                <tr className="bg-[#11161d] border-b border-[#1c2430] text-[#7a828c] font-rajdhani text-[8.5px] font-bold tracking-wider uppercase">
+                  <th className="px-2 py-1">SYS_ID</th>
+                  <th className="px-2 py-1">TACTICAL SYSTEM OPERATIONAL CRITERION</th>
+                  <th className="px-2 py-1 text-right">ACTIVE METRIC</th>
+                  <th className="px-2 py-1 text-right">OFFSET DELTA</th>
+                  <th className="px-2 py-1 text-right">TARGET LIMIT</th>
+                  <th className="px-2 py-1 text-center">COMPLIANCE</th>
+                  <th className="px-2 py-1">TIMING STATUS COMMENTARY</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1c2430]/35">
+                <tr className="hover:bg-[#11161d]/40 transition-colors">
+                  <td className="px-2 py-0.8 text-[#7a828c]">STRAT_01</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">RACE PACE PROJECTION TARGET</td>
+                  <td className="px-2 py-0.8 text-right font-bold">1:45.850</td>
+                  <td className="px-2 py-0.8 text-right text-red-400 font-bold">+0.120s</td>
+                  <td className="px-2 py-0.8 text-right text-[#7a828c]">1:45.730</td>
+                  <td className="px-2 py-0.8 text-center"><span className="text-[#FFB800] bg-[#FFB800]/5 border border-[#FFB800]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">WARNING</span></td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">S1 (LA SOURCE) EXCEEDING DELTA WINDOW</td>
+                </tr>
+                <tr className="bg-[#0b0f14]/40 hover:bg-[#11161d]/40 transition-colors">
+                  <td className="px-2 py-0.8 text-[#7a828c]">STRAT_02</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">FUEL BURN EFFICIENCY RATIO</td>
+                  <td className="px-2 py-0.8 text-right font-bold">2.85 L/LAP</td>
+                  <td className="px-2 py-0.8 text-right text-[#00D17F] font-bold">-0.05 L/LAP</td>
+                  <td className="px-2 py-0.8 text-right text-[#7a828c]">2.80 L/LAP</td>
+                  <td className="px-2 py-0.8 text-center"><span className="text-[#00D17F] bg-[#00D17F]/5 border border-[#00D17F]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">OPTIMAL</span></td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">TARGET COMPLIANT FOR 215 LAP STINT LIMIT</td>
+                </tr>
+                <tr className="hover:bg-[#11161d]/40 transition-colors">
+                  <td className="px-2 py-0.8 text-[#7a828c]">STRAT_03</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">POTENTIAL OVERCUT STRATEGY GAIN</td>
+                  <td className="px-2 py-0.8 text-right font-bold text-[#00D17F]">+18.650s</td>
+                  <td className="px-2 py-0.8 text-right text-[#00D17F] font-bold">+3.420s</td>
+                  <td className="px-2 py-0.8 text-right text-[#7a828c]">+15.230s</td>
+                  <td className="px-2 py-0.8 text-center"><span className="text-[#00D17F] bg-[#00D17F]/5 border border-[#00D17F]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">OPTIMAL</span></td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">GREEN CAUTION WINDOW PREDICTION ALIGNED</td>
+                </tr>
+                <tr className="bg-[#0b0f14]/40 hover:bg-[#11161d]/40 transition-colors">
+                  <td className="px-2 py-0.8 text-[#7a828c]">STRAT_04</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">TYRE WEAR RATIO (FRONT-LEFT)</td>
+                  <td className="px-2 py-0.8 text-right font-bold">1.65 %/LAP</td>
+                  <td className="px-2 py-0.8 text-right text-red-400 font-bold">+0.15 %/LAP</td>
+                  <td className="px-2 py-0.8 text-right text-[#7a828c]">1.50 %/LAP</td>
+                  <td className="px-2 py-0.8 text-center"><span className="text-[#FF4D4D] bg-[#FF4D4D]/5 border border-red-500/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">CRITICAL</span></td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">DOUBLE STINT NOT ADVISED · HIGH DEGRADATION</td>
+                </tr>
+                <tr className="hover:bg-[#11161d]/40 transition-colors">
+                  <td className="px-2 py-0.8 text-[#7a828c]">STRAT_05</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">NEXT MANDATORY PIT STOP OPEN</td>
+                  <td className="px-2 py-0.8 text-right font-bold">LAP 91-97</td>
+                  <td className="px-2 py-0.8 text-right text-white font-bold">-1.5 LAPS</td>
+                  <td className="px-2 py-0.8 text-right text-[#7a828c]">LAP 93</td>
+                  <td className="px-2 py-0.8 text-center"><span className="text-[#3B82F6] bg-[#3B82F6]/5 border border-[#3B82F6]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">LEGAL</span></td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">RECHARGE ALIGNED WITH PIT WINDOW 2</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* COLUMN 3: LIVE PIT WALL TELEMETRY HUD MONITOR & SPARKLINES (span 1) - Shared Borders */}
+        <section className="col-span-1 bg-[#0b0f14] flex flex-col justify-start select-none overflow-hidden h-full rounded-none">
+          
+          {/* ACTIVE CHANNEL TIMING MONITOR HUD */}
+          <div className="border-b border-[#1c2430] bg-[#05070a] rounded-none font-mono text-[8px] overflow-hidden select-none">
+            
+            {/* Contiguous Status Strip */}
+            <div className="bg-[#11161d] border-b border-[#1c2430] px-2.5 py-1.5 flex items-center justify-between font-rajdhani text-[9.5px] font-bold text-white tracking-wider">
+              <div className="flex items-center gap-1.5">
+                <span className={`size-1.5 rounded-full ${teamConnected ? "bg-[#00D17F] shadow-[0_0_6px_#00D17F]" : "bg-red-500 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.7)]"}`} />
+                <span>ACTIVE MONITOR CHANNEL HUD</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTeamCodePanel(true)}
+                  className={`text-[8px] border px-1.5 py-0.5 uppercase tracking-widest font-mono font-bold transition-all rounded-none cursor-pointer ${
+                    teamCode 
+                      ? "text-[#00D17F] bg-[#00D17F]/10 border-[#00D17F]/30 hover:bg-[#00D17F]/20" 
+                      : "text-[#3B82F6] bg-[#3B82F6]/10 border-[#3B82F6]/30 hover:bg-[#3B82F6]/20"
+                  }`}
+                >
+                  {teamCode ? `🔗 ${teamCode}` : "+ JOIN TEAM"}
+                </button>
+                {activeTeamTelemetry && (
+                  <span className="text-red-400 text-[8px] bg-red-500/10 border border-red-500/25 px-1 py-0.5 uppercase font-mono tracking-widest animate-pulse font-sans font-bold">LIVE</span>
+                )}
+              </div>
+            </div>
+
+            {/* High-density metadata strip */}
+            <div className="p-2 border-b border-[#1c2430]/65 space-y-1 font-sans text-[#7a828c] text-[8.5px] uppercase">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[#E2E4E8] font-black text-[10px]">
+                  {activeTeamTelemetry ? activeTeamTelemetry.driverName : "L. VANTHOOR"}
+                </span>
+                <span className="font-mono text-white bg-[#11161d] border border-[#1c2430] px-1 rounded-none text-[8.5px]">
+                  {activeTeamTelemetry && activeTeamTelemetry.carOperationalState?.sequenceId 
+                    ? `LAP ${activeTeamTelemetry.carOperationalState.sequenceId}` 
+                    : "LAP 68"}
+                </span>
+              </div>
+              <div className="flex justify-between font-mono text-[7px] tracking-wider">
+                <span>{selectedCar ? selectedCar.name.toUpperCase() : "PORSCHE 963 LMDH"}</span>
+                <span className="text-[#3B82F6] font-sans font-bold">WEC {selectedCar ? selectedCar.carClass : "GTP"} CLASS</span>
+              </div>
+            </div>
+
+            {/* Monospace Telemetry Grid */}
+            <div className="grid grid-cols-3 gap-0 border-b border-[#1c2430] bg-[#0b0f14] text-center font-mono">
+              <div className="p-1 border-r border-[#1c2430]">
+                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">SPEED</span>
+                <span className="text-[9.5px] font-black text-white block mt-0.5">
+                  {activeTeamTelemetry ? activeTeamTelemetry.speedKph : (t.connected ? t.speedKph : 243)}{" "}
+                  <span className="text-[6.5px] text-[#3B82F6]">KPH</span>
+                </span>
+              </div>
+              <div className="p-1 border-r border-[#1c2430]">
+                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">GEAR</span>
+                <span className="text-[9.5px] font-black text-[#FFB800] block mt-0.5">
+                  {activeTeamTelemetry 
+                    ? activeTeamTelemetry.gear === 0 ? "N" : activeTeamTelemetry.gear === -1 ? "R" : activeTeamTelemetry.gear 
+                    : (t.connected ? t.gear : 6)}
+                </span>
+              </div>
+              <div className="p-1">
+                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">RPM</span>
+                <span className="text-[9.5px] font-black text-red-400 block mt-0.5">
+                  {activeTeamTelemetry ? activeTeamTelemetry.rpm : (t.connected ? t.rpm : 7850)}
+                </span>
+              </div>
+            </div>
+
+            {/* Throttle & Brake visual telemetry input bars */}
+            <div className="space-y-1.5 p-1.5 bg-[#05070a] border-b border-[#1c2430] rounded-none font-mono text-[8px]">
+              {/* Throttle */}
+              <div>
+                <div className="flex justify-between mb-0.5 leading-none">
+                  <span className="text-[#00D17F] font-bold text-[7.5px]">THROTTLE</span>
+                  <span className="text-white font-bold text-[7.5px]">{t.connected ? `${(t.throttle * 100).toFixed(0)}%` : "78%"}</span>
+                </div>
+                <div className="h-1 bg-[#11161d] rounded-none overflow-hidden border border-[#1c2430]">
+                  <div className="h-full bg-[#00D17F] rounded-none transition-all" style={{ width: t.connected ? `${t.throttle * 100}%` : "78%" }} />
                 </div>
               </div>
 
-              <div className="mt-6 text-[10px] text-muted-foreground leading-relaxed font-sans shrink-0 border-t border-border/20 pt-4">
-                * Combines weather fronts, incident metrics, and driver stint logs to construct advanced racing recommendations.
+              {/* Brake */}
+              <div>
+                <div className="flex justify-between mb-0.5 leading-none">
+                  <span className="text-[#FF4D4D] font-bold text-[7.5px]">BRAKE</span>
+                  <span className="text-white font-bold text-[7.5px]">{t.connected ? `${(t.brake * 100).toFixed(0)}%` : "12%"}</span>
+                </div>
+                <div className="h-1 bg-[#11161d] rounded-none overflow-hidden border border-[#1c2430]">
+                  <div className="h-full bg-[#FF4D4D] rounded-none transition-all" style={{ width: t.connected ? `${t.brake * 100}%` : "12%" }} />
+                </div>
               </div>
-            </section>
+            </div>
+
+            {/* Sector Splits Tabular Row */}
+            <div className="p-1.5 space-y-1 border-b border-[#1c2430] bg-[#05070a]/75 text-[8px]">
+              <div className="flex justify-between font-bold border-b border-[#1c2430]/30 pb-0.5 mb-1 text-[7px] text-[#7a828c] tracking-wider uppercase font-rajdhani">
+                <span>TRACK SECTOR</span><span>DURATION</span><span>DELTA</span>
+              </div>
+              <div className="flex justify-between font-mono">
+                <span className="text-[#7a828c]">S1 (LA SOURCE)</span>
+                <span className="text-white font-bold">28.451</span>
+                <span className="text-red-400 font-bold font-sans">+0.156</span>
+              </div>
+              <div className="flex justify-between font-mono">
+                <span className="text-[#7a828c]">S2 (LES COMBES)</span>
+                <span className="text-white font-bold">33.782</span>
+                <span className="text-[#00D17F] font-bold font-sans">-0.203</span>
+              </div>
+              <div className="flex justify-between font-mono">
+                <span className="text-[#7a828c]">S3 (BLANCHIMONT)</span>
+                <span className="text-white font-bold">42.779</span>
+                <span className="text-red-400 font-bold font-sans">+0.089</span>
+              </div>
+            </div>
+
+            {/* Lap Times Data Strip */}
+            <div className="p-1.5 font-mono text-[8px] space-y-0.5 bg-[#05070a]">
+              <div className="flex justify-between">
+                <span className="text-[#7a828c] font-rajdhani text-[8.5px]">LAST LAP TIME:</span>
+                <span className="text-white font-bold">
+                  {activeTeamTelemetry ? activeTeamTelemetry.lastLap : "1:46.012"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#7a828c] font-rajdhani text-[8.5px]">BEST LAP TIME:</span>
+                <span className="text-[#00D17F] font-bold">
+                  {activeTeamTelemetry ? activeTeamTelemetry.bestLap : "1:45.234"}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-[#1c2430]/30 pt-0.5 mt-0.5">
+                <span className="text-[#7a828c] font-rajdhani text-[8.5px]">LEADER DELTA:</span>
+                <span className="text-red-400 font-bold font-mono tracking-widest italic">
+                  {activeTeamTelemetry && activeTeamTelemetry.deltaSec 
+                    ? `+${activeTeamTelemetry.deltaSec.toFixed(3)}s` 
+                    : "+0.842s"}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Animated SVG Spa GP Track Circuit Minimap - Tactical Overlay System */}
+          <div className="p-2 bg-[#05070a] border-b border-[#1c2430] rounded-none flex flex-col items-center justify-center">
+            <div className="w-full flex items-center justify-between border-b border-[#1c2430]/35 pb-1 mb-1.5 text-[7.5px] font-bold text-[#7a828c] font-rajdhani">
+              <span className="uppercase">GP CIRCUIT TACTICAL MAP</span>
+              <span className="text-right text-[#FFB800] uppercase tracking-widest font-mono text-[6.5px]">TRAFFIC WINDOW: +4.2s (CLEAR)</span>
+            </div>
+            
+            <svg width="200" height="85" viewBox="0 0 260 110" className="overflow-visible select-none">
+              {/* Sector 1 Steel Path */}
+              <path
+                d="M 50,75 L 45,70 L 48,55 L 65,40 L 95,35"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              
+              {/* Sector 2 Highlighted Path */}
+              <path
+                d="M 95,35 L 140,35 L 175,45 L 195,58 L 220,60"
+                fill="none"
+                stroke="#334155"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Sector 3 Path */}
+              <path
+                d="M 220,60 L 235,55 L 250,68 L 240,80 L 225,82 L 205,75 L 175,95 L 155,90 L 125,75 L 105,80 L 80,72 L 65,85 Z"
+                fill="none"
+                stroke="#1e293b"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Main GPS Blue circuit tracing path (No glow effects, pure engineering line) */}
+              <path
+                d="M 50,75 L 45,70 L 48,55 L 65,40 L 95,35 L 140,35 L 175,45 L 195,58 L 220,60 L 235,55 L 250,68 L 240,80 L 225,82 L 205,75 L 175,95 L 155,90 L 125,75 L 105,80 L 80,72 L 65,85 Z"
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* TACTICAL OVERLAY: Pit lane merge zone (Dashed Red line) */}
+              <path
+                d="M 50,75 L 58,58 L 65,40"
+                fill="none"
+                stroke="#FF4D4D"
+                strokeWidth="2"
+                strokeDasharray="2 2"
+              />
+              
+              {/* TACTICAL OVERLAY: FCY Caution risk T7-T9 (Yellow alert block overlay) */}
+              <path
+                d="M 140,35 L 175,45 L 195,58"
+                fill="none"
+                stroke="#FFB800"
+                strokeWidth="3.5"
+                strokeDasharray="1 1"
+                opacity="0.8"
+              />
+
+              {/* Animated active vehicle position dot (No glow, precise solid GPS red tracker dot) */}
+              <circle r="3" fill="#FF4D4D">
+                <animateMotion
+                  path="M 50,75 L 45,70 L 48,55 L 65,40 L 95,35 L 140,35 L 175,45 L 195,58 L 220,60 L 235,55 L 250,68 L 240,80 L 225,82 L 205,75 L 175,95 L 155,90 L 125,75 L 105,80 L 80,72 L 65,85 Z"
+                  dur="20s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+
+              {/* Monospace Checkpoints & Sector Tags */}
+              <text x="32" y="85" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">LA SOURCE (S1)</text>
+              <text x="32" y="48" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">EAU ROUGE</text>
+              <text x="110" y="27" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold" textAnchor="middle">KEMMEL STR.</text>
+              <text x="180" y="32" fill="#FFB800" fontSize="5.5" fontFamily="monospace" fontWeight="bold">LES COMBES (FCY)</text>
+              <text x="245" y="50" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">POUHON (S2)</text>
+              <text x="188" y="103" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">BLANCHIMONT</text>
+              <text x="100" y="93" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">BUS STOP (S3)</text>
+              
+              {/* Pit Exit Merge tag */}
+              <text x="70" y="60" fill="#FF4D4D" fontSize="5" fontFamily="monospace" fontWeight="bold">PIT_MERGE</text>
+            </svg>
+          </div>
+
+          {/* Live Channels Sparklines trace list */}
+          <div className="p-2 bg-[#05070a] rounded-none font-mono text-[8px] space-y-2 flex-1 overflow-y-auto scrollbar-hide">
+            <span className="text-[7.5px] text-[#7a828c] uppercase font-bold border-b border-[#1c2430]/25 pb-1 mb-1 block font-rajdhani">
+              LIVE CHANNELS STREAM TRACES
+            </span>
+            
+            {/* Speed trace */}
+            <div className="flex items-center justify-between">
+              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">SPEED</span>
+              <Sparkline data={sparkData.speed} color="#3B82F6" />
+              <span className="text-white font-bold font-mono w-14 text-right">
+                {activeTeamTelemetry ? activeTeamTelemetry.speedKph : (t.connected ? t.speedKph : 243)} km/h
+              </span>
+            </div>
+
+            {/* Throttle trace */}
+            <div className="flex items-center justify-between">
+              <span className="text-[#00D17F] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">THROTTLE</span>
+              <Sparkline data={sparkData.throttle} color="#00D17F" />
+              <span className="text-white font-bold font-mono w-14 text-right">
+                {t.connected ? `${(t.throttle * 100).toFixed(0)}%` : "78%"}
+              </span>
+            </div>
+
+            {/* Brake trace */}
+            <div className="flex items-center justify-between">
+              <span className="text-[#FF4D4D] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">BRAKE</span>
+              <Sparkline data={sparkData.brake} color="#FF4D4D" />
+              <span className="text-white font-bold font-mono w-14 text-right">
+                {t.connected ? `${(t.brake * 100).toFixed(0)}%` : "12%"}
+              </span>
+            </div>
+
+            {/* RPM trace */}
+            <div className="flex items-center justify-between">
+              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">RPM</span>
+              <Sparkline data={sparkData.rpm} color="#FFB800" />
+              <span className="text-white font-bold font-mono w-14 text-right">
+                {activeTeamTelemetry ? activeTeamTelemetry.rpm : (t.connected ? t.rpm : 7850)} rpm
+              </span>
+            </div>
+
+            {/* Fuel trace */}
+            <div className="flex items-center justify-between">
+              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">FUEL</span>
+              <Sparkline data={sparkData.fuel} color="#8B5CF6" />
+              <span className="text-white font-bold font-mono w-14 text-right">
+                {activeTeamTelemetry ? activeTeamTelemetry.fuelRemainingL.toFixed(1) : (t.connected ? t.fuelRemainingL.toFixed(1) : "54.2")} L
+              </span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      {/* BOTTOM CONSOLE ROW GRID (Snapping edge-to-edge - span 5 columns) - Shared borders */}
+      <footer className="grid grid-cols-5 gap-0 bg-[#0b0f14] relative z-10 shrink-0 select-none rounded-none">
+        
+        {/* Widget 6: TEAM MET WEATHER STATUS */}
+        <div className="p-2.5 border-r border-[#1c2430] font-mono text-[8.5px] space-y-1.5 flex flex-col justify-between rounded-none">
+          <span className="text-[7.5px] font-black text-[#7a828c] uppercase tracking-widest border-b border-[#1c2430]/40 pb-0.5 flex items-center gap-1.5">
+            <span className="size-1 bg-[#00D17F] rounded-full" />
+            6 TEAM STATUS
+          </span>
+
+          <div className="grid grid-cols-2 gap-1.5 text-[#7a828c] pt-0.5">
+            <div>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">TRACK TEMP</span>
+              <span className="text-white font-bold font-mono text-[10px]">28.4 °C</span>
+            </div>
+            <div>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">AIR TEMP</span>
+              <span className="text-white font-bold font-mono text-[10px]">22.1 °C</span>
+            </div>
+            <div>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">HUMIDITY</span>
+              <span className="text-white font-bold font-mono text-[10px]">45%</span>
+            </div>
+            <div>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">WIND VEL</span>
+              <span className="text-white font-bold font-mono text-[10px]">6.2 km/h</span>
+            </div>
+          </div>
+          
+          <div className="pt-1.5 border-t border-[#1c2430]/40 flex justify-between items-center text-[7px] font-bold">
+            <span className="text-[#7a828c] uppercase">TRACK GRIP</span>
+            <span className="text-[#00D17F] font-black uppercase">HIGH</span>
           </div>
         </div>
-      </main>
 
-      {/* Dynamic Popups / Forms */}
+        {/* Widget: DRIVER ROSTER QUICK STATUS LIGHTS */}
+        <div className="p-2.5 border-r border-[#1c2430] font-mono text-[8.5px] flex flex-col justify-between rounded-none">
+          <span className="text-[7.5px] font-black text-[#7a828c] uppercase tracking-widest border-b border-[#1c2430]/40 pb-0.5">
+            DRIVER ROSTER QUICK STATUS
+          </span>
+
+          <div className="space-y-1 py-0.5">
+            {drivers.map(d => {
+              const indicator = 
+                d.status === "Driving" ? "bg-red-400" :
+                d.status === "Available" ? "bg-[#00D17F]" :
+                d.status === "In Garage" ? "bg-[#3B82F6]" : "bg-[#FFB800]";
+
+              return (
+                <div key={d.id} className="flex items-center justify-between text-[#E2E4E8] leading-none">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${indicator}`} />
+                    <span className="uppercase text-[8.5px]">{d.name}</span>
+                  </div>
+                  <span className="text-[#7a828c] text-[7.5px] uppercase">{d.status || "Available"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Widget: PROBABILISTIC FAILURE RISK & DEGRADATION MODEL */}
+        <div className="p-2.5 border-r border-[#1c2430] font-mono text-[8.5px] flex flex-col justify-between rounded-none">
+          <span className="text-[7.5px] font-black text-[#7a828c] uppercase tracking-widest border-b border-[#1c2430]/40 pb-0.5 font-rajdhani">
+            PROBABILISTIC FAILURE & RISK MODEL
+          </span>
+
+          <div className="flex items-center gap-3 py-0.5 flex-1 min-h-0">
+            {/* Inline Technical SVG side view blueprint vector layout */}
+            <svg width="80" height="30" viewBox="0 0 110 40" className="overflow-visible opacity-75 shrink-0">
+              <path
+                d="M 5,28 L 22,28 A 6,6 0 0,1 34,28 L 65,28 A 6,6 0 0,1 77,28 L 96,28 L 98,22 L 92,20 L 92,10 L 72,12 L 56,12 L 42,16 L 24,18 L 10,24 Z"
+                fill="none"
+                stroke="#00D17F"
+                strokeWidth="1.2"
+              />
+              <circle cx="28" cy="28" r="5" fill="none" stroke="#00D17F" strokeWidth="1" />
+              <circle cx="28" cy="28" r="2" fill="#00D17F" />
+              <circle cx="71" cy="28" r="5" fill="none" stroke="#00D17F" strokeWidth="1" />
+              <circle cx="71" cy="28" r="2" fill="#00D17F" />
+              {/* Rear Wing */}
+              <line x1="90" y1="10" x2="98" y2="10" stroke="#00D17F" strokeWidth="1.5" />
+              <line x1="94" y1="10" x2="94" y2="20" stroke="#00D17F" strokeWidth="0.8" />
+            </svg>
+
+            <div className="grid grid-cols-1 gap-x-0 gap-y-0.5 text-[7px] leading-none flex-1">
+              <div className="flex justify-between"><span>PUNCTURE PROB</span><span className="text-[#00D17F] font-bold">8.2% [NOMINAL]</span></div>
+              <div className="flex justify-between"><span>BRAKE THERMAL</span><span className="text-[#00D17F] font-bold">640°C [LIMIT 680]</span></div>
+              <div className="flex justify-between"><span>HYBRID REGEN DEFICIT</span><span className="text-white font-bold">-0.12 kW</span></div>
+              <div className="flex justify-between"><span>OVERHEAT COEFF</span><span className="text-[#00D17F] font-bold">0.14 [NOMINAL]</span></div>
+              <div className="flex justify-between"><span>TYRE SLIP LIMIT</span><span className="text-[#FFB800] font-bold">1.05 [WARNING]</span></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Widget: SCROLLING messages logs timing screen console */}
+        <div className="p-2.5 border-r border-[#1c2430] font-mono text-[8.5px] flex flex-col justify-between rounded-none">
+          <span className="text-[7.5px] font-black text-[#7a828c] uppercase tracking-widest border-b border-[#1c2430]/40 pb-0.5 font-rajdhani">
+            ENGINEERING MESSAGES LOG
+          </span>
+
+          <div className="space-y-0.5 py-0.5 max-h-12 overflow-y-auto scrollbar-hide text-[#7a828c] text-[7.5px] leading-none select-none">
+            <div
+              onClick={() => handleAnomalyClick("temp", 3)}
+              className="cursor-pointer hover:bg-[#11161d] hover:text-[#FFB800] p-0.5 transition-all flex justify-between"
+              title="Click to jump to Stint 4 Track Temp"
+            >
+              <span><span className="text-white">14:32:15</span> TRACK TEMP RISING +1.2°C</span>
+              <span className="text-[6px] border border-[#FFB800]/30 px-1 font-bold text-[#FFB800] rounded-none font-rajdhani">ANOMALY</span>
+            </div>
+            <div
+              onClick={() => handleAnomalyClick("pit", 1)}
+              className="cursor-pointer hover:bg-[#11161d] hover:text-[#3B82F6] p-0.5 transition-all flex justify-between"
+              title="Click to jump to Stint 2 Fuel curve"
+            >
+              <span><span className="text-[#3B82F6]">14:31:48</span> CAR #7 ENTERED PITS</span>
+              <span className="text-[6px] border border-[#3B82F6]/30 px-1 font-bold text-[#3B82F6] rounded-none font-rajdhani">PIT_BOX</span>
+            </div>
+            <div
+              onClick={() => handleAnomalyClick("caution", 2)}
+              className="cursor-pointer hover:bg-[#11161d] hover:text-[#FF4D4D] p-0.5 transition-all flex justify-between"
+              title="Click to jump to Stint 3 Delta timeline"
+            >
+              <span><span className="text-[#FFB800]">14:30:22</span> YELLOW FLAG SECTOR 2 T7</span>
+              <span className="text-[6px] border border-red-500/30 px-1 font-bold text-[#FF4D4D] rounded-none font-rajdhani">CAUTION</span>
+            </div>
+            <div
+              onClick={() => handleAnomalyClick("green", 0)}
+              className="cursor-pointer hover:bg-[#11161d] hover:text-[#00D17F] p-0.5 transition-all flex justify-between"
+              title="Click to jump to Stint 1 Tyre Life"
+            >
+              <span><span className="text-[#00D17F]">14:28:11</span> GREEN FLAG RESOLVED - SPA OK</span>
+              <span className="text-[6px] border border-[#00D17F]/30 px-1 font-bold text-[#00D17F] rounded-none font-rajdhani">RESOLVED</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Widget: RADIO AI COACH DIRECTIVE */}
+        <div className="p-2.5 font-mono text-[8.5px] flex items-stretch gap-2.5 bg-[#05070a]/50 select-none rounded-none">
+          {/* Coach photo from the public folder */}
+          <div className="w-10 bg-[#11161d] border border-[#1c2430] rounded-none overflow-hidden shrink-0 flex items-center justify-center">
+            <img src="/images/coach-avatar.png" alt="AI Coach" className="w-full h-full object-cover" />
+          </div>
+
+          <div className="flex-1 flex flex-col justify-between min-w-0 leading-tight">
+            <div>
+              <span className="text-[#FFB800] font-black uppercase text-[7.5px] tracking-widest block mb-0.5">
+                AI PIT WALL COACH
+              </span>
+              <p className="text-[7px] text-[#7a828c] uppercase leading-none font-sans line-clamp-2">
+                "Good pace from Laurens. front tyres are in optimal temperature windows. next stint keep managing fuel. push to speak"
+              </p>
+            </div>
+
+            <button className="w-full py-0.5 bg-[#FFB800]/10 hover:bg-[#FFB800]/20 border border-[#FFB800]/30 text-[#FFB800] text-[7.5px] font-black uppercase tracking-widest rounded-none transition-all cursor-pointer">
+              PUSH TO SPEAKER
+            </button>
+          </div>
+        </div>
+
+      </footer>
+
+      {/* Modal configuration overlays */}
       <>
-        {/* Add Car Popup */}
+        {/* TEAM CODE CONFIGURATION PANEL modal */}
+        {showTeamCodePanel && (
+          <div className="fixed inset-0 bg-[#05070A]/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-[#0b0f14] border border-[#1c2430] rounded-none p-5 relative shadow-2xl">
+              <button
+                type="button"
+                onClick={() => setShowTeamCodePanel(false)}
+                className="absolute top-4 right-4 p-1 hover:bg-[#11161d] border border-transparent hover:border-[#1c2430] rounded-none text-[#7a828c] hover:text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#E2E4E8] mb-4 border-b border-[#1c2430] pb-2">
+                TEAM CHANNEL CONNECTION
+              </h3>
+              
+              <div className="space-y-4">
+                {teamCode ? (
+                  <div className="space-y-3.5">
+                    <div className="p-3 bg-[#00D17F]/5 border border-[#00D17F]/30 text-center font-mono">
+                      <span className="text-[7.5px] font-bold text-[#7a828c] uppercase tracking-widest block mb-1">ACTIVE CHANNEL</span>
+                      <span className="text-white text-sm font-black tracking-widest block font-orbitron">{teamCode}</span>
+                      <span className="text-[7px] text-[#00D17F] font-bold uppercase tracking-wider block mt-2">
+                        {teamConnected ? "● SECURELY SUBSCRIBED TO REALTIME RELAY" : "○ SUBMITTING TO RELAY CHANNEL..."}
+                      </span>
+                    </div>
+
+                    <div className="text-[8px] text-[#7a828c] uppercase leading-relaxed font-sans text-center">
+                      Drivers must place the pre-filled <code className="text-[#FFB800] font-mono font-bold">.env</code> in their bridge directory and run <code className="text-[#FFB800] font-mono font-bold">npm start</code> to publish telemetry.
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTeamCode("");
+                        setTeamCodeInput("");
+                        setShowTeamCodePanel(false);
+                      }}
+                      className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/35 text-red-400 font-black uppercase tracking-widest text-[9px] rounded-none transition-all cursor-pointer"
+                    >
+                      DISCONNECT / LEAVE CHANNEL
+                    </button>
+                  </div>
+                ) : (
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (teamCodeInput.trim()) {
+                        setTeamCode(teamCodeInput.trim().toUpperCase());
+                        setShowTeamCodePanel(false);
+                      }
+                    }} 
+                    className="space-y-4"
+                  >
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="team-code-input" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                        TEAM CODE SEQUENCE
+                      </label>
+                      <input
+                        id="team-code-input"
+                        type="text"
+                        value={teamCodeInput}
+                        onChange={(e) => setTeamCodeInput(e.target.value)}
+                        className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-3 py-2 text-xs font-mono font-bold text-[#E2E4E8] focus:border-[#3B82F6] focus:outline-none uppercase"
+                        placeholder="PITWALL-XXXX"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={generateTeamCode}
+                        className="py-2 bg-[#FFB800]/10 hover:bg-[#FFB800]/20 border border-[#FFB800]/35 text-[#FFB800] font-black uppercase tracking-widest text-[8.5px] rounded-none transition-all cursor-pointer"
+                      >
+                        ✦ GENERATE CODE
+                      </button>
+                      <button
+                        type="submit"
+                        className="py-2 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 border border-[#3B82F6]/35 text-[#3B82F6] font-black uppercase tracking-widest text-[8.5px] rounded-none transition-all cursor-pointer"
+                      >
+                        JOIN CHANNEL
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* REGISTER CAR modal */}
         {isAddCarOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-panel border border-border/60 rounded-3xl p-6 relative shadow-2xl">
+          <div className="fixed inset-0 bg-[#05070A]/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-[#0b0f14] border border-[#1c2430] rounded-none p-5 relative shadow-2xl">
               <button
                 onClick={() => setIsAddCarOpen(false)}
-                className="absolute top-4 right-4 p-1 hover:bg-muted rounded-xl transition-all cursor-pointer"
+                className="absolute top-4 right-4 p-1 hover:bg-[#11161d] border border-transparent hover:border-[#1c2430] rounded-none text-[#7a828c] hover:text-white transition-all cursor-pointer"
               >
-                <X className="w-5 h-5 text-muted-foreground" />
+                <X className="w-4 h-4" />
               </button>
-              <h3 className="text-sm font-mono uppercase tracking-widest text-foreground mb-4">
-                Register Active Car
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#E2E4E8] mb-4 border-b border-[#1c2430] pb-2">
+                ADD ACTIVE VEHICLE
               </h3>
               <form onSubmit={handleAddCar} className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="car-name-input"
-                    className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                  >
-                    Car Model/Name
+                  <label htmlFor="car-name" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                    CAR MODEL VECTOR
                   </label>
                   <input
-                    id="car-name-input"
+                    id="car-name"
                     type="text"
                     value={newCar.name}
                     onChange={(e) => setNewCar((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    placeholder="Mercedes AMG GT3"
+                    className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-3 py-2 text-xs font-mono font-bold text-[#E2E4E8] focus:border-[#3B82F6] focus:outline-none"
+                    placeholder="PORSCHE 963"
                   />
                 </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="car-number-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Car Number
+                    <label htmlFor="car-num" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                      VEHICLE NO
                     </label>
                     <input
-                      id="car-number-input"
+                      id="car-num"
                       type="text"
                       value={newCar.number}
                       onChange={(e) => setNewCar((prev) => ({ ...prev, number: e.target.value }))}
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                      placeholder="44"
+                      className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-3 py-2 text-xs font-mono font-bold text-[#E2E4E8] focus:border-[#3B82F6] focus:outline-none"
+                      placeholder="7"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="car-class-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Car Class
+                    <label htmlFor="car-cls" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                      CLASS
                     </label>
                     <select
-                      id="car-class-input"
+                      id="car-cls"
                       value={newCar.carClass}
                       onChange={(e) =>
                         setNewCar((prev) => ({
@@ -1833,7 +2677,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                           carClass: e.target.value as Car["carClass"],
                         }))
                       }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
+                      className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-3 py-2 text-xs font-mono font-bold text-[#E2E4E8] focus:border-[#3B82F6] focus:outline-none"
                     >
                       <option value="GT3">GT3</option>
                       <option value="GTP">GTP</option>
@@ -1843,395 +2687,77 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-primary text-primary-foreground hover:opacity-90 font-bold uppercase tracking-wider text-[10px] rounded-xl shadow cursor-pointer mt-2"
+                  className="w-full py-2 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 border border-[#3B82F6]/35 text-[#3B82F6] font-black uppercase tracking-widest text-[9px] rounded-none transition-all cursor-pointer mt-2"
                 >
-                  Confirm Car Link
+                  CONFIRM FLEET LINK
                 </button>
               </form>
             </div>
           </div>
         )}
 
-        {/* Add Driver Popup */}
+        {/* REGISTER DRIVER modal */}
         {isAddDriverOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-panel border border-border/60 rounded-3xl p-6 relative shadow-2xl">
+          <div className="fixed inset-0 bg-[#05070A]/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-[#0b0f14] border border-[#1c2430] rounded-none p-5 relative shadow-2xl">
               <button
                 onClick={() => setIsAddDriverOpen(false)}
-                className="absolute top-4 right-4 p-1 hover:bg-muted rounded-xl transition-all cursor-pointer"
+                className="absolute top-4 right-4 p-1 hover:bg-[#11161d] border border-transparent hover:border-[#1c2430] rounded-none text-[#7a828c] hover:text-white transition-all cursor-pointer"
               >
-                <X className="w-5 h-5 text-muted-foreground" />
+                <X className="w-4 h-4" />
               </button>
-              <h3 className="text-sm font-mono uppercase tracking-widest text-foreground mb-4">
-                Register Paddock Driver
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#E2E4E8] mb-4 border-b border-[#1c2430] pb-2">
+                ADD TEAM DRIVER
               </h3>
               <form onSubmit={handleAddDriver} className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="driver-name-input"
-                    className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                  >
-                    Full Driver Name
+                  <label htmlFor="drv-name" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                    FULL DIRECTIVE NAME
                   </label>
                   <input
-                    id="driver-name-input"
+                    id="drv-name"
                     type="text"
                     value={newDriver.name}
                     onChange={(e) => setNewDriver((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    placeholder="Charles Leclerc"
+                    className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-3 py-2 text-xs font-mono font-bold text-[#E2E4E8] focus:border-[#3B82F6] focus:outline-none"
+                    placeholder="LAURENS VANTHOOR"
                   />
                 </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="driver-short-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Short Code
+                    <label htmlFor="drv-short" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                      3-LETTER SIG
                     </label>
                     <input
-                      id="driver-short-input"
+                      id="drv-short"
                       type="text"
                       value={newDriver.shortName}
                       onChange={(e) =>
                         setNewDriver((prev) => ({ ...prev, shortName: e.target.value }))
                       }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                      placeholder="LEC"
+                      className="w-full bg-[#05070a] border border-[#1c2430] rounded-none px-3 py-2 text-xs font-mono font-bold text-[#E2E4E8] focus:border-[#3B82F6] focus:outline-none"
+                      placeholder="VAN"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="driver-color-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Aesthetic Color
+                    <label htmlFor="drv-color" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                      SIGNATURE COLOR
                     </label>
                     <input
-                      id="driver-color-input"
+                      id="drv-color"
                       type="color"
                       value={newDriver.color}
                       onChange={(e) => setNewDriver((prev) => ({ ...prev, color: e.target.value }))}
-                      className="w-full bg-background border border-border/60 rounded-xl h-8 text-xs cursor-pointer p-0"
+                      className="w-full bg-[#05070a] border border-[#1c2430] rounded-none h-8 p-0 cursor-pointer"
                     />
                   </div>
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-primary text-primary-foreground hover:opacity-90 font-bold uppercase tracking-wider text-[10px] rounded-xl shadow cursor-pointer mt-2"
+                  className="w-full py-2 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 border border-[#3B82F6]/35 text-[#3B82F6] font-black uppercase tracking-widest text-[9px] rounded-none transition-all cursor-pointer mt-2"
                 >
-                  Confirm Driver Registry
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Weather Popup */}
-        {isAddWeatherOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-panel border border-border/60 rounded-3xl p-6 relative shadow-2xl">
-              <button
-                onClick={() => setIsAddWeatherOpen(false)}
-                className="absolute top-4 right-4 p-1 hover:bg-muted rounded-xl transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-              <h3 className="text-sm font-mono uppercase tracking-widest text-foreground mb-4">
-                Forecast Meteorological Event
-              </h3>
-              <form onSubmit={handleAddWeather} className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="weather-type-input"
-                    className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                  >
-                    Weather Climate Type
-                  </label>
-                  <select
-                    id="weather-type-input"
-                    value={newWeather.type}
-                    onChange={(e) =>
-                      setNewWeather((prev) => ({ ...prev, type: e.target.value as WeatherType }))
-                    }
-                    className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                  >
-                    <option value="Sunny">Sunny</option>
-                    <option value="Partly Cloudy">Partly Cloudy</option>
-                    <option value="Overcast">Overcast</option>
-                    <option value="Light Rain">Light Rain</option>
-                    <option value="Heavy Rain">Heavy Rain</option>
-                    <option value="Thunderstorm">Thunderstorm</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="weather-start-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Start Hour Offset (min)
-                    </label>
-                    <input
-                      id="weather-start-input"
-                      type="number"
-                      value={newWeather.startOffset}
-                      onChange={(e) =>
-                        setNewWeather((prev) => ({
-                          ...prev,
-                          startOffset: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="weather-duration-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Duration (min)
-                    </label>
-                    <input
-                      id="weather-duration-input"
-                      type="number"
-                      value={newWeather.duration}
-                      onChange={(e) =>
-                        setNewWeather((prev) => ({
-                          ...prev,
-                          duration: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-primary text-primary-foreground hover:opacity-90 font-bold uppercase tracking-wider text-[10px] rounded-xl shadow cursor-pointer mt-2"
-                >
-                  Confirm Weather Event
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Stint Popup */}
-        {isAddStintOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-panel border border-border/60 rounded-3xl p-6 relative shadow-2xl">
-              <button
-                onClick={() => setIsAddStintOpen(false)}
-                className="absolute top-4 right-4 p-1 hover:bg-muted rounded-xl transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-              <h3 className="text-sm font-mono uppercase tracking-widest text-foreground mb-4">
-                Schedule Driver Stint
-              </h3>
-              <form onSubmit={handleAddStint} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="stint-car-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Assign to Car
-                    </label>
-                    <select
-                      id="stint-car-input"
-                      value={newStint.carId}
-                      onChange={(e) => setNewStint((prev) => ({ ...prev, carId: e.target.value }))}
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    >
-                      <option value="">-- Choose Car --</option>
-                      {cars.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          #{c.number} {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="stint-driver-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Select Driver
-                    </label>
-                    <select
-                      id="stint-driver-input"
-                      value={newStint.driverId}
-                      onChange={(e) =>
-                        setNewStint((prev) => ({ ...prev, driverId: e.target.value }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    >
-                      <option value="">-- Choose Driver --</option>
-                      {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} ({d.shortName})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="stint-start-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Start Offset (min)
-                    </label>
-                    <input
-                      id="stint-start-input"
-                      type="number"
-                      value={newStint.startOffset}
-                      onChange={(e) =>
-                        setNewStint((prev) => ({
-                          ...prev,
-                          startOffset: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="stint-duration-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Stint Duration (min)
-                    </label>
-                    <input
-                      id="stint-duration-input"
-                      type="number"
-                      value={newStint.duration}
-                      onChange={(e) =>
-                        setNewStint((prev) => ({
-                          ...prev,
-                          duration: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="stint-note-input"
-                    className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                  >
-                    Strategic Notes
-                  </label>
-                  <input
-                    id="stint-note-input"
-                    type="text"
-                    value={newStint.note}
-                    onChange={(e) => setNewStint((prev) => ({ ...prev, note: e.target.value }))}
-                    className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    placeholder="Soft compound, save fuel"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-primary text-primary-foreground hover:opacity-90 font-bold uppercase tracking-wider text-[10px] rounded-xl shadow cursor-pointer mt-2"
-                >
-                  Confirm Stint Schedule
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Add Incident Popup */}
-        {isAddIncidentOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-panel border border-border/60 rounded-3xl p-6 relative shadow-2xl">
-              <button
-                onClick={() => setIsAddIncidentOpen(false)}
-                className="absolute top-4 right-4 p-1 hover:bg-muted rounded-xl transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-              <h3 className="text-sm font-mono uppercase tracking-widest text-foreground mb-4">
-                Inject Track Incident
-              </h3>
-              <form onSubmit={handleAddIncident} className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="incident-type-input"
-                    className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                  >
-                    Incident Warning Level
-                  </label>
-                  <select
-                    id="incident-type-input"
-                    value={newIncident.type}
-                    onChange={(e) =>
-                      setNewIncident((prev) => ({
-                        ...prev,
-                        type: e.target.value as RaceIncident["type"],
-                      }))
-                    }
-                    className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                  >
-                    <option value="Caution">Caution (Local Yellow)</option>
-                    <option value="Safety Car">Safety Car (Full Caution)</option>
-                    <option value="Red Flag">Red Flag (Race Halted)</option>
-                    <option value="Green Flag">Green Flag (Cleared)</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="incident-start-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Start Offset (min)
-                    </label>
-                    <input
-                      id="incident-start-input"
-                      type="number"
-                      value={newIncident.startOffset}
-                      onChange={(e) =>
-                        setNewIncident((prev) => ({
-                          ...prev,
-                          startOffset: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor="incident-duration-input"
-                      className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest pl-1"
-                    >
-                      Duration (min)
-                    </label>
-                    <input
-                      id="incident-duration-input"
-                      type="number"
-                      value={newIncident.duration}
-                      onChange={(e) =>
-                        setNewIncident((prev) => ({
-                          ...prev,
-                          duration: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-background border border-border/60 rounded-xl px-3 py-2 text-xs font-mono"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-primary text-primary-foreground hover:opacity-90 font-bold uppercase tracking-wider text-[10px] rounded-xl shadow cursor-pointer mt-2"
-                >
-                  Confirm Incident Warning
+                  CONFIRM ROSTER ADDITION
                 </button>
               </form>
             </div>

@@ -191,10 +191,17 @@ async function probeLocalAI() {
   // LM Studio check
   const lmStudioUp = await isPortListening(LMSTUDIO_PORT, 800);
   if (lmStudioUp) {
-    const reachable = await isHttpReachable(`http://localhost:${LMSTUDIO_PORT}/v1/models`);
+    let isApiV1 = true;
+    let reachable = await isHttpReachable(`http://localhost:${LMSTUDIO_PORT}/api/v1/models`);
+    if (!reachable) {
+      reachable = await isHttpReachable(`http://localhost:${LMSTUDIO_PORT}/v1/models`);
+      isApiV1 = false;
+    }
     if (reachable) {
       aiMode = "lmstudio";
-      aiEndpoint = `http://localhost:${LMSTUDIO_PORT}/v1/chat/completions`;
+      aiEndpoint = isApiV1
+        ? `http://localhost:${LMSTUDIO_PORT}/api/v1/chat`
+        : `http://localhost:${LMSTUDIO_PORT}/v1/chat/completions`;
       console.log("[supervisor] Local AI → LM Studio detected at port", LMSTUDIO_PORT);
       return;
     }

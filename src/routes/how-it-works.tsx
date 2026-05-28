@@ -42,7 +42,7 @@ function HowItWorksPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
               <Activity className="h-4 w-4" />
             </div>
-            <span className="font-mono text-sm tracking-wider">APEXTRACE</span>
+            <span className="font-mono text-sm tracking-wider">PIT WALL</span>
           </Link>
 
           {/* Centered navigation links in the middle */}
@@ -331,7 +331,7 @@ function HowItWorksPage() {
 
       <footer className="hairline-t">
         <div className="mx-auto max-w-7xl px-6 py-6 font-mono text-xs text-muted-foreground">
-          APEXTRACE · iRacing IBT v2 · 60 / 360 Hz
+          PIT WALL · iRacing IBT v2 · 60 / 360 Hz
         </div>
       </footer>
     </div>

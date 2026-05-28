@@ -209,6 +209,22 @@ export function useTeamTelemetry(teamCode: string | null): UseTeamTelemetryResul
         };
 
         setDrivers((prev) => {
+          const existing = prev.get(payload.carNumber);
+          if (existing) {
+            const existingSeq = existing.carOperationalState?.sequenceId ?? 0;
+            const incomingSeq = mappedTeammate.carOperationalState?.sequenceId ?? 0;
+            const existingTs = existing.timestamp ?? 0;
+            const incomingTs = mappedTeammate.timestamp ?? 0;
+
+            // Reject out-of-order or duplicate stale sequences under network packet storms
+            if (incomingSeq < existingSeq || (incomingSeq === existingSeq && incomingTs <= existingTs)) {
+              console.warn(
+                `[telemetry-sync] Discarded out-of-order/stale packet: Car ${payload.carNumber} | Inbound Seq: ${incomingSeq} (Existing: ${existingSeq}) | Inbound Ts: ${incomingTs} (Existing: ${existingTs})`
+              );
+              return prev;
+            }
+          }
+
           const next = new Map(prev);
           next.set(payload.carNumber, mappedTeammate);
           return next;

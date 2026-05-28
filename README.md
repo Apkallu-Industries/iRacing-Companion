@@ -395,6 +395,6 @@ Pit Wall works fully offline for AI coaching using a local LLM:
 
 ## Credits
 
-Built with [Lovable](https://lovable.dev) on Lovable Cloud + Lovable AI Gateway.  
+Built By Black-Net Systems
 iRacing® and IRSDK are trademarks of iRacing.com Motorsport Simulations, LLC.  
 This project is an independent companion tool and is not affiliated with or endorsed by iRacing.

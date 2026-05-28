@@ -73,6 +73,20 @@ startAnalyticalWorker();
 // Load .env from local-bridge directory (TEAM_CODE, SUPABASE_URL, etc.)
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+// Load local driver config if exists
+const configPath = path.join(__dirname, "driver-config.json");
+if (fs.existsSync(configPath)) {
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    if (config.driverName) process.env.DRIVER_NAME = config.driverName;
+    if (config.iracingId) process.env.IRACING_ID = config.iracingId;
+    if (config.teamCode) process.env.TEAM_CODE = config.teamCode;
+    console.log(`[bridge] Loaded saved driver config: ${config.driverName} (ID: ${config.iracingId}) | Team: ${config.teamCode}`);
+  } catch (e) {
+    console.warn("[bridge] Failed to load driver-config.json:", e.message);
+  }
+}
+
 // ─── MongoDB Telemetry Recorder ───────────────────────────────────────────────────
 
 // MONGO_URI is injected by the Electron Runtime Supervisor via env.
@@ -210,6 +224,53 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  /* ───────────────────────────────────────── Driver Config Endpoints */
+
+  if (urlPath === "/api/driver/config" && req.method === "GET") {
+    const configPath = path.join(__dirname, "driver-config.json");
+    let config = { driverName: "", iracingId: "", teamCode: "" };
+    if (fs.existsSync(configPath)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      } catch {}
+    }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(config));
+    return;
+  }
+
+  if (urlPath === "/api/driver/config" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body);
+        const { driverName, iracingId, teamCode } = payload;
+        
+        // Save to file
+        const configPath = path.join(__dirname, "driver-config.json");
+        fs.writeFileSync(configPath, JSON.stringify({ driverName, iracingId, teamCode }, null, 2), "utf8");
+        
+        // Update environment variables
+        process.env.DRIVER_NAME = driverName || "";
+        process.env.IRACING_ID = iracingId || "";
+        process.env.TEAM_CODE = teamCode || "";
+        
+        console.log(`[bridge] Configured driver: ${driverName} (ID: ${iracingId}) | Team: ${teamCode}`);
+        
+        // Re-initialize team relay dynamically
+        teamRelay.init();
+        
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, driverName, iracingId, teamCode }));
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
     return;
   }
 
@@ -890,6 +951,16 @@ const server = http.createServer(async (req, res) => {
           .sort({ timestamp: 1 })
           .toArray();
 
+        // Enforce Replay Sort Normalization Guarantees: sort strictly by (sequenceId ASC, timestamp ASC) keys
+        samples.sort((a, b) => {
+          const seqA = a.sequence_id || a.channels?.sequenceId || a.channels?.carOperationalState?.sequenceId || 0;
+          const seqB = b.sequence_id || b.channels?.sequenceId || b.channels?.carOperationalState?.sequenceId || 0;
+          if (seqA !== seqB) return seqA - seqB;
+          const tsA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const tsB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return tsA - tsB;
+        });
+
         // Run counterfactual physical stint simulation using our Physics layer
         const counterfactual = simulationRuntime.simulateCounterfactualStint(samples, adjustments || {});
 
@@ -982,7 +1053,7 @@ if (IRacingSDK) {
         startRecordingSession({
           track:  weekend?.TrackDisplayName ?? "unknown",
           car:    me.CarScreenName ?? "unknown",
-          driver: me.UserName ?? "unknown",
+          driver: process.env.DRIVER_NAME || me.UserName || "unknown",
           sessionInfoYaml: "",
         });
         vehicleIdentityRuntime.initializeSession({
@@ -990,7 +1061,7 @@ if (IRacingSDK) {
           carNumber: me.CarNumber ?? "0",
           carName: me.CarScreenName ?? "Unknown Car",
           teamId: process.env.TEAM_CODE || "local",
-          driverId: me.UserName ?? "unknown",
+          driverId: process.env.DRIVER_NAME || me.UserName || "unknown",
           env: {
             trackTempC: weekend?.WeekendOptions?.TrackTemp ?? 0,
             airTempC: weekend?.WeekendOptions?.AirTemp ?? 0,

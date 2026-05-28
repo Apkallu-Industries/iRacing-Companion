@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeamGuideRouteImport } from './routes/team-guide'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -17,6 +18,7 @@ import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as FingerprintRouteImport } from './routes/fingerprint'
+import { Route as DriverBridgeRouteImport } from './routes/driver-bridge'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AiEngineerRouteImport } from './routes/ai-engineer'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -28,6 +30,11 @@ import { Route as LabLapfileRouteImport } from './routes/lab.lapfile'
 import { Route as DetachedInstrumentRouteImport } from './routes/detached.$instrument'
 import { Route as ApiPublicOgShareTokenRouteImport } from './routes/api/public/og/share.$token'
 
+const TeamGuideRoute = TeamGuideRouteImport.update({
+  id: '/team-guide',
+  path: '/team-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -66,6 +73,11 @@ const HowItWorksRoute = HowItWorksRouteImport.update({
 const FingerprintRoute = FingerprintRouteImport.update({
   id: '/fingerprint',
   path: '/fingerprint',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DriverBridgeRoute = DriverBridgeRouteImport.update({
+  id: '/driver-bridge',
+  path: '/driver-bridge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -124,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/ai-engineer': typeof AiEngineerRoute
   '/auth': typeof AuthRoute
+  '/driver-bridge': typeof DriverBridgeRoute
   '/fingerprint': typeof FingerprintRoute
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
@@ -132,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
+  '/team-guide': typeof TeamGuideRoute
   '/detached/$instrument': typeof DetachedInstrumentRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
@@ -144,6 +158,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/ai-engineer': typeof AiEngineerRoute
   '/auth': typeof AuthRoute
+  '/driver-bridge': typeof DriverBridgeRoute
   '/fingerprint': typeof FingerprintRoute
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
@@ -152,6 +167,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
+  '/team-guide': typeof TeamGuideRoute
   '/detached/$instrument': typeof DetachedInstrumentRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
@@ -165,6 +181,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/ai-engineer': typeof AiEngineerRoute
   '/auth': typeof AuthRoute
+  '/driver-bridge': typeof DriverBridgeRoute
   '/fingerprint': typeof FingerprintRoute
   '/how-it-works': typeof HowItWorksRoute
   '/live': typeof LiveRoute
@@ -173,6 +190,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
+  '/team-guide': typeof TeamGuideRoute
   '/detached/$instrument': typeof DetachedInstrumentRoute
   '/lab/lapfile': typeof LabLapfileRoute
   '/sessions/$id': typeof SessionsIdRoute
@@ -187,6 +205,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ai-engineer'
     | '/auth'
+    | '/driver-bridge'
     | '/fingerprint'
     | '/how-it-works'
     | '/live'
@@ -195,6 +214,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/team'
+    | '/team-guide'
     | '/detached/$instrument'
     | '/lab/lapfile'
     | '/sessions/$id'
@@ -207,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ai-engineer'
     | '/auth'
+    | '/driver-bridge'
     | '/fingerprint'
     | '/how-it-works'
     | '/live'
@@ -215,6 +236,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/team'
+    | '/team-guide'
     | '/detached/$instrument'
     | '/lab/lapfile'
     | '/sessions/$id'
@@ -227,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ai-engineer'
     | '/auth'
+    | '/driver-bridge'
     | '/fingerprint'
     | '/how-it-works'
     | '/live'
@@ -235,6 +258,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/team'
+    | '/team-guide'
     | '/detached/$instrument'
     | '/lab/lapfile'
     | '/sessions/$id'
@@ -248,6 +272,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AiEngineerRoute: typeof AiEngineerRoute
   AuthRoute: typeof AuthRoute
+  DriverBridgeRoute: typeof DriverBridgeRoute
   FingerprintRoute: typeof FingerprintRoute
   HowItWorksRoute: typeof HowItWorksRoute
   LiveRoute: typeof LiveRoute
@@ -256,6 +281,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TeamRoute: typeof TeamRoute
+  TeamGuideRoute: typeof TeamGuideRoute
   DetachedInstrumentRoute: typeof DetachedInstrumentRoute
   LabLapfileRoute: typeof LabLapfileRoute
   SessionsIdRoute: typeof SessionsIdRoute
@@ -266,6 +292,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/team-guide': {
+      id: '/team-guide'
+      path: '/team-guide'
+      fullPath: '/team-guide'
+      preLoaderRoute: typeof TeamGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/team': {
       id: '/team'
       path: '/team'
@@ -320,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: '/fingerprint'
       fullPath: '/fingerprint'
       preLoaderRoute: typeof FingerprintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driver-bridge': {
+      id: '/driver-bridge'
+      path: '/driver-bridge'
+      fullPath: '/driver-bridge'
+      preLoaderRoute: typeof DriverBridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -400,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AiEngineerRoute: AiEngineerRoute,
   AuthRoute: AuthRoute,
+  DriverBridgeRoute: DriverBridgeRoute,
   FingerprintRoute: FingerprintRoute,
   HowItWorksRoute: HowItWorksRoute,
   LiveRoute: LiveRoute,
@@ -408,6 +449,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TeamRoute: TeamRoute,
+  TeamGuideRoute: TeamGuideRoute,
   DetachedInstrumentRoute: DetachedInstrumentRoute,
   LabLapfileRoute: LabLapfileRoute,
   SessionsIdRoute: SessionsIdRoute,

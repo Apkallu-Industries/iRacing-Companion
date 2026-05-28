@@ -438,6 +438,11 @@ function buildMenu() {
           click: navigate(`${BASE_URL}/sessions`),
         },
         {
+          label: "Team Command Center",
+          accelerator: "CmdOrCtrl+3",
+          click: navigate(`${BASE_URL}/team`),
+        },
+        {
           label: "Settings",
           accelerator: "CmdOrCtrl+,",
           click: navigate(`${BASE_URL}/settings`),

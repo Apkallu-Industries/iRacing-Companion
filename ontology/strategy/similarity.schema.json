@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/similarity.schema.json",
+  "title": "SimilarityContext",
+  "type": "object",
+  "required": [
+    "trackLayoutType",
+    "optimalThermalWindowC",
+    "vehicleClass",
+    "driverTraits"
+  ],
+  "properties": {
+    "trackLayoutType": {
+      "type": "string",
+      "enum": [
+        "slow_hairpin",
+        "medium_chicanes",
+        "highspeed_sweeper",
+        "heavy_braking_zone",
+        "curb_strike_zone"
+      ],
+      "description": "Dynamic corner archetype under loading"
+    },
+    "optimalThermalWindowC": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" }
+      }
+    },
+    "vehicleClass": {
+      "type": "string",
+      "enum": ["gt3", "gtp", "lemans"],
+      "description": "Aeromechanical and powertrain baseline configuration class"
+    },
+    "driverTraits": {
+      "type": "object",
+      "required": [
+        "cornerEntryRotationPreference",
+        "rearAxleStabilityTolerance",
+        "brakeReleaseStyle",
+        "throttleCommitmentConfidence"
+      ],
+      "properties": {
+        "cornerEntryRotationPreference": { "type": "string", "enum": ["high", "medium", "low"] },
+        "rearAxleStabilityTolerance": { "type": "string", "enum": ["aggressive", "neutral", "cautious"] },
+        "brakeReleaseStyle": { "type": "string", "enum": ["fast_decay", "linear", "smooth_trail"] },
+        "throttleCommitmentConfidence": { "type": "string", "enum": ["early", "progressive", "hesitant"] }
+      }
+    }
+  }
+}

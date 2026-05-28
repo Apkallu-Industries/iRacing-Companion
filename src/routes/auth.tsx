@@ -117,7 +117,7 @@ function AuthPage() {
           <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <Activity className="h-4 w-4" />
           </div>
-          <span className="font-mono text-sm tracking-wider">APEXTRACE</span>
+          <span className="font-mono text-sm tracking-wider">PIT WALL</span>
         </Link>
 
         {/* Auth status panel */}

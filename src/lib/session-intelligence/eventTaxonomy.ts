@@ -1,12 +1,4 @@
-/**
- * eventTaxonomy.ts — Structured Motorsport Ontology & Temporal Event Taxonomy
- *
- * Implements a formal taxonomy for vehicle states, behavior-centric Driver DNA,
- * temporal telemetry events, stateful engineering episodes (progressive instability sequences),
- * causality-aware motorsport reasoning nodes, session narratives, and auditable decision lineage tracing.
- *
- * Aligned with the Motorsport Ontology Kernel v1.0.0.
- */
+import { sha256 } from "./hashAdapter";
 
 export enum RaceEventType {
   ENTRY_OVER_ROTATION = "ENTRY_OVER_ROTATION",
@@ -190,6 +182,11 @@ export interface AICommunicationPayload {
   provenRecommendations: RecommendationLineage[];
   sessionNarrative: SessionNarrative;
   driverTraits: DriverBehaviorTraits;
+  
+  // Deterministic State Hashing metadata
+  stateHash?: string;
+  ontologyVersion?: string;
+  heuristicVersion?: string;
 }
 
 /**
@@ -262,3 +259,92 @@ export function traceDecisionLineage(
     physicsTruthBoundary,
   };
 }
+
+/**
+ * Deep-copies an ontology projection and recursively sorts its object keys,
+ * while discarding volatile dynamic parameters (timestamps, unique random ids)
+ * and locking floating precision to 6 decimal places to prevent false cross-runtime divergence.
+ */
+export function canonicalizeProjection(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null; // Normalize undefined to null for stable serialization
+  }
+  if (typeof obj === "number") {
+    if (Number.isNaN(obj) || !Number.isFinite(obj)) {
+      return null; // Normalize NaN and Infinity to null to prevent compiler drift
+    }
+    // Freeze float precision to prevent micro-divergences between execution targets
+    return Number(obj.toFixed(6));
+  }
+  if (typeof obj === "function" || typeof obj === "symbol") {
+    return null; // Normalize functions and symbols to null
+  }
+  if (typeof obj !== "object") {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    const canonicalArray = obj.map(canonicalizeProjection);
+    // Deterministic Array Sorting to mitigate reordering issues under packet storms or async batching
+    canonicalArray.sort((a: any, b: any) => {
+      if (a === b) return 0;
+      if (a === null) return -1;
+      if (b === null) return 1;
+
+      // 1. Sort by chronological properties (timestampSec or timestamp)
+      const tsSecA = a?.timestampSec ?? 0;
+      const tsSecB = b?.timestampSec ?? 0;
+      if (tsSecA !== tsSecB) return tsSecA - tsSecB;
+      
+      const tsA = a?.timestamp ?? "";
+      const tsB = b?.timestamp ?? "";
+      if (tsA !== tsB) return String(tsA).localeCompare(String(tsB));
+
+      // 2. Sort by event types or active classifications
+      const typeA = a?.eventType ?? "";
+      const typeB = b?.eventType ?? "";
+      if (typeA !== typeB) return String(typeA).localeCompare(String(typeB));
+
+      // 3. Sort by proposed setup recommendation actions
+      const actionA = a?.proposedAction ?? "";
+      const actionB = b?.proposedAction ?? "";
+      if (actionA !== actionB) return String(actionA).localeCompare(String(actionB));
+
+      // 4. Sort by identifiers
+      const idA = a?.id ?? a?.episodeId ?? a?.recommendationId ?? "";
+      const idB = b?.id ?? b?.episodeId ?? b?.recommendationId ?? "";
+      if (idA !== idB) return String(idA).localeCompare(String(idB));
+
+      // 5. Fallback: sort by deterministic JSON string comparison
+      return JSON.stringify(a).localeCompare(JSON.stringify(b));
+    });
+    return canonicalArray;
+  }
+  const sortedKeys = Object.keys(obj).sort();
+  const result: Record<string, any> = {};
+  for (const key of sortedKeys) {
+    if (
+      key === "stateHash" ||
+      key === "timestamp" ||
+      key === "timestampSec" ||
+      key === "recorded_at" ||
+      key === "updated_at" ||
+      key === "lastUpdated" ||
+      key === "recommendationId" ||
+      key === "episodeId" ||
+      key === "id"
+    ) {
+      continue;
+    }
+    result[key] = canonicalizeProjection(obj[key]);
+  }
+  return result;
+}
+
+/**
+ * Calculates a canonical deterministic SHA-256 state hash asynchronously using the native SubtleCrypto adapter.
+ */
+export async function computeProjectionHash(projection: AICommunicationPayload): Promise<string> {
+  const canonical = canonicalizeProjection(projection);
+  return await sha256(JSON.stringify(canonical));
+}
+

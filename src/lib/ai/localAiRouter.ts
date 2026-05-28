@@ -45,16 +45,28 @@ function notify() {
 
 // ─── Probe functions ──────────────────────────────────────────────────────────
 
-async function probeLmStudio(): Promise<{ ok: boolean; model: string | null }> {
+async function probeLmStudio(): Promise<{ ok: boolean; model: string | null; isApiV1?: boolean }> {
   try {
-    const res = await fetch(`${LMSTUDIO_BASE}/v1/models`, {
+    // 1. Try new v0.4.0+ /api/v1/models first
+    let res = await fetch(`${LMSTUDIO_BASE}/api/v1/models`, {
       signal: AbortSignal.timeout(1200),
       headers: { "Content-Type": "application/json" },
     });
+    let isApiV1 = true;
+
+    // 2. Fall back to older /v1/models if 404/failure
+    if (!res.ok) {
+      res = await fetch(`${LMSTUDIO_BASE}/v1/models`, {
+        signal: AbortSignal.timeout(1200),
+        headers: { "Content-Type": "application/json" },
+      });
+      isApiV1 = false;
+    }
+
     if (!res.ok) return { ok: false, model: null };
     const data = await res.json() as { data?: { id: string }[] };
     const model = data?.data?.[0]?.id ?? null;
-    return { ok: true, model };
+    return { ok: true, model, isApiV1 };
   } catch {
     return { ok: false, model: null };
   }
@@ -87,7 +99,9 @@ export async function probeLocalAi(): Promise<AiRouterState> {
     if (lmResult.ok) {
       state = {
         mode:        "lmstudio",
-        endpoint:    `${LMSTUDIO_BASE}/v1/chat/completions`,
+        endpoint:    lmResult.isApiV1
+          ? `${LMSTUDIO_BASE}/api/v1/chat`
+          : `${LMSTUDIO_BASE}/v1/chat/completions`,
         modelName:   lmResult.model,
         probing:     false,
         lastProbeAt: Date.now(),

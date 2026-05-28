@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Palette, RotateCcw, Upload, Download, Share2, Loader2 } from "lucide-react";
 import { z } from "zod";
 import {
@@ -107,7 +107,7 @@ export function ThemeEditor() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${(shareName || "apextrace-theme").replace(/\s+/g, "-").toLowerCase()}.json`;
+    a.download = `${(shareName || "pitwall-theme").replace(/\s+/g, "-").toLowerCase()}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

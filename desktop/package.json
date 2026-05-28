@@ -66,11 +66,14 @@
     "nodeGypRebuild": false,
     "npmRebuild": false
   },
+  "engines": {
+    "node": "24.13.0"
+  },
   "private": true,
   "author": "Apkallu Industries",
   "license": "UNLICENSED",
   "devDependencies": {
-    "electron": "^31.7.7",
-    "electron-builder": "^25.1.8"
+    "electron": "31.7.7",
+    "electron-builder": "25.1.8"
   }
 }

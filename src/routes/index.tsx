@@ -19,6 +19,8 @@ import {
   Car,
   MapPin,
   RefreshCw,
+  Users,
+  Rocket,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
@@ -348,7 +350,7 @@ function LandingPage() {
             Telemetry Workstation Console Panels
           </div>
 
-          {/* 7 Section Workstation Grid Tiles */}
+          {/* 8 Section Workstation Grid Tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-[360px]">
             
             {/* Tile 1: LIVE TELEMETRY COMMAND */}
@@ -377,7 +379,33 @@ function LandingPage() {
               </span>
             </Link>
 
-            {/* Tile 2: ANALYSIS WORKBENCH */}
+            {/* Tile 2: TEAM STRATEGY COMMAND */}
+            <Link
+              to="/team"
+              className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] hover:border-[#3B82F6]/50 p-4 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-1.5 rounded border border-[#1C2430] bg-[#0B0F14] text-[#3B82F6]">
+                  <Users className="h-5 w-5" />
+                </span>
+                <span className="text-[8px] font-bold tracking-widest px-2 py-0.5 border border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#3B82F6]">
+                  MULTI-DRIVER
+                </span>
+              </div>
+              <div className="mt-3">
+                <h3 className="text-xs font-bold text-white tracking-widest uppercase mb-1">
+                  TEAM STRATEGY COMMAND
+                </h3>
+                <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
+                  Endurance Strategy Operations Center. Coordinate driver stints, compute Le Mans fuel plans, and analyze live team streams.
+                </p>
+              </div>
+              <span className="text-[9px] font-bold text-[#3B82F6] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2">
+                PLAN TEAM STRATEGY <ChevronRight className="h-3 w-3" />
+              </span>
+            </Link>
+
+            {/* Tile 3: ANALYSIS WORKBENCH */}
             <Link
               to="/sessions"
               className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] hover:border-[#3B82F6]/50 p-4 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
@@ -403,7 +431,7 @@ function LandingPage() {
               </span>
             </Link>
 
-            {/* Tile 3: AI ENGINEER TERMINAL */}
+            {/* Tile 4: AI ENGINEER TERMINAL */}
             <Link
               to="/ai-engineer"
               className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] hover:border-[#8B5CF6]/50 p-4 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
@@ -429,7 +457,7 @@ function LandingPage() {
               </span>
             </Link>
 
-            {/* Tile 4: INTERACTIVE TUTORIAL */}
+            {/* Tile 5: INTERACTIVE TUTORIAL */}
             <a
               href="#onboarding-tutorial"
               className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] p-4 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
@@ -455,7 +483,7 @@ function LandingPage() {
               </span>
             </a>
 
-            {/* Tile 5: TECHNICAL MANUAL */}
+            {/* Tile 6: TECHNICAL MANUAL */}
             <Link
               to="/how-it-works"
               className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] p-4 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
@@ -481,7 +509,33 @@ function LandingPage() {
               </span>
             </Link>
 
-            {/* Tile 6: SYSTEM SETTINGS */}
+            {/* Tile 7: DEVELOPMENT ROADMAP */}
+            <Link
+              to="/roadmap"
+              className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] p-4 transition-all duration-200 group flex flex-col justify-between cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <span className="p-1.5 rounded border border-[#1C2430] bg-[#0B0F14] text-[#FF4D4D]">
+                  <Rocket className="h-5 w-5" />
+                </span>
+                <span className="text-[8px] font-bold tracking-widest px-2 py-0.5 border border-[#1C2430] bg-[#05070A] text-[#7A828C]">
+                  TIMELINE
+                </span>
+              </div>
+              <div className="mt-3">
+                <h3 className="text-xs font-bold text-white tracking-widest uppercase mb-1">
+                  DEVELOPMENT ROADMAP
+                </h3>
+                <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
+                  Pit Wall development timeline. Check shipped milestones, active beta-testing status, and upcoming Monetization phases.
+                </p>
+              </div>
+              <span className="text-[9px] font-bold text-[#FF4D4D] inline-flex items-center gap-1 mt-2">
+                VIEW ROADMAP <ChevronRight className="h-3 w-3" />
+              </span>
+            </Link>
+
+            {/* Tile 8: SYSTEM SETTINGS */}
             <button
               onClick={openSettings}
               className="border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] p-4 transition-all duration-200 group flex flex-col justify-between text-left cursor-pointer"
@@ -507,6 +561,20 @@ function LandingPage() {
               </span>
             </button>
           </div>
+
+          {/* Tile 6.5: DRIVER COCKPIT HUD GATEWAY */}
+          <Link
+            to="/driver-bridge"
+            className="border border-[#1C2430] bg-[#00D17F]/5 hover:bg-[#00D17F]/10 hover:border-[#00D17F]/50 p-3 text-[10px] uppercase tracking-widest flex items-center justify-between border-dashed cursor-pointer"
+          >
+            <span className="flex items-center gap-2 text-white font-bold">
+              <Gauge className="h-4 w-4 text-[#00D17F]" />
+              DRIVER COCKPIT HUD GATEWAY
+            </span>
+            <span className="text-[#00D17F] hover:underline font-bold">
+              LAUNCH COCKPIT HUD →
+            </span>
+          </Link>
 
           {/* Tile 7: ENGINEER ACCOUNT GATEWAY */}
           <Link
@@ -610,26 +678,28 @@ function LandingPage() {
           <div className="space-y-3">
             <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h3 className="font-bold text-white text-xs uppercase">Step A: Downloand bridge package</h3>
+                <h3 className="font-bold text-white text-xs uppercase">Step A: Install Pit Wall Desktop</h3>
                 <p className="text-[10px] text-[#7A828C] mt-0.5 leading-relaxed">
-                  Extract the local bridge package. We recommend placing the extracted folders directly in <span className="font-mono text-white">C:\PitWall\bridge</span>.
+                  The local bridge is bundled inside the Pit Wall Desktop installer. Download and run the installer — the bridge starts automatically when you launch the app.
+                  Place the app in <span className="font-mono text-white">C:\Program Files\Pit Wall</span> or your preferred location.
                 </p>
               </div>
-              <a
-                href="/downloads/pit-wall-bridge.zip"
-                className="inline-flex items-center justify-center gap-2 border border-[#1C2430] bg-[#05070A] hover:bg-[#0B0F14] px-4 py-2 text-[10px] uppercase font-bold text-[#3B82F6] transition-colors flex-shrink-0"
+              <Link
+                to="/roadmap"
+                className="inline-flex items-center justify-center gap-2 border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 px-4 py-2 text-[10px] uppercase font-bold text-[#3B82F6] transition-colors flex-shrink-0"
               >
-                pit-wall-bridge.zip
-              </a>
+                Get Desktop App →
+              </Link>
             </div>
 
             <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
-              <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Initialize powershell commands</h3>
+              <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and connect</h3>
               <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
-                Right-click with Shift in your bridge directory and open a PowerShell terminal. Execute the standard commands:
+                Launch Pit Wall Desktop. The bridge starts automatically in the background on port <span className="font-mono text-white">3001</span>.
+                Start iRacing and join a session — the Live Telemetry dashboard will connect instantly.
               </p>
               <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
-                {`cd C:\\PitWall\\bridge\nnpm install\nnpm start`}
+                {`# Bridge starts automatically — no commands needed.\n# Verify connection at:\nws://127.0.0.1:3001`}
               </pre>
             </div>
           </div>

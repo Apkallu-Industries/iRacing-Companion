@@ -1,0 +1,23 @@
+{
+  "ontologyVersion": "1.0.0",
+  "heuristicVersion": "1.0.0",
+  "stateHash": "c45098578e848fc56ab36780f815f33e30002644f60eb710cb75c452043eb5ee",
+  "expectedHash": "c45098578e848fc56ab36780f815f33e30002644f60eb710cb75c452043eb5ee",
+  "status": "SUCCESS",
+  "driftSummary": "State hashes match character-for-character with zero drift.",
+  "eventCount": 2,
+  "recommendationCount": 1,
+  "confidenceGraph": [
+    {
+      "action": "Soften rear rebound dampers by...",
+      "confidence": 85
+    }
+  ],
+  "replayDurationMs": 8,
+  "environmentMetadata": {
+    "runnerNodeVersion": "v24.13.0",
+    "platform": "win32",
+    "arch": "x64",
+    "executedAt": "2026-05-27T22:16:19.428Z"
+  }
+}

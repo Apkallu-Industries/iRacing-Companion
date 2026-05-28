@@ -66,7 +66,7 @@ export const Route = createFileRoute("/api/public/og/share/$token")({
   <rect width="${w}" height="${h}" fill="url(#bg)"/>
   <rect x="0" y="0" width="${w}" height="6" fill="url(#accent)"/>
   <g font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="#e6e8eb">
-    <text x="64" y="120" font-size="22" letter-spacing="6" fill="#9aa3ad">APEXTRACE · ${esc(badge)}</text>
+    <text x="64" y="120" font-size="22" letter-spacing="6" fill="#9aa3ad">PIT WALL · ${esc(badge)}</text>
     <text x="64" y="220" font-size="78" font-weight="700">${esc(track)}</text>
     <text x="64" y="270" font-size="30" fill="#9aa3ad">${esc(car)}</text>
     <g transform="translate(64,360)">
@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/public/og/share/$token")({
     </g>`
         : ""
     }
-    <text x="64" y="${h - 48}" font-size="20" fill="#6b7280">apextrace · iRacing telemetry workbench</text>
+    <text x="64" y="${h - 48}" font-size="20" fill="#6b7280">pit wall · iRacing telemetry workbench</text>
   </g>
 </svg>`;
 

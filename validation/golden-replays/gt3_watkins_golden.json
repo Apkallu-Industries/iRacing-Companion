@@ -1,0 +1,149 @@
+{
+  "recipientDriverId": "driver_danym_iracing_44",
+  "activeContext": {
+    "track": "watkins_glen",
+    "car": "ferrari_296_gt3",
+    "ambientTempC": 24,
+    "fuelLapsMargin": 1.5
+  },
+  "personality": "CONSERVATIVE_ENDURANCE",
+  "ontologyEvents": [
+    {
+      "id": "evt_lockup_fl_001",
+      "timestamp": "2026-05-27T22:00:15Z",
+      "lapNumber": 8,
+      "sectorNumber": 3,
+      "eventType": "BRAKE_LOCK_FRONT_LEFT",
+      "priority": {
+        "severity": "CRITICAL",
+        "confidence": 0.88,
+        "persistence": 2,
+        "lapTimeImpactS": 0.22,
+        "driverRiskRating": 4
+      },
+      "triggerChannel": "BrakeLinePressureLF",
+      "triggerValue": 84.5,
+      "narrativeDescription": "Front axle brake pressure exceeded 82% threshold target under trail deceleration.",
+      "physicsTruthBoundary": {
+        "sourceTypes": [
+          "deterministic_physics"
+        ]
+      }
+    },
+    {
+      "id": "evt_traction_rr_002",
+      "timestamp": "2026-05-27T22:00:45Z",
+      "lapNumber": 8,
+      "sectorNumber": 1,
+      "eventType": "REAR_TRACTION_COLLAPSE",
+      "priority": {
+        "severity": "WARNING",
+        "confidence": 0.76,
+        "persistence": 1,
+        "lapTimeImpactS": 0.15,
+        "driverRiskRating": 5
+      },
+      "triggerChannel": "RRspeed",
+      "triggerValue": 12.8,
+      "narrativeDescription": "Rear driven exit wheel speed mismatched by more than 12% under re-application.",
+      "physicsTruthBoundary": {
+        "sourceTypes": [
+          "behavioral_model"
+        ]
+      }
+    }
+  ],
+  "activeEpisodes": [
+    {
+      "episodeId": "eps_tire_overload_01",
+      "title": "Rear Tire Thermal Saturation Cascade",
+      "startTime": "2026-05-27T22:00:15Z",
+      "isActive": true,
+      "precursorEvents": [
+        "THERMAL_REAR_OVERLOAD"
+      ],
+      "triggerConditions": [
+        "Consecutive lateral slips under abrasive track evolution"
+      ],
+      "progressionStages": [
+        {
+          "stageIndex": 1,
+          "description": "Lateral scrub loading raises rear tread values past 95 degrees limit.",
+          "detectedEventIds": [
+            "evt_traction_rr_002"
+          ]
+        }
+      ],
+      "mitigationAdvised": "Soften rear rebound dampers or raise dynamic traction harvest ratios.",
+      "physicsTruthBoundary": {
+        "sourceTypes": [
+          "deterministic_physics",
+          "behavioral_model"
+        ]
+      }
+    }
+  ],
+  "provenRecommendations": [
+    {
+      "recommendationId": "rec_damper_001",
+      "timestamp": "2026-05-27T22:01:00Z",
+      "proposedAction": "Soften rear rebound dampers by -1 click to recover lateral tractive footprint.",
+      "citationSource": "Carroll Smith: Heuristic Suspension Matrix #4 (Damper Tuning)",
+      "confidenceRating": 85,
+      "sensorEvidence": [
+        {
+          "channel": "BrakeLinePressureLF",
+          "value": 84.5,
+          "threshold": 82
+        },
+        {
+          "channel": "LFshockDefl",
+          "value": 3.2,
+          "threshold": 2
+        }
+      ],
+      "activeCorrelations": [
+        "Rear tires overheating under high traction exit loads"
+      ],
+      "relatedEpisodes": [
+        "eps_tire_overload_01"
+      ],
+      "driverTraitsInfluence": {
+        "cornerEntryRotationPreference": "medium",
+        "rearAxleStabilityTolerance": "neutral"
+      },
+      "physicsTruthBoundary": {
+        "sourceTypes": [
+          "deterministic_physics",
+          "historical_correlation"
+        ]
+      }
+    }
+  ],
+  "sessionNarrative": {
+    "sessionId": "ses_watkins_001",
+    "trackEvolutionState": "rubbered_in",
+    "fuelLoadDecayState": "stint_mid",
+    "driverConfidenceTrend": "stable",
+    "keyMechanicalNarrative": "Chassis decay stable. Heavy entry trail lockups observed at Turn 8 under downforce rake.",
+    "physicsTruthBoundary": {
+      "sourceTypes": [
+        "behavioral_model"
+      ]
+    }
+  },
+  "driverTraits": {
+    "cornerEntryRotationPreference": "medium",
+    "rearAxleStabilityTolerance": "neutral",
+    "brakeReleaseStyle": "linear",
+    "throttleCommitmentConfidence": "progressive",
+    "physicsTruthBoundary": {
+      "sourceTypes": [
+        "behavioral_model"
+      ]
+    }
+  },
+  "ontologyVersion": "1.0.0",
+  "heuristicVersion": "1.0.0",
+  "stateHash": "c45098578e848fc56ab36780f815f33e30002644f60eb710cb75c452043eb5ee"
+}

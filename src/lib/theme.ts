@@ -28,10 +28,10 @@ export type ThemeMap = Partial<Record<ThemeTokenKey, string>>;
 // Bump when token keys are renamed/removed/added in a breaking way.
 // Add a migrator below for each new version.
 export const THEME_SCHEMA_VERSION = 2;
-export const THEME_SCHEMA_ID = "apextrace.theme";
+export const THEME_SCHEMA_ID = "pitwall.theme";
 
 export interface ThemeFile {
-  $schema: string; // "apextrace.theme/v{N}"
+  $schema: string; // "pitwall.theme/v{N}"
   version: number;
   name?: string;
   description?: string | null;
@@ -75,7 +75,7 @@ export function migrateThemeFile(raw: unknown): MigrationResult {
   const obj = raw as Record<string, any>;
 
   // Detect version: explicit `version`, or parse from `$schema` like
-  // "apextrace.theme/v2", or fall back to v1 (the original unversioned shape).
+  // "pitwall.theme/v2" or legacy "apextrace.theme/v2", or fall back to v1.
   let from: number;
   if (typeof obj.version === "number" && Number.isFinite(obj.version)) {
     from = obj.version;

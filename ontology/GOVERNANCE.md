@@ -95,3 +95,41 @@ The operating system kernel strictly prohibits automatic heuristic mutation. The
 * Calibrating recommendation confidence weights based on attribution feedback.
 * Storing audited historical outcomes in the session lineage.
 * Proposing major heuristic adjustments to human engineers for review.
+
+---
+
+## 8. Heuristic Version Lineage & Reputation Registry (Stage 8)
+
+All mechanical setup rules are isolated into a versioned **Heuristic Reputation Registry**. This registry guarantees absolute historical reproducibility and tracks performance indicators.
+- **Heuristic Lineage**: Every recommendation must log its active `heuristicId` and `heuristicVersion` inside `RecommendationLineage`.
+- **Absolute Reproducibility**: Replay engines must load the identical historical heuristic version to guarantee identical narratives and setup outputs.
+- **Reputation Tracking**: Every heuristic maintains a success rate, average gains, and active confidence weights derived from closed-loop validation history.
+
+---
+
+## 9. Contextual Similarity Weighting (Stage 9)
+
+Closed-loop calibration must operate contextually. To prevent cross-environment calibration contamination, the calibration coefficient of any closed-loop evaluation is multiplied by a similarity multiplier before updating the registry.
+
+Learning weight shifts scale based on matching stint profiles:
+1. **Track Layout Similarity**: Match slow-speed chicanes, high-speed sweepers, or heavy braking zones.
+2. **Thermal Similarity**: Match ambient and track temperature ranges, alongside carcass optimal friction envelopes.
+3. **Vehicle Profile Similarity**: Match aeromechanical downforce compression (GT3 vs. GTP prototypes).
+
+---
+
+## 10. "Modify Before Create" Extension Doctrine (Anti-Entropy Rule)
+
+The Motorsport Ontology Kernel strictly enforces a **Modify Before Create** extension policy. Parallel implementations, duplicated utilities, alternate schemas, or shadow reasoning channels are dangerous and represent architecture corruption vectors.
+- **Subsystem Reuse**: If a subsystem already models a physical concept, developers *must* extend it rather than writing a duplicate file.
+- **Schema Evolution**: Existing schemas and typescript interfaces must be versioned, expanded, or compositionally layered rather than creating shadow abstractions.
+- **New File Restriction**: Creating new modules is only permitted when introducing a genuinely new, bounded domain boundary, a new persistence contract, or a completely isolated reasoning engine.
+
+---
+
+## 11. Single Source of Truth (SSOT) & Telemetry Containment
+
+To preserve conceptual purity, no subsystem or frontend UI component may replicate or bypass active session-intelligence logic.
+- **Abstractions**: Telemetry mapping, setup confidence, recommendations, heuristics, or environmental similarity evaluations are owned strictly by the reasoning kernel.
+- **No Raw Telemetry Leakage**: Raw telemetry interpretative calculations are strictly sandboxed. Strategic dashboard widgets and LLM communication wrappers consume only unified semantic primitives (`TelemetryEvent`, `EngineeringEpisode`, `CausalityNode`, and `UnifiedRecommendation`).
+- **epistemological Control**: Frontends are prohibited from creating parallel reasoning logic or interpreting raw sensor traces independently, avoiding reasoning divergence.

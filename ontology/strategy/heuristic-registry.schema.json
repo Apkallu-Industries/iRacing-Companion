@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://motorsport-intelligence.org/schemas/ontology/heuristic-registry.schema.json",
+  "title": "HeuristicVersionEntry",
+  "type": "object",
+  "required": [
+    "heuristicId",
+    "version",
+    "baseConfidenceIndex",
+    "activeConfidenceIndex",
+    "deprecationStatus",
+    "validationHistory",
+    "physicsTruthBoundary"
+  ],
+  "properties": {
+    "heuristicId": {
+      "type": "string",
+      "pattern": "^heur_[a-z0-9_]+$",
+      "description": "Unique heuristic identifier, prefixed with 'heur_'"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic versioning (SemVer 2.0.0)"
+    },
+    "baseConfidenceIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "The default starting confidence baseline derived from physics principles"
+    },
+    "activeConfidenceIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Calibrated dynamic confidence index based on closed-loop track feedback"
+    },
+    "deprecationStatus": {
+      "type": "string",
+      "enum": ["active", "deprecated", "archived"]
+    },
+    "validationHistory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sessionId", "outcomeStatus", "attributionSetupPct", "timestamp"],
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "pattern": "^ses_[a-f0-9]+$"
+          },
+          "outcomeStatus": {
+            "type": "string",
+            "enum": ["SUCCESS_VERIFIED", "COMPROMISED_FAIL", "INCONCLUSIVE_NO_DATA"]
+          },
+          "attributionSetupPct": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "The dynamic setup attribution calculated in Closed-Loop Feedback"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "physicsTruthBoundary": {
+      "type": "object",
+      "required": ["sourceTypes"],
+      "properties": {
+        "sourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "deterministic_physics",
+              "historical_correlation",
+              "behavioral_model",
+              "probabilistic_projection"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

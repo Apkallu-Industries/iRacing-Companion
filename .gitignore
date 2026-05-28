@@ -32,8 +32,13 @@ dist-ssr
 *.sw?
 desktop/node_modules
 desktop/out
+desktop/dist-installer/
 desktop/bridge/node_modules
 
 # Large desktop bundles - host externally (GitHub Releases, R2, etc.)
 public/downloads/*.zip
 !public/downloads/.gitkeep
+
+# Confidential Admin Documentation
+ADMIN.md
+

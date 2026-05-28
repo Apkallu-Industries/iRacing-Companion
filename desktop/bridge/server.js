@@ -15,6 +15,134 @@ const fs = require("fs");
 const path = require("path");
 const { WebSocketServer } = require("ws");
 const licensing = require("./licensing");
+const teamRelay = require("./teamRelay");
+const { TelemetryRecorder } = require("./telemetry-recorder");
+const { parseTelemetryQuery } = require("./query-parser");
+
+// Import Phase 13 & 14 Deterministic Runtime & Simulation components
+const runtimeBus = require("./runtimeBus");
+const binaryEncoder = require("./binaryEncoder");
+const queryPlanner = require("./queryPlanner");
+const { Worker } = require("worker_threads");
+const simulationRuntime = require("./simulationRuntime");
+const observability = require("./observability");
+const carStateRuntime = require("./carStateRuntime");
+const driverSwapContinuity = require("./driverSwapContinuity");
+const pitStopRuntime = require("./pitStopRuntime");
+const vehicleIdentityRuntime = require("./vehicleIdentityRuntime");
+
+// Spawn and supervise isolated analytical worker thread
+let analyticalWorker = null;
+let previousFrame = null;
+
+function startAnalyticalWorker() {
+  try {
+    const workerPath = path.join(__dirname, "workers", "analyticalWorker.js");
+    analyticalWorker = new Worker(workerPath);
+    console.log("[bridge] Analytical worker thread spawned successfully.");
+
+    analyticalWorker.on("message", (msg) => {
+      const { type, payload } = msg;
+      if (type === "PREDICTION_RESULT") {
+        runtimeBus.publish("PREDICTION_WARNING", payload.prediction);
+      } else if (type === "STRATEGY_RESULT") {
+        runtimeBus.publish("STINT_UPDATED", payload.strategy);
+      } else if (type === "ERROR") {
+        console.warn("[analytical-worker] Isolated thread error:", payload.message);
+      }
+    });
+
+    analyticalWorker.on("error", (err) => {
+      console.error("[analytical-worker] Thread crashed:", err.message);
+      setTimeout(startAnalyticalWorker, 2000); // Auto-reboot after 2s
+    });
+
+    analyticalWorker.on("exit", (code) => {
+      if (code !== 0) {
+        console.warn(`[analytical-worker] Exited with code ${code}. Rebooting thread…`);
+        setTimeout(startAnalyticalWorker, 2000);
+      }
+    });
+  } catch (e) {
+    console.error("[analytical-worker] Failed to initialize worker thread:", e.message);
+  }
+}
+
+startAnalyticalWorker();
+
+// Load .env from local-bridge directory (TEAM_CODE, SUPABASE_URL, etc.)
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+
+// Load local driver config if exists
+const configPath = path.join(__dirname, "driver-config.json");
+if (fs.existsSync(configPath)) {
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    if (config.driverName) process.env.DRIVER_NAME = config.driverName;
+    if (config.iracingId) process.env.IRACING_ID = config.iracingId;
+    if (config.teamCode) process.env.TEAM_CODE = config.teamCode;
+    console.log(`[bridge] Loaded saved driver config: ${config.driverName} (ID: ${config.iracingId}) | Team: ${config.teamCode}`);
+  } catch (e) {
+    console.warn("[bridge] Failed to load driver-config.json:", e.message);
+  }
+}
+
+// ─── MongoDB Telemetry Recorder ───────────────────────────────────────────────────
+
+// MONGO_URI is injected by the Electron Runtime Supervisor via env.
+// If absent, recording silently degrades — bridge still works without MongoDB.
+const MONGO_URI = process.env.MONGO_URI || null;
+const USER_ID   = process.env.PITWALL_USER_ID || "local";
+
+/** @type {import('./telemetry-recorder').TelemetryRecorder | null} */
+let recorder = null;
+let recorderConnected = false;
+let recorderSampleCount = 0;
+let recorderSessionId = null;
+let lastRecordedLap = -1;
+
+/**
+ * Start a MongoDB recording session when iRacing connects.
+ * Safe to call multiple times — creates a new recorder each connection.
+ */
+async function startRecordingSession(sessionInfo) {
+  if (!MONGO_URI) return;
+  try {
+    if (recorder) await recorder.close();
+  } catch {}
+
+  recorder = new TelemetryRecorder(MONGO_URI, USER_ID, sessionInfo);
+  recorderConnected = await recorder.connect();
+  if (recorderConnected) {
+    recorderSessionId = await recorder.startSession(Object.keys(latest || {}));
+    recorderSampleCount = 0;
+    lastRecordedLap = -1;
+    console.log("[bridge] Telemetry recording started → MongoDB");
+
+    // Asynchronously run tiered retention compaction
+    try {
+      const { executeRetentionPolicy } = require("./retention");
+      executeRetentionPolicy(recorder.db).catch(err => {
+        console.warn("[bridge] Retention policy sweep warning:", err.message);
+      });
+    } catch (e) {
+      console.warn("[bridge] Failed to load retention sweeps module:", e.message);
+    }
+  }
+}
+
+async function stopRecordingSession() {
+  if (!recorder) return;
+  try {
+    await recorder.close();
+    console.log(`[bridge] Telemetry recording ended — ${recorderSampleCount} samples recorded`);
+  } catch (e) {
+    console.warn("[bridge] Recorder close error:", e.message);
+  }
+  recorder = null;
+  recorderConnected = false;
+  recorderSessionId = null;
+}
 
 let IRacingSDK = null;
 try {
@@ -85,7 +213,7 @@ const MIME = {
 
 /* ───────────────────────────────────────── HTTP server (static PWA) */
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const urlPath = (req.url || "/").split("?")[0];
 
   // Set CORS headers
@@ -96,6 +224,53 @@ const server = http.createServer((req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  /* ───────────────────────────────────────── Driver Config Endpoints */
+
+  if (urlPath === "/api/driver/config" && req.method === "GET") {
+    const configPath = path.join(__dirname, "driver-config.json");
+    let config = { driverName: "", iracingId: "", teamCode: "" };
+    if (fs.existsSync(configPath)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+      } catch {}
+    }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(config));
+    return;
+  }
+
+  if (urlPath === "/api/driver/config" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body);
+        const { driverName, iracingId, teamCode } = payload;
+        
+        // Save to file
+        const configPath = path.join(__dirname, "driver-config.json");
+        fs.writeFileSync(configPath, JSON.stringify({ driverName, iracingId, teamCode }, null, 2), "utf8");
+        
+        // Update environment variables
+        process.env.DRIVER_NAME = driverName || "";
+        process.env.IRACING_ID = iracingId || "";
+        process.env.TEAM_CODE = teamCode || "";
+        
+        console.log(`[bridge] Configured driver: ${driverName} (ID: ${iracingId}) | Team: ${teamCode}`);
+        
+        // Re-initialize team relay dynamically
+        teamRelay.init();
+        
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, driverName, iracingId, teamCode }));
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
     return;
   }
 
@@ -148,7 +323,674 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  /* ───────────────────────────────────────── Static File Serving */
+  /* ─────────────────────────────────────────── MongoDB Status API */
+
+  if (urlPath === "/api/mongo/status" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      connected: recorderConnected,
+      uri: MONGO_URI ? MONGO_URI.replace(/:([^@]+)@/, ":***@") : null,
+      sessionId: recorderSessionId ? recorderSessionId.toString() : null,
+      sampleCount: recorderSampleCount,
+    }));
+    return;
+  }
+
+  if (urlPath === "/api/sessions" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    // Expose recent sessions for the HistoricalQueryPanel
+    // (recorder.db is the MongoClient db instance)
+    try {
+      const sessions = await recorder.db
+        .collection("telemetry_sessions")
+        .find({}, { projection: { session_info_yaml: 0 } })
+        .sort({ start_time: -1 })
+        .limit(20)
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ sessions }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/sessions/laps" && req.method === "GET") {
+    const sessionId = new URL(req.url, `http://localhost`).searchParams.get("sessionId");
+    if (!recorder || !recorderConnected || !sessionId) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected or no sessionId" }));
+      return;
+    }
+    try {
+      const { ObjectId } = require("mongodb");
+      const laps = await recorder.db
+        .collection("laps")
+        .find({ session_id: new ObjectId(sessionId) })
+        .sort({ lap_number: 1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ laps }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/events" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      let filter = {};
+      let projection = {};
+
+      const q = params.get("q");
+      if (q) {
+        const parsedQuery = parseTelemetryQuery(q);
+        filter = parsedQuery.filter;
+        projection = parsedQuery.projection;
+      } else {
+        if (params.get("track"))    filter.track    = params.get("track");
+        if (params.get("car"))      filter.car      = params.get("car");
+        if (params.get("category")) filter.category = params.get("category");
+        if (params.get("severity")) filter.severity = params.get("severity");
+        if (params.get("corner"))   filter.cornerNumber = parseInt(params.get("corner"), 10);
+      }
+
+      // Shape and optimize query using Phase 13 QueryPlanner
+      const planned = queryPlanner.plan({ filter, projection }, recorderSessionId);
+
+      const cursor = recorder.db
+        .collection("scanner_events")
+        .find(planned.filter, { projection: planned.projection });
+
+      if (planned.hint) {
+        cursor.hint(planned.hint);
+      }
+
+      const events = await cursor
+        .sort({ timestamp: -1 })
+        .limit(planned.limit)
+        .toArray();
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ events }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/events" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { events } = payload;
+        if (Array.isArray(events) && events.length > 0) {
+          const { ObjectId } = require("mongodb");
+          const docs = events.map(ev => {
+            let sid = null;
+            if (ev.session_id) {
+              sid = ObjectId.isValid(ev.session_id) ? new ObjectId(ev.session_id) : ev.session_id;
+            } else {
+              sid = recorderSessionId;
+            }
+            return {
+              session_id: sid,
+              timestamp: ev.timestamp ? new Date(ev.timestamp) : new Date(),
+              track: ev.track || "unknown",
+              car: ev.car || "unknown",
+              category: ev.category || "inputs",
+              classification: ev.classification || "STABILITY",
+              severity: ev.severity || "info",
+              label: ev.label || "",
+              description: ev.description || "",
+              cornerNumber: ev.cornerNumber != null ? parseInt(ev.cornerNumber, 10) : undefined,
+              lapNumber: ev.lapNumber != null ? parseInt(ev.lapNumber, 10) : undefined,
+              metadata: ev.metadata || {},
+            };
+          });
+
+          await recorder.db.collection("scanner_events").insertMany(docs);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, count: docs.length }));
+        } else {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid events format" }));
+        }
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/setup-changes" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const { ObjectId } = require("mongodb");
+      const filter = {};
+      const sid = params.get("sessionId");
+      if (sid) {
+        filter.session_id = ObjectId.isValid(sid) ? new ObjectId(sid) : sid;
+      }
+      const changes = await recorder.db
+        .collection("setup_changes")
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ changes }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/setup-changes" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { session_id, lap_number, change_type, parameter, delta, consequences, notes } = payload;
+        const { ObjectId } = require("mongodb");
+        const doc = {
+          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          timestamp: new Date(),
+          lap_number: lap_number != null ? parseInt(lap_number, 10) : 0,
+          change_type: change_type || "general",
+          parameter: parameter || "",
+          delta: delta || "",
+          consequences: Array.isArray(consequences) ? consequences : [],
+          notes: notes || "",
+        };
+        await recorder.db.collection("setup_changes").insertOne(doc);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, change: doc }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/team-profiles" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const profiles = await recorder.db
+        .collection("team_profiles")
+        .find({})
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ profiles }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/team-profiles" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const profile = JSON.parse(body);
+        if (!profile.id) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Profile id is required" }));
+          return;
+        }
+
+        await recorder.db.collection("team_profiles").updateOne(
+          { id: profile.id },
+          { $set: profile },
+          { upsert: true }
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, profile }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/session-notes" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const { ObjectId } = require("mongodb");
+      const filter = {};
+      const sid = params.get("sessionId");
+      if (sid) {
+        filter.session_id = ObjectId.isValid(sid) ? new ObjectId(sid) : sid;
+      }
+      const notes = await recorder.db
+        .collection("session_notes")
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ notes }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/session-notes" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { session_id, lap_number, corner_number, engineer_name, notes, linked_incident_id, replay_bookmark_sec } = payload;
+        const { ObjectId } = require("mongodb");
+        const doc = {
+          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          timestamp: new Date(),
+          lap_number: lap_number != null ? parseInt(lap_number, 10) : undefined,
+          corner_number: corner_number != null ? parseInt(corner_number, 10) : undefined,
+          engineer_name: engineer_name || "Lead Engineer",
+          notes: notes || "",
+          linked_incident_id: linked_incident_id && ObjectId.isValid(linked_incident_id) ? new ObjectId(linked_incident_id) : undefined,
+          replay_bookmark_sec: replay_bookmark_sec != null ? parseFloat(replay_bookmark_sec) : undefined,
+        };
+        await recorder.db.collection("session_notes").insertOne(doc);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, note: doc }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  /* ────────────────────────────────────── Strategy, Bookmarks and Setup Notebook API */
+
+  if (urlPath === "/api/notebook/notes" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const { ObjectId } = require("mongodb");
+      const filter = {};
+      const sid = params.get("sessionId");
+      if (sid) {
+        filter.session_id = ObjectId.isValid(sid) ? new ObjectId(sid) : sid;
+      }
+      const notes = await recorder.db
+        .collection("engineering_notes")
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ notes }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/notebook/notes" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { session_id, title, content, engineer_name, tags } = payload;
+        const { ObjectId } = require("mongodb");
+        const doc = {
+          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          timestamp: new Date(),
+          title: title || "Stint Strategy Update",
+          content: content || "",
+          engineer_name: engineer_name || "Lead Engineer",
+          tags: Array.isArray(tags) ? tags : [],
+        };
+        await recorder.db.collection("engineering_notes").insertOne(doc);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, note: doc }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/notebook/bookmarks" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const { ObjectId } = require("mongodb");
+      const filter = {};
+      const sid = params.get("sessionId");
+      if (sid) {
+        filter.session_id = ObjectId.isValid(sid) ? new ObjectId(sid) : sid;
+      }
+      const bookmarks = await recorder.db
+        .collection("notebook_bookmarks")
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ bookmarks }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/notebook/bookmarks" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { session_id, lap_number, replay_tick, label, description } = payload;
+        const { ObjectId } = require("mongodb");
+        const doc = {
+          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          timestamp: new Date(),
+          lap_number: lap_number != null ? parseInt(lap_number, 10) : 1,
+          replay_tick: replay_tick != null ? parseInt(replay_tick, 10) : 0,
+          label: label || "Replay Hotspot",
+          description: description || "",
+        };
+        await recorder.db.collection("notebook_bookmarks").insertOne(doc);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, bookmark: doc }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/notebook/snapshots" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const { ObjectId } = require("mongodb");
+      const filter = {};
+      const sid = params.get("sessionId");
+      if (sid) {
+        filter.session_id = ObjectId.isValid(sid) ? new ObjectId(sid) : sid;
+      }
+      const snapshots = await recorder.db
+        .collection("setup_snapshots")
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ snapshots }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/notebook/snapshots" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { session_id, lap_number, chassis_profile, springs, dampers, wing_angle, tire_pressures } = payload;
+        const { ObjectId } = require("mongodb");
+        const doc = {
+          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          timestamp: new Date(),
+          lap_number: lap_number != null ? parseInt(lap_number, 10) : 1,
+          chassis_profile: chassis_profile || "gt3",
+          springs: springs || {},
+          dampers: dampers || {},
+          wing_angle: wing_angle != null ? parseFloat(wing_angle) : 0,
+          tire_pressures: tire_pressures || {},
+        };
+        await recorder.db.collection("setup_snapshots").insertOne(doc);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, snapshot: doc }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/intelligence/correlations" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const track = params.get("track") || "unknown";
+      const car = params.get("car") || "unknown";
+      const ambient = parseFloat(params.get("ambient") || "20");
+      const rebound = parseInt(params.get("rebound") || "0", 10);
+      const laps = parseInt(params.get("laps") || "0", 10);
+
+      // Query historical setup changes and scanner events to feed the correlation builder
+      const [changes, events] = await Promise.all([
+        recorder.db.collection("setup_changes").find({}).limit(50).toArray(),
+        recorder.db.collection("scanner_events").find({}).limit(100).toArray()
+      ]);
+
+      const { calculateSessionCorrelations } = require("../src/lib/session-intelligence/correlationEngine");
+      const correlation = calculateSessionCorrelations(track, car, rebound, ambient, laps, changes, events);
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ correlation }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/multi-car/sessions" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const sessions = await recorder.db
+        .collection("telemetry_sessions")
+        .find({ garage_sharing: true })
+        .sort({ start_time: -1 })
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ sessions }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/multi-car/telemetry" && req.method === "GET") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const carNumber = params.get("carNumber") || "unknown";
+      const telemetry = await recorder.db
+        .collection("telemetry_samples")
+        .find({ car_number: carNumber })
+        .sort({ timestamp: 1 })
+        .limit(100)
+        .toArray();
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ telemetry }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/sandbox/simulate" && req.method === "POST") {
+    if (!recorder || !recorderConnected) {
+      res.writeHead(503, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "MongoDB not connected" }));
+      return;
+    }
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", async () => {
+      const startQueryTime = Date.now();
+      try {
+        const payload = JSON.parse(body);
+        const { sessionId, adjustments } = payload;
+        const { ObjectId } = require("mongodb");
+        
+        if (!sessionId) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "sessionId is required for scenario cloning" }));
+          return;
+        }
+
+        const sid = ObjectId.isValid(sessionId) ? new ObjectId(sessionId) : sessionId;
+
+        // Fetch baseline telemetry ticks from indexed collection
+        const samples = await recorder.db
+          .collection("telemetry_samples")
+          .find({ session_id: sid })
+          .sort({ timestamp: 1 })
+          .toArray();
+
+        // Enforce Replay Sort Normalization Guarantees: sort strictly by (sequenceId ASC, timestamp ASC) keys
+        samples.sort((a, b) => {
+          const seqA = a.sequence_id || a.channels?.sequenceId || a.channels?.carOperationalState?.sequenceId || 0;
+          const seqB = b.sequence_id || b.channels?.sequenceId || b.channels?.carOperationalState?.sequenceId || 0;
+          if (seqA !== seqB) return seqA - seqB;
+          const tsA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const tsB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return tsA - tsB;
+        });
+
+        // Run counterfactual physical stint simulation using our Physics layer
+        const counterfactual = simulationRuntime.simulateCounterfactualStint(samples, adjustments || {});
+
+        // Log query planning performance to our self-monitoring observability tracker
+        observability.recordQueryLatency(Date.now() - startQueryTime);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          success: true,
+          count: counterfactual.length,
+          counterfactual
+        }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/observability/metrics" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      success: true,
+      metrics: observability.getMetrics()
+    }));
+    return;
+  }
+
+  /* ────────────────────────────────────── Static File Serving */
 
   let filePath = path.join(PUBLIC_DIR, urlPath === "/" ? "index.html" : urlPath);
 
@@ -185,10 +1027,13 @@ server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
   console.log(`[bridge] websocket:  ws://localhost:${PORT}`);
   printNetworkUrls(PORT);
+  // Init team relay AFTER server is up (dotenv already loaded above)
+  teamRelay.init();
 });
 
 let latest = null;
 let packetCount = 0;
+let currentLap = 0;
 
 if (IRacingSDK) {
   const iracing = new IRacingSDK({ autoEnableTelemetry: true });
@@ -199,6 +1044,33 @@ if (IRacingSDK) {
     if (connected !== wasConnected) {
       console.log(connected ? "[bridge] iRacing connected" : "[bridge] iRacing disconnected");
       wasConnected = connected;
+      if (connected) {
+        // Start recording session when iRacing connects
+        const sessionData = iracing.getSessionData();
+        const weekend = sessionData?.WeekendInfo;
+        const driverInfo = sessionData?.DriverInfo;
+        const me = driverInfo?.Drivers?.[driverInfo?.DriverCarIdx] ?? {};
+        startRecordingSession({
+          track:  weekend?.TrackDisplayName ?? "unknown",
+          car:    me.CarScreenName ?? "unknown",
+          driver: process.env.DRIVER_NAME || me.UserName || "unknown",
+          sessionInfoYaml: "",
+        });
+        vehicleIdentityRuntime.initializeSession({
+          carId: me.CarScreenName ?? "unknown",
+          carNumber: me.CarNumber ?? "0",
+          carName: me.CarScreenName ?? "Unknown Car",
+          teamId: process.env.TEAM_CODE || "local",
+          driverId: process.env.DRIVER_NAME || me.UserName || "unknown",
+          env: {
+            trackTempC: weekend?.WeekendOptions?.TrackTemp ?? 0,
+            airTempC: weekend?.WeekendOptions?.AirTemp ?? 0,
+          }
+        });
+      } else {
+        // Stop recording when iRacing disconnects
+        stopRecordingSession();
+      }
     }
     if (!connected || !iracing.waitForData(1000 / TICK_HZ)) return;
     const flat = flattenTelemetry(iracing.getTelemetry());
@@ -208,7 +1080,83 @@ if (IRacingSDK) {
     }
     latest = mapTelemetry(flat, iracing.getSessionData());
     latest.all = flat;
+    currentLap = flat.Lap ?? 0;
     packetCount += 1;
+
+    // Phase 15 Endurance State calculations
+    carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
+    const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
+    
+    // Authoritative Ingest to produce deterministic nextState & sequences
+    const enduranceState = carStateRuntime.getCurrentState();
+    const nextState = vehicleIdentityRuntime.ingestFrame(latest, enduranceState, swapReport, currentLap);
+    
+    // Add authoritative state to frame projection
+    latest.carOperationalState = nextState;
+    latest.enduranceState = enduranceState;
+    if (swapReport) {
+      latest.adaptationState = swapReport;
+    }
+
+    // Periodically persist coherent state snapshot & deltas to MongoDB (every 10s)
+    if (recorder && recorderConnected && packetCount % (TICK_HZ * 10) === 0) {
+      vehicleIdentityRuntime.persistSnapshot(recorder.db, recorderSessionId);
+      vehicleIdentityRuntime.flushDeltasToMongo(recorder.db, recorderSessionId);
+    }
+
+    // Publish live frame tick to the Decoupled Runtime Event Bus
+    runtimeBus.publish("FRAME_RECEIVED", latest);
+
+    // Delegate high-frequency calculations to the isolated analytical worker
+    if (analyticalWorker) {
+      const currentTick = {
+        tick: latest.tick || packetCount,
+        speedMps: latest.speedKph / 3.6,
+        brake: latest.brake,
+        throttle: latest.throttle,
+        steeringWheelAngle: (latest.steeringDeg * Math.PI) / 180,
+        yawRate: latest.yawRate || latest.all?.YawRate || 0,
+        pitch: latest.all?.Pitch || 0,
+        roll: latest.all?.Roll || 0,
+        mgukDeploykW: latest.all?.MgukDeploykW || 0,
+        frontLeftDeflection: latest.all?.LFshockDefl || latest.all?.LFshockDefl_ST || 0,
+        rearRightSpeedMps: latest.all?.RRspeed || 0,
+        rearLeftSpeedMps: latest.all?.LRspeed || 0
+      };
+
+      analyticalWorker.postMessage({
+        type: "PROCESS_TICK",
+        payload: {
+          current: currentTick,
+          previous: previousFrame || currentTick,
+          hz: TICK_HZ
+        }
+      });
+
+      previousFrame = currentTick;
+    }
+
+    // ─── Telemetry Recording ─────────────────────────────────────────────────────
+    if (recorder && recorderConnected) {
+      // Record 60Hz sample
+      recorder.recordSample(flat, currentLap);
+      recorderSampleCount++;
+
+      // Record completed lap metadata
+      const lapTime = flat.LapLastLapTime ?? 0;
+      if (currentLap > lastRecordedLap && lapTime > 0 && currentLap > 0) {
+        lastRecordedLap = currentLap;
+        recorder.recordLap(
+          currentLap,
+          lapTime,
+          flat.FuelLevel ?? 0,
+          flat.TrackTemp ?? 0,
+          flat.AirTemp ?? 0,
+        );
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
     if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
       console.log(
         `[bridge] live packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
@@ -219,19 +1167,79 @@ if (IRacingSDK) {
   }, 1000 / TICK_HZ);
 }
 
-// Broadcast loop
+// 60Hz local WebSocket broadcast (Binary & JSON adaptive transport)
 setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
-  const msg = JSON.stringify(latest);
-  for (const client of wss.clients) if (client.readyState === 1) client.send(msg);
+
+  let jsonMsg = null;
+  let binaryMsg = null;
+
+  for (const client of wss.clients) {
+    if (client.readyState === 1) {
+      if (client.isBinary) {
+        if (!binaryMsg) {
+          binaryMsg = binaryEncoder.encodeTelemetry(latest);
+        }
+        client.send(binaryMsg);
+      } else {
+        if (!jsonMsg) {
+          jsonMsg = JSON.stringify({
+            carId: latest.carNumber || "963",
+            teamId: "team_pitwall",
+            driverId: latest.driver || "driver_A",
+            payload: latest
+          });
+        }
+        client.send(jsonMsg);
+      }
+    }
+  }
 }, 1000 / TICK_HZ);
+
+// 2Hz team relay publish (Supabase Realtime — no-op if TEAM_CODE not set)
+setInterval(() => {
+  if (!latest) return;
+  teamRelay.publish(latest);
+}, 500); // 2Hz = every 500ms
 
 wss.on("connection", (ws) => {
   console.log("[bridge] dashboard connected");
   ws.send(JSON.stringify({ type: "license", ...activeLicense }));
-  if (latest) ws.send(JSON.stringify(latest));
+  if (latest) {
+    if (ws.isBinary) {
+      ws.send(binaryEncoder.encodeTelemetry(latest));
+    } else {
+      ws.send(JSON.stringify({
+        carId: latest.carNumber || "963",
+        teamId: "team_pitwall",
+        driverId: latest.driver || "driver_A",
+        payload: latest
+      }));
+    }
+  }
+
+  // Handle client-initiated WebSocket messages for protocol negotiation
+  ws.on("message", (msg) => {
+    try {
+      const payloadStr = msg.toString().trim();
+      if (payloadStr === "protocol:binary") {
+        ws.isBinary = true;
+        console.log("[bridge] WebSocket connection upgraded to binary protocol");
+      } else if (payloadStr === "protocol:json") {
+        ws.isBinary = false;
+        console.log("[bridge] WebSocket connection downgraded to json protocol");
+      }
+    } catch (e) {
+      console.warn("[bridge] Error parsing WebSocket message:", e.message);
+    }
+  });
+
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
+
+// Graceful shutdown — close recorder and Supabase channel cleanly
+process.on("SIGINT",  async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
+process.on("SIGTERM", async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
 
 function printNetworkUrls(port) {
   try {
@@ -297,6 +1305,8 @@ function mapTelemetry(v, session) {
     sectors: updateSectors(v, session),
 
     fuelRemainingL: v.FuelLevel ?? 0,
+    fuelUsePerHour: v.FuelUsePerHour ?? 0,       // kg/hr from iRacing (≈ L/hr for petrol)
+    lapLastLapTimeSec: v.LapLastLapTime ?? 0,     // raw seconds — lets UI compute burn per lap
     lapsEstimated: estimateLaps(v),
 
     tires: {
