@@ -48,7 +48,6 @@ function LandingPage() {
   const [pulse, setPulse] = useState(true);
   const [bridgeConnected, setBridgeConnected] = useState(false);
   const [recentSessions, setRecentSessions] = useState<Sess[]>([]);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Poll local bridge status
   useEffect(() => {
@@ -87,101 +86,6 @@ function LandingPage() {
       setPulse((prev) => !prev);
     }, 1500);
     return () => clearInterval(interval);
-  }, []);
-
-  // 60Hz Canvas Telemetry Waveform Animation
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationId: number;
-    let offset = 0;
-
-    const resizeCanvas = () => {
-      canvas.width = canvas.parentElement?.clientWidth || 500;
-      canvas.height = 140;
-    };
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
-    const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw background grid minor
-      ctx.strokeStyle = "#11161D";
-      ctx.lineWidth = 1;
-      const step = 20;
-      for (let x = 0; x < canvas.width; x += step) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += step) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-
-      // Major grid line
-      ctx.strokeStyle = "#1C2430";
-      ctx.beginPath();
-      ctx.moveTo(0, canvas.height / 2);
-      ctx.lineTo(canvas.width, canvas.height / 2);
-      ctx.stroke();
-
-      offset += 1.5;
-
-      // Draw Throttle Waveform (Green)
-      ctx.strokeStyle = "#00D17F";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let x = 0; x < canvas.width; x++) {
-        const val = Math.sin((x + offset) * 0.015) * Math.cos((x + offset) * 0.005) * 45;
-        const y = canvas.height / 2 - 20 - val;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // Draw Brake Waveform (Red)
-      ctx.strokeStyle = "#FF4D4D";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let x = 0; x < canvas.width; x++) {
-        let val = Math.sin((x - offset * 0.8) * 0.04) * 50;
-        if (val < 0) val = 0; // Simulate threshold breaking
-        const y = canvas.height - 10 - val;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // Draw ERS State-of-charge (Purple)
-      ctx.strokeStyle = "#8B5CF6";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      for (let x = 0; x < canvas.width; x++) {
-        const y = canvas.height / 2 + 10 + Math.cos((x + offset * 0.5) * 0.01) * 20;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]); // Reset dash
-
-      animationId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      window.removeEventListener("resize", resizeCanvas);
-      cancelAnimationFrame(animationId);
-    };
   }, []);
 
   const openSettings = () => {
@@ -298,105 +202,8 @@ function LandingPage() {
       </section>
 
       {/* ── MAIN WORKSPACE CONTAINER ── */}
-      <section className="flex-1 w-full max-w-[1700px] mx-auto px-4 md:px-8 py-6 grid lg:grid-cols-12 gap-5 items-stretch relative z-10">
-        
-        {/* LEFT COLUMN: ACTIVE COCKPIT TELEMETRY GRAPHICS (Cols 1-5) */}
-        <div className="lg:col-span-5 flex flex-col gap-4 justify-between h-full">
-          
-          {/* Waveform Panel */}
-          <div className="border border-[#1C2430] bg-[#0B0F14] p-4 flex flex-col justify-between flex-1 min-h-[220px]">
-            <div className="flex items-center justify-between border-b border-[#1C2430] pb-2 mb-2">
-              <div className="text-[10px] font-mono text-[#E2E4E8] tracking-widest font-black uppercase flex items-center gap-2">
-                <Activity className="h-3.5 w-3.5 text-[#3B82F6]" />
-                60Hz Realtime Stream Emulator
-              </div>
-              <span className="text-[8px] font-mono text-[#00D17F] border border-[#00D17F]/30 bg-[#00D17F]/10 px-1.5 py-0.5">
-                LIVE WAVEFORMS
-              </span>
-            </div>
-
-            {/* Live Waveform Canvas */}
-            <div className="w-full flex-1 relative flex items-center justify-center bg-[#05070A] border border-[#1C2430] py-2">
-              <canvas ref={canvasRef} className="w-full h-full max-h-[140px]" />
-              
-              <div className="absolute top-2 left-2 flex gap-3 text-[8px] font-mono uppercase font-black tracking-widest text-[#7A828C]">
-                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#00D17F]" /> THR</span>
-                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#FF4D4D]" /> BRK</span>
-                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#8B5CF6]" /> ERS</span>
-              </div>
-            </div>
-
-            <div className="text-[8px] text-[#7A828C] uppercase tracking-wider font-bold mt-2 text-right">
-              SYSTEM ENGINE RUNNING IN BACKGROUND · BUFFER ACTIVE
-            </div>
-          </div>
-
-          {/* Spa Sector Vector Track Map */}
-          <div className="border border-[#1C2430] bg-[#0B0F14] p-4 flex flex-col justify-between flex-1 min-h-[260px]">
-            <div className="flex items-center justify-between border-b border-[#1C2430] pb-2 mb-3">
-              <div className="text-[10px] font-mono text-[#E2E4E8] tracking-widest font-black uppercase">
-                Active Track Geometry splits
-              </div>
-              <span className="text-[8px] font-mono text-[#7A828C] uppercase">Spa-Francorchamps</span>
-            </div>
-
-            <div className="grid grid-cols-12 gap-4 items-center">
-              {/* Spa SVG */}
-              <div className="col-span-5 h-28 flex items-center justify-center">
-                <svg viewBox="0 0 100 100" className="w-24 h-24 overflow-visible">
-                  <path
-                    d="M 50,5 C 80,10 90,25 95,45 C 99,60 85,75 75,80 C 65,85 55,70 45,75 C 35,80 25,95 10,85 C -5,75 5,50 15,40 C 25,30 35,25 40,15 Z"
-                    fill="none"
-                    stroke="url(#trackGradient)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <defs>
-                    <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FF4D4D" /> {/* Red Sector 1 */}
-                      <stop offset="40%" stopColor="#FFB800" /> {/* Amber Sector 2 */}
-                      <stop offset="75%" stopColor="#00D17F" /> {/* Green Sector 3 */}
-                    </linearGradient>
-                  </defs>
-                  <circle cx="50" cy="5" r="3.5" fill="#FFFFFF" className="animate-ping" />
-                </svg>
-              </div>
-
-              {/* Data Table */}
-              <div className="col-span-7 flex flex-col justify-center text-[10px] font-mono text-[#7A828C] gap-1.5 border-l border-[#1C2430] pl-4">
-                <div className="flex justify-between border-b border-[#1C2430]/40 pb-1">
-                  <span>SECTOR 1 (SPEED RUN)</span>
-                  <span className="text-white font-bold tracking-wider">24.567s</span>
-                </div>
-                <div className="flex justify-between border-b border-[#1C2430]/40 pb-1">
-                  <span>SECTOR 2 (TECHNICAL)</span>
-                  <span className="text-[#FFB800] font-bold tracking-wider">33.112s</span>
-                </div>
-                <div className="flex justify-between border-b border-[#1C2430]/40 pb-1">
-                  <span>SECTOR 3 (BLANCHIMONT)</span>
-                  <span className="text-[#00D17F] font-bold tracking-wider">25.777s</span>
-                </div>
-                <div className="flex justify-between border-t border-[#1C2430] mt-1 pt-1.5 text-[#3B82F6] font-black text-[11px] tracking-wider">
-                  <span>TOTAL ESTIMATED</span>
-                  <span>1:23.456</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dynamic Local Bridge Connection Banner */}
-            <div className={`mt-3 p-2 border text-[9px] uppercase tracking-wider flex items-center justify-between ${bridgeConnected ? 'border-[#00D17F]/30 bg-[#00D17F]/5 text-[#00D17F]' : 'border-[#FFB800]/30 bg-[#FFB800]/5 text-[#FFB800]'}`}>
-              <span>LOCAL SERVICE BRIDGE LINK:</span>
-              <span className="font-bold flex items-center gap-1">
-                <span className={`h-1.5 w-1.5 rounded-full ${bridgeConnected ? 'bg-[#00D17F]' : 'bg-[#FFB800]'}`} />
-                {bridgeConnected ? 'CONNECTED' : 'DISCONNECTED (SIM MODE ACTIVE)'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: PRIMARY TELEMETRY WORKSPACE SELECTORS (Cols 6-12) */}
-        <div className="lg:col-span-7 flex flex-col justify-between gap-4 h-full">
+      <section className="flex-1 w-full max-w-[1700px] mx-auto px-4 md:px-8 py-6 relative z-10">
+        <div className="flex flex-col gap-4 w-full">
           
           {/* Main Grid Header */}
           <div className="border border-[#1C2430] bg-[#0B0F14] px-4 py-2 text-[10px] tracking-widest text-[#7A828C] uppercase font-black flex items-center gap-2">
@@ -404,8 +211,8 @@ function LandingPage() {
             Telemetry Workstation Console Panels
           </div>
 
-          {/* 8 Section Workstation Grid Tiles */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-[360px]">
+          {/* 8 Section Workstation Grid Tiles (Using full horizontal canvas) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 flex-1">
             
             {/* Tile 1: LIVE TELEMETRY COMMAND */}
             <Link
@@ -616,33 +423,36 @@ function LandingPage() {
             </button>
           </div>
 
-          {/* Tile 6.5: DRIVER COCKPIT HUD GATEWAY */}
-          <Link
-            to="/driver-bridge"
-            className="border border-[#1C2430] bg-[#00D17F]/5 hover:bg-[#00D17F]/10 hover:border-[#00D17F]/50 p-3 text-[10px] uppercase tracking-widest flex items-center justify-between border-dashed cursor-pointer"
-          >
-            <span className="flex items-center gap-2 text-white font-bold">
-              <Gauge className="h-4 w-4 text-[#00D17F]" />
-              DRIVER COCKPIT HUD GATEWAY
-            </span>
-            <span className="text-[#00D17F] hover:underline font-bold">
-              LAUNCH COCKPIT HUD →
-            </span>
-          </Link>
+          {/* Gateway links spaced out horizontally */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            {/* Tile 6.5: DRIVER COCKPIT HUD GATEWAY */}
+            <Link
+              to="/driver-bridge"
+              className="border border-[#1C2430] bg-[#00D17F]/5 hover:bg-[#00D17F]/10 hover:border-[#00D17F]/50 p-4 text-[10px] uppercase tracking-widest flex items-center justify-between border-dashed cursor-pointer"
+            >
+              <span className="flex items-center gap-2 text-white font-bold">
+                <Gauge className="h-4 w-4 text-[#00D17F]" />
+                DRIVER COCKPIT HUD GATEWAY
+              </span>
+              <span className="text-[#00D17F] hover:underline font-bold">
+                LAUNCH COCKPIT HUD →
+              </span>
+            </Link>
 
-          {/* Tile 7: ENGINEER ACCOUNT GATEWAY */}
-          <Link
-            to="/auth"
-            className="border border-[#1C2430] bg-[#0B0F14] hover:bg-[#11161D] p-3 text-[10px] uppercase tracking-widest flex items-center justify-between border-dashed cursor-pointer"
-          >
-            <span className="flex items-center gap-2 text-white font-bold">
-              <LogIn className="h-4 w-4 text-[#3B82F6]" />
-              {user ? 'Active Account Profile Linked' : 'ENGINEER LOGIN GATEWAY'}
-            </span>
-            <span className="text-[#3B82F6] hover:underline">
-              {user ? 'View profile →' : 'Sign in to save records →'}
-            </span>
-          </Link>
+            {/* Tile 7: ENGINEER ACCOUNT GATEWAY */}
+            <Link
+              to="/auth"
+              className="border border-[#1C2430] bg-[#0B0F14] hover:bg-[#11161D] p-4 text-[10px] uppercase tracking-widest flex items-center justify-between border-dashed cursor-pointer"
+            >
+              <span className="flex items-center gap-2 text-white font-bold">
+                <LogIn className="h-4 w-4 text-[#3B82F6]" />
+                {user ? 'Active Account Profile Linked' : 'ENGINEER LOGIN GATEWAY'}
+              </span>
+              <span className="text-[#3B82F6] hover:underline">
+                {user ? 'View profile →' : 'Sign in to save records →'}
+              </span>
+            </Link>
+          </div>
         </div>
       </section>
 
