@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench, type MapMode, type MapColorChannel } from "@/lib/store";
 import { Plus, Minus, Maximize2, Flame, Waves, GitCompare, Activity } from "lucide-react";
@@ -364,6 +364,14 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
   const reset = useCallback(() => {
     animateTo(1, { x: 0, y: 0 }, false);
   }, [animateTo]);
+
+  useEffect(() => {
+    return () => {
+      if (animRef.current !== null) {
+        cancelAnimationFrame(animRef.current);
+      }
+    };
+  }, []);
 
   const xy = parsed.trackXY;
 

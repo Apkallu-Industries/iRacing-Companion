@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Users,
   Car as CarIcon,
@@ -205,12 +205,20 @@ function TeamPage() {
     }
   };
 
+  const [activeTimelinePan, setActiveTimelinePan] = useState(false);
+  const [activeTimelineZoom, setActiveTimelineZoom] = useState(false);
   const dragTimelineRef = useRef<{ startX: number; startPanOffset: number } | null>(null);
 
-  const onTimelineWheel = (e: React.WheelEvent) => {
+  const clampTimelinePan = useCallback(
+    (newStart: number) => Math.max(0, Math.min(totalMin - visibleDuration, newStart)),
+    [totalMin, visibleDuration],
+  );
+
+  const onTimelineWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     // Hold LMB and scroll MMW to zoom in and out
     if (!(e.buttons & 1)) return;
     e.preventDefault();
+    setActiveTimelineZoom(true);
     const rect = e.currentTarget.getBoundingClientRect();
     const isGraph = e.currentTarget.classList.contains("timeline-graph-container");
     const offsetLeft = isGraph ? 0 : 110;
@@ -228,40 +236,91 @@ function TeamPage() {
     const newVisibleDur = totalMin / newZoom;
     let newStart = mouseTimeMin - mousePct * newVisibleDur;
 
-    newStart = Math.max(0, Math.min(totalMin - newVisibleDur, newStart));
+    newStart = clampTimelinePan(newStart);
 
     setTimelineZoom(newZoom);
     setTimelinePanOffset(newStart);
   };
 
-  const onTimelineMouseDown = (e: React.MouseEvent) => {
-    // Hold LMB+RMB simultaneously to pan (buttons === 3)
+  const onTimelinePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.buttons === 3) {
       e.preventDefault();
-      dragTimelineRef.current = { startX: e.clientX, startPanOffset: timelinePanOffset };
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore unsupported browsers
+      }
+      setActiveTimelinePan(true);
+      setActiveTimelineZoom(false);
+      dragTimelineRef.current = {
+        startX: e.clientX,
+        startPanOffset: timelinePanOffset,
+      };
+    } else if (e.buttons & 1) {
+      setActiveTimelineZoom(true);
+      setActiveTimelinePan(false);
     }
   };
 
-  const onTimelineMouseMove = (e: React.MouseEvent) => {
-    if (dragTimelineRef.current && e.buttons === 3) {
-      e.preventDefault();
-      const rect = e.currentTarget.getBoundingClientRect();
-      const isGraph = e.currentTarget.classList.contains("timeline-graph-container");
-      const offsetLeft = isGraph ? 0 : 110;
-      const timelineWidth = rect.width - offsetLeft;
-      if (timelineWidth <= 0) return;
-
-      const dx = e.clientX - dragTimelineRef.current.startX;
-      const minDelta = (dx / timelineWidth) * visibleDuration;
-
-      let newStart = dragTimelineRef.current.startPanOffset - minDelta;
-      newStart = Math.max(0, Math.min(totalMin - visibleDuration, newStart));
-      setTimelinePanOffset(newStart);
+  const onTimelinePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const currentDrag = dragTimelineRef.current;
+    if (e.buttons === 3) {
+      setActiveTimelinePan(true);
+      setActiveTimelineZoom(false);
+    } else if (e.buttons & 1) {
+      setActiveTimelineZoom(true);
+      setActiveTimelinePan(false);
+    } else {
+      setActiveTimelinePan(false);
+      setActiveTimelineZoom(false);
     }
+
+    if (!currentDrag) return;
+    if (e.buttons !== 3) {
+      dragTimelineRef.current = null;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore unsupported browsers
+      }
+      return;
+    }
+
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isGraph = e.currentTarget.classList.contains("timeline-graph-container");
+    const offsetLeft = isGraph ? 0 : 110;
+    const timelineWidth = rect.width - offsetLeft;
+    if (timelineWidth <= 0) return;
+
+    const dx = e.clientX - currentDrag.startX;
+    const minDelta = (dx / timelineWidth) * visibleDuration;
+
+    let newStart = currentDrag.startPanOffset - minDelta;
+    newStart = clampTimelinePan(newStart);
+    setTimelinePanOffset(newStart);
   };
 
-  const onTimelineMouseUp = () => {
+  const onTimelinePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore unsupported browsers
+    }
     dragTimelineRef.current = null;
+    setActiveTimelinePan(false);
+    setActiveTimelineZoom(false);
+  };
+
+  const onTimelinePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragTimelineRef.current = null;
+    setActiveTimelinePan(false);
+    setActiveTimelineZoom(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore unsupported browsers
+    }
   };
 
   const onContextMenu = (e: React.MouseEvent) => {
@@ -1645,13 +1704,26 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             {/* Gantt Timeline scale rulers - Flush mounted panels */}
             <div 
               onWheel={onTimelineWheel}
-              onMouseDown={onTimelineMouseDown}
-              onMouseMove={onTimelineMouseMove}
-              onMouseUp={onTimelineMouseUp}
-              onMouseLeave={onTimelineMouseUp}
+              onPointerDown={onTimelinePointerDown}
+              onPointerMove={onTimelinePointerMove}
+              onPointerUp={onTimelinePointerUp}
+              onPointerCancel={onTimelinePointerCancel}
+              onPointerLeave={onTimelinePointerUp}
               onContextMenu={onContextMenu}
-              className="relative border border-[#1c2430] bg-[#05070a] p-2.5 rounded-none overflow-hidden select-none select-none cursor-ew-resize timeline-gantt-container"
+              className={`relative border border-[#1c2430] bg-[#05070a] p-2.5 rounded-none overflow-hidden select-none select-none ${activeTimelinePan ? "cursor-grabbing" : activeTimelineZoom ? "cursor-crosshair" : "cursor-ew-resize"} timeline-gantt-container`}
             >
+              {timelineZoom > 1 && (
+                <div className="absolute top-2 right-2 z-20 pointer-events-none bg-black/85 border border-[#FFB800]/30 px-2 py-1 font-mono text-[8px] text-white rounded-none uppercase tracking-wider shadow-lg">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[#FFB800] font-bold">SPAN</span>
+                    <span className="font-black">{visibleDuration.toFixed(0)}M</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-[7px] text-[#7a828c]">
+                    <span>{Math.round(startTimeOffsetMin)}M → {Math.round(endTimeOffsetMin)}M</span>
+                    <span>ZOOM {timelineZoom.toFixed(2)}×</span>
+                  </div>
+                </div>
+              )}
               
               {/* Vertical grids backing */}
               <div className="absolute inset-y-0 left-[110px] right-0 flex pointer-events-none z-0">
@@ -1971,12 +2043,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             {/* SVG Interactive Telemetry Graph - Shared borders */}
             <div 
               onWheel={onTimelineWheel}
-              onMouseDown={onTimelineMouseDown}
-              onMouseMove={onTimelineMouseMove}
-              onMouseUp={onTimelineMouseUp}
-              onMouseLeave={onTimelineMouseUp}
+              onPointerDown={onTimelinePointerDown}
+              onPointerMove={onTimelinePointerMove}
+              onPointerUp={onTimelinePointerUp}
+              onPointerCancel={onTimelinePointerCancel}
+              onPointerLeave={onTimelinePointerUp}
               onContextMenu={onContextMenu}
-              className="flex-1 min-h-0 relative bg-[#030508] border border-[#1c2430] rounded-none p-2 flex flex-col justify-between shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] cursor-ew-resize timeline-graph-container"
+              className={`flex-1 min-h-0 relative bg-[#030508] border border-[#1c2430] rounded-none p-2 flex flex-col justify-between shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] ${activeTimelinePan ? "cursor-grabbing" : activeTimelineZoom ? "cursor-crosshair" : "cursor-ew-resize"} timeline-graph-container`}
             >
               
               <div className="absolute inset-0 p-2.5 pointer-events-none select-none flex flex-col justify-between font-mono text-[7px] text-[#7a828c]/25 uppercase tracking-widest border-t border-[#1c2430]/5">

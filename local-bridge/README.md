@@ -9,7 +9,7 @@ Run it on the same Windows PC as iRacing. Then open the Pit Wall dashboard on an
 ## Requirements
 
 - **Windows PC** running iRacing
-- Node.js 20 LTS or newer
+- Node.js 24 LTS or newer
 
 ---
 

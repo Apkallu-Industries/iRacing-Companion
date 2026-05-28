@@ -289,6 +289,36 @@ function createWindow() {
 
   mainWindow.loadURL(DASHBOARD_URL);
 
+  mainWindow.webContents.on("did-finish-load", () => {
+    if (!mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+  });
+
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      const message = `[desktop] failed to load ${validatedURL}: (${errorCode}) ${errorDescription}`;
+      console.error(message);
+      writeBridgeLog(message);
+
+      if (isMainFrame && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        dialog
+          .showMessageBox(mainWindow, {
+            type: "error",
+            title: "Pit Wall Desktop — UI load failed",
+            message: "The desktop UI failed to load.",
+            detail: `${validatedURL}\n${errorDescription} (${errorCode})`,
+            buttons: ["Open in Browser", "OK"],
+          })
+          .then(({ response }) => {
+            if (response === 0) shell.openExternal(DASHBOARD_URL);
+          });
+      }
+    }
+  );
+
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
     if (isDev) mainWindow.webContents.openDevTools({ mode: "detach" });

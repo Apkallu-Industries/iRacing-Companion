@@ -517,7 +517,7 @@ function LandingPage() {
               <ul className="space-y-1 text-[#7A828C] text-[10px] leading-relaxed">
                 <li>• Windows 10 or 11 (Host machine)</li>
                 <li>• iRacing active simulation running</li>
-                <li>• Node.js 20 LTS or bun runtime installed</li>
+                <li>• Node.js 24 LTS or bun runtime installed</li>
               </ul>
             </div>
             <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">

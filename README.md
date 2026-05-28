@@ -327,6 +327,7 @@ C:\Dev\iRacing-Companion\
 │   ├── config.toml
 │   └── migrations/             # Schema, RLS, RPCs, triggers
 ├── docs/
+│   ├── GETTING_STARTED.md      # Desktop + Web onboarding for alpha testers
 │   ├── MATH_EVAL_GRAMMAR.md    # Math channel expression grammar
 │   └── MATH_V1_TECH_SPEC.md    # Math evaluator technical spec
 ├── BRIDGE_ARCHITECTURE.md      # Bridge data flow & consumer guide
@@ -340,7 +341,7 @@ C:\Dev\iRacing-Companion\
 
 ### Prerequisites
 
-- Node.js 20 LTS or newer
+- Node.js 24 LTS or newer
 - Windows PC (for bridge + iRacing; the web app runs on any OS)
 
 ### 1. Install & start the web app
