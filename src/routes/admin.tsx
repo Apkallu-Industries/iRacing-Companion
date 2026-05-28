@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppHeader } from "@/components/AppHeader";
@@ -424,7 +424,7 @@ function AdminPage() {
         </Link>
       </AppHeader>
 
-      <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
+      <main className="w-full max-w-none px-4 md:px-12 lg:px-16 py-8 space-y-6">
         {/* Navigation Tabs */}
         <div className="flex border-b border-border bg-panel/30 font-mono text-xs uppercase tracking-wider mb-6 shrink-0">
           <button

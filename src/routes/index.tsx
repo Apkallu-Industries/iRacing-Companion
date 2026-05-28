@@ -148,7 +148,7 @@ function LandingPage() {
       </nav>
 
       {/* ── HERO BANNER SECTION ── */}
-      <section className="w-full max-w-[1700px] mx-auto px-4 md:px-8 pt-6 relative z-10 select-none">
+      <section className="w-full max-w-none px-4 md:px-12 lg:px-16 pt-6 relative z-10 select-none">
         <div className="border border-[#1C2430] bg-[#0B0F14] overflow-hidden rounded-sm flex flex-col md:flex-row items-center gap-6 p-6 md:p-8 relative">
           {/* Glassmorphic lighting background */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#3B82F6] opacity-[0.06] rounded-full blur-[100px] pointer-events-none" />
@@ -202,7 +202,7 @@ function LandingPage() {
       </section>
 
       {/* ── MAIN WORKSPACE CONTAINER ── */}
-      <section className="flex-1 w-full max-w-[1700px] mx-auto px-4 md:px-8 py-6 relative z-10">
+      <section className="flex-1 w-full max-w-none px-4 md:px-12 lg:px-16 py-6 relative z-10">
         <div className="flex flex-col gap-4 w-full">
           
           {/* Main Grid Header */}
@@ -458,7 +458,7 @@ function LandingPage() {
 
       {/* ── SECTION: RECENT SESSIONS GRID (Workstation Log style) ── */}
       {user && recentSessions.length > 0 && (
-        <section className="mx-auto w-full max-w-[1700px] px-4 md:px-8 py-2 z-10 select-none">
+        <section className="w-full max-w-none px-4 md:px-12 lg:px-16 py-2 z-10 select-none">
           <div className="border border-[#1C2430] bg-[#0B0F14] p-4">
             <h3 className="text-[9px] font-mono uppercase tracking-widest text-[#7A828C] border-b border-[#1C2430] pb-2 mb-3">
               RECENTLY PARSED TELEMETRY LOGS (.IBT RECONSTRUCTION)
@@ -494,7 +494,7 @@ function LandingPage() {
       )}
 
       {/* ── ONBOARDING TUTORIAL DETAIL AREA (HTML Onboarding Anchor) ── */}
-      <section id="onboarding-tutorial" className="mx-auto w-full max-w-[1700px] px-4 md:px-8 py-6 z-10 scroll-mt-14">
+      <section id="onboarding-tutorial" className="w-full max-w-none px-4 md:px-12 lg:px-16 py-6 z-10 scroll-mt-14">
         <div className="border border-[#1C2430] bg-[#0B0F14] p-5">
           <div className="mb-4 text-left border-b border-[#1C2430] pb-3">
             <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#FFB800] font-semibold">
@@ -572,7 +572,7 @@ function LandingPage() {
 
       {/* ── WORKSTATION FOOTER ── */}
       <footer className="border-t border-[#1C2430] bg-[#0B0F14]/50 py-4 px-6 text-[#7A828C] text-[9px] font-mono tracking-wider z-10 select-none">
-        <div className="mx-auto w-full max-w-[1700px] flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center md:items-start">
             <span className="font-sans font-black italic tracking-tighter text-white text-sm">
               PIT WALL COMMAND

@@ -254,7 +254,7 @@ function LapfileLab() {
           ← Sessions
         </Link>
       </AppHeader>
-      <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 p-4">
+      <main className="w-full max-w-none px-4 md:px-12 lg:px-16 flex-1 space-y-4 p-4">
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={onDrop}

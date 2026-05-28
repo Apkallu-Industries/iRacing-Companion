@@ -34,7 +34,7 @@ function SettingsPage() {
         </Link>
       </AppHeader>
 
-      <main className="mx-auto max-w-5xl p-6">
+      <main className="w-full max-w-none px-4 md:px-12 lg:px-16 p-6">
         <div className="hairline rounded-sm bg-panel p-5">
           <div className="flex items-start gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">

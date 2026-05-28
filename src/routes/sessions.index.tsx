@@ -171,7 +171,7 @@ function SessionsPage() {
         )}
       </AppHeader>
 
-      <main className="mx-auto max-w-7xl p-6">
+      <main className="w-full max-w-none px-4 md:px-12 lg:px-16 p-6">
         {/* Guest banner */}
         {!loading && !user && (
           <div className="hairline mb-6 flex flex-col gap-3 rounded-md bg-racing-orange/10 p-4 sm:flex-row sm:items-center sm:justify-between">

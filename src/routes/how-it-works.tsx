@@ -37,7 +37,7 @@ function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="hairline-b">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 relative">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 flex items-center justify-between py-4 relative">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground">
               <Activity className="h-4 w-4" />
@@ -77,7 +77,7 @@ function HowItWorksPage() {
             backgroundSize: "40px 40px",
           }}
         />
-        <div className="mx-auto max-w-5xl px-6 py-20">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 py-20">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
             How it works
           </p>
@@ -96,7 +96,7 @@ function HowItWorksPage() {
       </section>
 
       {/* Pipeline */}
-      <section className="mx-auto max-w-7xl px-6 py-20">
+      <section className="w-full max-w-none px-4 md:px-12 lg:px-16 py-20">
         <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
           The pipeline
         </h2>
@@ -149,7 +149,7 @@ function HowItWorksPage() {
 
       {/* The .ibt format */}
       <section className="hairline-t bg-rail">
-        <div className="mx-auto max-w-7xl px-6 py-20 md:grid md:grid-cols-2 md:gap-16">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 py-20 md:grid md:grid-cols-2 md:gap-16">
           <div>
             <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
               The .ibt format
@@ -198,7 +198,7 @@ function HowItWorksPage() {
       </section>
 
       {/* Workbench */}
-      <section className="mx-auto max-w-7xl px-6 py-20">
+      <section className="w-full max-w-none px-4 md:px-12 lg:px-16 py-20">
         <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
           The workbench
         </h2>
@@ -240,7 +240,7 @@ function HowItWorksPage() {
 
       {/* Performance & privacy */}
       <section className="hairline-t bg-rail">
-        <div className="mx-auto max-w-7xl grid gap-px overflow-hidden rounded-sm bg-border px-6 py-20 md:grid-cols-3">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 grid gap-px overflow-hidden rounded-sm bg-border py-20 md:grid-cols-3">
           <div className="bg-panel p-6">
             <Cpu className="h-5 w-5 text-primary" />
             <h4 className="mt-4 text-base font-medium">Off the main thread</h4>
@@ -269,7 +269,7 @@ function HowItWorksPage() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-4xl px-6 py-20">
+      <section className="w-full max-w-none px-4 md:px-12 lg:px-16 py-20">
         <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">FAQ</h2>
         <h3 className="mt-2 text-3xl font-semibold tracking-tight">Common questions</h3>
         <dl className="mt-10 space-y-8">
@@ -305,7 +305,7 @@ function HowItWorksPage() {
 
       {/* CTA */}
       <section className="hairline-t">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-6 py-20 md:flex-row md:items-center md:justify-between">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 flex flex-col items-start gap-6 py-20 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 className="text-3xl font-semibold tracking-tight">Ready to read every channel?</h3>
             <p className="mt-2 text-muted-foreground">
@@ -330,7 +330,7 @@ function HowItWorksPage() {
       </section>
 
       <footer className="hairline-t">
-        <div className="mx-auto max-w-7xl px-6 py-6 font-mono text-xs text-muted-foreground">
+        <div className="w-full max-w-none px-4 md:px-12 lg:px-16 py-6 font-mono text-xs text-muted-foreground">
           PIT WALL · iRacing IBT v2 · 60 / 360 Hz
         </div>
       </footer>

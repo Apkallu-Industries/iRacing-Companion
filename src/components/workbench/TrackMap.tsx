@@ -287,12 +287,83 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
   );
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const reset = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
+  const [activePan, setActivePan] = useState(false);
+  const [activeZoom, setActiveZoom] = useState(false);
+
+  const targetZoomRef = useRef(1);
+  const targetPanRef = useRef({ x: 0, y: 0 });
+  const animRef = useRef<number | null>(null);
 
   const clampZoom = (z: number) => Math.min(20, Math.max(1, z));
+
+  const clampPan = useCallback((p: { x: number; y: number}, currentZoom: number) => {
+    const currentVbW = W / currentZoom;
+    const currentVbH = H / currentZoom;
+    const maxX = (W - currentVbW) / 2;
+    const maxY = (H - currentVbH) / 2;
+    return {
+      x: Math.max(-maxX, Math.min(maxX, p.x)),
+      y: Math.max(-maxY, Math.min(maxY, p.y)),
+    };
+  }, []);
+
+  const animateTo = useCallback((nz: number, np: { x: number; y: number }, instant = false) => {
+    const clampedZ = clampZoom(nz);
+    const clampedP = clampPan(np, clampedZ);
+
+    targetZoomRef.current = clampedZ;
+    targetPanRef.current = clampedP;
+
+    if (instant) {
+      if (animRef.current !== null) {
+        cancelAnimationFrame(animRef.current);
+        animRef.current = null;
+      }
+      setZoom(clampedZ);
+      setPan(clampedP);
+      return;
+    }
+
+    if (animRef.current !== null) return;
+
+    const tick = () => {
+      let zDone = false;
+      let pDone = false;
+
+      setZoom((currentZ) => {
+        const diffZ = targetZoomRef.current - currentZ;
+        if (Math.abs(diffZ) < 0.001) {
+          zDone = true;
+          return targetZoomRef.current;
+        }
+        return currentZ + diffZ * 0.25; // 25% interpolation per frame
+      });
+
+      setPan((currentP) => {
+        const diffX = targetPanRef.current.x - currentP.x;
+        const diffY = targetPanRef.current.y - currentP.y;
+        if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01) {
+          pDone = true;
+          return targetPanRef.current;
+        }
+        return {
+          x: currentP.x + diffX * 0.25,
+          y: currentP.y + diffY * 0.25,
+        };
+      });
+
+      if (!zDone || !pDone) {
+        animRef.current = requestAnimationFrame(tick);
+      } else {
+        animRef.current = null;
+      }
+    };
+    animRef.current = requestAnimationFrame(tick);
+  }, [clampPan]);
+
+  const reset = useCallback(() => {
+    animateTo(1, { x: 0, y: 0 }, false);
+  }, [animateTo]);
 
   const xy = parsed.trackXY;
 
@@ -622,41 +693,105 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
   const vbY = (H - vbH) / 2 + pan.y;
 
   const onWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    if (!(e.buttons & 1)) return; // Only zoom when holding LMB
     e.preventDefault();
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const mx = vbX + ((e.clientX - rect.left) / rect.width) * vbW;
-    const my = vbY + ((e.clientY - rect.top) / rect.height) * vbH;
+    
+    // Stable zoom center calculations using targets
+    const currentTargZ = targetZoomRef.current;
+    const currentTargP = targetPanRef.current;
+    const targVbW = W / currentTargZ;
+    const targVbH = H / currentTargZ;
+    const targVbX = (W - targVbW) / 2 + currentTargP.x;
+    const targVbY = (H - targVbH) / 2 + currentTargP.y;
+
+    const mx = targVbX + ((e.clientX - rect.left) / rect.width) * targVbW;
+    const my = targVbY + ((e.clientY - rect.top) / rect.height) * targVbH;
     const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
-    const newZoom = clampZoom(zoom * factor);
-    if (newZoom === zoom) return;
-    const newVbW = W / newZoom;
-    const newVbH = H / newZoom;
-    const newVbX = mx - ((e.clientX - rect.left) / rect.width) * newVbW;
-    const newVbY = my - ((e.clientY - rect.top) / rect.height) * newVbH;
-    setZoom(newZoom);
-    setPan({ x: newVbX - (W - newVbW) / 2, y: newVbY - (H - newVbH) / 2 });
+    const newZoom = clampZoom(currentTargZ * factor);
+    
+    if (newZoom === currentTargZ) return;
+    setActiveZoom(true);
+    if (newZoom === 1) {
+      animateTo(1, { x: 0, y: 0 }, false);
+    } else {
+      const newVbW = W / newZoom;
+      const newVbH = H / newZoom;
+      const newVbX = mx - ((e.clientX - rect.left) / rect.width) * newVbW;
+      const newVbY = my - ((e.clientY - rect.top) / rect.height) * newVbH;
+      const newPan = { x: newVbX - (W - newVbW) / 2, y: newVbY - (H - newVbH) / 2 };
+      animateTo(newZoom, newPan, false); // smooth zoom transition
+    }
   };
+
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (zoom <= 1) return;
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
+    if (e.buttons === 3) {
+      e.preventDefault();
+      if (zoom <= 1) return;
+      setActivePan(true);
+      setActiveZoom(false);
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch (err) {}
+      dragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
+    } else if (e.buttons & 1) {
+      setActiveZoom(true);
+      setActivePan(false);
+    }
   };
+
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const d = dragRef.current;
+    if (e.buttons === 3) {
+      setActivePan(true);
+      setActiveZoom(false);
+    } else if (e.buttons & 1) {
+      setActiveZoom(true);
+      setActivePan(false);
+    } else {
+      setActivePan(false);
+      setActiveZoom(false);
+    }
+
+    if (!d) return;
+
+    if (e.buttons !== 3) {
+      dragRef.current = null;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+      return;
+    }
+
     const svg = svgRef.current;
-    if (!d || !svg) return;
+    if (!svg) return;
     const rect = svg.getBoundingClientRect();
     const dx = ((e.clientX - d.startX) / rect.width) * vbW;
     const dy = ((e.clientY - d.startY) / rect.height) * vbH;
-    setPan({ x: d.panX - dx, y: d.panY - dy });
+    
+    // Drag pan is instant to feel absolutely responsive
+    animateTo(zoom, { x: d.panX - dx, y: d.panY - dy }, true);
   };
+
   const onPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
-    (e.target as Element).releasePointerCapture?.(e.pointerId);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
     dragRef.current = null;
+    setActivePan(false);
+    setActiveZoom(false);
   };
-  const zoomBy = (factor: number) => setZoom((z) => clampZoom(z * factor));
+
+  const zoomBy = (factor: number) => {
+    const nz = clampZoom(zoom * factor);
+    if (nz === 1) {
+      animateTo(1, { x: 0, y: 0 }, false);
+    } else {
+      animateTo(nz, pan, false);
+    }
+  };
 
   const colorChannel =
     mapColorBy !== "none" && mapColorBy !== "DeltaT" ? parsed.channels[mapColorBy] : undefined;
@@ -914,19 +1049,34 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
           <ExportButton getSvg={() => svgRef.current} filenameBase="track-map" />
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-hidden p-2">
+      <div className="min-h-0 flex-1 overflow-hidden p-2 relative">
+        {zoom > 1 && (
+          <div className="absolute top-4 left-4 pointer-events-none bg-black/85 border border-[#FFB800]/30 px-2 py-1 font-mono text-[8px] text-white space-y-0.5 rounded-none uppercase z-30 tracking-wider shadow-lg">
+            <div className="flex justify-between gap-4">
+              <span className="text-[#FFB800] font-bold">SYSTEM MAP TRACKER</span>
+              <span className="text-white font-black">{zoom.toFixed(2)}X</span>
+            </div>
+            <div className="flex justify-between gap-4 text-[7px] text-[#7a828c]">
+              <span>PAN COORDINATES:</span>
+              <span className="font-bold text-white">X: {pan.x.toFixed(1)} | Y: {pan.y.toFixed(1)}</span>
+            </div>
+          </div>
+        )}
         <svg
           ref={svgRef}
           viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
           preserveAspectRatio="xMidYMid meet"
           className="block h-full w-full touch-none select-none"
-          style={{ cursor: zoom > 1 ? (dragRef.current ? "grabbing" : "grab") : "default" }}
+          style={{
+            cursor: activePan ? "grabbing" : activeZoom ? "crosshair" : zoom > 1 ? "grab" : "default"
+          }}
           onWheel={onWheel}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           onDoubleClick={reset}
+          onContextMenu={(e) => e.preventDefault()}
         >
           {/* Faint full-session reference outline */}
           {mapMode !== "averaged" && (

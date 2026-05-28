@@ -132,6 +132,142 @@ function TeamPage() {
   // Temporal Zooming Level (24h, 6h, 1h, 15m)
   const [zoomLevel, setZoomLevel] = useState<"24h" | "6h" | "1h" | "15m">("6h");
 
+  // Le Mans / Endurance config
+  const [raceDurationHours, setRaceDurationHours] = useState<number>(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("team_race_duration_h") : null;
+    return saved ? Number(saved) : 6;
+  });
+  useEffect(() => {
+    localStorage.setItem("team_race_duration_h", String(raceDurationHours));
+  }, [raceDurationHours]);
+
+  // Mouse Zoom & Pan states for dynamic timeline realignment
+  const [timelineZoom, setTimelineZoom] = useState(1.0);
+  const [timelinePanOffset, setTimelinePanOffset] = useState(0.0); // in minutes
+
+  const totalMin = raceDurationHours * 60;
+  const visibleDuration = totalMin / timelineZoom;
+  const startTimeOffsetMin = Math.max(0, Math.min(totalMin - visibleDuration, timelinePanOffset));
+  const endTimeOffsetMin = startTimeOffsetMin + visibleDuration;
+
+  // Helper to map coordinate X from 0-600 space to zoomed-pan space
+  const mapX = (originalX: number) => {
+    const t = (originalX / 600) * totalMin;
+    return ((t - startTimeOffsetMin) / visibleDuration) * 600;
+  };
+
+  // Helper to parse SVG path and map X values
+  const mapPath = (dStr: string) => {
+    return dStr.replace(/([MQLC])\s*([-\d.]+),([-\d.]+)(?:\s+([-\d.]+),([-\d.]+))?(?:\s+([-\d.]+),([-\d.]+))?/g, (match, cmd, x1, y1, x2, y2, x3, y3) => {
+      const rx1 = mapX(parseFloat(x1));
+      if (x2 !== undefined && y2 !== undefined) {
+        const rx2 = mapX(parseFloat(x2));
+        if (x3 !== undefined && y3 !== undefined) {
+          const rx3 = mapX(parseFloat(x3));
+          return `${cmd} ${rx1},${y1} ${rx2},${y2} ${rx3},${y3}`;
+        }
+        return `${cmd} ${rx1},${y1} ${rx2},${y2}`;
+      }
+      return `${cmd} ${rx1},${y1}`;
+    });
+  };
+
+  // Helper to dynamically size stint slots across zoomed viewport
+  const getSlotStyle = (stintIdx: number) => {
+    const slotDur = totalMin / 4;
+    const slotStartMin = stintIdx * slotDur;
+    const slotEndMin = (stintIdx + 1) * slotDur;
+    const isVisible = slotEndMin > startTimeOffsetMin && slotStartMin < endTimeOffsetMin;
+    if (!isVisible) return { display: "none" };
+
+    const leftPct = Math.max(0, ((slotStartMin - startTimeOffsetMin) / visibleDuration) * 100);
+    const rightPct = Math.max(0, ((endTimeOffsetMin - slotEndMin) / visibleDuration) * 100);
+    const widthPct = 100 - leftPct - rightPct;
+    return {
+      position: "absolute" as const,
+      left: `calc(${leftPct}% + 1px)`,
+      width: `calc(${widthPct}% - 2px)`,
+      height: "100%",
+    };
+  };
+
+  const applyZoomPreset = (preset: "24h" | "6h" | "1h" | "15m") => {
+    setZoomLevel(preset);
+    setTimelinePanOffset(0);
+    if (preset === "24h") {
+      setTimelineZoom(1.0);
+    } else if (preset === "6h") {
+      setTimelineZoom(Math.max(1, raceDurationHours / 6));
+    } else if (preset === "1h") {
+      setTimelineZoom(Math.max(1, raceDurationHours / 1));
+    } else if (preset === "15m") {
+      setTimelineZoom(Math.max(1, raceDurationHours / 0.25));
+    }
+  };
+
+  const dragTimelineRef = useRef<{ startX: number; startPanOffset: number } | null>(null);
+
+  const onTimelineWheel = (e: React.WheelEvent) => {
+    // Hold LMB and scroll MMW to zoom in and out
+    if (!(e.buttons & 1)) return;
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isGraph = e.currentTarget.classList.contains("timeline-graph-container");
+    const offsetLeft = isGraph ? 0 : 110;
+    const mouseX = e.clientX - rect.left - offsetLeft; // offset for the w-24 / 110px label
+    const timelineWidth = rect.width - offsetLeft;
+    if (timelineWidth <= 0) return;
+
+    const mousePct = Math.max(0, Math.min(1, mouseX / timelineWidth));
+    const mouseTimeMin = startTimeOffsetMin + mousePct * visibleDuration;
+
+    const zoomFactor = e.deltaY < 0 ? 1.25 : 1 / 1.25;
+    const newZoom = Math.min(48, Math.max(1, timelineZoom * zoomFactor));
+    if (newZoom === timelineZoom) return;
+
+    const newVisibleDur = totalMin / newZoom;
+    let newStart = mouseTimeMin - mousePct * newVisibleDur;
+
+    newStart = Math.max(0, Math.min(totalMin - newVisibleDur, newStart));
+
+    setTimelineZoom(newZoom);
+    setTimelinePanOffset(newStart);
+  };
+
+  const onTimelineMouseDown = (e: React.MouseEvent) => {
+    // Hold LMB+RMB simultaneously to pan (buttons === 3)
+    if (e.buttons === 3) {
+      e.preventDefault();
+      dragTimelineRef.current = { startX: e.clientX, startPanOffset: timelinePanOffset };
+    }
+  };
+
+  const onTimelineMouseMove = (e: React.MouseEvent) => {
+    if (dragTimelineRef.current && e.buttons === 3) {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const isGraph = e.currentTarget.classList.contains("timeline-graph-container");
+      const offsetLeft = isGraph ? 0 : 110;
+      const timelineWidth = rect.width - offsetLeft;
+      if (timelineWidth <= 0) return;
+
+      const dx = e.clientX - dragTimelineRef.current.startX;
+      const minDelta = (dx / timelineWidth) * visibleDuration;
+
+      let newStart = dragTimelineRef.current.startPanOffset - minDelta;
+      newStart = Math.max(0, Math.min(totalMin - visibleDuration, newStart));
+      setTimelinePanOffset(newStart);
+    }
+  };
+
+  const onTimelineMouseUp = () => {
+    dragTimelineRef.current = null;
+  };
+
+  const onContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
   // Team Manager Active Variables & Compliance
   const [tyreSoftAllowed, setTyreSoftAllowed] = useState(true);
   const [tyreMediumAllowed, setTyreMediumAllowed] = useState(true);
@@ -308,14 +444,6 @@ function TeamPage() {
   const [isAddStintOpen, setIsAddStintOpen] = useState(false);
   const [isAddIncidentOpen, setIsAddIncidentOpen] = useState(false);
 
-  // Le Mans / Endurance config
-  const [raceDurationHours, setRaceDurationHours] = useState<number>(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("team_race_duration_h") : null;
-    return saved ? Number(saved) : 6;
-  });
-  useEffect(() => {
-    localStorage.setItem("team_race_duration_h", String(raceDurationHours));
-  }, [raceDurationHours]);
 
   // New item states
   const [newCar, setNewCar] = useState({
@@ -1312,7 +1440,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       <button
                         key={level}
                         type="button"
-                        onClick={() => setZoomLevel(level as any)}
+                        onClick={() => applyZoomPreset(level as any)}
                         className={`px-1.8 py-0.5 cursor-pointer rounded-none border-0 transition-all font-mono font-bold ${
                           active 
                             ? "bg-[#1c2430] text-white" 
@@ -1388,10 +1516,23 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                             onClick={() => {
                               setRaceDurationHours(h);
                               // Sync temporal zoom level automatically for elite timing layout UX
-                              if (h >= 12) setZoomLevel("24h");
-                              else if (h >= 4) setZoomLevel("6h");
-                              else if (h >= 2) setZoomLevel("6h");
-                              else setZoomLevel("1h");
+                              if (h >= 12) {
+                                setZoomLevel("24h");
+                                setTimelineZoom(1.0);
+                                setTimelinePanOffset(0);
+                              } else if (h >= 4) {
+                                setZoomLevel("6h");
+                                setTimelineZoom(Math.max(1, h / 6));
+                                setTimelinePanOffset(0);
+                              } else if (h >= 2) {
+                                setZoomLevel("6h");
+                                setTimelineZoom(Math.max(1, h / 6));
+                                setTimelinePanOffset(0);
+                              } else {
+                                setZoomLevel("1h");
+                                setTimelineZoom(Math.max(1, h / 1));
+                                setTimelinePanOffset(0);
+                              }
                             }}
                             className={`flex-1 text-[8px] py-0.5 text-center font-bold border-0 cursor-pointer transition-colors ${
                               isDur ? "bg-[#FFB800] text-black" : "text-[#7a828c] hover:text-white"
@@ -1502,7 +1643,15 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             )}
 
             {/* Gantt Timeline scale rulers - Flush mounted panels */}
-            <div className="relative border border-[#1c2430] bg-[#05070a] p-2.5 rounded-none overflow-hidden select-none select-none">
+            <div 
+              onWheel={onTimelineWheel}
+              onMouseDown={onTimelineMouseDown}
+              onMouseMove={onTimelineMouseMove}
+              onMouseUp={onTimelineMouseUp}
+              onMouseLeave={onTimelineMouseUp}
+              onContextMenu={onContextMenu}
+              className="relative border border-[#1c2430] bg-[#05070a] p-2.5 rounded-none overflow-hidden select-none select-none cursor-ew-resize timeline-gantt-container"
+            >
               
               {/* Vertical grids backing */}
               <div className="absolute inset-y-0 left-[110px] right-0 flex pointer-events-none z-0">
@@ -1520,50 +1669,22 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                 <div className="flex border-b border-[#1c2430]/60 pb-1.5 font-mono text-[7.5px] text-[#7a828c] font-black uppercase tracking-widest">
                   <span className="w-24 shrink-0 text-[#7a828c] font-rajdhani">RACE TIMELINE</span>
                   <div className="flex-1 flex justify-between font-mono">
-                    {zoomLevel === "24h" && (
-                      <>
-                        <span>START</span>
-                        <span>4:00</span>
-                        <span>8:00</span>
-                        <span>12:00</span>
-                        <span>16:00</span>
-                        <span>20:00</span>
-                        <span>FINISH (24H)</span>
-                      </>
-                    )}
-                    {zoomLevel === "6h" && (
-                      <>
-                        <span>START</span>
-                        <span>1:00</span>
-                        <span>2:00</span>
-                        <span>3:00</span>
-                        <span>4:00</span>
-                        <span>5:00</span>
-                        <span>FINISH (6H)</span>
-                      </>
-                    )}
-                    {zoomLevel === "1h" && (
-                      <>
-                        <span>T+0 MIN</span>
-                        <span>10 MIN</span>
-                        <span>20 MIN</span>
-                        <span>30 MIN</span>
-                        <span>40 MIN</span>
-                        <span>50 MIN</span>
-                        <span>60 MIN</span>
-                      </>
-                    )}
-                    {zoomLevel === "15m" && (
-                      <>
-                        <span>T+0 MIN</span>
-                        <span>2.5 MIN</span>
-                        <span>5.0 MIN</span>
-                        <span>7.5 MIN</span>
-                        <span>10.0 MIN</span>
-                        <span>12.5 MIN</span>
-                        <span>15.0 MIN</span>
-                      </>
-                    )}
+                    {Array.from({ length: 7 }).map((_, idx) => {
+                      const pct = idx / 6;
+                      const currentMin = startTimeOffsetMin + pct * visibleDuration;
+                      const hrs = Math.floor(currentMin / 60);
+                      const mins = Math.round(currentMin % 60);
+                      let label = "";
+                      if (raceDurationHours >= 4 && timelineZoom < 4) {
+                        label = `${hrs}:${String(mins).padStart(2, '0')}`;
+                        if (idx === 0) label = "START";
+                        if (idx === 6) label = `FINISH (${raceDurationHours}H)`;
+                      } else {
+                        label = `T+${hrs > 0 ? `${hrs}H ` : ""}${mins} MIN`;
+                        if (idx === 0) label = "T+0 MIN";
+                      }
+                      return <span key={idx}>{label}</span>;
+                    })}
                   </div>
                 </div>
 
@@ -1577,7 +1698,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       </span>
                     </div>
 
-                    <div className="flex-1 grid grid-cols-4 gap-2 relative bg-[#0b0f14]/80 border border-[#1c2430] p-1 h-12 rounded-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
+                    <div className="flex-1 relative bg-[#0b0f14]/80 border border-[#1c2430] p-1 h-12 rounded-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] overflow-hidden">
                       {activeStints.map((stint, stintIdx) => {
                         const driver = drivers.find(d => d.id === stint.driverId);
                         
@@ -1585,6 +1706,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         const isDimmed = selectedRosterDriverId && stint.driverId !== selectedRosterDriverId;
                         const isHighlighted = selectedRosterDriverId && stint.driverId === selectedRosterDriverId;
                         const isHovered = hoveredStintIndex === stintIdx;
+
+                        const slotStyle = getSlotStyle(stintIdx);
+                        if (slotStyle.display === "none") return null;
 
                         return (
                           <div
@@ -1610,7 +1734,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                             }}
                             onMouseEnter={() => setHoveredStintIndex(stintIdx)}
                             onMouseLeave={() => setHoveredStintIndex(null)}
-                            className={`h-full rounded-none border relative flex flex-col justify-center items-center px-1.5 select-none overflow-hidden transition-all duration-150 group/slot cursor-pointer ${
+                            className={`rounded-none border relative flex flex-col justify-center items-center px-1.5 select-none overflow-hidden transition-all duration-150 group/slot cursor-pointer ${
                               driver 
                                 ? "bg-gradient-to-b from-[#11161d] to-[#0b0f14] shadow-md" 
                                 : "bg-[#05070a] border-dashed border-[#1c2430] hover:bg-[#11161d]/40"
@@ -1618,6 +1742,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                               isHighlighted ? "ring-1 ring-[#FFB800]" : ""
                             } ${isHovered ? "brightness-125" : ""}`}
                             style={{
+                              ...slotStyle,
+                              left: `calc(${parseFloat(slotStyle.left as string)}% + 2px)`,
+                              width: `calc(${parseFloat(slotStyle.width as string)}% - 4px)`,
                               borderColor: driver ? driver.color : "#1C2430"
                             }}
                             title={driver ? `Driver: ${driver.name}\n${stint.note}. Hover to highlight fuel curve. Click to cycle drivers.` : "Drag driver here or click to assign."}
@@ -1665,25 +1792,37 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       TYRE COMPOUND
                     </span>
                   </div>
-                  <div className="flex-1 grid grid-cols-4 gap-2 h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] select-none text-[6.5px]">
-                    <div className={`border-r border-[#1c2430] font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                      tyreSoftAllowed ? "bg-[#FF4D4D]/25 text-[#FF4D4D]" : "bg-black/40 text-[#7a828c] line-through decoration-red-500/50"
-                    }`}>
+                  <div className="flex-1 relative h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] select-none text-[6.5px] overflow-hidden">
+                    <div 
+                      className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                        tyreSoftAllowed ? "bg-[#FF4D4D]/25 text-[#FF4D4D]" : "bg-black/40 text-[#7a828c] line-through decoration-red-500/50"
+                      }`}
+                      style={getSlotStyle(0)}
+                    >
                       SOFT (S1) {!tyreSoftAllowed && "LOCKED"}
                     </div>
-                    <div className={`border-r border-[#1c2430] font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                      tyreMediumAllowed ? "bg-[#FFB800]/25 text-[#FFB800]" : "bg-black/40 text-[#7a828c] line-through decoration-amber-500/50"
-                    }`}>
+                    <div 
+                      className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                        tyreMediumAllowed ? "bg-[#FFB800]/25 text-[#FFB800]" : "bg-black/40 text-[#7a828c] line-through decoration-amber-500/50"
+                      }`}
+                      style={getSlotStyle(1)}
+                    >
                       MEDIUM (S2) {!tyreMediumAllowed && "LOCKED"}
                     </div>
-                    <div className={`border-r border-[#1c2430] font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                      tyreHardAllowed ? "bg-[#E2E4E8]/15 text-[#E2E4E8]/70" : "bg-black/40 text-[#7a828c] line-through decoration-white/50"
-                    }`}>
+                    <div 
+                      className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                        tyreHardAllowed ? "bg-[#E2E4E8]/15 text-[#E2E4E8]/70" : "bg-black/40 text-[#7a828c] line-through decoration-white/50"
+                      }`}
+                      style={getSlotStyle(2)}
+                    >
                       HARD (S3) {!tyreHardAllowed && "LOCKED"}
                     </div>
-                    <div className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                      tyreWetAllowed ? "bg-[#3B82F6]/25 text-[#3B82F6]" : "bg-black/40 text-[#7a828c] line-through decoration-blue-500/50"
-                    }`}>
+                    <div 
+                      className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
+                        tyreWetAllowed ? "bg-[#3B82F6]/25 text-[#3B82F6]" : "bg-black/40 text-[#7a828c] line-through decoration-blue-500/50"
+                      }`}
+                      style={getSlotStyle(3)}
+                    >
                       WET (S4) {!tyreWetAllowed && "LOCKED"}
                     </div>
                   </div>
@@ -1696,17 +1835,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       FUEL & PIT WINDOW
                     </span>
                   </div>
-                  <div className="flex-1 grid grid-cols-4 gap-2 h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px]">
-                    <div className="border-r border-[#1c2430] flex items-center justify-between px-1.5">
+                  <div className="flex-1 relative h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px] overflow-hidden">
+                    <div className="flex items-center justify-between px-1.5" style={getSlotStyle(0)}>
                       <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span><span className="text-white">{zoomLevel === "24h" ? "2.65L" : "2.80L"}</span>
                     </div>
-                    <div className="border-r border-[#1c2430] flex items-center justify-between px-1.5 bg-[#FF4D4D]/5">
+                    <div className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5" style={getSlotStyle(1)}>
                       <span className="text-[#FF4D4D] font-rajdhani">PIT_WINDOW</span><span className="text-white">LAP {zoomLevel === "24h" ? "42" : "45"}</span>
                     </div>
-                    <div className="border-r border-[#1c2430] flex items-center justify-between px-1.5">
+                    <div className="flex items-center justify-between px-1.5" style={getSlotStyle(2)}>
                       <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span><span className="text-white">2.82L</span>
                     </div>
-                    <div className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5">
+                    <div className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5" style={getSlotStyle(3)}>
                       <span className="text-[#FF4D4D] font-rajdhani">PIT_LEGAL</span><span className="text-white">LAP 180</span>
                     </div>
                   </div>
@@ -1719,17 +1858,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       CAUTION FCY %
                     </span>
                   </div>
-                  <div className="flex-1 grid grid-cols-4 gap-2 h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px]">
-                    <div className="border-r border-[#1c2430] bg-orange-500/10 flex items-center justify-center font-bold text-orange-400 tracking-wider font-rajdhani">
+                  <div className="flex-1 relative h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px] overflow-hidden">
+                    <div className="bg-orange-500/10 flex items-center justify-center font-bold text-orange-400 tracking-wider font-rajdhani" style={getSlotStyle(0)}>
                       FCY RISK: 18% (LOW)
                     </div>
-                    <div className={`border-r border-[#1c2430] bg-red-500/20 flex items-center justify-center font-bold text-red-400 tracking-wider font-rajdhani ${focusMode === "fcy" ? "animate-pulse border-red-500" : ""}`}>
+                    <div className={`bg-red-500/20 flex items-center justify-center font-bold text-red-400 tracking-wider font-rajdhani ${focusMode === "fcy" ? "animate-pulse border-red-500" : ""}`} style={getSlotStyle(1)}>
                       FCY RISK: 75% (CRITICAL)
                     </div>
-                    <div className="border-r border-[#1c2430] bg-yellow-500/15 flex items-center justify-center font-bold text-[#FFB800] tracking-wider font-rajdhani">
+                    <div className="bg-yellow-500/15 flex items-center justify-center font-bold text-[#FFB800] tracking-wider font-rajdhani" style={getSlotStyle(2)}>
                       FCY RISK: 40% (MEDIUM)
                     </div>
-                    <div className="bg-emerald-500/5 flex items-center justify-center font-bold text-[#00D17F] tracking-wider font-rajdhani">
+                    <div className="bg-emerald-500/5 flex items-center justify-center font-bold text-[#00D17F] tracking-wider font-rajdhani" style={getSlotStyle(3)}>
                       FCY RISK: 8% (NOMINAL)
                     </div>
                   </div>
@@ -1742,20 +1881,20 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       MET WEATHER
                     </span>
                   </div>
-                  <div className={`flex-1 grid grid-cols-4 gap-2 transition-all duration-300 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] ${focusMode === "wet" ? "h-10" : "h-4"}`}>
-                    <div className="border-r border-[#1c2430] text-[#f59e0b] bg-[#f59e0b]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold">
+                  <div className={`flex-1 relative transition-all duration-300 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] overflow-hidden ${focusMode === "wet" ? "h-10" : "h-4"}`}>
+                    <div className="text-[#f59e0b] bg-[#f59e0b]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold" style={getSlotStyle(0)}>
                       <span>100% DRY / SUNNY</span>
                       {focusMode === "wet" && <span className="text-[5px] text-[#7a828c] mt-0.5">SLICK WINDOW</span>}
                     </div>
-                    <div className="border-r border-[#1c2430] text-[#60a5fa] bg-[#60a5fa]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold">
+                    <div className="text-[#60a5fa] bg-[#60a5fa]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold" style={getSlotStyle(1)}>
                       <span>40% DAMP OVERCAST</span>
                       {focusMode === "wet" && <span className="text-[5px] text-[#60a5fa] mt-0.5">SLICK CHASSIS OPTIMAL</span>}
                     </div>
-                    <div className="border-r border-[#1c2430] text-[#94a3b8] bg-[#94a3b8]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold">
+                    <div className="text-[#94a3b8] bg-[#94a3b8]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold" style={getSlotStyle(2)}>
                       <span>65% WET TRANSITION</span>
                       {focusMode === "wet" && <span className="text-[5px] text-[#94a3b8] mt-0.5">CROSSOVER IN 4 LAPS</span>}
                     </div>
-                    <div className="text-blue-400 bg-blue-500/10 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold animate-pulse">
+                    <div className="text-blue-400 bg-blue-500/10 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold animate-pulse" style={getSlotStyle(3)}>
                       <span>80% WET STORM WARNING</span>
                       {focusMode === "wet" && <span className="text-[5px] text-blue-300 mt-0.5">HEAVY WET TYRES</span>}
                     </div>
@@ -1770,20 +1909,20 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       RIVAL GHOST
                     </span>
                   </div>
-                  <div className="flex-1 grid grid-cols-4 gap-2 h-6 rounded-none border border-dashed border-[#1c2430]/65 bg-[#05070a]/20 p-[1px] opacity-60 text-[6.5px]">
-                    <div className="border-r border-[#1c2430]/25 flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight">
+                  <div className="flex-1 relative h-6 rounded-none border border-dashed border-[#1c2430]/65 bg-[#05070a]/20 p-[1px] opacity-60 text-[6.5px] overflow-hidden">
+                    <div className="flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight" style={getSlotStyle(0)}>
                       <span className="font-bold text-white uppercase text-[6px] font-rajdhani">#12 BMW HYBRID</span>
                       <span className="font-mono text-[5.5px]">PIT WINDOW: LAP 42-48</span>
                     </div>
-                    <div className="border-r border-[#1c2430]/25 flex flex-col justify-center px-1.5 bg-yellow-500/5 text-[#FFB800]/70 leading-tight">
+                    <div className="flex flex-col justify-center px-1.5 bg-yellow-500/5 text-[#FFB800]/70 leading-tight" style={getSlotStyle(1)}>
                       <span className="font-bold uppercase text-[6px] font-rajdhani">UNDERCUT PROJECTION</span>
                       <span className="font-mono text-[5.5px]">CHANCE: 64% (HIGH)</span>
                     </div>
-                    <div className="border-r border-[#1c2430]/25 flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight">
+                    <div className="flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight" style={getSlotStyle(2)}>
                       <span className="font-bold text-white uppercase text-[6px] font-rajdhani">#3 CADILLAC WTR</span>
                       <span className="font-mono text-[5.5px]">FUEL OFFSET: -1.2 LAPS</span>
                     </div>
-                    <div className="flex flex-col justify-center px-1.5 bg-red-500/5 text-[#FF4D4D]/70 leading-tight">
+                    <div className="flex flex-col justify-center px-1.5 bg-red-500/5 text-[#FF4D4D]/70 leading-tight" style={getSlotStyle(3)}>
                       <span className="font-bold uppercase text-[6px] font-rajdhani">TRAFFIC CONVERGENCE</span>
                       <span className="font-mono text-[5.5px]">LAP 195 · SECTOR 2</span>
                     </div>
@@ -1830,14 +1969,37 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             </div>
 
             {/* SVG Interactive Telemetry Graph - Shared borders */}
-            <div className="flex-1 min-h-0 relative bg-[#030508] border border-[#1c2430] rounded-none p-2 flex flex-col justify-between shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]">
+            <div 
+              onWheel={onTimelineWheel}
+              onMouseDown={onTimelineMouseDown}
+              onMouseMove={onTimelineMouseMove}
+              onMouseUp={onTimelineMouseUp}
+              onMouseLeave={onTimelineMouseUp}
+              onContextMenu={onContextMenu}
+              className="flex-1 min-h-0 relative bg-[#030508] border border-[#1c2430] rounded-none p-2 flex flex-col justify-between shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] cursor-ew-resize timeline-graph-container"
+            >
               
               <div className="absolute inset-0 p-2.5 pointer-events-none select-none flex flex-col justify-between font-mono text-[7px] text-[#7a828c]/25 uppercase tracking-widest border-t border-[#1c2430]/5">
                 <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>100% / MAX</span><span>ESTIMATED DOCK</span></div>
                 <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>75%</span><span>STINT LAP LIMIT</span></div>
                 <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>50%</span><span>PIT RECHARGE</span></div>
                 <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>25% / MIN</span><span>CRITICAL LIMIT</span></div>
-                <div className="flex justify-between font-black text-[#7a828c]/40"><span>T+0:00</span><span>1:00</span><span>2:00</span><span>3:00</span><span>4:00</span><span>5:00</span><span>FINISH</span></div>
+                <div className="flex justify-between font-black text-[#7a828c]/40">
+                  {Array.from({ length: 7 }).map((_, idx) => {
+                    const pct = idx / 6;
+                    const currentMin = startTimeOffsetMin + pct * visibleDuration;
+                    const hrs = Math.floor(currentMin / 60);
+                    const mins = Math.round(currentMin % 60);
+                    if (raceDurationHours >= 4 && timelineZoom < 4) {
+                      if (idx === 0) return <span key={idx}>T+0:00</span>;
+                      if (idx === 6) return <span key={idx}>FINISH</span>;
+                      return <span key={idx}>{hrs}:{String(mins).padStart(2, '0')}</span>;
+                    } else {
+                      if (idx === 0) return <span key={idx}>T+0 MIN</span>;
+                      return <span key={idx}>{hrs > 0 ? `${hrs}H ` : ""}${mins}M</span>;
+                    }
+                  })}
+                </div>
               </div>
 
               {/* Dynamic SVG Strategy Graph curve rendering (Contextual Highlight Expansion Sync) */}
@@ -1849,17 +2011,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   <line x1="0" y1="60" x2="600" y2="60" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
                   <line x1="0" y1="90" x2="600" y2="90" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
                   
-                  <line x1="100" y1="0" x2="100" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="200" y1="0" x2="200" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="300" y1="0" x2="300" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="400" y1="0" x2="400" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="500" y1="0" x2="500" y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1={mapX(100)} y1="0" x2={mapX(100)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1={mapX(200)} y1="0" x2={mapX(200)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1={mapX(300)} y1="0" x2={mapX(300)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1={mapX(400)} y1="0" x2={mapX(400)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line x1={mapX(500)} y1="0" x2={mapX(500)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
 
                   {graphTab === "fuel" && (
                     <>
                       {/* Segment 1 */}
                       <path
-                        d="M 5,20 Q 75,70 138,100"
+                        d={mapPath("M 5,20 Q 75,70 138,100")}
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 0 ? "3" : "1.8"}
@@ -1868,7 +2030,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
                       {/* Segment 2 */}
                       <path
-                        d="M 140,20 Q 210,65 273,95"
+                        d={mapPath("M 140,20 Q 210,65 273,95")}
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 1 ? "3" : "1.8"}
@@ -1877,7 +2039,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
                       {/* Segment 3 */}
                       <path
-                        d="M 275,20 Q 345,72 408,102"
+                        d={mapPath("M 275,20 Q 345,72 408,102")}
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 2 ? "3" : "1.8"}
@@ -1886,7 +2048,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
                       {/* Segment 4 */}
                       <path
-                        d="M 410,20 Q 500,55 595,78"
+                        d={mapPath("M 410,20 Q 500,55 595,78")}
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 3 ? "3" : "1.8"}
@@ -1895,13 +2057,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
 
                       {/* Verticals pit stops */}
-                      <line x1="138" y1="100" x2="140" y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
-                      <line x1="273" y1="95" x2="275" y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
-                      <line x1="408" y1="102" x2="410" y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+                      <line x1={mapX(138)} y1="100" x2={mapX(140)} y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+                      <line x1={mapX(273)} y1="95" x2={mapX(275)} y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+                      <line x1={mapX(408)} y1="102" x2={mapX(410)} y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
 
                       {/* Pit stop markers */}
                       <circle
-                        cx="138"
+                        cx={mapX(138)}
                         cy="100"
                         r={hoveredStintIndex === 0 ? "5" : "3"}
                         fill="#FFB800"
@@ -1910,7 +2072,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         className="cursor-pointer transition-all duration-150"
                       />
                       <circle
-                        cx="273"
+                        cx={mapX(273)}
                         cy="95"
                         r={hoveredStintIndex === 1 ? "5" : "3"}
                         fill="#FFB800"
@@ -1919,7 +2081,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         className="cursor-pointer transition-all duration-150"
                       />
                       <circle
-                        cx="408"
+                        cx={mapX(408)}
                         cy="102"
                         r={hoveredStintIndex === 2 ? "5" : "3"}
                         fill="#FFB800"
@@ -1927,10 +2089,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         onMouseLeave={() => setHoveredStintIndex(null)}
                         className="cursor-pointer transition-all duration-150"
                       />
-                      <text x="138" y="111" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(0)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
-                      <text x="273" y="106" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(1)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
-                      <text x="408" y="113" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(2)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
-                      <text x="590" y="72" fill="#3B82F6" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">24.6 L</text>
+                      <text x={mapX(138)} y="111" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(0)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
+                      <text x={mapX(273)} y="106" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(1)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
+                      <text x={mapX(408)} y="113" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(2)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
+                      <text x={mapX(590)} y="72" fill="#3B82F6" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">24.6 L</text>
                     </>
                   )}
 
@@ -1938,7 +2100,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     <>
                       {/* Segment 1 */}
                       <path
-                        d="M 5,30 C 40,32 90,65 138,85"
+                        d={mapPath("M 5,30 C 40,32 90,65 138,85")}
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 0 ? "3" : "1.8"}
@@ -1947,7 +2109,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
                       {/* Segment 2 */}
                       <path
-                        d="M 140,30 C 175,32 225,60 273,78"
+                        d={mapPath("M 140,30 C 175,32 225,60 273,78")}
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 1 ? "3" : "1.8"}
@@ -1956,7 +2118,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
                       {/* Segment 3 */}
                       <path
-                        d="M 275,30 C 310,32 360,70 408,90"
+                        d={mapPath("M 275,30 C 310,32 360,70 408,90")}
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 2 ? "3" : "1.8"}
@@ -1965,7 +2127,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       />
                       {/* Segment 4 */}
                       <path
-                        d="M 410,30 C 460,32 530,55 595,72"
+                        d={mapPath("M 410,30 C 460,32 530,55 595,72")}
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 3 ? "3" : "1.8"}
@@ -1973,10 +2135,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         className="transition-all duration-150"
                       />
 
-                      <circle cx="138" cy="85" r="3" fill="#00D17F" />
-                      <circle cx="273" cy="78" r="3" fill="#00D17F" />
-                      <circle cx="408" cy="90" r="3" fill="#00D17F" />
-                      <text x="590" y="65" fill="#00D17F" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">52% LIFE</text>
+                      <circle cx={mapX(138)} cy="85" r="3" fill="#00D17F" />
+                      <circle cx={mapX(273)} cy="78" r="3" fill="#00D17F" />
+                      <circle cx={mapX(408)} cy="90" r="3" fill="#00D17F" />
+                      <text x={mapX(590)} y="65" fill="#00D17F" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">52% LIFE</text>
                     </>
                   )}
 
@@ -1984,13 +2146,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     <>
                       {/* Track temp trace */}
                       <path
-                        d="M 5,80 Q 150,40 300,55 T 600,90"
+                        d={mapPath("M 5,80 Q 150,40 300,55 T 600,90")}
                         fill="none"
                         stroke="#FFB800"
                         strokeWidth="1.8"
                         className="drop-shadow-[0_0_4px_rgba(255,184,0,0.3)]"
                       />
-                      <text x="590" y="102" fill="#FFB800" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">28.4°C</text>
+                      <text x={mapX(590)} y="102" fill="#FFB800" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">28.4°C</text>
                     </>
                   )}
 
@@ -1998,13 +2160,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     <>
                       {/* Delta to leader trace */}
                       <path
-                        d="M 5,50 Q 70,53 138,55 M 140,42 Q 205,45 273,46 M 275,35 Q 340,33 408,32 M 410,22 Q 500,16 595,12"
+                        d={mapPath("M 5,50 Q 70,53 138,55 M 140,42 Q 205,45 273,46 M 275,35 Q 340,33 408,32 M 410,22 Q 500,16 595,12")}
                         fill="none"
                         stroke="#FF4D4D"
                         strokeWidth="1.8"
                         className="drop-shadow-[0_0_4px_rgba(255,77,77,0.3)]"
                       />
-                      <text x="590" y="24" fill="#FF4D4D" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">-12.4s (LEAD)</text>
+                      <text x={mapX(590)} y="24" fill="#FF4D4D" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">-12.4s (LEAD)</text>
                     </>
                   )}
                 </svg>

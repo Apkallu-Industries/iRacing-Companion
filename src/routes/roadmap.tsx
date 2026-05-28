@@ -332,7 +332,7 @@ function RoadmapPage() {
         </Link>
       </AppHeader>
 
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="w-full max-w-none px-4 md:px-12 lg:px-16 py-12">
         {/* Hero */}
         <div className="mb-12 text-center">
           <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">

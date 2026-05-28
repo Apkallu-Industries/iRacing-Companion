@@ -1,4 +1,4 @@
-﻿import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
 import {
@@ -395,7 +395,7 @@ function FingerprintPage() {
         </div>
       )}
 
-      <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 p-4">
+      <main className="w-full max-w-none px-4 md:px-12 lg:px-16 flex-1 space-y-4 p-4">
         <div className="hairline rounded-md bg-panel p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>

@@ -214,7 +214,7 @@ function DriverBridgePage() {
       </nav>
 
       {/* Main Workspace */}
-      <div className="flex-1 w-full max-w-[1300px] mx-auto px-4 py-8 flex flex-col justify-center items-center z-10 relative">
+      <div className="flex-1 w-full max-w-none px-4 md:px-12 lg:px-16 py-8 flex flex-col justify-center items-center z-10 relative">
         
         {!isConfigured ? (
           /* STATE A: WIZARD CONFIGURATION FORM */
@@ -561,7 +561,7 @@ function DriverBridgePage() {
 
       {/* Footer */}
       <footer className="border-t border-[#1C2430] bg-[#0B0F14]/50 py-4 px-6 text-[#7A828C] text-[8px] font-mono tracking-wider z-10 select-none">
-        <div className="mx-auto w-full max-w-[1300px] flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mx-auto w-full max-w-none px-4 md:px-12 lg:px-16 flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="font-sans font-black italic tracking-tighter text-white">PIT WALL DRIVER STATION</span>
           <span>© 2026 PIT WALL WORKSTATION · ACTIVE LOCAL WS PIPELINE</span>
         </div>
