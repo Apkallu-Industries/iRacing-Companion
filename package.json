@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "desktop": "npm --prefix desktop run start",
     "desktop:dev": "npm --prefix desktop run dev",
+    "changelog:update": "node ./desktop/scripts/update-changelog.js",
     "validate:determinism": "node scripts/validate-determinism.js"
   },
   "dependencies": {

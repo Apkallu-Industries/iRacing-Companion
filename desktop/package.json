@@ -8,9 +8,11 @@
     "dev": "electron . --dev",
     "sync-bridge": "node ./scripts/copy-bridge.js",
     "prestart": "node ./scripts/copy-bridge.js",
-    "dist": "node ./scripts/copy-bridge.js && electron-builder --win --x64",
-    "dist:dir": "node ./scripts/copy-bridge.js && electron-builder --win --x64 --dir",
-    "dist:portable": "node ./scripts/copy-bridge.js && electron-builder --win --x64 --config.win.target=portable"
+    "version:alpha": "node ./scripts/bump-version.js",
+    "changelog:update": "node ./scripts/update-changelog.js",
+    "dist": "npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64",
+    "dist:dir": "npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --dir",
+    "dist:portable": "npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --config.win.target=portable"
   },
   "build": {
     "appId": "industries.apkallu.pitwall",
