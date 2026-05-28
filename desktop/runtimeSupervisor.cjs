@@ -19,6 +19,11 @@ const net    = require("net");
 const http   = require("http");
 const { exec, execSync } = require("child_process");
 const os     = require("os");
+const { EventEmitter } = require("events");
+const supervisorApi = require("./supervisorApi.cjs");
+const ingestionController = require("./ingestionController.cjs");
+
+const supervisorEvents = new EventEmitter();
 
 // ─── Port constants ────────────────────────────────────────────────────────────
 
@@ -40,6 +45,8 @@ let aiMode = "unknown";
 let aiEndpoint = null;
 
 let initialized = false;
+let apiController = null;
+let ingestionControllerHandle = null;
 
 // ─── Utility: port probe ──────────────────────────────────────────────────────
 
@@ -297,6 +304,50 @@ async function init() {
   // Start active supervision watchdog
   startWatchdogLoop();
 
+  // Start ingestion controller before the HTTP API so external telemetry
+  // injection can flow into the same packet router.
+  try {
+    ingestionControllerHandle = ingestionController.create({
+      udpPort: Number(process.env.SUPERVISOR_UDP_PORT || 4711),
+      tcpPort: Number(process.env.SUPERVISOR_TCP_PORT || 4712),
+      onPacket: ({ packet, source, sessionId, sessionMeta }) => {
+        if (apiController && typeof apiController.broadcastTelemetry === "function") {
+          apiController.broadcastTelemetry({ type: "telemetry.packet", packet, source, sessionId, sessionMeta });
+        }
+        supervisorEvents.emit("live", packet);
+      },
+      onRawPacket: ({ packet, source, sessionId, sessionMeta }) => {
+        if (apiController && typeof apiController.broadcastRawTelemetry === "function") {
+          apiController.broadcastRawTelemetry({ type: "telemetry.raw", packet, source, sessionId, sessionMeta });
+        }
+        supervisorEvents.emit("raw", packet);
+      },
+      onEvent: ({ event, sessionId, sessionMeta }) => {
+        if (apiController && typeof apiController.broadcastEvent === "function") {
+          apiController.broadcastEvent({ type: "telemetry.event", event, sessionId, sessionMeta });
+        }
+        supervisorEvents.emit("event", event);
+      },
+    });
+    ingestionControllerHandle.openTelemetryStream();
+    console.log("[supervisor] Ingestion controller started");
+  } catch (e) {
+    console.warn("[supervisor] Failed to start ingestion controller:", e.message || e);
+  }
+
+  // Start minimal local Supervisor API (HTTP + SSE)
+  try {
+    apiController = supervisorApi.start({
+      port: process.env.SUPERVISOR_API_PORT || 17777,
+      getStatus,
+      onExternalTelemetry: (packet) => ingestionControllerHandle?.emitTelemetryPacket(packet, "http") ?? false,
+    });
+    activeSessionId = getActiveSession()?.id || null;
+    console.log(`[supervisor] API started on ${apiController.host}:${apiController.port}`);
+  } catch (e) {
+    console.warn("[supervisor] Failed to start API:", e.message || e);
+  }
+
   console.log(`[supervisor] Init complete — State: ${supervisorState} | MongoDB: ${mongoStatus} | AI: ${aiMode}`);
 }
 
@@ -358,14 +409,111 @@ function getAiEndpoint() {
 }
 
 /**
+ * Start a logical session via the supervisor. This will emit a session.start
+ * telemetry event to any SSE subscribers.
+ */
+let activeSessionId = null;
+
+function getActiveSession() {
+  try {
+    if (ingestionControllerHandle && typeof ingestionControllerHandle.getActiveSession === "function") {
+      const session = ingestionControllerHandle.getActiveSession();
+      activeSessionId = session?.id || null;
+      return session;
+    }
+    if (apiController && typeof apiController.getActiveSession === "function") {
+      const session = apiController.getActiveSession();
+      activeSessionId = session?.id || null;
+      return session;
+    }
+  } catch (e) {
+    console.warn('[supervisor] getActiveSession failed', e?.message || e);
+  }
+  return null;
+}
+
+function startSession(sessionId, meta) {
+  const result = apiController && typeof apiController.startSession === "function"
+    ? apiController.startSession(sessionId, meta)
+    : { ok: false, error: "supervisor API unavailable" };
+  if (result?.ok) {
+    activeSessionId = result.sessionId;
+    if (ingestionControllerHandle) {
+      if (typeof ingestionControllerHandle.startSession === "function") {
+        ingestionControllerHandle.startSession(result.sessionId, meta);
+      }
+      if (typeof ingestionControllerHandle.openTelemetryStream === "function") {
+        ingestionControllerHandle.openTelemetryStream();
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Stop a logical session via the supervisor. Emits session.stop.
+ */
+function stopSession(sessionId) {
+  const id = sessionId || activeSessionId;
+  if (!id) return { ok: false, error: "missing sessionId" };
+  const result = apiController && typeof apiController.stopSession === "function"
+    ? apiController.stopSession(id)
+    : { ok: false, error: "supervisor API unavailable" };
+  if (result?.ok) {
+    if (activeSessionId === id) activeSessionId = null;
+    if (ingestionControllerHandle) {
+      if (typeof ingestionControllerHandle.stopSession === "function") {
+        ingestionControllerHandle.stopSession(id);
+      }
+      if (typeof ingestionControllerHandle.closeTelemetryStream === "function") {
+        ingestionControllerHandle.closeTelemetryStream();
+      }
+    }
+  }
+  return result;
+}
+
+function getSessions() {
+  try {
+    if (apiController && typeof apiController.getSessions === "function") {
+      return apiController.getSessions();
+    }
+  } catch (e) {
+    console.warn('[supervisor] getSessions failed', e?.message || e);
+  }
+  return [];
+}
+
+/**
  * Graceful shutdown — cleans up watchdog intervals.
  */
 async function shutdown() {
   if (watchdogInterval) {
     clearInterval(watchdogInterval);
   }
+  if (apiController && typeof apiController.stop === "function") {
+    try { await apiController.stop(); } catch {}
+  }
+  if (ingestionControllerHandle && typeof ingestionControllerHandle.closeTelemetryStream === "function") {
+    try { ingestionControllerHandle.closeTelemetryStream(); } catch (e) { console.warn("[supervisor] ingestion shutdown failed", e?.message || e); }
+  }
   supervisorState = "OFFLINE";
   console.log("[supervisor] Shutdown complete");
+}
+
+function onTelemetryLive(callback) {
+  supervisorEvents.on("live", callback);
+  return () => supervisorEvents.off("live", callback);
+}
+
+function onTelemetryRaw(callback) {
+  supervisorEvents.on("raw", callback);
+  return () => supervisorEvents.off("raw", callback);
+}
+
+function onTelemetryEvent(callback) {
+  supervisorEvents.on("event", callback);
+  return () => supervisorEvents.off("event", callback);
 }
 
 module.exports = {
@@ -377,4 +525,11 @@ module.exports = {
   getAiEndpoint,
   ensureMongoDBNow,
   refreshAiMode,
+  startSession,
+  stopSession,
+  getSessions,
+  getActiveSession,
+  onTelemetryLive,
+  onTelemetryRaw,
+  onTelemetryEvent,
 };

@@ -34,7 +34,7 @@ export function FingerprintUploadCard() {
         const { selected, totalScanned } = selectLapfiles(files);
         if (selected.length === 0) {
           toast.error(
-            `Scanned ${totalScanned} files but found no .olap/.blap files. Pick your iRacing 'lapfiles' folder.`,
+            `Scanned ${totalScanned} files but found no .olap/.blap/.plap files. Pick your iRacing 'lapfiles' folder.`,
           );
           return;
         }

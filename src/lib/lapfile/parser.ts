@@ -48,7 +48,15 @@
  * window so we can finalize the mapping by eye.
  */
 
-export type LapfileMagic = "OLAP" | "BLAP" | "OLTA" | "BLTA";
+export type LapfileMagic =
+  | "OLAP"
+  | "BLAP"
+  | "OLTA"
+  | "BLTA"
+  | "PLAP"
+  | "BPLAP"
+  | "PLTA"
+  | "BPLTA";
 
 export interface LapfileHeader {
   magic: LapfileMagic;
@@ -130,7 +138,67 @@ function readLiveryRecords(view: DataView, start: number, count: number, stride 
   return out.filter((s) => s.length > 0);
 }
 
-const MAGICS: ReadonlyArray<LapfileMagic> = ["OLAP", "BLAP", "OLTA", "BLTA"];
+const MAGICS: ReadonlyArray<LapfileMagic> = [
+  "OLAP",
+  "BLAP",
+  "OLTA",
+  "BLTA",
+  "PLAP",
+  "BPLAP",
+  "PLTA",
+  "BPLTA",
+];
+
+function isLikelyLapTime(value: number): boolean {
+  return Number.isFinite(value) && value >= 5 && value <= 60 * 30;
+}
+
+function lapBoundaryIndex(distance: Float32Array, trackLengthM: number): number {
+  let lastFiniteIndex = -1;
+  const target = Math.max(1, trackLengthM);
+  for (let i = 0; i < distance.length; i++) {
+    const d = distance[i];
+    if (!Number.isFinite(d)) continue;
+    lastFiniteIndex = i;
+    if (d >= target * 0.98) return i;
+  }
+  return lastFiniteIndex >= 0 ? lastFiniteIndex : distance.length - 1;
+}
+
+function estimateBestLapSFromChannels(
+  channels: LapfileChannel[],
+  trackLengthM: number,
+): number | null {
+  if (!Number.isFinite(trackLengthM) || trackLengthM <= 0) return null;
+  const distance = channels.find((c) => c.label === "distance");
+  if (!distance) return null;
+
+  const bestLapChannel =
+    channels.find((c) => c.label === "best.t.seg6") ??
+    channels.find((c) => c.label === "opt.t.seg6");
+  if (!bestLapChannel) return null;
+
+  let index = lapBoundaryIndex(distance.values, trackLengthM);
+  while (index >= 0) {
+    const candidate = bestLapChannel.values[index];
+    if (Number.isFinite(candidate) && candidate > 0) return candidate;
+    index--;
+  }
+  return null;
+}
+
+function chooseBestLapS(headerBestLapS: number, channelBestLapS: number | null): number {
+  if (!isLikelyLapTime(headerBestLapS) && channelBestLapS != null) {
+    return channelBestLapS;
+  }
+  if (channelBestLapS != null) {
+    const diff = channelBestLapS - headerBestLapS;
+    if (diff < -0.25 && channelBestLapS / Math.max(1, headerBestLapS) > 0.5) {
+      return channelBestLapS;
+    }
+  }
+  return headerBestLapS;
+}
 
 function decodeMagic(view: DataView): LapfileMagic {
   const m = String.fromCharCode(
@@ -366,6 +434,9 @@ export function parseLapfile(buffer: ArrayBuffer): ParsedLapfile {
     raw,
   );
 
+  const estimatedBestLapS = estimateBestLapSFromChannels(channels, tableInfo.trackLengthM);
+  const normalizedBestLapS = chooseBestLapS(tableInfo.bestLapS, estimatedBestLapS);
+
   const header: LapfileHeader = {
     magic,
     version,
@@ -383,7 +454,7 @@ export function parseLapfile(buffer: ArrayBuffer): ParsedLapfile {
     buildDates,
   };
   const summary: LapfileSummary = {
-    bestLapS: tableInfo.bestLapS,
+    bestLapS: normalizedBestLapS,
     trackLengthM: tableInfo.trackLengthM,
     sectorTimesS: tableInfo.sectorTimesS,
     numBins: tableInfo.numBins,

@@ -145,6 +145,13 @@ async function stopRecordingSession() {
 }
 
 let IRacingSDK = null;
+let currentIracingConnected = false;
+const bridgeVersion = (() => {
+  try { return require("./package.json").version || "unknown"; }
+  catch { return "unknown"; }
+})();
+const serverStartedAt = Date.now();
+
 try {
   ({ IRacingSDK } = require("irsdk-node"));
 } catch (err) {
@@ -224,6 +231,18 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (urlPath === "/health" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      connected: true,
+      iRacingConnected: currentIracingConnected,
+      version: bridgeVersion,
+      uptimeMs: Date.now() - serverStartedAt,
+      timestamp: Date.now(),
+    }));
     return;
   }
 
@@ -1041,6 +1060,7 @@ if (IRacingSDK) {
 
   setInterval(() => {
     const connected = iracing.sessionStatusOK || iracing.startSDK();
+    currentIracingConnected = Boolean(connected);
     if (connected !== wasConnected) {
       console.log(connected ? "[bridge] iRacing connected" : "[bridge] iRacing disconnected");
       wasConnected = connected;

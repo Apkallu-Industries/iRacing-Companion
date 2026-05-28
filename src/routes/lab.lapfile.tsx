@@ -15,7 +15,10 @@ export const Route = createFileRoute("/lab/lapfile")({
   head: () => ({
     meta: [
       { title: "Lapfile Lab — Pit Wall" },
-      { name: "description", content: "Inspect iRacing .olap / .blap reference lap files." },
+      {
+        name: "description",
+        content: "Inspect iRacing .olap / .blap / .plap reference lap files.",
+      },
     ],
   }),
   component: LapfileLab,
@@ -263,7 +266,7 @@ function LapfileLab() {
         >
           <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
           <div className="mt-2 font-mono text-xs uppercase tracking-wider">
-            Drop .olap / .blap / .olapta / .blapta files
+            Drop .olap / .blap / .plap / .olapta / .blapta / .plapta files
           </div>
           <div className="mt-1 text-[10px] text-muted-foreground">
             Parsed entirely in your browser — nothing uploaded.
@@ -272,7 +275,7 @@ function LapfileLab() {
             ref={inputRef}
             type="file"
             multiple
-            accept=".olap,.blap,.olapta,.blapta"
+            accept=".olap,.blap,.plap,.olapta,.blapta,.plapta"
             className="hidden"
             onChange={(e) => void handleFiles(e.target.files)}
           />

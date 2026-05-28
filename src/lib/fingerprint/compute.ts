@@ -75,6 +75,14 @@ const MIN_LAP_S = 5;
 const MIN_SECTOR_S = 1;
 const MAX_LAP_S = 60 * 30; // 30 min lap upper bound
 
+function filterLapsNearBest(bestLaps: number[]): number[] {
+  if (bestLaps.length <= 2) return bestLaps;
+  const bestEver = Math.min(...bestLaps);
+  const threshold = Math.max(bestEver * 1.3, bestEver + 20);
+  const nearBest = bestLaps.filter((s) => s <= threshold);
+  return nearBest.length > 0 ? nearBest : bestLaps;
+}
+
 function isValidLap(s: number): boolean {
   return Number.isFinite(s) && s >= MIN_LAP_S && s <= MAX_LAP_S;
 }
@@ -96,7 +104,7 @@ function stdev(xs: number[]): number {
   return Math.sqrt(v);
 }
 
-/** Filter file picker FileList to .olap/.blap/.olapta/.blapta and group by track folder. */
+/** Filter file picker FileList to .olap/.blap/.plap/.bplap/.olapta/.blapta/.plapta/.bplapta and group by track folder. */
 export function selectLapfiles(files: FileList): {
   selected: { file: File; trackFolder: string; baseName: string; ext: string }[];
   totalScanned: number;
@@ -107,7 +115,7 @@ export function selectLapfiles(files: FileList): {
     scanned++;
     const path = (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
     const lower = f.name.toLowerCase();
-    const m = lower.match(/\.(olap|blap|olapta|blapta)$/);
+    const m = lower.match(/\.(olap|blap|plap|bplap|olapta|blapta|plapta|bplapta)$/);
     if (!m) continue;
     const ext = m[1];
     const baseName = f.name.slice(0, -1 - ext.length);
@@ -143,8 +151,10 @@ export function buildFingerprint(
 
   const pairs: TrackCarFingerprint[] = [];
   for (const g of groups.values()) {
-    const bestLaps = g.files.map((f) => f.summary.bestLapS).filter(isValidLap);
-    if (bestLaps.length === 0) continue;
+    const rawBestLaps = g.files.map((f) => f.summary.bestLapS).filter(isValidLap);
+    if (rawBestLaps.length === 0) continue;
+    const plausibleBestLaps = filterLapsNearBest(rawBestLaps);
+    const bestLaps = plausibleBestLaps.length ? plausibleBestLaps : rawBestLaps;
     const bestEver = Math.min(...bestLaps);
     const bestEverFile = g.files.find((f) => f.summary.bestLapS === bestEver)!;
 
@@ -154,6 +164,7 @@ export function buildFingerprint(
     const validSectorFiles = g.files.filter(
       (f) =>
         isValidLap(f.summary.bestLapS) &&
+        f.summary.bestLapS <= Math.max(bestEver * 1.3, bestEver + 20) &&
         f.summary.sectorTimesS.length > 0 &&
         f.summary.sectorTimesS.every(isValidSector),
     );

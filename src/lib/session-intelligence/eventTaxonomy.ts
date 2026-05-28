@@ -10,6 +10,12 @@ export enum RaceEventType {
   DIRTY_AIR_PUSH = "DIRTY_AIR_PUSH",
   THERMAL_REAR_OVERLOAD = "THERMAL_REAR_OVERLOAD",
   HIGH_SPEED_HEAVE_SPIKE = "HIGH_SPEED_HEAVE_SPIKE",
+  AERO_PLATFORM_OSCILLATION = "AERO_PLATFORM_OSCILLATION",
+  DIFFUSER_STALL = "DIFFUSER_STALL",
+  BRAKE_MIGRATION_ROTATION = "BRAKE_MIGRATION_ROTATION",
+  HYBRID_DEPLOYMENT_SURGE = "HYBRID_DEPLOYMENT_SURGE",
+  FLOOR_DAMAGE_ALERT = "FLOOR_DAMAGE_ALERT",
+  TIRE_DEGRADATION_ALERT = "TIRE_DEGRADATION_ALERT",
 }
 
 export enum EventSeverity {
@@ -79,6 +85,12 @@ export interface TelemetryEvent {
   triggerValue: number;
   narrativeDescription: string;
   physicsTruthBoundary: PhysicsTruthBoundary;
+  rationale: string[];
+  classification: "observed" | "interpreted";
+  detector: string;
+  detectorVersion: string;
+  physicsProfile?: string;
+  physicsProfileVersion?: string;
 }
 
 /**

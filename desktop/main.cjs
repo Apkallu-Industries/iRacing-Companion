@@ -11,7 +11,7 @@
  *   Dev (--dev) → loads http://127.0.0.1:8080 (local Vite dev server)
  */
 
-const { app, BrowserWindow, shell, Menu, Tray, dialog, ipcMain, nativeTheme, screen } = require("electron");
+const { app, BrowserWindow, shell, Menu, Tray, dialog, ipcMain, nativeTheme, screen, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -115,6 +115,7 @@ let tray = null;
 let bridgeProc = null;
 let bridgeRestartCount = 0;
 let bridgeStatus = "starting"; // 'starting' | 'running' | 'crashed'
+let currentSessionId = null;
 
 /**
  * Emit bridge status change events to the renderer so the UI
@@ -345,6 +346,68 @@ function createWindow() {
 
 // ─── System Tray ─────────────────────────────────────────────────────────────
 
+function emitSessionChanged(sessionId) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("session-changed", sessionId);
+  }
+}
+
+function setCurrentSession(sessionId) {
+  currentSessionId = sessionId || null;
+  updateTray();
+  emitSessionChanged(currentSessionId);
+}
+
+function startCurrentSession(sessionId, meta) {
+  try {
+    const result = supervisor.startSession ? supervisor.startSession(sessionId, meta) : { ok: false, error: "supervisor unavailable" };
+    if (result?.ok) {
+      setCurrentSession(result.sessionId);
+    }
+    return result;
+  } catch (e) {
+    console.warn("[desktop] startCurrentSession failed", e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+function stopCurrentSession(sessionId) {
+  const id = sessionId || currentSessionId || (supervisor.getActiveSession ? supervisor.getActiveSession()?.id : null);
+  if (!id) {
+    return { ok: false, error: "no active session" };
+  }
+  try {
+    const result = supervisor.stopSession ? supervisor.stopSession(id) : { ok: false, error: "supervisor unavailable" };
+    if (result?.ok) {
+      setCurrentSession(null);
+    }
+    return result;
+  } catch (e) {
+    console.warn("[desktop] stopCurrentSession failed", e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+function toggleSession() {
+  if (currentSessionId) {
+    return stopCurrentSession();
+  }
+  return startCurrentSession();
+}
+
+function registerSessionHotkey() {
+  const shortcut = "Control+Shift+R";
+  try {
+    if (!globalShortcut.register(shortcut, toggleSession)) {
+      console.warn(`[desktop] failed to register hotkey ${shortcut}`);
+    } else {
+      console.log(`[desktop] registered session hotkey ${shortcut}`);
+    }
+  } catch (e) {
+    console.warn("[desktop] global shortcut registration failed", e);
+  }
+}
+
 function updateTray() {
   if (!tray) return;
   const bridgeLabel =
@@ -353,6 +416,7 @@ function updateTray() {
       : bridgeStatus === "crashed"
         ? "❌ Bridge: Crashed"
         : "⏳ Bridge: Starting…";
+  const sessionLabel = currentSessionId ? `🟢 Active session: ${currentSessionId}` : "⚪ No active session";
 
   const menu = Menu.buildFromTemplate([
     {
@@ -361,6 +425,13 @@ function updateTray() {
     },
     { type: "separator" },
     { label: bridgeLabel, enabled: false },
+    { label: sessionLabel, enabled: false },
+    {
+      label: currentSessionId ? "Stop Session" : "Start Session",
+      accelerator: "Ctrl+Shift+R",
+      click: () => toggleSession(),
+    },
+    { type: "separator" },
     {
       label: "Restart Bridge",
       click: () => {
@@ -394,7 +465,7 @@ function updateTray() {
   ]);
   tray.setContextMenu(menu);
   tray.setToolTip(
-    `Pit Wall Desktop v${APP_VERSION}\nBridge: ${bridgeStatus}\nUI: ${BASE_URL}`
+    `Pit Wall Desktop v${APP_VERSION}\nBridge: ${bridgeStatus}\nSession: ${currentSessionId ?? "none"}\nUI: ${BASE_URL}`
   );
 }
 
@@ -616,6 +687,29 @@ ipcMain.handle("get-monitor-layout", () => {
   }));
 });
 
+// Supervisor helpers exposed to renderer via preload
+ipcMain.handle("supervisor:get-status", () => supervisor.getStatus());
+ipcMain.handle("supervisor:get-sessions", () => {
+  try { return supervisor.getSessions ? supervisor.getSessions() : []; } catch { return []; }
+});
+ipcMain.handle("supervisor:get-active-session", () => {
+  try { return supervisor.getActiveSession ? supervisor.getActiveSession() : null; } catch { return null; }
+});
+ipcMain.handle("supervisor:start-session", (_e, { sessionId, meta } = {}) => {
+  return startCurrentSession(sessionId, meta);
+});
+ipcMain.handle("supervisor:stop-session", (_e, { sessionId } = {}) => {
+  return stopCurrentSession(sessionId);
+});
+ipcMain.handle("supervisor:get-telemetry-schema", () => {
+  try {
+    const { CoreTelemetryV1 } = require("./telemetry/coreSchema.cjs");
+    return CoreTelemetryV1;
+  } catch (e) {
+    return { schemaVersion: 1, error: e.message };
+  }
+});
+
 /**
  * Opens a properly-configured detached instrument window.
  * Sizes are calibrated per instrument type for optimal data density.
@@ -660,6 +754,42 @@ app.whenReady().then(async () => {
   // before the bridge spawns so MONGO_URI is available for injection.
   await supervisor.init();
 
+  // Forward live/raw telemetry from supervisor in-process events to all open renderer windows
+  if (typeof supervisor.onTelemetryLive === "function") {
+    supervisor.onTelemetryLive((packet) => {
+      const windows = BrowserWindow.getAllWindows();
+      for (const win of windows) {
+        if (!win.isDestroyed() && win.webContents) {
+          win.webContents.send("telemetry-live", packet);
+        }
+      }
+    });
+  }
+
+  if (typeof supervisor.onTelemetryRaw === "function") {
+    supervisor.onTelemetryRaw((packet) => {
+      const windows = BrowserWindow.getAllWindows();
+      for (const win of windows) {
+        if (!win.isDestroyed() && win.webContents) {
+          win.webContents.send("telemetry-raw", packet);
+        }
+      }
+    });
+  }
+
+  if (typeof supervisor.onTelemetryEvent === "function") {
+    supervisor.onTelemetryEvent((event) => {
+      const windows = BrowserWindow.getAllWindows();
+      for (const win of windows) {
+        if (!win.isDestroyed() && win.webContents) {
+          win.webContents.send("telemetry-event", event);
+        }
+      }
+    });
+  }
+
+  currentSessionId = supervisor.getActiveSession ? supervisor.getActiveSession()?.id : null;
+
   startBridge();
   buildMenu();
 
@@ -668,6 +798,7 @@ app.whenReady().then(async () => {
 
   createWindow();
   createTray();
+  registerSessionHotkey();
 
   // Rebuild the menu now that BASE_URL is set correctly
   buildMenu();
@@ -681,6 +812,10 @@ app.on("before-quit", () => {
   saveWindowState();
   stopBridge();
   supervisor.shutdown();
+});
+
+app.on("will-quit", () => {
+  try { globalShortcut.unregisterAll(); } catch {}
 });
 
 app.on("window-all-closed", () => {

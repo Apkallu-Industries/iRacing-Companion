@@ -200,7 +200,7 @@ function FingerprintPage() {
       const { selected, totalScanned } = selectLapfiles(files);
       if (selected.length === 0) {
         toast.error(
-          `Scanned ${totalScanned} files but found no .olap/.blap files. Did you pick your iRacing 'lapfiles' folder?`,
+          `Scanned ${totalScanned} files but found no .olap/.blap/.plap files. Did you pick your iRacing 'lapfiles' folder?`,
         );
         return;
       }
@@ -407,7 +407,8 @@ function FingerprintPage() {
                 </code>{" "}
                 folder. We recursively scan every track sub-folder, parse all{" "}
                 <code className="font-mono text-[11px]">.olap</code> /{" "}
-                <code className="font-mono text-[11px]">.blap</code> files in your browser, and
+                <code className="font-mono text-[11px]">.blap</code> /{" "}
+                <code className="font-mono text-[11px]">.plap</code> files in your browser, and
                 build a per-track baseline. Nothing is uploaded.
               </p>
             </div>

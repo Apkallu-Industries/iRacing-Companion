@@ -69,4 +69,31 @@ contextBridge.exposeInMainWorld("pitWallRuntime", {
     // Return an unsubscribe function
     return () => ipcRenderer.removeListener("bridge-status-changed", listener);
   },
+  onSessionChanged: (callback) => {
+    const listener = (_, sessionId) => callback(sessionId);
+    ipcRenderer.on("session-changed", listener);
+    return () => ipcRenderer.removeListener("session-changed", listener);
+  },
+  // ── Supervisor / Sessions ─────────────────────────────────────────────────
+  getSupervisorStatus: () => ipcRenderer.invoke("supervisor:get-status"),
+  getActiveSession: () => ipcRenderer.invoke("supervisor:get-active-session"),
+  listSessions: () => ipcRenderer.invoke("supervisor:get-sessions"),
+  startSession: (sessionId, meta) => ipcRenderer.invoke("supervisor:start-session", { sessionId, meta }),
+  stopSession: (sessionId) => ipcRenderer.invoke("supervisor:stop-session", { sessionId }),
+  onTelemetryLive: (callback) => {
+    const listener = (_, packet) => callback(packet);
+    ipcRenderer.on("telemetry-live", listener);
+    return () => ipcRenderer.removeListener("telemetry-live", listener);
+  },
+  onTelemetryRaw: (callback) => {
+    const listener = (_, packet) => callback(packet);
+    ipcRenderer.on("telemetry-raw", listener);
+    return () => ipcRenderer.removeListener("telemetry-raw", listener);
+  },
+  onTelemetryEvent: (callback) => {
+    const listener = (_, event) => callback(event);
+    ipcRenderer.on("telemetry-event", listener);
+    return () => ipcRenderer.removeListener("telemetry-event", listener);
+  },
+  getTelemetrySchema: () => ipcRenderer.invoke("supervisor:get-telemetry-schema"),
 });

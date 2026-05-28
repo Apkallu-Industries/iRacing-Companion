@@ -109,6 +109,7 @@ export function inferMechanicalState(
   const hasLockups = eventTypes.includes(RaceEventType.BRAKE_LOCK_FRONT_LEFT) || eventTypes.includes(RaceEventType.BRAKE_LOCK_FRONT_RIGHT);
   const hasRearSlide = eventTypes.includes(RaceEventType.REAR_TRACTION_COLLAPSE);
   const hasThermalRear = eventTypes.includes(RaceEventType.THERMAL_REAR_OVERLOAD);
+  const hasOverRotation = eventTypes.includes(RaceEventType.ENTRY_OVER_ROTATION);
 
   if (hasBottoming || episodeTitles.some(t => t.includes("Diffuser"))) {
     inferredState = "DIFFUSER_VACUUM_STALL_GROUNDING";
@@ -120,6 +121,11 @@ export function inferMechanicalState(
     confidenceIndex = 88;
     rootCauseNarrative = "Rear tire carcass heating saturates operating limits. The resultant traction decay induces persistent friction sliding under acceleration.";
     sourceTypes = ["deterministic_physics", "historical_correlation"];
+  } else if (hasOverRotation && traits.brakeReleaseStyle === "fast_decay") {
+    inferredState = "LIFT_OFF_OVERSTEER_BRAKE_RELEASE_TIMING";
+    confidenceIndex = 90;
+    rootCauseNarrative = "Aggressive or abrupt brake pedal release during turn-in collapses the front axle contact patch load before the chassis stabilizes, triggering dynamic lift-off oversteer.";
+    sourceTypes = ["deterministic_physics", "behavioral_model"];
   } else if (hasLockups && traits.brakeReleaseStyle === "fast_decay") {
     inferredState = "BRAKE_RELEASE_LOAD_COLLAPSE";
     confidenceIndex = 85;
@@ -135,6 +141,54 @@ export function inferMechanicalState(
     evidenceEventIds: events.map((e) => e.id),
     physicsTruthBoundary: { sourceTypes },
   };
+}
+
+/**
+ * Strategist Gatekeeper. Strictly filters out inferences below 90% confidence
+ * to guarantee that critical race strategy decisions are driven by hard mechanical facts.
+ */
+export function getStrategistMechanicalState(
+  events: TelemetryEvent[],
+  episodes: EngineeringEpisode[],
+  traits: DriverBehaviorTraits
+): MechanicalStateInference | null {
+  const inference = inferMechanicalState(events, episodes, traits);
+  if (inference.confidenceIndex < 90) {
+    return null;
+  }
+  return inference;
+}
+
+/**
+ * Coaching Gatekeeper. Filters out inferences below 75% confidence
+ * for probabilistic driver performance analysis and dynamic trackside training context.
+ */
+export function getCoachingMechanicalState(
+  events: TelemetryEvent[],
+  episodes: EngineeringEpisode[],
+  traits: DriverBehaviorTraits
+): MechanicalStateInference | null {
+  const inference = inferMechanicalState(events, episodes, traits);
+  if (inference.confidenceIndex < 75) {
+    return null;
+  }
+  return inference;
+}
+
+/**
+ * Overlay Gatekeeper. Filters out inferences below 60% confidence
+ * for real-time visual UI telemetry metrics and observational gauges.
+ */
+export function getOverlayMechanicalState(
+  events: TelemetryEvent[],
+  episodes: EngineeringEpisode[],
+  traits: DriverBehaviorTraits
+): MechanicalStateInference | null {
+  const inference = inferMechanicalState(events, episodes, traits);
+  if (inference.confidenceIndex < 60) {
+    return null;
+  }
+  return inference;
 }
 
 /**

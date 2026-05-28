@@ -48,7 +48,13 @@
         "REAR_TRACTION_COLLAPSE",
         "DIRTY_AIR_PUSH",
         "THERMAL_REAR_OVERLOAD",
-        "HIGH_SPEED_HEAVE_SPIKE"
+        "HIGH_SPEED_HEAVE_SPIKE",
+        "AERO_PLATFORM_OSCILLATION",
+        "DIFFUSER_STALL",
+        "BRAKE_MIGRATION_ROTATION",
+        "HYBRID_DEPLOYMENT_SURGE",
+        "FLOOR_DAMAGE_ALERT",
+        "TIRE_DEGRADATION_ALERT"
       ],
       "description": "Classification from the standard RaceEventType taxonomy"
     },
@@ -120,6 +126,26 @@
           "description": "Classify the mathematical origin of this event detection to preserve physical truth"
         }
       }
+    },
+    "rationale": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of engineering observations or reasons supporting this event trigger"
+    },
+    "classification": {
+      "type": "string",
+      "enum": ["observed", "interpreted"],
+      "description": "Indicates whether the event is a directly observed physical state or an interpreted behavioral deduction"
+    },
+    "detector": {
+      "type": "string",
+      "description": "The specific detector routine name that triggered this event"
+    },
+    "detectorVersion": {
+      "type": "string",
+      "description": "Semantic versioning identifier of the detector routine"
     }
   }
 }
