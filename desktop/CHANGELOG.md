@@ -1,3 +1,9 @@
+## [1.2.10-alpha] - 2026-05-29
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.10-alpha.exe
+- Commit: feat: implement Electron shell for desktop bridge supervision and dashboard management
+
+# Changelog
+
 ## [1.2.9-alpha] - 2026-05-29
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.9-alpha.exe
 - Commit: chore: bump version to 1.2.2-alpha and initialize desktop project configuration and changelog

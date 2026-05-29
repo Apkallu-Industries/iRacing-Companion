@@ -1,6 +1,6 @@
 {
   "name": "pit-wall-desktop",
-  "version": "1.2.9-alpha",
+  "version": "1.2.10-alpha",
   "description": "Pit Wall Desktop — iRacing telemetry workbench with bundled local bridge.",
   "main": "main.cjs",
   "scripts": {

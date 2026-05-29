@@ -1006,6 +1006,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
       {/* Top Main branding & Live Status Timing Header */}
       <header className="h-10 border-b border-[#1c2430] bg-[#0b0f14] px-3 flex items-center justify-between relative z-10 shrink-0 select-none">
         <div className="flex items-center gap-2.5">
+          <Link 
+            to="/" 
+            className="text-[8.5px] font-black text-[#7a828c] hover:text-white uppercase tracking-widest border border-[#1c2430] bg-[#11161d] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer hover:bg-zinc-800"
+          >
+            ← MENU
+          </Link>
+          <span className="h-3.5 w-px bg-[#1c2430]" />
           <span className="text-white font-black italic tracking-widest text-[11px] bg-gradient-to-r from-red-600 to-red-800 px-1.5 py-0.5 border border-red-500/20 rounded-none font-orbitron">PITWALL</span>
           <span className="text-[10px] uppercase tracking-[0.3em] text-[#7a828c] font-bold font-rajdhani hidden sm:inline">TEAM COMMAND CENTRE</span>
           <span className="h-3.5 w-px bg-[#1c2430] hidden sm:inline" />

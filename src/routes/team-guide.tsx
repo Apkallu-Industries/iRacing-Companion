@@ -428,7 +428,13 @@ DRIVER_NAME=${name}`;
         </div>
 
         {/* Global Navigation Link Back */}
-        <div className="flex items-center gap-3 text-[9px] font-rajdhani">
+        <div className="flex items-center gap-2 text-[9px] font-rajdhani">
+          <Link 
+            to="/" 
+            className="text-[8.5px] font-black text-[#7a828c] hover:text-white uppercase tracking-widest border border-[#1c2430] bg-[#11161d] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer hover:bg-zinc-800"
+          >
+            ← MENU
+          </Link>
           <Link 
             to="/team" 
             className="text-[8.5px] font-black text-[#3B82F6] hover:bg-[#3B82F6]/10 uppercase tracking-widest border border-[#3B82F6]/25 bg-[#3B82F6]/5 px-2 py-0.5 rounded-none flex items-center gap-1 transition-all"
