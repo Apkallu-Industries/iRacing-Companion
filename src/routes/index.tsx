@@ -49,6 +49,31 @@ function LandingPage() {
   const [bridgeConnected, setBridgeConnected] = useState(false);
   const [recentSessions, setRecentSessions] = useState<Sess[]>([]);
 
+  const isElectron =
+    typeof window !== "undefined" &&
+    ((window as any).pitWallRuntime !== undefined ||
+     window.navigator.userAgent.toLowerCase().includes("electron"));
+
+  const [manifest, setManifest] = useState<any>(null);
+
+  // Poll manifest in Electron mode
+  useEffect(() => {
+    if (!isElectron) return;
+    const fetchManifest = async () => {
+      try {
+        if ((window as any).pitWallRuntime?.getRuntimeManifest) {
+          const m = await (window as any).pitWallRuntime.getRuntimeManifest();
+          setManifest(m);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch manifest", err);
+      }
+    };
+    fetchManifest();
+    const interval = setInterval(fetchManifest, 3000);
+    return () => clearInterval(interval);
+  }, [isElectron]);
+
   // Poll local bridge status
   useEffect(() => {
     const checkBridge = async () => {
@@ -99,6 +124,32 @@ function LandingPage() {
     return `${m}:${sec.padStart(6, "0")}`;
   };
 
+  // Determine LLM Recommendation based on detected RAM and VRAM
+  const systemRam = manifest?.totalRamGb ? parseFloat(manifest.totalRamGb) : 16;
+  const systemVram = manifest?.vramGb ? parseFloat(manifest.vramGb) : 0;
+
+  let recommendedLlmName = "Cloud API Mode (OpenAI/Anthropic)";
+  let recommendedLlmUrl = "#";
+  let recommendedLlmLinkText = "Configure Cloud API →";
+  let recommendedLlmDesc = "Local models smaller than 7B parameters lack native tool-use & strategic reasoning capabilities. Cloud Mode is recommended to prevent telemetry pipeline failures.";
+
+  if (systemRam >= 64 && systemVram >= 16) {
+    recommendedLlmName = "Qwen-2.5-72B-Instruct (Q4_K_M)";
+    recommendedLlmUrl = "https://huggingface.co/lmstudio-community/Qwen2.5-72B-Instruct-GGUF";
+    recommendedLlmLinkText = "Download GGUF →";
+    recommendedLlmDesc = "Elite-tier offline strategy & tool use. Runs fully offline with 72B parameter reasoning using 48GB System RAM and 16GB VRAM.";
+  } else if (systemRam >= 32 && systemVram >= 12) {
+    recommendedLlmName = "Qwen-2.5-14B-Instruct (Q4_K_M)";
+    recommendedLlmUrl = "https://huggingface.co/lmstudio-community/Qwen2.5-14B-Instruct-GGUF";
+    recommendedLlmLinkText = "Download GGUF →";
+    recommendedLlmDesc = "Perfect balance of speed and outstanding native tool-calling strategy. Fits comfortably inside 12GB VRAM.";
+  } else if (systemRam >= 16 && systemVram >= 6) {
+    recommendedLlmName = "Qwen-2.5-7B-Instruct (Q4_K_M)";
+    recommendedLlmUrl = "https://huggingface.co/lmstudio-community/Qwen2.5-7B-Instruct-GGUF";
+    recommendedLlmLinkText = "Download GGUF →";
+    recommendedLlmDesc = "Extremely reliable tool-use and telemetry formatting for standard consumer rigs with >= 6GB VRAM.";
+  }
+
   return (
     <main className="min-h-screen bg-[#05070A] text-[#E2E4E8] font-mono selection:bg-[#3B82F6]/30 selection:text-white overflow-x-hidden relative flex flex-col justify-between">
       
@@ -147,58 +198,249 @@ function LandingPage() {
         </div>
       </nav>
 
-      {/* ── HERO BANNER SECTION ── */}
+      {/* ── HERO BANNER SECTION (Desktop Workstation Hub vs Web Marketing) ── */}
       <section className="w-full max-w-none px-4 md:px-12 lg:px-16 pt-6 relative z-10 select-none">
-        <div className="border border-[#1C2430] bg-[#0B0F14] overflow-hidden rounded-sm flex flex-col md:flex-row items-center gap-6 p-6 md:p-8 relative">
-          {/* Glassmorphic lighting background */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#3B82F6] opacity-[0.06] rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#00D17F] opacity-[0.04] rounded-full blur-[100px] pointer-events-none" />
+        {isElectron ? (
+          <div className="border border-[#1C2430] bg-[#0B0F14] overflow-hidden rounded-sm flex flex-col lg:flex-row items-stretch gap-6 p-6 md:p-8 relative">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[#3B82F6] opacity-[0.06] rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#00D17F] opacity-[0.04] rounded-full blur-[100px] pointer-events-none" />
 
-          {/* Left Hero Content */}
-          <div className="flex-1 flex flex-col items-start gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-mono tracking-widest text-[#00D17F] bg-[#00D17F]/10 border border-[#00D17F]/20 px-2 py-0.5 font-bold uppercase">
-                Now Live
-              </span>
-              <span className="text-[9px] font-mono tracking-widest text-[#7A828C] bg-[#11161D] px-2 py-0.5 border border-[#1C2430]">
-                Desktop Suite v1.2.0
-              </span>
+            {/* Left Hero Content */}
+            <div className="flex-1 flex flex-col items-start justify-between gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-mono tracking-widest text-[#3B82F6] bg-[#3B82F6]/10 border border-[#3B82F6]/20 px-2 py-0.5 font-bold uppercase">
+                    Workstation Active
+                  </span>
+                  <span className="text-[9px] font-mono tracking-widest text-[#7A828C] bg-[#11161D] px-2 py-0.5 border border-[#1C2430]">
+                    Desktop Suite v{manifest?.appVersion ?? "1.2.3-alpha"}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans mt-1">
+                  Pit Wall <span className="text-[#3B82F6]">Workstation</span>
+                </h1>
+                <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg mt-1">
+                  Race engineering command center. Streaming deterministic 60Hz live iRacing telemetry, processing observer loops, and running latent Bayesian chassis degradation estimators.
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  to="/live"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm bg-[#00D17F] hover:bg-[#00B86F] px-6 py-3 font-mono text-xs uppercase font-bold text-zinc-950 transition-all shadow-[0_0_20px_rgba(0,209,127,0.25)] hover:scale-105 cursor-pointer"
+                >
+                  <Gauge className="h-4 w-4" />
+                  Launch Live Dashboard
+                </Link>
+                <Link
+                  to="/sessions"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] px-5 py-3 font-mono text-xs uppercase font-bold text-white transition-all cursor-pointer"
+                >
+                  <LineChart className="h-4 w-4 text-[#3B82F6]" />
+                  Open Analysis Workbench
+                </Link>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans">
-              Enter the <span className="text-[#3B82F6]">Pit Wall</span>
-            </h1>
-            <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg">
-              Stream high-fidelity 60Hz live iRacing telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Link
-                to="/live"
-                className="inline-flex items-center justify-center gap-2 rounded-sm bg-[#00D17F] hover:bg-[#00B86F] px-6 py-3 font-mono text-xs uppercase font-bold text-zinc-950 transition-all shadow-[0_0_20px_rgba(0,209,127,0.25)] hover:scale-105 cursor-pointer"
-              >
-                <Gauge className="h-4 w-4" />
-                Enter Pit Wall
-              </Link>
-              <Link
-                to="/roadmap"
-                className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] px-5 py-3 font-mono text-xs uppercase font-bold text-white transition-all cursor-pointer"
-              >
-                <Rocket className="h-4 w-4" />
-                Get Desktop Installer
-              </Link>
+
+            {/* Middle: Workstation Hero Image */}
+            <div className="hidden lg:block lg:w-[260px] xl:w-[320px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-xl flex-shrink-0">
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#3B82F6]/10 via-transparent to-[#00D17F]/10 opacity-30 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              <img
+                src="/images/hero.png"
+                alt="Pit Wall Workstation"
+                className="w-full h-full object-cover transform group-hover:scale-[1.02] transition-transform duration-500"
+              />
+            </div>
+
+            {/* Right: Hardware Diagnostics & Services */}
+            <div className="flex-1 border border-[#1C2430] bg-[#05070A]/85 backdrop-blur-sm p-5 flex flex-col justify-between rounded-sm relative overflow-hidden group">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#11161D_1px,transparent_1px),linear-gradient(to_bottom,#11161D_1px,transparent_1px)] bg-[size:1.5rem_1.5rem] opacity-20 pointer-events-none" />
+
+              <div className="relative z-10 flex items-center justify-between border-b border-[#1C2430] pb-2.5 mb-4">
+                <span className="text-[9px] font-mono tracking-widest text-[#7A828C] font-bold uppercase flex items-center gap-1.5">
+                  <Cpu className="h-3.5 w-3.5 text-[#3B82F6]" />
+                  LOCAL HARDWARE & DAEMON STATUS
+                </span>
+                <span className="text-[9px] font-mono text-[#00D17F] font-bold tracking-wider animate-pulse flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#00D17F] rounded-full" />
+                  MONITORING
+                </span>
+              </div>
+
+              <div className="relative z-10 grid grid-cols-2 gap-4 text-[10px] uppercase font-bold tracking-wide">
+                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">HOST CLIENT</span>
+                  <span className="text-white truncate font-sans text-xs italic tracking-tight font-extrabold">
+                    {manifest?.hostname ?? "WORKSTATION-PC"}
+                  </span>
+                  <span className="text-[#7A828C] text-[8px]">
+                    OS: {manifest?.platform ?? "win32"} · {manifest?.arch ?? "x64"}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1 pl-2">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">CPU CORES</span>
+                  <span className="text-white truncate text-xs font-mono">
+                    {manifest?.cpuModel ? manifest.cpuModel.replace(/\(R\)|\(TM\)/g, "").trim() : "Detecting..."}
+                  </span>
+                  <span className="text-[#7A828C] text-[8px]">
+                    LOGICAL CORES: {manifest?.cpuCores ?? 8}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2 pt-2 border-t border-[#1C2430]/40">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">RAM ALLOCATION</span>
+                  <div className="flex items-center justify-between text-white text-xs font-mono">
+                    <span>{manifest ? `${(manifest.totalRamGb - manifest.freeRamGb).toFixed(1)} GB` : "0.0 GB"}</span>
+                    <span className="text-[#7A828C]">/ {manifest?.totalRamGb ?? "16.0"} GB</span>
+                  </div>
+                  <div className="w-full bg-[#11161D] h-1 rounded-full overflow-hidden mt-0.5">
+                    <div
+                      className="bg-[#3B82F6] h-full transition-all duration-500"
+                      style={{ width: manifest ? `${((manifest.totalRamGb - manifest.freeRamGb) / manifest.totalRamGb) * 100}%` : "30%" }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 pl-2 pt-2 border-t border-[#1C2430]/40">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">PCIe GPU & VRAM</span>
+                  <span className="text-white truncate font-sans text-xs italic tracking-tight font-extrabold">
+                    {manifest?.gpuModel ?? "Detecting GPU..."}
+                  </span>
+                  <div className="flex items-center justify-between text-white text-[9px] font-mono">
+                    <span className="text-[#7A828C]">VRAM:</span>
+                    <span className="font-bold text-[#00D17F]">
+                      {manifest?.vramGb ? `${parseFloat(manifest.vramGb).toFixed(1)} GB` : "0.0 GB"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2 pt-2 border-t border-[#1C2430]/40">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">SUPERVISOR DAEMONS</span>
+                  <div className="flex flex-col gap-1 text-[9px] font-mono mt-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white">MONGO DATABASE:</span>
+                      <span className={manifest?.mongoStatus === "active" ? "text-[#00D17F]" : "text-[#FF4D4D]"}>
+                        {manifest?.mongoStatus === "active" ? "ACTIVE" : "INACTIVE"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white">CO-PILOT AI:</span>
+                      <span className="text-[#3B82F6]">
+                        {manifest?.aiMode ? String(manifest.aiMode).toUpperCase() : "CLOUD"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 pl-2 pt-2 border-t border-[#1C2430]/40">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">RECOMMENDED LOCAL LLM</span>
+                  <span className="text-[#3B82F6] truncate text-xs font-mono font-bold">
+                    {recommendedLlmName}
+                  </span>
+                  {recommendedLlmUrl === "#" ? (
+                    <button
+                      onClick={openSettings}
+                      className="text-[#00D17F] hover:underline text-[8px] tracking-wider uppercase font-bold mt-0.5 text-left bg-transparent border-none p-0 cursor-pointer"
+                    >
+                      {recommendedLlmLinkText}
+                    </button>
+                  ) : (
+                    <a
+                      href={recommendedLlmUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#00D17F] hover:underline text-[8px] tracking-wider uppercase font-bold mt-0.5"
+                    >
+                      {recommendedLlmLinkText}
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* LLM Recommendation Footnote */}
+              <div className="relative z-10 border-t border-[#1C2430]/40 pt-2 mt-3 text-[8.5px] font-mono text-[#7A828C] uppercase leading-relaxed flex flex-col gap-1.5">
+                <div>
+                  <span className="text-[#FFB800] font-bold">Safe Model Guideline:</span> {recommendedLlmDesc}
+                </div>
+                <div className="text-[8px] text-[#7A828C]/80 normal-case border-t border-[#1C2430]/25 pt-1.5 mt-0.5 font-sans leading-relaxed">
+                  <span className="text-[#3B82F6] font-bold font-mono uppercase">Advanced Users:</span> Advanced LLM users may find a better model. Just remember to update the model name you have currently loaded in LM Studio inside the LM Studio settings to match.
+                </div>
+              </div>
+
+              <div className="relative z-10 flex items-center justify-between border-t border-[#1C2430]/40 pt-3 mt-4 text-[9px] font-mono">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[#7A828C]">BRIDGE:</span>
+                    <span className={manifest?.bridgeStatus === "running" ? "text-[#00D17F]" : manifest?.bridgeStatus === "crashed" ? "text-[#FF4D4D]" : "text-[#FFB800]"}>
+                      {manifest?.bridgeStatus ? String(manifest.bridgeStatus).toUpperCase() : "CONNECTING"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[#7A828C]">UPTIME:</span>
+                    <span className="text-white">
+                      {manifest?.uptimeSec ? `${Math.floor(manifest.uptimeSec / 3600)}h ${Math.floor((manifest.uptimeSec % 3600) / 60)}m` : "0h 0m"}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[#7A828C] tracking-widest">
+                  PORT 3001 ACTIVE
+                </span>
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="border border-[#1C2430] bg-[#0B0F14] overflow-hidden rounded-sm flex flex-col md:flex-row items-center gap-6 p-6 md:p-8 relative">
+            {/* Glassmorphic lighting background */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[#3B82F6] opacity-[0.06] rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#00D17F] opacity-[0.04] rounded-full blur-[100px] pointer-events-none" />
 
-          {/* Right Hero Image */}
-          <div className="flex-1 w-full max-w-[650px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-2xl">
-            {/* Glow border gradient effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#3B82F6]/20 via-transparent to-[#00D17F]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <img
-              src="/hero.png"
-              alt="Pit Wall Telemetry Dashboard"
-              className="w-full h-auto object-cover transform group-hover:scale-[1.02] transition-transform duration-500"
-            />
+            {/* Left Hero Content */}
+            <div className="flex-1 flex flex-col items-start gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-mono tracking-widest text-[#00D17F] bg-[#00D17F]/10 border border-[#00D17F]/20 px-2 py-0.5 font-bold uppercase">
+                  Now Live
+                </span>
+                <span className="text-[9px] font-mono tracking-widest text-[#7A828C] bg-[#11161D] px-2 py-0.5 border border-[#1C2430]">
+                  Desktop Suite v1.2.0
+                </span>
+              </div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans">
+                Enter the <span className="text-[#3B82F6]">Pit Wall</span>
+              </h1>
+              <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg">
+                Stream high-fidelity 60Hz live iRacing telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-3">
+                <Link
+                  to="/live"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm bg-[#00D17F] hover:bg-[#00B86F] px-6 py-3 font-mono text-xs uppercase font-bold text-zinc-950 transition-all shadow-[0_0_20px_rgba(0,209,127,0.25)] hover:scale-105 cursor-pointer"
+                >
+                  <Gauge className="h-4 w-4" />
+                  Enter Pit Wall
+                </Link>
+                <Link
+                  to="/roadmap"
+                  className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] px-5 py-3 font-mono text-xs uppercase font-bold text-white transition-all cursor-pointer"
+                >
+                  <Rocket className="h-4 w-4" />
+                  Get Desktop Installer
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Hero Image */}
+            <div className="flex-1 w-full max-w-[650px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-2xl">
+              {/* Glow border gradient effect */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#3B82F6]/20 via-transparent to-[#00D17F]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              <img
+                src="/images/hero.png"
+                alt="Pit Wall Telemetry Dashboard"
+                className="w-full h-auto object-cover transform group-hover:scale-[1.02] transition-transform duration-500"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* ── MAIN WORKSPACE CONTAINER ── */}
@@ -495,79 +737,184 @@ function LandingPage() {
 
       {/* ── ONBOARDING TUTORIAL DETAIL AREA (HTML Onboarding Anchor) ── */}
       <section id="onboarding-tutorial" className="w-full max-w-none px-4 md:px-12 lg:px-16 py-6 z-10 scroll-mt-14">
-        <div className="border border-[#1C2430] bg-[#0B0F14] p-5">
-          <div className="mb-4 text-left border-b border-[#1C2430] pb-3">
-            <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#FFB800] font-semibold">
-              GETTING STARTED
-            </span>
-            <h2 className="text-base font-bold tracking-tight text-white uppercase mt-1">
-              Establishing local telemetry bridge connection
-            </h2>
-            <p className="mt-1 text-xs text-[#7A828C] leading-relaxed max-w-4xl">
-              The Pit Wall desktop workstation pulls rolling telemetry directly from iRacing's Shared Memory API. 
-              This is achieved by running the local bridge WebSocket broker on the same Windows machine where the simulation is hosted.
-            </p>
-          </div>
-
-          <div className="grid gap-4 text-xs md:grid-cols-3 mb-5">
-            <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#3B82F6] font-bold">
-                <ShieldCheck className="h-4 w-4" /> 1. OS Requirements
-              </div>
-              <ul className="space-y-1 text-[#7A828C] text-[10px] leading-relaxed">
-                <li>• Windows 10 or 11 (Host machine)</li>
-                <li>• iRacing active simulation running</li>
-                <li>• Node.js 20 LTS or bun runtime installed</li>
-              </ul>
-            </div>
-            <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#FFB800] font-bold">
-                <Wifi className="h-4 w-4" /> 2. Port Allocation
-              </div>
-              <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                By default, the bridge opens a localhost listener on WebSocket port <span className="text-white font-bold">3001</span>.
-                Make sure no other programs are currently running on port 3001.
+        {isElectron ? (
+          <div className="border border-[#1C2430] bg-[#0B0F14] p-5">
+            <div className="mb-4 text-left border-b border-[#1C2430] pb-3">
+              <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#00D17F] font-semibold">
+                INFRASTRUCTURE CONSOLE
+              </span>
+              <h2 className="text-base font-bold tracking-tight text-white uppercase mt-1">
+                Local Telemetry supervisor daemon operations
+              </h2>
+              <p className="mt-1 text-xs text-[#7A828C] leading-relaxed max-w-4xl">
+                The workstation local supervisor runs continuous process monitors and local RPC loops to communicate directly with your local iRacing WebSocket bridge and MongoDB telemetry store.
               </p>
             </div>
-            <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#8B5CF6] font-bold">
-                <Cpu className="h-4 w-4" /> 3. Local first
-              </div>
-              <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                All telemetry data is streamed locally. No external server packages are sent, keeping your strategy completely private and secure.
-              </p>
-            </div>
-          </div>
 
-          <div className="space-y-3">
-            <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h3 className="font-bold text-white text-xs uppercase">Step A: Install Pit Wall Desktop</h3>
-                <p className="text-[10px] text-[#7A828C] mt-0.5 leading-relaxed">
-                  The local bridge is bundled inside the Pit Wall Desktop installer. Download and run the installer — the bridge starts automatically when you launch the app.
-                  Place the app in <span className="font-mono text-white">C:\Program Files\Pit Wall</span> or your preferred location.
-                </p>
+            <div className="grid gap-4 text-xs md:grid-cols-3 mb-5">
+              {/* Database daemon control */}
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col justify-between gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#00D17F] font-bold">
+                    <Database className="h-4 w-4" /> Telemetry Database
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    MongoDB stores indexed lap files, telemetry frames, and driver consistency fingerprints locally.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border-t border-[#1C2430]/40 pt-3">
+                  <span className="text-[9px] text-[#7A828C] font-mono">STATUS: {manifest?.mongoStatus === "active" ? "ACTIVE" : "OFFLINE"}</span>
+                  <button
+                    onClick={async () => {
+                      if ((window as any).pitWallRuntime?.ensureMongoDB) {
+                        await (window as any).pitWallRuntime.ensureMongoDB();
+                      }
+                    }}
+                    disabled={manifest?.mongoStatus === "active"}
+                    className="border border-[#00D17F]/40 bg-[#00D17F]/10 hover:bg-[#00D17F]/20 text-[#00D17F] px-3 py-1 text-[9px] uppercase font-bold disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                  >
+                    Start Daemon
+                  </button>
+                </div>
               </div>
-              <Link
-                to="/roadmap"
-                className="inline-flex items-center justify-center gap-2 border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 px-4 py-2 text-[10px] uppercase font-bold text-[#3B82F6] transition-colors flex-shrink-0"
-              >
-                Get Desktop App →
-              </Link>
+
+              {/* WebSocket Telemetry Bridge control */}
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col justify-between gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#3B82F6] font-bold">
+                    <Wifi className="h-4 w-4" /> WebSocket Bridge
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    iRacing memory broker. Captures live game frames at 60Hz and exposes them on localhost ws port 3001.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border-t border-[#1C2430]/40 pt-3">
+                  <span className="text-[9px] text-[#7A828C] font-mono">STATUS: {manifest?.bridgeStatus ? String(manifest.bridgeStatus).toUpperCase() : "STARTING"}</span>
+                  <button
+                    onClick={async () => {
+                      if ((window as any).pitWallRuntime?.restartBridge) {
+                        await (window as any).pitWallRuntime.restartBridge();
+                      }
+                    }}
+                    className="border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 text-[#3B82F6] px-3 py-1 text-[9px] uppercase font-bold transition-colors cursor-pointer"
+                  >
+                    Restart Bridge
+                  </button>
+                </div>
+              </div>
+
+              {/* Co-Pilot AI settings */}
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col justify-between gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#8B5CF6] font-bold">
+                    <Sparkles className="h-4 w-4" /> Co-Pilot AI Strategy
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    Local LLM router. Probes local inference servers (Ollama, LM Studio) or falls back to cloud APIs.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border-t border-[#1C2430]/40 pt-3">
+                  <span className="text-[9px] text-[#7A828C] font-mono">MODE: {manifest?.aiMode ? String(manifest.aiMode).toUpperCase() : "CLOUD"}</span>
+                  <button
+                    onClick={async () => {
+                      if ((window as any).pitWallRuntime?.refreshAiMode) {
+                        await (window as any).pitWallRuntime.refreshAiMode();
+                      }
+                    }}
+                    className="border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] px-3 py-1 text-[9px] uppercase font-bold transition-colors cursor-pointer"
+                  >
+                    Re-Probe AI
+                  </button>
+                </div>
+              </div>
             </div>
 
+            {/* Local Server API status */}
             <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
-              <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and connect</h3>
+              <h3 className="font-bold text-white text-xs uppercase mb-1">Supervisor Daemon API endpoints</h3>
               <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
-                Launch Pit Wall Desktop. The bridge starts automatically in the background on port <span className="font-mono text-white">3001</span>.
-                Start iRacing and join a session — the Live Telemetry dashboard will connect instantly.
+                The background supervisor hosts a local HTTP + SSE telemetry server at port <span className="font-mono text-white">17777</span>. Users can fetch telemetry programmatically or subscribe to the Server-Sent Events stream.
               </p>
               <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
-                {`# Bridge starts automatically — no commands needed.\n# Verify connection at:\nws://127.0.0.1:3001`}
+                {`# Status Endpoint:\nGET http://127.0.0.1:17777/supervisor/status\n\n# SSE Live Telemetry Stream:\nGET http://127.0.0.1:17777/telemetry/live`}
               </pre>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="border border-[#1C2430] bg-[#0B0F14] p-5">
+            <div className="mb-4 text-left border-b border-[#1C2430] pb-3">
+              <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-[#FFB800] font-semibold">
+                GETTING STARTED
+              </span>
+              <h2 className="text-base font-bold tracking-tight text-white uppercase mt-1">
+                Establishing local telemetry bridge connection
+              </h2>
+              <p className="mt-1 text-xs text-[#7A828C] leading-relaxed max-w-4xl">
+                The Pit Wall desktop workstation pulls rolling telemetry directly from iRacing's Shared Memory API. 
+                This is achieved by running the local bridge WebSocket broker on the same Windows machine where the simulation is hosted.
+              </p>
+            </div>
+
+            <div className="grid gap-4 text-xs md:grid-cols-3 mb-5">
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#3B82F6] font-bold">
+                  <ShieldCheck className="h-4 w-4" /> 1. OS Requirements
+                </div>
+                <ul className="space-y-1 text-[#7A828C] text-[10px] leading-relaxed">
+                  <li>• Windows 10 or 11 (Host machine)</li>
+                  <li>• iRacing active simulation running</li>
+                  <li>• Node.js 20 LTS or bun runtime installed</li>
+                </ul>
+              </div>
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#FFB800] font-bold">
+                  <Wifi className="h-4 w-4" /> 2. Port Allocation
+                </div>
+                <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                  By default, the bridge opens a localhost listener on WebSocket port <span className="text-white font-bold">3001</span>.
+                  Make sure no other programs are currently running on port 3001.
+                </p>
+              </div>
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#8B5CF6] font-bold">
+                  <Cpu className="h-4 w-4" /> 3. Local first
+                </div>
+                <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                  All telemetry data is streamed locally. No external server packages are sent, keeping your strategy completely private and secure.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="font-bold text-white text-xs uppercase">Step A: Install Pit Wall Desktop</h3>
+                  <p className="text-[10px] text-[#7A828C] mt-0.5 leading-relaxed">
+                    The local bridge is bundled inside the Pit Wall Desktop installer. Download and run the installer — the bridge starts automatically when you launch the app.
+                    Place the app in <span className="font-mono text-white">C:\Program Files\Pit Wall</span> or your preferred location.
+                  </p>
+                </div>
+                <Link
+                  to="/roadmap"
+                  className="inline-flex items-center justify-center gap-2 border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 px-4 py-2 text-[10px] uppercase font-bold text-[#3B82F6] transition-colors flex-shrink-0"
+                >
+                  Get Desktop App →
+                </Link>
+              </div>
+
+              <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
+                <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and connect</h3>
+                <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
+                  Launch Pit Wall Desktop. The bridge starts automatically in the background on port <span className="font-mono text-white">3001</span>.
+                  Start iRacing and join a session — the Live Telemetry dashboard will connect instantly.
+                </p>
+                <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
+                  {`# Bridge starts automatically — no commands needed.\n# Verify connection at:\nws://127.0.0.1:3001`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── WORKSTATION FOOTER ── */}

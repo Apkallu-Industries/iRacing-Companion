@@ -86,16 +86,11 @@ async function resolveUrl() {
     return;
   }
 
-  if (await isReachable(BRIDGE_UI)) {
-    BASE_URL      = BRIDGE_UI;
-    DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
-    console.log(`[desktop] bridge HTTP server detected → ${DASHBOARD_URL}`);
-    return;
-  }
-
+  // Production: Always load the canonical hosted React application so the desktop
+  // app loads the full, state-of-the-art UI instead of the lightweight offline bridge dashboard.
   BASE_URL      = CLOUD_URL;
-  DASHBOARD_URL = `${CLOUD_URL}/live`; // Cloud fallback skips boot sequence
-  console.log(`[desktop] ⚠️  no local server found, falling back to cloud → ${DASHBOARD_URL}`);
+  DASHBOARD_URL = `${CLOUD_URL}/runtime`;
+  console.log(`[desktop] loading production UI from cloud → ${DASHBOARD_URL}`);
 }
 
 // Prefer the source-tree bridge over the bundled copy (dev workflow).
@@ -620,15 +615,77 @@ ipcMain.handle("get-app-info", () => ({
   bridgeDir: BRIDGE_DIR,
 }));
 
+// ─── GPU & VRAM Detection Helper ──────────────────────────────────────────────
+
+/**
+ * Detect GPU and dedicated VRAM using nvidia-smi (if available)
+ * or fallback to PowerShell / WMI querying.
+ */
+function getGpuDetails() {
+  const { exec } = require("child_process");
+  return new Promise((resolve) => {
+    // 1. Try nvidia-smi first for accurate Nvidia GPU + VRAM
+    exec("nvidia-smi --query-gpu=name,memory.total --format=csv,noheader", { timeout: 3000 }, (err, stdout) => {
+      if (!err && stdout) {
+        const parts = stdout.trim().split(",");
+        if (parts.length >= 2) {
+          const name = parts[0].trim();
+          const memStr = parts[1].trim(); // e.g. "16303 MiB"
+          const mib = parseInt(memStr, 10);
+          if (!isNaN(mib)) {
+            const gb = parseFloat((mib / 1024).toFixed(1));
+            return resolve({ name, vramGb: gb, source: "nvidia-smi" });
+          }
+        }
+      }
+
+      // 2. Fallback to PowerShell WMI for AMD, Intel or other GPUs
+      exec('powershell -Command "Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json"', { timeout: 4000 }, (wmiErr, wmiStdout) => {
+        if (!wmiErr && wmiStdout) {
+          try {
+            let data = JSON.parse(wmiStdout.trim());
+            if (!Array.isArray(data)) {
+              data = [data];
+            }
+            // Filter out basic or virtual displays
+            const realGpus = data.filter(g => g.Name && !g.Name.includes("Basic Render") && !g.Name.includes("Virtual"));
+            const target = realGpus.length > 0 ? realGpus : data;
+
+            let bestGpu = null;
+            for (const gpu of target) {
+              if (!bestGpu || (gpu.AdapterRAM > bestGpu.AdapterRAM)) {
+                bestGpu = gpu;
+              }
+            }
+
+            if (bestGpu) {
+              const name = bestGpu.Name;
+              let vramGb = parseFloat((bestGpu.AdapterRAM / 1e9).toFixed(1));
+              // Handle WMI 4GB limitation overflow (reports exactly 4293918720)
+              if (bestGpu.AdapterRAM === 4293918720) {
+                vramGb = 4.0;
+              }
+              return resolve({ name, vramGb, source: "wmi" });
+            }
+          } catch (e) {}
+        }
+        resolve({ name: "Intel/AMD HD Graphics", vramGb: 2.0, source: "fallback" });
+      });
+    });
+  });
+}
+
 // ─── Workstation Runtime IPC ──────────────────────────────────────────────────
 
 /**
  * Returns the full machine identity manifest for the RuntimeMonitor / RuntimeStatusMatrix.
  */
-ipcMain.handle("get-runtime-manifest", () => {
+ipcMain.handle("get-runtime-manifest", async () => {
   const os_module = require("os");
   const displays = screen.getAllDisplays();
   const svStatus = supervisor.getStatus();
+  const gpuInfo = await getGpuDetails();
+
   return {
     hostname: os_module.hostname(),
     platform: os_module.platform(),
@@ -650,6 +707,9 @@ ipcMain.handle("get-runtime-manifest", () => {
     mongoUri:     svStatus.mongoUri,
     aiMode:       svStatus.aiMode,
     aiEndpoint:   svStatus.aiEndpoint,
+    // Detected Graphics & VRAM
+    gpuModel: gpuInfo.name,
+    vramGb: gpuInfo.vramGb,
   };
 });
 
