@@ -145,6 +145,7 @@ async function stopRecordingSession() {
 }
 
 let IRacingSDK = null;
+let iracingInstance = null;
 let currentIracingConnected = false;
 const bridgeVersion = (() => {
   try { return require("./package.json").version || "unknown"; }
@@ -285,6 +286,78 @@ const server = http.createServer(async (req, res) => {
         
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, driverName, iracingId, teamCode }));
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (urlPath === "/api/replay/command" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body);
+        const { command } = payload;
+        
+        if (!iracingInstance || !currentIracingConnected) {
+          res.writeHead(503, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: "iRacing SDK not connected" }));
+          return;
+        }
+
+        switch (command) {
+          case "seek": {
+            const sessionNum = parseInt(payload.sessionNum ?? 0, 10);
+            const sessionTimeMS = parseInt(payload.sessionTimeMS ?? 0, 10);
+            iracingInstance.triggerReplaySessionSearch(sessionNum, sessionTimeMS);
+            console.log(`[bridge] Replay seek sent: session ${sessionNum}, time ${sessionTimeMS}ms`);
+            break;
+          }
+          case "speed": {
+            const speedVal = parseFloat(payload.speed ?? 1.0);
+            const slowMotion = !!payload.slowMotion;
+            iracingInstance.changeReplaySpeed(speedVal, slowMotion);
+            console.log(`[bridge] Replay speed sent: speed ${speedVal}, slow ${slowMotion}`);
+            break;
+          }
+          case "position": {
+            const positionVal = parseInt(payload.position ?? 1, 10); // ReplayPositionCommand (0=Begin, 1=Current, 2=End)
+            const frameVal = parseInt(payload.frame ?? 0, 10);
+            iracingInstance.changeReplayPosition(positionVal, frameVal);
+            console.log(`[bridge] Replay position sent: command ${positionVal}, frame ${frameVal}`);
+            break;
+          }
+          case "search": {
+            const searchVal = parseInt(payload.searchCommand ?? 0, 10); // ReplaySearchCommand
+            iracingInstance.searchReplay(searchVal);
+            console.log(`[bridge] Replay search sent: command ${searchVal}`);
+            break;
+          }
+          case "state": {
+            const stateVal = parseInt(payload.state ?? 0, 10); // ReplayStateCommand
+            iracingInstance.changeReplayState(stateVal);
+            console.log(`[bridge] Replay state sent: command ${stateVal}`);
+            break;
+          }
+          case "camera": {
+            const positionVal = parseInt(payload.position ?? 0, 10);
+            const groupVal = parseInt(payload.group ?? 1, 10);
+            const cameraVal = parseInt(payload.camera ?? 0, 10);
+            iracingInstance.changeCameraPosition(positionVal, groupVal, cameraVal);
+            console.log(`[bridge] Camera position switch sent: position ${positionVal}, group ${groupVal}, camera ${cameraVal}`);
+            break;
+          }
+          default:
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: false, error: `Unknown command: ${command}` }));
+            return;
+        }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, command }));
       } catch (err) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: false, error: err.message }));
@@ -1056,6 +1129,7 @@ let currentLap = 0;
 
 if (IRacingSDK) {
   const iracing = new IRacingSDK({ autoEnableTelemetry: true });
+  iracingInstance = iracing;
   let wasConnected = false;
 
   setInterval(() => {

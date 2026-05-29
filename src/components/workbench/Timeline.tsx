@@ -1,13 +1,62 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { IbtParsed } from "@/lib/ibt/types";
 import { useWorkbench } from "@/lib/store";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Radio } from "lucide-react";
 
 export function Timeline({ parsed }: { parsed: IbtParsed }) {
   const { cursorTick, setCursorTick, playing, setPlaying, speed, setSpeed } = useWorkbench();
+  const [syncEnabled, setSyncEnabled] = useState(() => {
+    try {
+      const stored = localStorage.getItem("pitwall.replaysync.enabled");
+      return stored !== "false";
+    } catch {
+      return true;
+    }
+  });
+
   const total = parsed.meta.numTicks;
   const rafRef = useRef<number | null>(null);
   const lastRef = useRef<number | null>(null);
+
+  // Debounced Replay Sync Effect
+  useEffect(() => {
+    if (!syncEnabled || !parsed) return;
+
+    const st = parsed.channels["SessionTime"]?.data;
+    if (!st) return;
+
+    const sessionTimeSec = st[cursorTick];
+    if (sessionTimeSec === undefined || isNaN(sessionTimeSec)) return;
+
+    const sn = parsed.channels["SessionNum"]?.data;
+    const sessionNum = sn ? sn[cursorTick] : 0;
+
+    // Convert to milliseconds
+    const sessionTimeMS = Math.round(sessionTimeSec * 1000);
+
+    const timer = setTimeout(() => {
+      fetch("http://localhost:3001/api/replay/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          command: "seek",
+          sessionNum,
+          sessionTimeMS,
+        }),
+      }).catch(() => {
+        // Silent catch for bridge offline / unreachable cases
+      });
+    }, 85);
+
+    return () => clearTimeout(timer);
+  }, [cursorTick, syncEnabled, parsed]);
+
+  // Persist sync state
+  useEffect(() => {
+    try {
+      localStorage.setItem("pitwall.replaysync.enabled", String(syncEnabled));
+    } catch {}
+  }, [syncEnabled]);
 
   useEffect(() => {
     if (!playing) {
@@ -40,6 +89,18 @@ export function Timeline({ parsed }: { parsed: IbtParsed }) {
         className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground hover:opacity-90"
       >
         {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+      </button>
+      <button
+        onClick={() => setSyncEnabled(!syncEnabled)}
+        title={syncEnabled ? "Replay Sync: Active" : "Replay Sync: Disabled"}
+        className={`flex h-7 px-2.5 items-center justify-center gap-1.5 rounded-sm text-xs font-semibold tracking-wider transition-all ${
+          syncEnabled
+            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+            : "bg-muted/10 text-muted-foreground border border-border/50 hover:bg-muted/20"
+        }`}
+      >
+        <Radio className={`h-3 w-3 ${syncEnabled ? "animate-pulse text-emerald-400" : ""}`} />
+        <span>SIM SYNC</span>
       </button>
       <select
         value={speed}
