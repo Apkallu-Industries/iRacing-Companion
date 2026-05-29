@@ -253,27 +253,33 @@ export function useLiveRecorder(t: Telemetry) {
           channels: channels.current,
         };
         const json = JSON.stringify(doc);
-        const blob = new Blob([json], { type: "application/json" });
+        const fileSize = new TextEncoder().encode(json).length;
         const filename = `${doc.track}-${doc.car}-${Date.now()}.pwlap`.replace(/[^\w.\-]+/g, "_");
+        const isLocalDeveloper =
+          typeof window !== "undefined" &&
+          (localStorage.getItem("apex_local_session") || !import.meta.env.VITE_SUPABASE_URL);
 
-        // Always download for instant guest value.
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
         if (!userId) {
+          const blob = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          a.click();
           return { sessionId: null as string | null, filename, blob };
         }
 
         const path = `${userId}/${crypto.randomUUID()}-${filename}`;
-        const { error: upErr } = await supabase.storage
-          .from("telemetry")
-          .upload(path, blob, { contentType: "application/json", upsert: false });
-        if (upErr) throw upErr;
+        if (!isLocalDeveloper) {
+          const blob = new Blob([json], { type: "application/json" });
+          const { error: upErr } = await supabase.storage
+            .from("telemetry")
+            .upload(path, blob, { contentType: "application/json", upsert: false });
+          if (upErr) throw upErr;
+        }
 
         // Offload database insertion to the backend Server Function.
-        // This natively commits metadata to MongoDB, saves the full telemetry JSON doc locally in MongoDB,
+        // This commits metadata to MongoDB, saves the full telemetry JSON doc locally in MongoDB,
         // and pushes to Supabase fallback reliably.
         const res = await recordTelemetrySessionMeta({
           data: {
@@ -284,7 +290,7 @@ export function useLiveRecorder(t: Telemetry) {
             lap_count: 0,
             tick_rate: SAMPLE_HZ,
             num_vars: Object.keys(doc.channels).length,
-            file_size: blob.size,
+            file_size: fileSize,
             best_lap_s: doc.bestLapS,
             storage_path: path,
             recorded_at: doc.startedAt,
@@ -293,7 +299,8 @@ export function useLiveRecorder(t: Telemetry) {
         });
 
         if (!res.ok) throw new Error(res.error || "Failed inserting session metadata");
-        return { sessionId: res.id, filename, blob };
+        return { sessionId: res.id, filename };
+
       } finally {
         setState("idle");
       }

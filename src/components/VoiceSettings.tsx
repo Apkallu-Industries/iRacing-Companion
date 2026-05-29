@@ -39,7 +39,16 @@ async function enumerateKind(kind: "audioinput" | "audiooutput"): Promise<MediaD
 
 /** Play audio blob through a specific output device (via setSinkId). */
 async function playAudioOnDevice(base64: string, mime: string, deviceId: string): Promise<void> {
-  const audio = new Audio(`data:${mime};base64,${base64}`);
+  // Convert base64 to Blob for more reliable playback
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  const blob = new Blob([bytes], { type: mime });
+  const blobUrl = URL.createObjectURL(blob);
+
+  const audio = new Audio(blobUrl);
   if (deviceId && typeof (audio as any).setSinkId === "function") {
     try {
       await (audio as any).setSinkId(deviceId);
@@ -47,7 +56,36 @@ async function playAudioOnDevice(base64: string, mime: string, deviceId: string)
       // setSinkId can fail silently if device gone; fallback to default
     }
   }
-  await audio.play();
+
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      URL.revokeObjectURL(blobUrl);
+      reject(new Error("Audio loading timeout"));
+    }, 5000);
+
+    const handleCanPlay = () => {
+      clearTimeout(timeout);
+      cleanup();
+      audio.play().then(resolve).catch(reject);
+    };
+
+    const handleError = () => {
+      clearTimeout(timeout);
+      cleanup();
+      URL.revokeObjectURL(blobUrl);
+      reject(new Error("Failed to load audio: " + (audio.error?.message || "unknown error")));
+    };
+
+    const cleanup = () => {
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("error", handleError);
+      audio.removeEventListener("canplaythrough", handleCanPlay);
+    };
+
+    audio.addEventListener("canplay", handleCanPlay, { once: true });
+    audio.addEventListener("error", handleError, { once: true });
+  });
 }
 
 // ─── Device selector sub-component ───────────────────────────────────────────

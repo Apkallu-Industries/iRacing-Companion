@@ -39,14 +39,13 @@ export function RecordingControls({ t }: { t: Telemetry }) {
       const res = await save(user?.id ?? null);
       if (res.sessionId) {
         toast.success("Session saved");
-        // Push the file directly into memory so the workbench loads it instantly
-        // without waiting for the Supabase network trip (Gap 4).
-        if (res.blob) setPendingLocalBlob(res.blob);
         navigate({ to: "/sessions/$id", params: { id: res.sessionId } });
       } else {
         toast.message("Recording downloaded", {
           description: "Sign in to save it to your library.",
         });
+        // Keep the blob in memory only for guest recordings so the session can open immediately.
+        if (res.blob) setPendingLocalBlob(res.blob);
       }
     } catch (e) {
       toast.error((e as Error).message);

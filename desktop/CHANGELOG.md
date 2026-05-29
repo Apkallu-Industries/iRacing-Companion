@@ -1,3 +1,9 @@
+## [1.2.11-alpha] - 2026-05-29
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.11-alpha.exe
+- Commit: feat: implement team setup guide with interactive checklist, SQL simulation, and telemetry bridge console
+
+# Changelog
+
 ## [1.2.10-alpha] - 2026-05-29
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.10-alpha.exe
 - Commit: feat: implement Electron shell for desktop bridge supervision and dashboard management
