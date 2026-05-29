@@ -225,3 +225,44 @@ AdvisorButton.tsx       → dispatchAdvisorCall({ extrasSnapshot })
 | `src/lib/store.ts` | Zustand — ElevenLabs key, output device ID, mic device ID |
 | `desktop/main.cjs` | Electron — spawns bridge, tray, single-instance lock |
 | `desktop/scripts/copy-bridge.js` | Syncs `local-bridge/` → `desktop/bridge/` |
+
+---
+
+## Replay Broadcast Command API
+
+The bridge exposes a high-fidelity control interface for the active in-game iRacing replay system via the `POST /api/replay/command` REST endpoint. This API bridges the client workbench timeline to the simulator replay tape deck.
+
+### Supported Commands
+
+Exposed via `{ command: string, ...parameters }` JSON payloads:
+
+#### 1. Seek Replay (`seek`)
+Commands the simulator to seek to a specific session number and absolute session time.
+* **Payload**: `{ command: "seek", sessionNum: number, sessionTimeMS: number }`
+* **Underlying SDK API**: `triggerReplaySessionSearch(session, time)`
+
+#### 2. Change Playback Speed (`speed`)
+Controls the simulator's play, pause, fast forward, or rewind rate.
+* **Payload**: `{ command: "speed", speed: number, slowMotion: boolean }`
+* **Underlying SDK API**: `changeReplaySpeed(speed, slowMotion)`
+
+#### 3. Shift Playback Position (`position`)
+Jumps relative to absolute replay margins (0 = Begin, 1 = Current, 2 = End).
+* **Payload**: `{ command: "position", position: number, frame: number }`
+* **Underlying SDK API**: `changeReplayPosition(position, frame)`
+
+#### 4. Search Tapes (`search`)
+Controls iRacing search skips like previous/next lap, frame, or incident markers.
+* **Payload**: `{ command: "search", searchCommand: number }` (e.g. ReplaySearchCommand values 0–9)
+* **Underlying SDK API**: `searchReplay(command)`
+
+#### 5. Change Replay State (`state`)
+Triggers tape operations such as tape erasing or state switching.
+* **Payload**: `{ command: "state", state: number }` (ReplayStateCommand values)
+* **Underlying SDK API**: `changeReplayState(state)`
+
+#### 6. Switch Active Focus and Camera View (`camera`)
+Commands the spectator camera to switch drivers and angles in real-time.
+* **Payload**: `{ command: "camera", position: number, group: number, camera: number }`
+* **Underlying SDK API**: `changeCameraPosition(position, group, camera)`
+
