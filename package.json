@@ -2,6 +2,10 @@
   "name": "iracing-companion",
   "description": "Pit Wall — iRacing telemetry dashboard and lap analysis workbench.",
   "private": true,
+  "workspaces": [
+    "desktop",
+    "local-bridge"
+  ],
   "engines": {
     "node": "24.13.0"
   },

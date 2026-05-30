@@ -34,6 +34,7 @@ desktop/node_modules
 desktop/out
 desktop/dist-installer/
 desktop/bridge/node_modules
+desktop/bin/
 
 # Large desktop bundles - host externally (GitHub Releases, R2, etc.)
 public/downloads/*.zip

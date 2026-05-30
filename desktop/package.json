@@ -10,9 +10,9 @@
     "prestart": "node ./scripts/copy-bridge.js",
     "version:alpha": "node ./scripts/bump-version.js",
     "changelog:update": "node ./scripts/update-changelog.js",
-    "dist": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64",
-    "dist:dir": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --dir",
-    "dist:portable": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --config.win.target=portable"
+    "dist": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js --force-install && electron-builder --win --x64",
+    "dist:dir": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js --force-install && electron-builder --win --x64 --dir",
+    "dist:portable": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js --force-install && electron-builder --win --x64 --config.win.target=portable"
   },
   "build": {
     "appId": "industries.apkallu.pitwall",
@@ -43,6 +43,10 @@
           "**/*",
           "!node_modules/.cache/**"
         ]
+      },
+      {
+        "from": "bin",
+        "to": "bin"
       }
     ],
     "win": {

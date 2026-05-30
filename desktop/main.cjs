@@ -135,6 +135,18 @@ const BRIDGE_DIR = (() => {
   return path.join(__dirname, "bridge");
 })();
 
+const NODE_BIN = (() => {
+  // Check development bin folder
+  const devNode = path.join(__dirname, "bin", "node.exe");
+  if (fs.existsSync(devNode)) return devNode;
+
+  // Check packaged resources bin folder
+  const unpackedNode = path.join(process.resourcesPath || __dirname, "bin", "node.exe");
+  if (fs.existsSync(unpackedNode)) return unpackedNode;
+
+  return null;
+})();
+
 const STATE_FILE_PATH = path.join(app.getPath("userData"), "window-state.json");
 const LOG_FILE_PATH = path.join(app.getPath("userData"), "bridge.log");
 
@@ -281,17 +293,27 @@ function startBridge() {
   const aiEndpoint  = supervisor.getAiEndpoint();
   const aiMode      = supervisor.getAiMode();
 
-  bridgeProc = spawn(process.execPath, [serverPath], {
+  const runner = NODE_BIN || process.execPath;
+  const env = {
+    ...process.env,
+    NODE_ENV: isDev ? "development" : "production",
+    // Telemetry persistence — injected by supervisor after MongoDB probe
+    MONGO_URI:         mongoUri    ?? "",
+    PITWALL_AI_MODE:   aiMode      ?? "cloud",
+    PITWALL_AI_ENDPOINT: aiEndpoint ?? "",
+  };
+
+  // Only run as node under Electron if we aren't using the standard bundled node.exe
+  if (!NODE_BIN) {
+    env.ELECTRON_RUN_AS_NODE = "1";
+    console.log(`[desktop] Spawning bridge via Electron fallback runner: ${runner}`);
+  } else {
+    console.log(`[desktop] Spawning bridge via standard portable node.exe: ${runner}`);
+  }
+
+  bridgeProc = spawn(runner, [serverPath], {
     cwd: BRIDGE_DIR,
-    env: {
-      ...process.env,
-      ELECTRON_RUN_AS_NODE: "1",
-      NODE_ENV: isDev ? "development" : "production",
-      // Telemetry persistence — injected by supervisor after MongoDB probe
-      MONGO_URI:         mongoUri    ?? "",
-      PITWALL_AI_MODE:   aiMode      ?? "cloud",
-      PITWALL_AI_ENDPOINT: aiEndpoint ?? "",
-    },
+    env,
     stdio: ["ignore", "pipe", "pipe"],
   });
 
