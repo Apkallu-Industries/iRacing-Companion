@@ -78,6 +78,9 @@ interface WorkbenchState {
   setLlmBaseUrl: (url: string) => void;
   setLlmModelId: (modelId: string) => void;
 
+  activeGame: "iracing" | "assettocorsa";
+  setActiveGame: (game: "iracing" | "assettocorsa") => void;
+
   liveTrack: string;
   liveCar: string;
   liveConnected: boolean;
@@ -185,6 +188,9 @@ export const useWorkbench = create<WorkbenchState>()(
       setLlmBaseUrl: (url) => set({ llmBaseUrl: url }),
       setLlmModelId: (id) => set({ llmModelId: id }),
       setLlmApiKey: (key: string) => set({ llmApiKey: key }),
+
+      activeGame: "iracing",
+      setActiveGame: (game) => set({ activeGame: game }),
       elevenLabsApiKey: "",
       elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
       setElevenLabsApiKey: (key: string) => set({ elevenLabsApiKey: key }),
@@ -239,6 +245,7 @@ export const useWorkbench = create<WorkbenchState>()(
         micDeviceId: state.micDeviceId,
         mathExpressions: state.mathExpressions,
         activeWorkspace: state.activeWorkspace,
+        activeGame: state.activeGame,
       }),
     }
   )

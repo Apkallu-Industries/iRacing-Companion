@@ -26,6 +26,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { useWorkbench } from "@/lib/store";
 
 type Sess = Tables<"telemetry_sessions">;
 
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Motorsport engineering command center. Stream live iRacing telemetry at 60Hz and analyze laps with professional stacked traces and AI strategies.",
+          "Motorsport engineering command center. Stream live telemetry at 60Hz and analyze laps with professional stacked traces and AI strategies.",
       },
     ],
   }),
@@ -48,6 +49,23 @@ function LandingPage() {
   const [pulse, setPulse] = useState(true);
   const [bridgeConnected, setBridgeConnected] = useState(false);
   const [recentSessions, setRecentSessions] = useState<Sess[]>([]);
+
+  const activeGame = useWorkbench((state) => state.activeGame);
+  const setActiveGame = useWorkbench((state) => state.setActiveGame);
+
+  const handleGameSelect = async (game: "iracing" | "assettocorsa") => {
+    setActiveGame(game);
+    try {
+      await fetch("http://localhost:3001/api/game/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ game }),
+      });
+      console.log(`[Landing] Synergized bridge config for ${game}`);
+    } catch (err) {
+      console.warn("[Landing] Local bridge not reachable for game configuration update:", err);
+    }
+  };
 
   const isElectron =
     typeof window !== "undefined" &&
@@ -217,11 +235,47 @@ function LandingPage() {
                   </span>
                 </div>
                 <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans mt-1">
-                  Pit Wall <span className="text-[#3B82F6]">Workstation</span>
+                  Pit Wall <span className={activeGame === "assettocorsa" ? "text-[#00D17F]" : "text-[#3B82F6]"}>Workstation</span>
                 </h1>
                 <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg mt-1">
-                  Race engineering command center. Streaming deterministic 60Hz live iRacing telemetry, processing observer loops, and running latent Bayesian chassis degradation estimators.
+                  {activeGame === "assettocorsa" ? (
+                    <>
+                      Race engineering command center. Streaming deterministic 60Hz live <span className="text-[#00D17F]">Assetto Corsa</span> shared memory telemetry, processing observer loops, and running latent Bayesian chassis degradation estimators.
+                    </>
+                  ) : (
+                    <>
+                      Race engineering command center. Streaming deterministic 60Hz live <span className="text-[#3B82F6]">iRacing</span> telemetry, processing observer loops, and running latent Bayesian chassis degradation estimators.
+                    </>
+                  )}
                 </p>
+
+                {/* Sleek Motors-themed Glassmorphic Game Selector */}
+                <div className="mt-3 border border-[#1C2430] bg-[#05070A]/80 p-1 flex items-center gap-1.5 rounded relative z-10 w-full max-w-[340px] shadow-inner select-none backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() => handleGameSelect("iracing")}
+                    className={`flex-1 py-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-center transition-all duration-300 rounded-sm flex items-center justify-center gap-2 ${
+                      activeGame === "iracing"
+                        ? "bg-[#3B82F6] text-white shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-[1.02]"
+                        : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "iracing" ? "bg-white animate-pulse" : "bg-[#7A828C]"}`} />
+                    iRacing Simulator
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGameSelect("assettocorsa")}
+                    className={`flex-1 py-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-center transition-all duration-300 rounded-sm flex items-center justify-center gap-2 ${
+                      activeGame === "assettocorsa"
+                        ? "bg-[#00D17F] text-zinc-950 shadow-[0_0_15px_rgba(0,209,127,0.35)] scale-[1.02] font-black"
+                        : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "assettocorsa" ? "bg-zinc-950 animate-pulse" : "bg-[#7A828C]"}`} />
+                    Assetto Corsa
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-3">
@@ -406,11 +460,47 @@ function LandingPage() {
                 </span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans">
-                Enter the <span className="text-[#3B82F6]">Pit Wall</span>
+                Enter the <span className={activeGame === "assettocorsa" ? "text-[#00D17F]" : "text-[#3B82F6]"}>Pit Wall</span>
               </h1>
               <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg">
-                Stream high-fidelity 60Hz live iRacing telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+                {activeGame === "assettocorsa" ? (
+                  <>
+                    Stream high-fidelity 60Hz live <span className="text-[#00D17F]">Assetto Corsa</span> telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+                  </>
+                ) : (
+                  <>
+                    Stream high-fidelity 60Hz live <span className="text-[#3B82F6]">iRacing</span> telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+                  </>
+                )}
               </p>
+
+              {/* Sleek Motors-themed Glassmorphic Game Selector */}
+              <div className="mt-1 mb-2 border border-[#1C2430] bg-[#05070A]/80 p-1 flex items-center gap-1.5 rounded relative z-10 w-full max-w-[340px] shadow-inner select-none backdrop-blur-md">
+                <button
+                  type="button"
+                  onClick={() => handleGameSelect("iracing")}
+                  className={`flex-1 py-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-center transition-all duration-300 rounded-sm flex items-center justify-center gap-2 ${
+                    activeGame === "iracing"
+                      ? "bg-[#3B82F6] text-white shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-[1.02]"
+                      : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "iracing" ? "bg-white animate-pulse" : "bg-[#7A828C]"}`} />
+                  iRacing Simulator
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleGameSelect("assettocorsa")}
+                  className={`flex-1 py-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-center transition-all duration-300 rounded-sm flex items-center justify-center gap-2 ${
+                    activeGame === "assettocorsa"
+                      ? "bg-[#00D17F] text-zinc-950 shadow-[0_0_15px_rgba(0,209,127,0.35)] scale-[1.02] font-black"
+                      : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "assettocorsa" ? "bg-zinc-950 animate-pulse" : "bg-[#7A828C]"}`} />
+                  Assetto Corsa
+                </button>
+              </div>
               <div className="mt-2 flex flex-wrap gap-3">
                 <Link
                   to="/live"
@@ -847,43 +937,77 @@ function LandingPage() {
                 GETTING STARTED
               </span>
               <h2 className="text-base font-bold tracking-tight text-white uppercase mt-1">
-                Establishing local telemetry bridge connection
+                {activeGame === "assettocorsa"
+                  ? "Establishing Assetto Corsa shared memory telemetry"
+                  : "Establishing local iRacing telemetry bridge connection"}
               </h2>
               <p className="mt-1 text-xs text-[#7A828C] leading-relaxed max-w-4xl">
-                The Pit Wall desktop workstation pulls rolling telemetry directly from iRacing's Shared Memory API. 
-                This is achieved by running the local bridge WebSocket broker on the same Windows machine where the simulation is hosted.
+                {activeGame === "assettocorsa"
+                  ? "The Pit Wall workstation reads rolling telemetry from original Assetto Corsa shared memory blocks. This is achieved by running the local bridge on the same Windows machine where the simulation is hosted."
+                  : "The Pit Wall desktop workstation pulls rolling telemetry directly from iRacing's Shared Memory API. This is achieved by running the local bridge WebSocket broker on the same Windows machine where the simulation is hosted."}
               </p>
             </div>
 
-            <div className="grid gap-4 text-xs md:grid-cols-3 mb-5">
-              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#3B82F6] font-bold">
-                  <ShieldCheck className="h-4 w-4" /> 1. OS Requirements
+            {activeGame === "assettocorsa" ? (
+              <div className="grid gap-4 text-xs md:grid-cols-3 mb-5">
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#00D17F] font-bold">
+                    <ShieldCheck className="h-4 w-4" /> 1. OS Requirements
+                  </div>
+                  <ul className="space-y-1 text-[#7A828C] text-[10px] leading-relaxed">
+                    <li>• Windows 10 or 11 (Host machine)</li>
+                    <li>• Assetto Corsa (Original) simulator installed</li>
+                    <li>• Pre-installed .NET Framework 4.x (for ac-reader compilation)</li>
+                  </ul>
                 </div>
-                <ul className="space-y-1 text-[#7A828C] text-[10px] leading-relaxed">
-                  <li>• Windows 10 or 11 (Host machine)</li>
-                  <li>• iRacing active simulation running</li>
-                  <li>• Node.js 20 LTS or bun runtime installed</li>
-                </ul>
-              </div>
-              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#FFB800] font-bold">
-                  <Wifi className="h-4 w-4" /> 2. Port Allocation
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#FFB800] font-bold">
+                    <Wifi className="h-4 w-4" /> 2. Shared Memory Broker
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    The bridge compiles and spawns a native <span className="text-white font-bold">ac-reader.exe</span> to map original AC shared memory blocks to unified WebSocket streams.
+                  </p>
                 </div>
-                <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                  By default, the bridge opens a localhost listener on WebSocket port <span className="text-white font-bold">3001</span>.
-                  Make sure no other programs are currently running on port 3001.
-                </p>
-              </div>
-              <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#8B5CF6] font-bold">
-                  <Cpu className="h-4 w-4" /> 3. Local first
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#8B5CF6] font-bold">
+                    <Cpu className="h-4 w-4" /> 3. Seamless Normalization
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    All telemetry speeds, gear indexes, tire temperatures, and shock deflections are normalized to match the existing DDRE contracts perfectly.
+                  </p>
                 </div>
-                <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                  All telemetry data is streamed locally. No external server packages are sent, keeping your strategy completely private and secure.
-                </p>
               </div>
-            </div>
+            ) : (
+              <div className="grid gap-4 text-xs md:grid-cols-3 mb-5">
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#3B82F6] font-bold">
+                    <ShieldCheck className="h-4 w-4" /> 1. OS Requirements
+                  </div>
+                  <ul className="space-y-1 text-[#7A828C] text-[10px] leading-relaxed">
+                    <li>• Windows 10 or 11 (Host machine)</li>
+                    <li>• iRacing active simulation running</li>
+                    <li>• Node.js 20 LTS or bun runtime installed</li>
+                  </ul>
+                </div>
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#FFB800] font-bold">
+                    <Wifi className="h-4 w-4" /> 2. Port Allocation
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    By default, the bridge opens a localhost listener on WebSocket port <span className="text-white font-bold">3001</span>.
+                    Make sure no other programs are currently running on port 3001.
+                  </p>
+                </div>
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 font-mono uppercase tracking-wider text-[#8B5CF6] font-bold">
+                    <Cpu className="h-4 w-4" /> 3. Local first
+                  </div>
+                  <p className="text-[#7A828C] text-[10px] leading-relaxed">
+                    All telemetry data is streamed locally. No external server packages are sent, keeping your strategy completely private and secure.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -902,16 +1026,28 @@ function LandingPage() {
                 </Link>
               </div>
 
-              <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
-                <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and connect</h3>
-                <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
-                  Launch Pit Wall Desktop. The bridge starts automatically in the background on port <span className="font-mono text-white">3001</span>.
-                  Start iRacing and join a session — the Live Telemetry dashboard will connect instantly.
-                </p>
-                <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
-                  {`# Bridge starts automatically — no commands needed.\n# Verify connection at:\nws://127.0.0.1:3001`}
-                </pre>
-              </div>
+              {activeGame === "assettocorsa" ? (
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
+                  <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and stream</h3>
+                  <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
+                    Toggle active game to Assetto Corsa. The bridge will dynamically compile <span className="font-mono text-white">ac-reader.cs</span> and listen for Assetto Corsa memory frames. Start AC and drive!
+                  </p>
+                  <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
+                    {`# C# shared memory reader compiles automatically using built-in csc.exe.\n# Stream mapped telemetry at 60Hz:\nws://127.0.0.1:3001`}
+                  </pre>
+                </div>
+              ) : (
+                <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
+                  <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and connect</h3>
+                  <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
+                    Launch Pit Wall Desktop. The bridge starts automatically in the background on port <span className="font-mono text-white">3001</span>.
+                    Start iRacing and join a session — the Live Telemetry dashboard will connect instantly.
+                  </p>
+                  <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
+                    {`# Bridge starts automatically — no commands needed.\n# Verify connection at:\nws://127.0.0.1:3001`}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         )}

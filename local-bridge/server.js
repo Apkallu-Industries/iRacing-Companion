@@ -87,6 +87,19 @@ if (fs.existsSync(configPath)) {
   }
 }
 
+// Load active game config if exists
+let activeGame = "iracing";
+const gameConfigPath = path.join(__dirname, "game-config.json");
+if (fs.existsSync(gameConfigPath)) {
+  try {
+    const config = JSON.parse(fs.readFileSync(gameConfigPath, "utf8"));
+    if (config.activeGame) activeGame = config.activeGame;
+    console.log(`[bridge] Loaded saved active game config: ${activeGame}`);
+  } catch (e) {
+    console.warn("[bridge] Failed to load game-config.json:", e.message);
+  }
+}
+
 // ─── MongoDB Telemetry Recorder ───────────────────────────────────────────────────
 
 // MONGO_URI is injected by the Electron Runtime Supervisor via env.
@@ -256,10 +269,53 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({
       connected: true,
       iRacingConnected: currentIracingConnected,
+      assettoCorsaConnected: currentAssettoConnected,
+      activeGame: activeGame,
       version: bridgeVersion,
       uptimeMs: Date.now() - serverStartedAt,
       timestamp: Date.now(),
     }));
+    return;
+  }
+
+  /* ───────────────────────────────────────── Game Config Endpoints */
+
+  if (urlPath === "/api/game/config" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ activeGame }));
+    return;
+  }
+
+  if (urlPath === "/api/game/config" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body);
+        const { game } = payload;
+        if (game === "iracing" || game === "assettocorsa") {
+          activeGame = game;
+          
+          // Save to file
+          const gameConfigPath = path.join(__dirname, "game-config.json");
+          fs.writeFileSync(gameConfigPath, JSON.stringify({ activeGame }, null, 2), "utf8");
+          
+          console.log(`[bridge] Swapped active game to: ${activeGame}`);
+          
+          // Hot swap bridges dynamically
+          initActiveTelemetryBridge();
+          
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true, activeGame }));
+        } else {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: false, error: "Invalid game" }));
+        }
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
     return;
   }
 
@@ -1159,12 +1215,41 @@ let latest = null;
 let packetCount = 0;
 let currentLap = 0;
 
-if (IRacingSDK) {
-  const iracing = new IRacingSDK({ autoEnableTelemetry: true });
-  iracingInstance = iracing;
-  let wasConnected = false;
+let currentAssettoConnected = false;
+let assettoProcess = null;
+let telemetryInterval = null;
+let wasConnected = false;
 
-  setInterval(() => {
+function initActiveTelemetryBridge() {
+  if (telemetryInterval) {
+    clearInterval(telemetryInterval);
+    telemetryInterval = null;
+  }
+  stopAssettoCorsaBridge();
+  currentIracingConnected = false;
+  currentAssettoConnected = false;
+  wasConnected = false;
+  latest = null;
+
+  console.log(`[bridge] Initializing telemetry bridge for game: ${activeGame}`);
+
+  if (activeGame === "iracing") {
+    startIRacingBridge();
+  } else if (activeGame === "assettocorsa") {
+    startAssettoCorsaBridge();
+  }
+}
+
+function startIRacingBridge() {
+  if (!IRacingSDK) {
+    console.warn("[bridge] Cannot start iRacing bridge: irsdk-node is unavailable.");
+    return;
+  }
+  
+  const iracing = iracingInstance || new IRacingSDK({ autoEnableTelemetry: true });
+  iracingInstance = iracing;
+  
+  telemetryInterval = setInterval(() => {
     const connected = iracing.sessionStatusOK || iracing.startSDK();
     currentIracingConnected = Boolean(connected);
     if (connected !== wasConnected) {
@@ -1292,6 +1377,322 @@ if (IRacingSDK) {
     }
   }, 1000 / TICK_HZ);
 }
+
+function startAssettoCorsaBridge() {
+  if (assettoProcess) return;
+
+  const exePath = path.join(__dirname, "ac-reader.exe");
+  const csPath = path.join(__dirname, "ac-reader.cs");
+
+  if (!fs.existsSync(exePath)) {
+    console.log("[bridge] ac-reader.exe not found. Compiling from ac-reader.cs...");
+    const cscPath = "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe";
+    if (fs.existsSync(cscPath)) {
+      try {
+        const { execSync } = require("child_process");
+        execSync(`"${cscPath}" /out:"${exePath}" "${csPath}"`);
+        console.log("[bridge] ✅ Successfully compiled ac-reader.exe using csc.exe");
+      } catch (err) {
+        console.error("[bridge] ❌ Failed to compile ac-reader.exe:", err.message);
+        return;
+      }
+    } else {
+      console.error("[bridge] ❌ csc.exe not found at standard path. Cannot compile ac-reader.cs.");
+      return;
+    }
+  }
+
+  console.log(`[bridge] Starting Assetto Corsa shared memory reader: ${exePath}`);
+  const { spawn } = require("child_process");
+  assettoProcess = spawn(exePath, [String(TICK_HZ)]);
+
+  const readline = require("readline");
+  const rl = readline.createInterface({
+    input: assettoProcess.stdout,
+    terminal: false
+  });
+
+  rl.on("line", (line) => {
+    try {
+      const data = JSON.parse(line);
+      if (data.connected) {
+        currentAssettoConnected = true;
+        
+        if (!wasConnected) {
+          console.log("[bridge] Assetto Corsa connected");
+          wasConnected = true;
+          
+          startRecordingSession({
+            track: data.static?.track || "unknown",
+            car: data.static?.carModel || "unknown",
+            driver: data.static?.playerName || "unknown",
+            sessionInfoYaml: "",
+          });
+          vehicleIdentityRuntime.initializeSession({
+            carId: data.static?.carModel || "unknown",
+            carNumber: "0",
+            carName: data.static?.carModel || "Unknown Car",
+            teamId: process.env.TEAM_CODE || "local",
+            driverId: data.static?.playerName || "unknown",
+            env: {
+              trackTempC: data.physics?.tyreCoreTemperature ? (data.physics.tyreCoreTemperature.reduce((a,b)=>a+b,0)/4) : 0,
+              airTempC: data.physics?.tyreCoreTemperature ? (data.physics.tyreCoreTemperature.reduce((a,b)=>a+b,0)/4) : 0,
+            }
+          });
+        }
+
+        packetCount++;
+        latest = mapAssettoCorsaTelemetry(data);
+        currentLap = latest.lap;
+
+        carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
+        const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
+        
+        const enduranceState = carStateRuntime.getCurrentState();
+        const nextState = vehicleIdentityRuntime.ingestFrame(latest, enduranceState, swapReport, currentLap);
+        
+        latest.carOperationalState = nextState;
+        latest.enduranceState = enduranceState;
+        if (swapReport) {
+          latest.adaptationState = swapReport;
+        }
+
+        if (recorder && recorderConnected && packetCount % (TICK_HZ * 10) === 0) {
+          vehicleIdentityRuntime.persistSnapshot(recorder.db, recorderSessionId);
+          vehicleIdentityRuntime.flushDeltasToMongo(recorder.db, recorderSessionId);
+        }
+
+        runtimeBus.publish("FRAME_RECEIVED", latest);
+
+        if (analyticalWorker) {
+          const currentTick = {
+            tick: packetCount,
+            speedMps: latest.speedKph / 3.6,
+            brake: latest.brake,
+            throttle: latest.throttle,
+            steeringWheelAngle: (latest.steeringDeg * Math.PI) / 180,
+            yawRate: latest.yawRate || 0,
+            pitch: latest.pitch || 0,
+            roll: latest.roll || 0,
+            mgukDeploykW: 0,
+            frontLeftDeflection: data.physics?.suspensionTravel?.[0] || 0,
+            rearRightSpeedMps: latest.speedKph / 3.6,
+            rearLeftSpeedMps: latest.speedKph / 3.6
+          };
+
+          analyticalWorker.postMessage({
+            type: "PROCESS_TICK",
+            payload: {
+              current: currentTick,
+              previous: previousFrame || currentTick,
+              hz: TICK_HZ
+            }
+          });
+
+          previousFrame = currentTick;
+        }
+
+        if (recorder && recorderConnected) {
+          recorder.recordSample(latest.all, currentLap);
+          recorderSampleCount++;
+
+          if (currentLap > lastRecordedLap && latest.lapLastLapTimeSec > 0 && currentLap > 0) {
+            lastRecordedLap = currentLap;
+            recorder.recordLap(
+              currentLap,
+              latest.lapLastLapTimeSec,
+              latest.fuelRemainingL,
+              latest.trackTempC,
+              latest.airTempC
+            );
+          }
+        }
+
+        if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
+          console.log(
+            `[bridge] AC packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
+              latest.rpm,
+            )} gear=${latest.gear} clients=${wss.clients.size}`,
+          );
+        }
+      } else {
+        if (currentAssettoConnected) {
+          console.log("[bridge] Assetto Corsa disconnected");
+          currentAssettoConnected = false;
+          wasConnected = false;
+          stopRecordingSession();
+        }
+      }
+    } catch (err) {
+      console.error("[bridge] Error processing Assetto Corsa tick:", err.message);
+    }
+  });
+
+  assettoProcess.stderr.on("data", (data) => {
+    console.error(`[ac-reader stderr] ${data.toString().trim()}`);
+  });
+
+  assettoProcess.on("close", (code) => {
+    console.log(`[bridge] Assetto Corsa reader process exited with code ${code}`);
+    assettoProcess = null;
+    currentAssettoConnected = false;
+    wasConnected = false;
+    stopRecordingSession();
+    if (activeGame === "assettocorsa") {
+      setTimeout(startAssettoCorsaBridge, 2000);
+    }
+  });
+}
+
+function stopAssettoCorsaBridge() {
+  if (assettoProcess) {
+    console.log("[bridge] Stopping Assetto Corsa reader process...");
+    assettoProcess.kill();
+    assettoProcess = null;
+    currentAssettoConnected = false;
+    wasConnected = false;
+    stopRecordingSession();
+  }
+}
+
+function mapAssettoCorsaTelemetry(d) {
+  const p = d.physics || {};
+  const g = d.graphics || {};
+  const s = d.static || {};
+
+  let gear = 0;
+  if (p.gear === 0) gear = -1;
+  else if (p.gear === 1) gear = 0;
+  else if (p.gear > 1) gear = p.gear - 1;
+
+  const flWear = Math.round(p.tyreWear?.[0] ?? 100);
+  const frWear = Math.round(p.tyreWear?.[1] ?? 100);
+  const rlWear = Math.round(p.tyreWear?.[2] ?? 100);
+  const rrWear = Math.round(p.tyreWear?.[3] ?? 100);
+
+  const flPresBar = (p.wheelsPressure?.[0] ?? 0) * 0.0689476;
+  const frPresBar = (p.wheelsPressure?.[1] ?? 0) * 0.0689476;
+  const rlPresBar = (p.wheelsPressure?.[2] ?? 0) * 0.0689476;
+  const rrPresBar = (p.wheelsPressure?.[3] ?? 0) * 0.0689476;
+
+  const lap = g.completedLaps + 1;
+
+  const lastLapStr = g.lastTime || "--:--.---";
+  const bestLapStr = g.bestTime || "--:--.---";
+
+  const flat = {
+    Speed: p.speedKmh / 3.6,
+    RPM: p.rpms,
+    Gear: gear,
+    Throttle: p.gas,
+    Brake: p.brake,
+    Clutch: 0,
+    SteeringWheelAngle: p.steerAngle,
+    FuelLevel: p.fuel,
+    Lap: lap,
+    LapLastLapTime: g.iLastTime / 1000,
+    LapBestLapTime: g.iBestTime / 1000,
+    LatAccel: p.accG?.[0] ?? 0,
+    LongAccel: p.accG?.[1] ?? 0,
+    LFtempC: p.tyreCoreTemperature?.[0] ?? 0,
+    RFtempC: p.tyreCoreTemperature?.[1] ?? 0,
+    LRtempC: p.tyreCoreTemperature?.[2] ?? 0,
+    RRtempC: p.tyreCoreTemperature?.[3] ?? 0,
+    LFpressure: p.wheelsPressure?.[0] ?? 0,
+    RFpressure: p.wheelsPressure?.[1] ?? 0,
+    LRpressure: p.wheelsPressure?.[2] ?? 0,
+    RRpressure: p.wheelsPressure?.[3] ?? 0,
+  };
+
+  return {
+    connected: true,
+    source: "live",
+    session: `${g.session === 0 ? "PRACTICE" : g.session === 1 ? "QUALIFY" : g.session === 2 ? "RACE" : "SESSION"} — ${s.track || "TRACK"}`.toUpperCase(),
+    track: s.track || "—",
+    car: s.carModel || "—",
+    carNumber: "0",
+    sdkVersion: "acshm v1.0",
+    latencyMs: 0,
+    safetyRating: 4.99,
+
+    gear: gear,
+    speedKph: p.speedKmh ?? 0,
+    rpm: p.rpms ?? 0,
+    rpmMax: s.maxRpm || 8000,
+    rpmShiftWarn: (s.maxRpm || 8000) * 0.9,
+    rpmShiftRedline: (s.maxRpm || 8000) * 0.95,
+
+    throttle: clamp01(p.gas ?? 0),
+    brake: clamp01(p.brake ?? 0),
+    clutch: 0,
+    steeringDeg: ((p.steerAngle ?? 0) * 180) / Math.PI,
+
+    lastLap: lastLapStr,
+    bestLap: bestLapStr,
+    deltaSec: 0,
+    sectors: [0, 0, 0],
+    lap: lap,
+
+    fuelRemainingL: p.fuel ?? 0,
+    fuelUsePerHour: 0,
+    lapLastLapTimeSec: g.iLastTime / 1000,
+    lapsEstimated: 99,
+
+    tires: {
+      fl: { tempC: p.tyreCoreTemperature?.[0] ?? 0, pressureBar: flPresBar, wearPct: flWear, estWearPct: flWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
+      fr: { tempC: p.tyreCoreTemperature?.[1] ?? 0, pressureBar: frPresBar, wearPct: frWear, estWearPct: frWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
+      rl: { tempC: p.tyreCoreTemperature?.[2] ?? 0, pressureBar: rlPresBar, wearPct: rlWear, estWearPct: rlWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
+      rr: { tempC: p.tyreCoreTemperature?.[3] ?? 0, pressureBar: rrPresBar, wearPct: rrWear, estWearPct: rrWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
+    },
+
+    gLat: p.accG?.[0] ?? 0,
+    gLon: p.accG?.[1] ?? 0,
+    drsAvailable: p.drs > 0,
+    brakeBias: 0,
+    airTempC: s.airTemp ?? 20,
+    trackTempC: s.roadTemp ?? 25,
+    liveAirTempC: s.airTemp ?? 20,
+    liveTrackTempC: s.roadTemp ?? 25,
+    airDensity: p.airDensity ?? 0,
+    airPressure: 101325,
+    windVel: 0,
+    windDir: 0,
+    trackWetness: 0,
+    sof: 0,
+    myCarIdx: 0,
+    competitors: [],
+    all: flat,
+
+    extras: {
+      YawRate: 0,
+      Yaw: p.heading ?? 0,
+      LFshockDefl: p.suspensionTravel?.[0] ?? 0,
+      RFshockDefl: p.suspensionTravel?.[1] ?? 0,
+      LRshockDefl: p.suspensionTravel?.[2] ?? 0,
+      RRshockDefl: p.suspensionTravel?.[3] ?? 0,
+      BrakeLinePressureLF: 0,
+      BrakeLinePressureRF: 0,
+      BrakeLinePressureLR: 0,
+      BrakeLinePressureRR: 0,
+      LFtireForceLatN: 0,
+      RFtireForceLatN: 0,
+      LFwheelSpeed: p.wheelAngularSpeed?.[0] ?? 0,
+      RFwheelSpeed: p.wheelAngularSpeed?.[1] ?? 0,
+      LRwheelSpeed: p.wheelAngularSpeed?.[2] ?? 0,
+      RRwheelSpeed: p.wheelAngularSpeed?.[3] ?? 0,
+      Pitch: p.pitch ?? 0,
+      Roll: p.roll ?? 0,
+      PitchRate: 0,
+      RollRate: 0,
+      VelocityX: p.velocity?.[0] ?? 0,
+      VelocityY: p.velocity?.[1] ?? 0,
+      VelocityZ: p.velocity?.[2] ?? 0,
+    }
+  };
+}
+
+// Start active telemetry bridge on startup
+initActiveTelemetryBridge();
 
 // 60Hz local WebSocket broadcast (Binary & JSON adaptive transport)
 setInterval(() => {

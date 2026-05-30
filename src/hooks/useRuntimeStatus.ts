@@ -61,6 +61,8 @@ async function probeBridge(): Promise<{
   ok: boolean;
   latencyMs: number;
   iRacingConnected?: boolean;
+  assettoCorsaConnected?: boolean;
+  activeGame?: string;
   version?: string;
 }> {
   const t0 = now();
@@ -78,7 +80,9 @@ async function probeBridge(): Promise<{
     return {
       ok: true,
       latencyMs,
-      iRacingConnected: Boolean(data.iRacingConnected ?? data.connected ?? false),
+      iRacingConnected: Boolean(data.iRacingConnected ?? false),
+      assettoCorsaConnected: Boolean(data.assettoCorsaConnected ?? false),
+      activeGame: String(data.activeGame ?? "iracing"),
       version: String(data.version ?? ""),
     };
   } catch {
@@ -208,21 +212,33 @@ export function useRuntimeStatus(): RuntimeStatus {
       lastCheckedAt: now(),
     });
 
-    // ── iRacing connection (derived from bridge response) ──
+    // ── Simulator connection (derived from bridge response) ──
     if (bridgeResult.ok) {
-      setIRacing({
-        status: bridgeResult.iRacingConnected ? "active" : "degraded",
-        label: bridgeResult.iRacingConnected ? "CONNECTED" : "STANDBY",
-        detail: bridgeResult.iRacingConnected
-          ? "iRacing simulator telemetry stream active"
-          : "Bridge online — waiting for iRacing to launch",
-        lastCheckedAt: now(),
-      });
+      const activeGame = bridgeResult.activeGame ?? "iracing";
+      if (activeGame === "assettocorsa") {
+        setIRacing({
+          status: bridgeResult.assettoCorsaConnected ? "active" : "degraded",
+          label: bridgeResult.assettoCorsaConnected ? "CONNECTED" : "STANDBY",
+          detail: bridgeResult.assettoCorsaConnected
+            ? "Assetto Corsa simulator telemetry stream active"
+            : "Bridge online — waiting for Assetto Corsa to launch",
+          lastCheckedAt: now(),
+        });
+      } else {
+        setIRacing({
+          status: bridgeResult.iRacingConnected ? "active" : "degraded",
+          label: bridgeResult.iRacingConnected ? "CONNECTED" : "STANDBY",
+          detail: bridgeResult.iRacingConnected
+            ? "iRacing simulator telemetry stream active"
+            : "Bridge online — waiting for iRacing to launch",
+          lastCheckedAt: now(),
+        });
+      }
     } else {
       setIRacing({
         status: "offline",
         label: "OFFLINE",
-        detail: "Cannot detect iRacing — bridge must be running first",
+        detail: "Cannot detect simulator — bridge must be running first",
         lastCheckedAt: now(),
       });
     }
