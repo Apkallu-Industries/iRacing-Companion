@@ -17,27 +17,29 @@ const dest = path.join(__dirname, '..', 'bridge');
 // Directories / files to skip during copy
 const SKIP = new Set(['.git', 'dist', '.env']);
 
-function copyRecursiveSync(srcDir, destDir) {
+function copyRecursiveSync(srcDir, destDir, isRoot = false) {
   if (!fs.existsSync(srcDir)) {
     console.error('[copy-bridge] source does not exist:', srcDir);
     process.exit(1);
   }
 
   // Wipe destination so stale files don't accumulate
-  if (fs.existsSync(destDir)) {
+  if (fs.existsSync(destDir) && isRoot) {
     fs.rmSync(destDir, { recursive: true, force: true });
   }
-  fs.mkdirSync(destDir, { recursive: true });
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
 
   const entries = fs.readdirSync(srcDir, { withFileTypes: true });
   for (const entry of entries) {
-    if (SKIP.has(entry.name)) continue;
+    if (isRoot && SKIP.has(entry.name)) continue;
 
     const srcPath = path.join(srcDir, entry.name);
     const destPath = path.join(destDir, entry.name);
 
     if (entry.isDirectory()) {
-      copyRecursiveSync(srcPath, destPath);
+      copyRecursiveSync(srcPath, destPath, false);
     } else {
       fs.copyFileSync(srcPath, destPath);
     }
@@ -60,11 +62,23 @@ try {
   if (fs.existsSync(viteServer)) {
     console.log(`[copy-bridge] Syncing UI server from ${viteServer} to ${bridgeServer}`);
     copyRecursiveSync(viteServer, bridgeServer);
+    
+    // Write package.json declaring this folder as containing ES Modules
+    try {
+      fs.writeFileSync(
+        path.join(bridgeServer, 'package.json'),
+        JSON.stringify({ type: 'module' }, null, 2),
+        'utf8'
+      );
+      console.log(`[copy-bridge] ✅ Wrote ${path.join(bridgeServer, 'package.json')} with type: module`);
+    } catch (err) {
+      console.error(`[copy-bridge] ❌ Failed to write server package.json:`, err.message);
+    }
   } else {
     console.warn(`[copy-bridge] ⚠️ UI server not found at ${viteServer}.`);
   }
 
-  copyRecursiveSync(src, dest);
+  copyRecursiveSync(src, dest, true);
   // Count files for feedback
   const count = fs.readdirSync(dest, { recursive: true }).length;
   console.log(`[copy-bridge] ✅ Synced ${src} → ${dest} (${count} entries)`);

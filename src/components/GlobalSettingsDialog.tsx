@@ -208,7 +208,15 @@ export function GlobalSettingsDialog() {
   // AI Connection Test
   const activeProviderInfo = LLM_PROVIDERS.find((p) => p.id === llmProvider);
 
-  const applyAiDefaults = (providerId: (typeof LLM_PROVIDERS)[number]["id"]) => {
+  const applyAiDefaults = (providerId: "cloud" | (typeof LLM_PROVIDERS)[number]["id"]) => {
+    if (providerId === "cloud") {
+      setLlmProvider("cloud");
+      setLlmBaseUrl("http://localhost:1234/v1");
+      setLlmModelId("llama-3-8b-instruct");
+      setLlmApiKey("");
+      setAiTestResult(null);
+      return;
+    }
     const p = LLM_PROVIDERS.find((x) => x.id === providerId);
     if (!p) return;
     setLlmProvider(p.id);

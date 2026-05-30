@@ -8,12 +8,15 @@ import path from "path";
 export default defineConfig({
   plugins: [
     tanstackStart({
-      server: { preset: 'node-server' },
+      server: { entry: "src/server.ts" },
     }),
     viteReact(),
     tailwindcss(),
     tsConfigPaths({ projects: ["./tsconfig.json"] }),
   ],
+  server: {
+    port: 8080,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

@@ -1,3 +1,27 @@
+## [1.2.20-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.20-alpha.exe
+- Commit: feat: implement local-bridge architecture and desktop integration with new auth and advisor modules
+
+# Changelog
+
+## [1.2.19-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.19-alpha.exe
+- Commit: feat: implement local-bridge architecture and desktop integration with new auth and advisor modules
+
+# Changelog
+
+## [1.2.18-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.18-alpha.exe
+- Commit: feat: implement local-bridge architecture and desktop integration with new auth and advisor modules
+
+# Changelog
+
+## [1.2.17-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.17-alpha.exe
+- Commit: feat: implement local-bridge architecture and desktop integration with new auth and advisor modules
+
+# Changelog
+
 ## [1.2.16-alpha] - 2026-05-30
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.16-alpha.exe
 - Commit: feat: implement local bridge deployment and sync assets between desktop and local environments
