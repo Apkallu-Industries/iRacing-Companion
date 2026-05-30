@@ -1,3 +1,15 @@
+## [1.2.23-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.23-alpha.exe
+- Commit: build: initialize desktop and local-bridge server environments with updated asset manifests and configurations
+
+# Changelog
+
+## [1.2.22-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.22-alpha.exe
+- Commit: build: initialize desktop and local-bridge server environments with updated asset manifests and configurations
+
+# Changelog
+
 ## [1.2.21-alpha] - 2026-05-30
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.21-alpha.exe
 - Commit: feat: implement local bridge server with analytical threading and telemetry recording

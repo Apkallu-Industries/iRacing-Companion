@@ -13,6 +13,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const lapCache = require("./lap-cache");
 const { WebSocketServer } = require("ws");
 const licensing = require("./licensing");
 const teamRelay = require("./teamRelay");
@@ -544,6 +545,39 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: e.message }));
     }
+    return;
+  }
+
+  // ─────────────────────────────────────────── Local lap cache endpoints
+  if (urlPath === "/api/laps" && req.method === "GET") {
+    try {
+      const params = new URL(req.url, "http://localhost").searchParams;
+      const limit = Math.min(2000, Math.max(1, parseInt(params.get("limit") || "500", 10)));
+      const laps = lapCache.readLaps(limit);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ laps }));
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  if (urlPath === "/api/laps/mark-synced" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body || "{}");
+        const timestamps = Array.isArray(payload.timestamps) ? payload.timestamps : [];
+        const changed = lapCache.markSynced(timestamps);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ changed }));
+      } catch (e) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
     return;
   }
 
@@ -1182,7 +1216,15 @@ const server = http.createServer(async (req, res) => {
       });
     } else {
       if (ssrHandler) {
-        return ssrHandler(req, res);
+        try {
+          return ssrHandler(req, res);
+        } catch (err) {
+          try {
+            console.warn("[bridge] SSR handler error — disabling SSR fallback:", err && err.message ? err.message : err);
+          } catch (_) {}
+          // Disable SSR for subsequent requests and fall back to SPA index.html
+          ssrHandler = null;
+        }
       }
       // SPA fallback
       const fallbackPath = path.join(PUBLIC_DIR, "index.html");
@@ -1203,6 +1245,27 @@ const server = http.createServer(async (req, res) => {
 });
 
 const wss = new WebSocketServer({ server });
+
+// Relay important runtimeBus events to connected dashboard clients
+try {
+  runtimeBus.subscribe("PREDICTION_WARNING", (payload) => {
+    if (!wss) return;
+    const msg = JSON.stringify({ type: "runtime_event", event: "PREDICTION_WARNING", payload });
+    for (const client of wss.clients) {
+      if (client.readyState === 1) client.send(msg);
+    }
+  });
+
+  runtimeBus.subscribe("STINT_UPDATED", (payload) => {
+    if (!wss) return;
+    const msg = JSON.stringify({ type: "runtime_event", event: "STINT_UPDATED", payload });
+    for (const client of wss.clients) {
+      if (client.readyState === 1) client.send(msg);
+    }
+  });
+} catch (e) {
+  console.warn('[bridge] Failed to subscribe runtimeBus -> wss relay:', e && e.message ? e.message : e);
+}
 server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
   console.log(`[bridge] websocket:  ws://localhost:${PORT}`);
@@ -1764,9 +1827,19 @@ wss.on("connection", (ws) => {
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
 
-// Graceful shutdown — close recorder and Supabase channel cleanly
-process.on("SIGINT",  async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
-process.on("SIGTERM", async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
+// Graceful shutdown — close recorder, stop reader processes, and disconnect team relay cleanly
+process.on("SIGINT",  async () => {
+  stopAssettoCorsaBridge();
+  await stopRecordingSession();
+  teamRelay.disconnect();
+  process.exit(0);
+});
+process.on("SIGTERM", async () => {
+  stopAssettoCorsaBridge();
+  await stopRecordingSession();
+  teamRelay.disconnect();
+  process.exit(0);
+});
 
 function printNetworkUrls(port) {
   try {

@@ -262,6 +262,15 @@ function LapfileLab() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              inputRef.current?.click();
+            }
+          }}
+          aria-label="Upload lap files"
+          title="Upload lap files"
           className="hairline cursor-pointer rounded-md border-dashed bg-panel p-8 text-center transition-colors hover:bg-accent"
         >
           <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
@@ -277,6 +286,8 @@ function LapfileLab() {
             multiple
             accept=".olap,.blap,.plap,.olapta,.blapta,.plapta"
             className="hidden"
+            aria-label="Upload lap files"
+            title="Upload lap files"
             onChange={(e) => void handleFiles(e.target.files)}
           />
         </div>

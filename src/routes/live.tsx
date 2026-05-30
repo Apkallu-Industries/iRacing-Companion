@@ -5,6 +5,7 @@ import { BackButton } from "@/components/BackButton";
 import { useWorkbench } from "@/lib/store";
 import { WORKSPACES } from "@/lib/workspaces";
 import { useTelemetry } from "@/lib/useTelemetry";
+import { allowSimulator } from "@/lib/runtimeConfig";
 import { useTelemetryBuffer, type Sample } from "@/lib/useTelemetryBuffer";
 import { useBridgeDiagnostics } from "@/lib/bridgeDiagnostics";
 import type { Telemetry } from "@/lib/telemetry-types";
@@ -80,11 +81,14 @@ function Dashboard() {
   useEffect(() => {
     const handleChannelClick = (e: Event) => {
       const channel = ((e as CustomEvent).detail?.channel || "").toLowerCase();
-      if (["brake", "bias", "press", "tempc"].some(k => channel.includes(k))) {
+      if (["brake", "bias", "press", "tempc"].some((k) => channel.includes(k))) {
         setActivePreset("gt3");
       } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some(k => channel.includes(k))) {
+      } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) => channel.includes(k))) {
         setActivePreset("gtp");
-      } else if (["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(k => channel.includes(k))) {
+      } else if (["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some((k) =>
+        channel.includes(k),
+      )) {
         setActivePreset("aero");
       } else if (["throttle", "steer", "clutch", "input"].some(k => channel.includes(k))) {
         setActivePreset("coach");
@@ -137,7 +141,7 @@ function Dashboard() {
               <div className="flex items-center gap-2 border-b border-border px-3 py-1.5 text-[10px] flex-shrink-0">
                 <span className="uppercase tracking-wider text-muted-foreground">Live Telemetry</span>
                 <span className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`} />
-                <span className="text-muted-foreground">{t.connected ? "Connected" : "Simulated"}</span>
+                <span className="text-muted-foreground">{t.connected ? "Connected" : (typeof window !== 'undefined' && allowSimulator() ? "Simulated" : "Offline")}</span>
                 {t.connected && <span className="text-muted-foreground ml-auto">{t.latencyMs}ms</span>}
               </div>
 
@@ -431,7 +435,9 @@ function TopBar({ t }: { t: Telemetry }) {
         <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Profile</span>
         <select
           value={activeWorkspace}
-          onChange={(e) => setActiveWorkspace(e.target.value as any)}
+          aria-label="Profile"
+          title="Profile"
+          onChange={(e) => setActiveWorkspace(e.target.value as string)}
           className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
         >
           {Object.values(WORKSPACES).map((w) => (
@@ -447,6 +453,8 @@ function TopBar({ t }: { t: Telemetry }) {
         <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Style</span>
         <select
           value={layout}
+          aria-label="Style"
+          title="Style"
           onChange={(e) => handleLayoutChange(e.target.value)}
           className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
         >
@@ -476,7 +484,7 @@ function TopBar({ t }: { t: Telemetry }) {
             className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`}
           />
           <span className="text-[10px]">
-            {t.connected ? `${t.sdkVersion} · ${t.latencyMs}ms` : "Simulated"}
+            {t.connected ? `${t.sdkVersion} · ${t.latencyMs}ms` : (typeof window !== 'undefined' && allowSimulator() ? "Simulated" : "Offline")}
           </span>
         </div>
         <Link

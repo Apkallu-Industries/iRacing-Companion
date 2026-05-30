@@ -54,14 +54,16 @@ try {
   
   if (fs.existsSync(viteClient)) {
     console.log(`[copy-bridge] Syncing UI client from ${viteClient} to ${bridgePublic}`);
-    copyRecursiveSync(viteClient, bridgePublic);
+    // Wipe the bridge public dir before copying so stale files are removed
+    copyRecursiveSync(viteClient, bridgePublic, true);
   } else {
     console.warn(`[copy-bridge] ⚠️ UI client not found at ${viteClient}.`);
   }
 
   if (fs.existsSync(viteServer)) {
     console.log(`[copy-bridge] Syncing UI server from ${viteServer} to ${bridgeServer}`);
-    copyRecursiveSync(viteServer, bridgeServer);
+    // Wipe the bridge server dir before copying to avoid leftover files
+    copyRecursiveSync(viteServer, bridgeServer, true);
     
     // Write package.json declaring this folder as containing ES Modules
     try {
@@ -82,6 +84,20 @@ try {
   // Count files for feedback
   const count = fs.readdirSync(dest, { recursive: true }).length;
   console.log(`[copy-bridge] ✅ Synced ${src} → ${dest} (${count} entries)`);
+  // Copy installer hero image into desktop assets so NSIS can use it as header
+  try {
+    const repoHero = path.join(__dirname, '..', '..', 'public', 'images', 'hero.png');
+    const installerAssets = path.join(__dirname, '..', 'assets');
+    if (fs.existsSync(repoHero)) {
+      if (!fs.existsSync(installerAssets)) fs.mkdirSync(installerAssets, { recursive: true });
+      fs.copyFileSync(repoHero, path.join(installerAssets, 'hero.png'));
+      console.log('[copy-bridge] ✅ Copied installer hero image to desktop/assets/hero.png');
+    } else {
+      console.warn('[copy-bridge] ⚠️ repo hero.png not found at', repoHero);
+    }
+  } catch (err) {
+    console.warn('[copy-bridge] Failed to copy installer hero image:', err.message);
+  }
 } catch (e) {
   console.error('[copy-bridge] ❌ Failed:', e.message);
   process.exit(1);

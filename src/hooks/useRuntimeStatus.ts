@@ -49,7 +49,10 @@ export interface RuntimeStatus {
 
 const BRIDGE_HEALTH_URL  = "http://localhost:3001/health";
 const BRIDGE_MONGO_URL   = "http://localhost:3001/api/mongo/status";
-const AI_HEALTH_URL = "https://generativelanguage.googleapis.com/";
+// Use a lightweight, stable endpoint for reachability checks to avoid
+// noisy 404s from API root paths. `generate_204` returns 204 and is
+// ideal for connectivity probes.
+const AI_HEALTH_URL = "https://clients3.google.com/generate_204";
 const POLL_INTERVAL_MS = 2000;
 const SETTLED_TIMEOUT_MS = 8000; // Auto-advance after 8s regardless
 

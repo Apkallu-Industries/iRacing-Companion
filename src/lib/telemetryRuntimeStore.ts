@@ -43,6 +43,7 @@ interface TelemetryRuntimeState {
   // Event Timeline Actions
   addEvent: (event: Omit<TelemetryEvent, "id">) => void;
   triggerEvent: (event: TelemetryEvent) => void;
+  deleteEvent: (id: string) => void;
   clearEvents: () => void;
   
   // Focus Mode Actions
@@ -76,6 +77,12 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
     events: [...state.events, { ...event, id: crypto.randomUUID() }]
   })),
   
+  // Delete a single event by id
+  deleteEvent: (id) => set((state) => ({
+    events: state.events.filter((e) => e.id !== id),
+    activeEvent: state.activeEvent?.id === id ? null : state.activeEvent,
+  })),
+  
   triggerEvent: (event) => {
     // Central Orchestration Trigger (Contextual Linking)
     set({ activeEvent: event, cursorTick: Math.round(event.timestampSec * 60) });
@@ -96,6 +103,41 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
   setFocusMode: (mode) => set({ focusMode: mode }),
   setDetachedTelemetryFrame: (frame) => set({ detachedTelemetryFrame: frame }),
 }));
+
+// Persist events to localStorage so user deletions survive restarts.
+const STORAGE_KEY = "pitwall:runtime:events:v1";
+function loadPersistedEvents(): TelemetryEvent[] {
+  try {
+    if (typeof window === "undefined") return [];
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as TelemetryEvent[];
+  } catch {
+    return [];
+  }
+}
+
+function persistEvents(events: TelemetryEvent[]) {
+  try {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+  } catch {}
+}
+
+// Hydrate store with persisted events on module load
+if (typeof window !== "undefined") {
+  const persisted = loadPersistedEvents();
+  if (persisted.length > 0) {
+    useTelemetryRuntimeStore.setState({ events: persisted });
+  }
+
+  // Subscribe to events changes and persist them
+  useTelemetryRuntimeStore.subscribe((s) => s.events, (events) => {
+    persistEvents(events);
+  });
+}
 
 // ─── Broadcast Sync Engine ───────────────────────────────────────────────────
 

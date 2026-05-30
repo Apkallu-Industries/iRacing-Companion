@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getBridgeClient } from "./bridgeDataClient";
 import { DEFAULT_TELEMETRY, type Telemetry } from "./telemetry-types";
 import { saveBridgePerformanceSnapshot } from "./bridgePerformance";
+import { isForceLiveMode, allowSimulator } from "./runtimeConfig";
 
 /**
  * Hook: Subscribe to live bridge telemetry.
@@ -78,6 +79,8 @@ export function useTelemetry(): Telemetry {
 
   // Simulator (only when not live) — 60Hz updates
   useEffect(() => {
+    // Only enable the client-side simulator if explicitly allowed and force-live is not set.
+    if (isForceLiveMode() || !allowSimulator()) return;
     const id = setInterval(() => {
       if (liveRef.current) return;
       const now = performance.now() / 1000;

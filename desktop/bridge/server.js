@@ -1764,9 +1764,19 @@ wss.on("connection", (ws) => {
   ws.on("close", () => console.log("[bridge] dashboard disconnected"));
 });
 
-// Graceful shutdown — close recorder and Supabase channel cleanly
-process.on("SIGINT",  async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
-process.on("SIGTERM", async () => { await stopRecordingSession(); teamRelay.disconnect(); process.exit(0); });
+// Graceful shutdown — close recorder, stop reader processes, and disconnect team relay cleanly
+process.on("SIGINT",  async () => {
+  stopAssettoCorsaBridge();
+  await stopRecordingSession();
+  teamRelay.disconnect();
+  process.exit(0);
+});
+process.on("SIGTERM", async () => {
+  stopAssettoCorsaBridge();
+  await stopRecordingSession();
+  teamRelay.disconnect();
+  process.exit(0);
+});
 
 function printNetworkUrls(port) {
   try {

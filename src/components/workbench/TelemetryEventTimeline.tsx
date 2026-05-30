@@ -1,49 +1,53 @@
 import React, { useEffect } from "react";
 import { useTelemetryRuntimeStore, type TelemetryEvent } from "@/lib/telemetryRuntimeStore";
-import { AlertTriangle, Zap, Activity, Shield, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Zap, Activity, Shield, CheckCircle2, Trash } from "lucide-react";
 
 export function TelemetryEventTimeline() {
   const { events, activeEvent, triggerEvent, addEvent } = useTelemetryRuntimeStore();
 
-  // Populate mock data if timeline is empty to provide instant validation of Instrument Linking
+  // Only seed mock events when simulator allowance is enabled. In force-live mode we never seed.
   useEffect(() => {
-    if (events.length === 0) {
-      addEvent({
-        timestampSec: 12.5,
-        label: "REAR LOCKUP DETECTED",
-        category: "thermal",
-        severity: "critical",
-        description: "Rear axle slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift bias forward.",
-        associatedChannels: ["Brake", "LFbrakeLinePress", "LRbrakeTemp"],
-        cornerNumber: 8,
-      });
-      addEvent({
-        timestampSec: 28.4,
-        label: "ERS DEPLOYMENT SATURATION",
-        category: "hybrid",
-        severity: "warning",
-        description: "MGU-K deploy saturated at 120kW for 5.2s. Potential state-of-charge exhaustion at back straight.",
-        associatedChannels: ["EnergyStorePct", "MgukDeploykW"],
-        cornerNumber: 11,
-      });
-      addEvent({
-        timestampSec: 42.1,
-        label: "THROTTLE INSTABILITY AT CORNER EXIT",
-        category: "inputs",
-        severity: "info",
-        description: "Rapid throttle micro-pumping detected at Turn 3 exit. Steer smoothness rating dropped to 72%.",
-        associatedChannels: ["Throttle", "SteeringWheelAngle"],
-        cornerNumber: 3,
-      });
-      addEvent({
-        timestampSec: 68.9,
-        label: "CHASSIS REB COMPRESSION GROUNDING",
-        category: "dynamics",
-        severity: "warning",
-        description: "Nose pitch rotation exceeding -1.8 deg. Splitter grounding threat detected under heavy heave load.",
-        associatedChannels: ["LongAccel", "LatAccel", "pitch"],
-        cornerNumber: 5,
-      });
+    try {
+      if (events.length === 0 && window && window.localStorage && window.localStorage.getItem("pitwall:allow_simulator") === "1") {
+        addEvent({
+          timestampSec: 12.5,
+          label: "REAR LOCKUP DETECTED",
+          category: "thermal",
+          severity: "critical",
+          description: "Rear axle slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift bias forward.",
+          associatedChannels: ["Brake", "LFbrakeLinePress", "LRbrakeTemp"],
+          cornerNumber: 8,
+        });
+        addEvent({
+          timestampSec: 28.4,
+          label: "ERS DEPLOYMENT SATURATION",
+          category: "hybrid",
+          severity: "warning",
+          description: "MGU-K deploy saturated at 120kW for 5.2s. Potential state-of-charge exhaustion at back straight.",
+          associatedChannels: ["EnergyStorePct", "MgukDeploykW"],
+          cornerNumber: 11,
+        });
+        addEvent({
+          timestampSec: 42.1,
+          label: "THROTTLE INSTABILITY AT CORNER EXIT",
+          category: "inputs",
+          severity: "info",
+          description: "Rapid throttle micro-pumping detected at Turn 3 exit. Steer smoothness rating dropped to 72%.",
+          associatedChannels: ["Throttle", "SteeringWheelAngle"],
+          cornerNumber: 3,
+        });
+        addEvent({
+          timestampSec: 68.9,
+          label: "CHASSIS REB COMPRESSION GROUNDING",
+          category: "dynamics",
+          severity: "warning",
+          description: "Nose pitch rotation exceeding -1.8 deg. Splitter grounding threat detected under heavy heave load.",
+          associatedChannels: ["LongAccel", "LatAccel", "pitch"],
+          cornerNumber: 5,
+        });
+      }
+    } catch (e) {
+      // ignore
     }
   }, [events.length, addEvent]);
 
@@ -95,9 +99,25 @@ export function TelemetryEventTimeline() {
         <span className="font-bold text-[9px] uppercase tracking-[0.25em] text-[#7A828C]">
           TACTICAL EVENT TIMELINE
         </span>
-        <span className="text-[7.5px] text-[#00D17F] font-black tracking-widest bg-[#00D17F]/10 px-1.5 py-0.5 border border-[#00D17F]/30 rounded">
-          ANOMALY SCANNERS LIVE
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (events.length === 0) return;
+              if (confirm("Clear all timeline events? This cannot be undone.")) {
+                const { clearEvents } = useTelemetryRuntimeStore.getState();
+                clearEvents();
+              }
+            }}
+            title="Clear all events"
+            className="text-[9px] px-2 py-1 bg-[#11161D]/60 border border-[#1C2430] rounded text-[#FFB800] hover:bg-[#11161D]"
+          >
+            Clear All
+          </button>
+          <span className="text-[7.5px] text-[#00D17F] font-black tracking-widest bg-[#00D17F]/10 px-1.5 py-0.5 border border-[#00D17F]/30 rounded">
+            ANOMALY SCANNERS LIVE
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-1.5 space-y-1.5 bg-[#05070A]">
@@ -130,6 +150,20 @@ export function TelemetryEventTimeline() {
                   <span className="text-[8px] text-[#7A828C] font-bold tabular-nums">
                     t = {event.timestampSec.toFixed(2)}s {event.cornerNumber ? `· T${event.cornerNumber}` : ""}
                   </span>
+                  {/* Delete single event button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!confirm(`Delete event: ${event.label}?`)) return;
+                      const { deleteEvent } = useTelemetryRuntimeStore.getState();
+                      deleteEvent(event.id);
+                    }}
+                    title="Delete event"
+                    className="ml-2 text-[#FF4D4D] hover:text-white"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
               

@@ -83,10 +83,15 @@ export class BridgeDataClient {
         };
         this.ws.onmessage = (ev) => {
           try {
-            const data = JSON.parse(ev.data);
-            if (data && data.type === "license") {
-              this.emit({ type: "license", data });
-            } else {
+                const data = JSON.parse(ev.data);
+                // Runtime events forwarded from bridge (analytical warnings, strategy updates)
+                if (data && data.type === "runtime_event") {
+                  this.emit({ type: "event", data: { event: data.event, payload: data.payload } });
+                  return;
+                }
+                if (data && data.type === "license") {
+                  this.emit({ type: "license", data });
+                } else {
               // Unpack multi-car namespace envelope if present, else fallback to legacy direct frame
               let normalized = data;
               if (data && typeof data === "object" && "payload" in data && typeof data.payload === "object") {

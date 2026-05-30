@@ -35,7 +35,9 @@ const APP_VERSION = require("./package.json").version ?? "1.0.0";
  * In --dev mode we always use 8080 (fast, no wait).
  * In production mode we probe 8080 first, then 3001, then fall back to cloud.
  */
-const VITE_URL  = "http://127.0.0.1:8080";
+const VITE_HOST = "http://127.0.0.1";
+const VITE_DEFAULT_PORT = 8080;
+const VITE_URL = `${VITE_HOST}:${VITE_DEFAULT_PORT}`;
 const BRIDGE_UI = "http://localhost:3001";
 
 // Start with a sensible default; resolveUrl() will update it before the window opens.
@@ -68,10 +70,33 @@ async function isReachable(url, timeoutMs = 1500) {
  */
 async function resolveUrl() {
   if (isDev) {
-    // Dev mode: always use Vite — load /runtime for boot sequence
-    BASE_URL      = VITE_URL;
-    DASHBOARD_URL = `${VITE_URL}/runtime`;
-    console.log(`[desktop] dev mode → ${DASHBOARD_URL}`);
+    // Dev mode: probe common local Vite ports (in case Vite auto-incremented)
+    const portsToTry = [8080, 8081, 3000, 5173];
+    const hosts = ["127.0.0.1", "localhost"];
+
+    // Try each host:port combination with a short timeout. Retry briefly if nothing responds immediately.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      for (const p of portsToTry) {
+        for (const h of hosts) {
+          const url = `http://${h}:${p}`;
+          // eslint-disable-next-line no-await-in-loop
+          if (await isReachable(url, 700)) {
+            BASE_URL = url;
+            DASHBOARD_URL = `${url}/runtime`;
+            console.log(`[desktop] dev mode → ${DASHBOARD_URL} (detected on ${h}:${p}, attempt ${attempt + 1})`);
+            return;
+          }
+        }
+      }
+      // Small back-off between attempts to allow Vite to finish startup
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    // Fallback to standard VITE default if none responded
+    BASE_URL = `${VITE_HOST}:${VITE_DEFAULT_PORT}`;
+    DASHBOARD_URL = `${BASE_URL}/runtime`;
+    console.log(`[desktop] dev mode (fallback) → ${DASHBOARD_URL}`);
     return;
   }
 
@@ -121,6 +146,7 @@ let bridgeProc = null;
 let bridgeRestartCount = 0;
 let bridgeStatus = "starting"; // 'starting' | 'running' | 'crashed'
 let currentSessionId = null;
+let isQuitting = false;
 
 /**
  * Emit bridge status change events to the renderer so the UI
@@ -203,6 +229,38 @@ function writeBridgeLog(line) {
   } catch {}
 }
 
+function killProcessOnPort(port) {
+  if (process.platform !== "win32") return Promise.resolve();
+  const { exec } = require("child_process");
+  return new Promise((resolve) => {
+    exec(`netstat -ano | findstr :${port}`, (err, stdout) => {
+      if (err || !stdout) return resolve();
+      const lines = stdout.trim().split("\n");
+      const pids = new Set();
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && pid !== "0" && /^\d+$/.test(pid)) {
+          pids.add(pid);
+        }
+      }
+      if (pids.size === 0) return resolve();
+      
+      const pidList = Array.from(pids).map(pid => `/PID ${pid}`).join(" ");
+      console.log(`[desktop] Port ${port} occupied by PIDs: ${Array.from(pids).join(", ")}. Killing...`);
+      exec(`taskkill /F ${pidList}`, () => resolve());
+    });
+  });
+}
+
+function killAllOrphanedReaders() {
+  if (process.platform !== "win32") return Promise.resolve();
+  const { exec } = require("child_process");
+  return new Promise((resolve) => {
+    exec("taskkill /F /IM ac-reader.exe", () => resolve());
+  });
+}
+
 function startBridge() {
   if (bridgeProc) return;
   const serverPath = path.join(BRIDGE_DIR, "server.js");
@@ -257,6 +315,17 @@ function startBridge() {
     writeBridgeLog(`[desktop] Bridge exited: code=${code} signal=${signal}`);
     console.log("[desktop] bridge exited", { code, signal });
     bridgeProc = null;
+    // If the app is quitting, avoid any automatic restarts or recovery
+    if (isQuitting) {
+      bridgeStatus = "starting";
+      bridgeLogStream?.end();
+      bridgeLogStream = null;
+      updateTray();
+      emitBridgeStatusToRenderer(bridgeStatus);
+      updateWindowTitle();
+      return;
+    }
+
     bridgeStatus = code === 0 ? "starting" : "crashed";
     bridgeLogStream?.end();
     bridgeLogStream = null;
@@ -265,7 +334,7 @@ function startBridge() {
     updateWindowTitle();
 
     // Auto-restart on crash (up to 5 times, with back-off)
-    if (code !== 0 && bridgeRestartCount < 5) {
+    if (!isQuitting && code !== 0 && bridgeRestartCount < 5) {
       const delay = Math.min(1000 * Math.pow(2, bridgeRestartCount), 30000);
       bridgeRestartCount++;
       console.log(`[desktop] auto-restarting bridge in ${delay}ms (attempt ${bridgeRestartCount})`);
@@ -281,6 +350,11 @@ function stopBridge() {
   bridgeProc = null;
   bridgeStatus = "starting";
   updateTray();
+
+  // Clean up any orphaned Assetto Corsa memory readers
+  killAllOrphanedReaders();
+  // Ensure port 3001 is freed on Windows (best-effort)
+  try { killProcessOnPort(3001); } catch (e) { }
 }
 
 // ─── Window state ─────────────────────────────────────────────────────────────
@@ -951,6 +1025,10 @@ app.whenReady().then(async () => {
 
   currentSessionId = supervisor.getActiveSession ? supervisor.getActiveSession()?.id : null;
 
+  // Resilient Fault Isolation: Clean up any zombie/orphaned ports or memory readers before spawning new ones
+  await killAllOrphanedReaders();
+  await killProcessOnPort(3001);
+
   startBridge();
   buildMenu();
 
@@ -970,8 +1048,12 @@ app.whenReady().then(async () => {
 });
 
 app.on("before-quit", () => {
+  // Mark quitting to prevent auto-restarts and perform aggressive cleanup
+  isQuitting = true;
   saveWindowState();
   stopBridge();
+  // Ensure any process listening on bridge port is killed to avoid orphans
+  try { killProcessOnPort(3001); } catch (e) {}
   supervisor.shutdown();
 });
 

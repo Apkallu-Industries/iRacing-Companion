@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/themeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTelemetry } from "@/lib/useTelemetry";
+import { useBridgeEvents } from "@/lib/useBridgeEvents";
 import { LiveBridgeSync } from "@/components/LiveBridgeSync";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { HelpSystem } from "@/components/HelpSystem";
@@ -160,6 +161,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const t = useTelemetry();
+  useBridgeEvents();
 
   useEffect(() => {
     const {

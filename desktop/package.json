@@ -1,6 +1,6 @@
 {
   "name": "pit-wall-desktop",
-  "version": "1.2.21-alpha",
+  "version": "1.2.23-alpha",
   "description": "Pit Wall Desktop — iRacing telemetry workbench with bundled local bridge.",
   "main": "main.cjs",
   "scripts": {
@@ -10,9 +10,9 @@
     "prestart": "node ./scripts/copy-bridge.js",
     "version:alpha": "node ./scripts/bump-version.js",
     "changelog:update": "node ./scripts/update-changelog.js",
-    "dist": "npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64",
-    "dist:dir": "npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --dir",
-    "dist:portable": "npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --config.win.target=portable"
+    "dist": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64",
+    "dist:dir": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --dir",
+    "dist:portable": "npm --prefix .. run build && npm run version:alpha && npm run changelog:update && node ./scripts/copy-bridge.js && electron-builder --win --x64 --config.win.target=portable"
   },
   "build": {
     "appId": "industries.apkallu.pitwall",
@@ -62,6 +62,9 @@
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
+      "installerHeader": "assets/hero.png",
+      "installerHeaderIcon": "assets/icon.ico",
+      "installerSidebar": "assets/hero.png",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Pit Wall",
