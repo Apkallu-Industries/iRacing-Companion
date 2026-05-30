@@ -86,11 +86,17 @@ async function resolveUrl() {
     return;
   }
 
-  // Production: Always load the canonical hosted React application so the desktop
-  // app loads the full, state-of-the-art UI instead of the lightweight offline bridge dashboard.
+  if (await isReachable(BRIDGE_UI)) {
+    BASE_URL      = BRIDGE_UI;
+    DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
+    console.log(`[desktop] local bridge UI detected → ${DASHBOARD_URL}`);
+    return;
+  }
+
+  // Fallback: If neither local server is reachable, fall back to cloud.
   BASE_URL      = CLOUD_URL;
   DASHBOARD_URL = `${CLOUD_URL}/runtime`;
-  console.log(`[desktop] loading production UI from cloud → ${DASHBOARD_URL}`);
+  console.log(`[desktop] loading fallback UI from cloud → ${DASHBOARD_URL}`);
 }
 
 // Prefer the source-tree bridge over the bundled copy (dev workflow).
@@ -133,10 +139,47 @@ function updateWindowTitle() {
 }
 
 let windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximized: false };
+
+/**
+ * Validate that saved window position is within bounds of any current display.
+ * Resets position to undefined if invalid to let Electron use default behavior.
+ */
+function isPositionValid(x, y, width, height) {
+  if (x === undefined || y === undefined) return true;
+  
+  const displays = screen.getAllDisplays();
+  if (displays.length === 0) return true;
+  
+  // Check if window overlaps with any display
+  for (const display of displays) {
+    const bounds = display.bounds;
+    // Check if window center is within display bounds
+    const windowCenterX = x + width / 2;
+    const windowCenterY = y + height / 2;
+    if (
+      windowCenterX >= bounds.x &&
+      windowCenterX <= bounds.x + bounds.width &&
+      windowCenterY >= bounds.y &&
+      windowCenterY <= bounds.y + bounds.height
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 try {
   if (fs.existsSync(STATE_FILE_PATH)) {
     const data = JSON.parse(fs.readFileSync(STATE_FILE_PATH, "utf-8"));
-    if (data.width && data.height) windowState = { ...windowState, ...data };
+    if (data.width && data.height) {
+      windowState = { ...windowState, ...data };
+      // Validate position against current display configuration
+      if (!isPositionValid(windowState.x, windowState.y, windowState.width, windowState.height)) {
+        console.log("[desktop] Saved window position invalid for current display setup, resetting to default");
+        windowState.x = undefined;
+        windowState.y = undefined;
+      }
+    }
   }
 } catch {}
 
@@ -550,6 +593,31 @@ function buildMenu() {
           click: () => shell.openPath(LOG_FILE_PATH),
         },
         { type: "separator" },
+        {
+          label: "Reset Window Position",
+          click: () => {
+            try {
+              if (fs.existsSync(STATE_FILE_PATH)) {
+                fs.unlinkSync(STATE_FILE_PATH);
+              }
+              windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximized: false };
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                const primary = screen.getPrimaryDisplay();
+                const centerX = primary.bounds.x + (primary.bounds.width - windowState.width) / 2;
+                const centerY = primary.bounds.y + (primary.bounds.height - windowState.height) / 2;
+                mainWindow.setBounds({
+                  x: Math.max(primary.bounds.x, centerX),
+                  y: Math.max(primary.bounds.y, centerY),
+                  width: windowState.width,
+                  height: windowState.height,
+                });
+                mainWindow.unmaximize();
+              }
+            } catch (err) {
+              console.error("[desktop] failed to reset window position", err);
+            }
+          },
+        },
         isMac ? { role: "close" } : { role: "quit" },
       ],
     },
@@ -760,6 +828,36 @@ ipcMain.handle("supervisor:start-session", (_e, { sessionId, meta } = {}) => {
 });
 ipcMain.handle("supervisor:stop-session", (_e, { sessionId } = {}) => {
   return stopCurrentSession(sessionId);
+});
+
+/** Reset window position to default (useful for multi-monitor issues) */
+ipcMain.handle("reset-window-position", () => {
+  try {
+    // Clear saved state file
+    if (fs.existsSync(STATE_FILE_PATH)) {
+      fs.unlinkSync(STATE_FILE_PATH);
+    }
+    // Reset in-memory state
+    windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximized: false };
+    // Reposition window to primary display
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const primary = screen.getPrimaryDisplay();
+      const centerX = primary.bounds.x + (primary.bounds.width - windowState.width) / 2;
+      const centerY = primary.bounds.y + (primary.bounds.height - windowState.height) / 2;
+      mainWindow.setBounds({
+        x: Math.max(primary.bounds.x, centerX),
+        y: Math.max(primary.bounds.y, centerY),
+        width: windowState.width,
+        height: windowState.height,
+      });
+      mainWindow.unmaximize();
+    }
+    console.log("[desktop] window position reset to primary display center");
+    return { ok: true, message: "Window position reset to primary display" };
+  } catch (err) {
+    console.error("[desktop] failed to reset window position", err);
+    return { ok: false, error: String(err) };
+  }
 });
 ipcMain.handle("supervisor:get-telemetry-schema", () => {
   try {

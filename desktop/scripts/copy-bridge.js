@@ -45,6 +45,16 @@ function copyRecursiveSync(srcDir, destDir) {
 }
 
 try {
+  // First, copy the React UI build to the local bridge's public folder
+  const viteDist = path.join(__dirname, '..', '..', 'dist', 'client');
+  const bridgePublic = path.join(src, 'public');
+  if (fs.existsSync(viteDist)) {
+    console.log(`[copy-bridge] Syncing UI build from ${viteDist} to ${bridgePublic}`);
+    copyRecursiveSync(viteDist, bridgePublic);
+  } else {
+    console.warn(`[copy-bridge] ⚠️ UI build not found at ${viteDist}. You should run 'npm run build' first.`);
+  }
+
   copyRecursiveSync(src, dest);
   // Count files for feedback
   const count = fs.readdirSync(dest, { recursive: true }).length;

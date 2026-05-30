@@ -1,0 +1,7 @@
+# Pit Wall
+
+> Real-time iRacing telemetry dashboard. A local Node bridge reads the iRacing SDK on Windows and streams gear, RPM, lap delta, tire temps, fuel and G-force to a web UI over WebSocket.
+
+## Pages
+
+- [Dashboard](/): Live telemetry dashboard with gear, RPM, lap timing, tire temps, fuel, G-forces, and a browser for every iRacing variable.

@@ -1,3 +1,15 @@
+## [1.2.13-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.13-alpha.exe
+- Commit: Allow the user to choose between a local or remote bridge.
+
+# Changelog
+
+## [1.2.12-alpha] - 2026-05-29
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.12-alpha.exe
+- Commit: Allow the user to choose between a local or remote bridge.
+
+# Changelog
+
 ## [1.2.11-alpha] - 2026-05-29
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.11-alpha.exe
 - Commit: feat: implement team setup guide with interactive checklist, SQL simulation, and telemetry bridge console
