@@ -219,6 +219,22 @@ const MIME = {
   ".webmanifest": "application/manifest+json",
 };
 
+// ─── TanStack Start SSR Fallback ────────────────────────────────────────────────
+let ssrHandler = null;
+(async function initSSR() {
+  try {
+    const serverPath = path.join(__dirname, 'server', 'server.js');
+    if (fs.existsSync(serverPath)) {
+      const { createServerAdapter } = await import('@whatwg-node/server');
+      const ssrModule = await import("file://" + serverPath.replace(/\\/g, '/'));
+      ssrHandler = createServerAdapter(ssrModule.default.fetch);
+      console.log("[bridge] Mounted TanStack Start SSR Handler");
+    }
+  } catch (err) {
+    console.log("[bridge] SSR adapter not found or failed, skipping SSR fallback:", err.message);
+  }
+})();
+
 /* ───────────────────────────────────────── HTTP server (static PWA) */
 
 const server = http.createServer(async (req, res) => {
@@ -1094,23 +1110,39 @@ const server = http.createServer(async (req, res) => {
   }
 
   fs.stat(filePath, (err, stat) => {
-    if (err || !stat.isFile()) {
-      // SPA fallback
-      filePath = path.join(PUBLIC_DIR, "index.html");
-    }
-    fs.readFile(filePath, (e, data) => {
-      if (e) {
-        res.writeHead(404);
-        res.end("not found");
-        return;
-      }
-      const ext = path.extname(filePath).toLowerCase();
-      res.writeHead(200, {
-        "Content-Type": MIME[ext] || "application/octet-stream",
-        "Cache-Control": "no-cache",
+    if (!err && stat.isFile()) {
+      fs.readFile(filePath, (e, data) => {
+        if (e) {
+          res.writeHead(404);
+          res.end("not found");
+          return;
+        }
+        const ext = path.extname(filePath).toLowerCase();
+        res.writeHead(200, {
+          "Content-Type": MIME[ext] || "application/octet-stream",
+          "Cache-Control": "no-cache",
+        });
+        res.end(data);
       });
-      res.end(data);
-    });
+    } else {
+      if (ssrHandler) {
+        return ssrHandler(req, res);
+      }
+      // SPA fallback
+      const fallbackPath = path.join(PUBLIC_DIR, "index.html");
+      fs.readFile(fallbackPath, (e, data) => {
+        if (e) {
+          res.writeHead(404);
+          res.end("not found");
+          return;
+        }
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache",
+        });
+        res.end(data);
+      });
+    }
   });
 });
 

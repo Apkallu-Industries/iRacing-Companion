@@ -24,7 +24,6 @@ import { TelemetryEventTimeline } from "@/components/workbench/TelemetryEventTim
 import { DerivedMetrics } from "@/components/live/DerivedMetrics";
 import { ConfigurableChannelList } from "@/components/live/ConfigurableChannelList";
 import { GearAdvisor } from "@/components/live/GearAdvisor";
-import { DesktopLapSync } from "@/components/live/DesktopLapSync";
 import { BridgeConnectionBanner } from "@/components/live/BridgeConnectionBanner";
 import { DiagnosticsPanel } from "@/components/live/DiagnosticsPanel";
 import { TabedAnalysisPanel } from "@/components/live/TabedAnalysisPanel";
@@ -56,9 +55,7 @@ export const Route = createFileRoute("/live")({
         content:
           "MoTeC-style live iRacing telemetry workbench. Rolling channel traces, G-G scatter, channel list, sector + tyre data straight from the bridge.",
       },
-      { property: "og:url", content: "https://iracing-companion.lovable.app/" },
     ],
-    links: [{ rel: "canonical", href: "https://iracing-companion.lovable.app/" }],
   }),
   component: Dashboard,
 });
@@ -242,9 +239,6 @@ function Dashboard() {
             </div>
             <div className="col-span-12 md:col-span-6 lg:col-span-2 flex flex-col justify-between relative">
               <FingerprintUploadCard />
-              <div className="mt-1 flex items-center justify-end">
-                <DesktopLapSync />
-              </div>
             </div>
           </div>
         </>
@@ -404,9 +398,6 @@ function Dashboard() {
             <div className="col-span-12 lg:col-span-5 flex flex-col gap-2 border-l border-[#1C2430]/60 pl-2 relative">
               <AdvisorButton t={t} />
               <FingerprintUploadCard />
-              <div className="mt-1 flex items-center justify-end">
-                <DesktopLapSync />
-              </div>
             </div>
           </div>
         </>

@@ -37,7 +37,6 @@ const APP_VERSION = require("./package.json").version ?? "1.0.0";
  */
 const VITE_URL  = "http://127.0.0.1:8080";
 const BRIDGE_UI = "http://localhost:3001";
-const CLOUD_URL = "https://iracing-companion.lovable.app";
 
 // Start with a sensible default; resolveUrl() will update it before the window opens.
 let BASE_URL    = isDev ? VITE_URL : BRIDGE_UI;
@@ -93,17 +92,22 @@ async function resolveUrl() {
     return;
   }
 
-  // Fallback: If neither local server is reachable, fall back to cloud.
-  BASE_URL      = CLOUD_URL;
-  DASHBOARD_URL = `${CLOUD_URL}/runtime`;
-  console.log(`[desktop] loading fallback UI from cloud → ${DASHBOARD_URL}`);
+  // Fallback: If neither local server is reachable, just use BRIDGE_UI and wait for it to come up.
+  BASE_URL      = BRIDGE_UI;
+  DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
+  console.log(`[desktop] loading local bridge UI (may take a moment to start) → ${DASHBOARD_URL}`);
 }
 
 // Prefer the source-tree bridge over the bundled copy (dev workflow).
 // Falls back to desktop/bridge for packaged distributions.
 const BRIDGE_DIR = (() => {
   const srcBridge = path.join(__dirname, "..", "local-bridge");
-  return fs.existsSync(path.join(srcBridge, "server.js")) ? srcBridge : path.join(__dirname, "bridge");
+  if (fs.existsSync(path.join(srcBridge, "server.js"))) return srcBridge;
+
+  const unpackedBridge = path.join(process.resourcesPath || __dirname, "bridge");
+  if (fs.existsSync(path.join(unpackedBridge, "server.js"))) return unpackedBridge;
+
+  return path.join(__dirname, "bridge");
 })();
 
 const STATE_FILE_PATH = path.join(app.getPath("userData"), "window-state.json");
@@ -345,8 +349,7 @@ function createWindow() {
     if (
       url.startsWith(BASE_URL) ||
       url.startsWith("http://localhost") ||
-      url.startsWith("http://127.0.0.1") ||
-      url.startsWith("https://iracing-companion.lovable.app")
+      url.startsWith("http://127.0.0.1")
     ) {
       return {
         action: "allow",

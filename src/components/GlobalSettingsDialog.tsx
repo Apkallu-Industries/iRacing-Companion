@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "@tanstack/react-router";
 import {
   Settings,
@@ -36,13 +36,6 @@ import { getBridgeUrl } from "@/lib/bridgeDataClient";
 import { toast } from "sonner";
 
 const LLM_PROVIDERS = [
-  {
-    id: "cloud",
-    name: "Cloud (Lovable/Default)",
-    icon: Server,
-    url: "",
-    desc: "Route requests securely through the Lovable AI Gateway.",
-  },
   {
     id: "lmstudio",
     name: "LM Studio",
@@ -403,13 +396,6 @@ export function GlobalSettingsDialog() {
                 Local DB
               </TabsTrigger>
               <TabsTrigger
-                value="cloud"
-                className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
-              >
-                <Cloud className="h-3.5 w-3.5" />
-                Cloud Area
-              </TabsTrigger>
-              <TabsTrigger
                 value="ai"
                 className="gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer"
               >
@@ -615,81 +601,6 @@ export function GlobalSettingsDialog() {
               </div>
             </TabsContent>
 
-            {/* TAB: Cloud DB */}
-            <TabsContent
-              value="cloud"
-              className="flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none"
-            >
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1.5">
-                  <Cloud className="h-4 w-4" />
-                  Cloud Sync Replicator
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  We are currently sorting our master Cloud database hosting layout. When fully
-                  active, cloud databases will auto-sync with users' local telemetry records and
-                  telemetry profiles.
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  For early developer testing, you can input a manual MongoDB Atlas or custom cloud
-                  server URI below to replicate local records.
-                </p>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                    Cloud MongoDB Connection String (Manual Input)
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="password"
-                      value={cloudUri}
-                      onChange={(e) => setCloudUri(e.target.value)}
-                      placeholder="mongodb+srv://username:password@cluster0.abcde.mongodb.net/iracing"
-                      className="font-mono text-xs flex-1"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleSaveDbConfig}
-                      disabled={savingDb}
-                      size="sm"
-                      className="font-mono text-xs"
-                    >
-                      {savingDb ? "Saving..." : "Save"}
-                    </Button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    This setting will replicate local telemetry sessions to your specified cloud
-                    Mongo instance. Keep empty if you only want local storage.
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-border bg-panel p-4 space-y-3">
-                  <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                      Cloud Sync Engine
-                    </span>
-                    <span className="text-[10px] text-amber-500 uppercase font-mono tracking-wider font-semibold">
-                      Testing Mode
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                      Active Connection Target
-                    </span>
-                    <span className="text-xs font-mono text-muted-foreground truncate max-w-[300px]">
-                      {cloudUri
-                        ? cloudUri.startsWith("mongodb")
-                          ? "Manual Connection String Configured"
-                          : "Configured"
-                        : "None (Local Only)"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
             {/* TAB: AI Engine */}
             <TabsContent
               value="ai"
@@ -725,8 +636,6 @@ export function GlobalSettingsDialog() {
                   ))}
                 </div>
               </div>
-
-              {llmProvider !== "cloud" && (
                 <div className="space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
@@ -810,7 +719,6 @@ export function GlobalSettingsDialog() {
                     )}
                   </div>
                 </div>
-              )}
             </TabsContent>
 
             {/* TAB: Licensing */}

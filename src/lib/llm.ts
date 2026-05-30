@@ -1,8 +1,8 @@
 import { useWorkbench } from "./store";
 import { WORKSPACES } from "./workspaces";
-import { advisorCall } from "./advisor.functions";
-import { analyzeTelemetry, liveCoach } from "./coach.functions";
-import { strategyCopilot, type StrategyCallResult } from "./strategy.functions";
+import { localAdvisorFallback } from "./advisor.functions";
+import { localCoachFallbackConcise, localLiveCoachFallback } from "./coach.functions";
+import { strategyCopilotStub, type StrategyCallResult } from "./strategy.functions";
 import {
   STRATEGY_SCHEMA,
   STRATEGY_SYSTEM_PROMPT,
@@ -129,14 +129,7 @@ async function callLocalOpenAI(system: string, user: string, schema: any): Promi
 
 /** Wrapper for Advisor calls that checks if we should route to Local LLM or Cloud */
 export async function dispatchAdvisorCall(data: any): Promise<any> {
-  const { llmProvider } = useWorkbench.getState();
   const wsCtx = buildWorkspaceContext();
-
-  if (llmProvider === "cloud") {
-    // Cloud server functions run server-side and can't read the browser store,
-    // so we inject wsCtx as a field inside data for buildAdvisorUserMessage to pick up.
-    return advisorCall({ data: { ...data, wsCtx } });
-  }
 
   try {
     const system = getAdvisorSystemPrompt(data) + wsCtx;
@@ -153,7 +146,7 @@ export async function dispatchAdvisorCall(data: any): Promise<any> {
     };
   } catch (err) {
     console.error("[Local LLM] Advisor failure:", err);
-    return { error: err instanceof Error ? err.message : "Local LLM failed to respond correctly." };
+    return { result: localAdvisorFallback(data), fallback: "local" };
   }
 }
 
@@ -162,12 +155,7 @@ export async function dispatchAnalyzeTelemetry(data: {
   payload: any;
   detailed: boolean;
 }): Promise<any> {
-  const { llmProvider } = useWorkbench.getState();
   const wsCtx = buildWorkspaceContext();
-
-  if (llmProvider === "cloud") {
-    return analyzeTelemetry({ data });
-  }
 
   try {
     const schema = data.detailed ? COACH_SCHEMA_DETAILED : COACH_SCHEMA_CONCISE;
@@ -187,7 +175,11 @@ export async function dispatchAnalyzeTelemetry(data: {
     };
   } catch (err) {
     console.error("[Local LLM] Coach failure:", err);
-    return { error: err instanceof Error ? err.message : "Local LLM failed to analyze telemetry." };
+    return {
+      result: localCoachFallbackConcise(data.payload, data.detailed),
+      detailed: data.detailed,
+      fallback: "local",
+    };
   }
 }
 
@@ -212,10 +204,6 @@ export async function dispatchLiveCoach(data: any): Promise<any> {
   };
   const enrichedData = { ...data, context: enrichedContext };
 
-  if (llmProvider === "cloud") {
-    return liveCoach({ data: enrichedData });
-  }
-
   try {
     const user = buildLiveCoachUserMessage(enrichedData);
     const resultObj = await callLocalOpenAI(LIVE_COACH_SYSTEM + wsCtx, user, LIVE_COACH_SCHEMA);
@@ -225,7 +213,7 @@ export async function dispatchLiveCoach(data: any): Promise<any> {
     return { call: resultObj };
   } catch (err) {
     console.error("[Local LLM] Live Coach failure:", err);
-    return { error: "Local model failed" };
+    return { call: localLiveCoachFallback(data.summary), fallback: "net" };
   }
 }
 
@@ -309,10 +297,6 @@ export async function dispatchStrategyCopilot(
   data: any,
 ): Promise<{ call?: StrategyCallResult; error?: string }> {
   try {
-    const { llmProvider } = useWorkbench.getState();
-    if (llmProvider === "cloud") {
-      return strategyCopilot({ data }); // Cloud fallback
-    }
     const user = buildStrategyUserMessage(data.player, data.competitors);
     const resultObj = await callLocalOpenAI(STRATEGY_SYSTEM_PROMPT, user, STRATEGY_SCHEMA);
     return { call: resultObj as StrategyCallResult };

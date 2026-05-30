@@ -15,13 +15,6 @@ import { testLLMConnection } from "@/lib/llm";
 
 const PROVIDERS = [
   {
-    id: "cloud",
-    name: "Cloud (Lovable/Default)",
-    icon: Server,
-    url: "",
-    desc: "Route requests securely through the Lovable AI Gateway.",
-  },
-  {
     id: "lmstudio",
     name: "LM Studio",
     icon: Laptop,
@@ -132,101 +125,99 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
         </div>
       </div>
 
-      {llmProvider !== "cloud" && (
-        <div className="space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                Base URL (OpenAI Compatible)
-              </label>
-              <Input
-                type="text"
-                value={llmBaseUrl}
-                onChange={(e) => {
-                  setLlmBaseUrl(e.target.value);
-                  setTestResult(null);
-                }}
-                placeholder={activeProviderInfo?.url || "http://localhost:1234/v1"}
-                className="font-mono text-xs bg-background/50 border-border/80 focus:border-primary/50"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                Model ID
-              </label>
-              <Input
-                type="text"
-                value={llmModelId}
-                onChange={(e) => {
-                  setLlmModelId(e.target.value);
-                  setTestResult(null);
-                }}
-                placeholder="e.g. liquid/lfm2.5-1.2b"
-                className="font-mono text-xs bg-background/50 border-border/80 focus:border-primary/50"
-              />
-            </div>
+      <div className="space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+              Base URL (OpenAI Compatible)
+            </label>
+            <Input
+              type="text"
+              value={llmBaseUrl}
+              onChange={(e) => {
+                setLlmBaseUrl(e.target.value);
+                setTestResult(null);
+              }}
+              placeholder={activeProviderInfo?.url || "http://localhost:1234/v1"}
+              className="font-mono text-xs bg-background/50 border-border/80 focus:border-primary/50"
+            />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-              API Token / Permission Key (Optional)
+              Model ID
             </label>
             <Input
-              type="password"
-              value={llmApiKey}
+              type="text"
+              value={llmModelId}
               onChange={(e) => {
-                setLlmApiKey(e.target.value);
+                setLlmModelId(e.target.value);
                 setTestResult(null);
               }}
-              placeholder="Enter LM Studio token or Bearer key if required"
+              placeholder="e.g. liquid/lfm2.5-1.2b"
               className="font-mono text-xs bg-background/50 border-border/80 focus:border-primary/50"
             />
-            <p className="text-[9px] text-muted-foreground mt-1">
-              Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).
-            </p>
-          </div>
-
-          <div className="pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={runTest}
-              disabled={testing}
-              className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
-            >
-              {testing ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3 w-3" />
-              )}
-              {testing ? "Testing Connection..." : "Test Local Host Software Connection"}
-            </Button>
-            {testResult && (
-              <div
-                className={`mt-3 rounded-lg p-3 border text-xs whitespace-pre-line leading-relaxed font-mono ${
-                  testResult.success
-                    ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
-                    : "border-rose-500/30 bg-rose-500/5 text-rose-400"
-                }`}
-              >
-                <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
-                  {testResult.success ? "✓ AI Connection Successful" : "✗ Connection Failed"}
-                </div>
-                <div className="text-[10px]">{testResult.message}</div>
-              </div>
-            )}
           </div>
         </div>
-      )}
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+            API Token / Permission Key (Optional)
+          </label>
+          <Input
+            type="password"
+            value={llmApiKey}
+            onChange={(e) => {
+              setLlmApiKey(e.target.value);
+              setTestResult(null);
+            }}
+            placeholder="Enter LM Studio token or Bearer key if required"
+            className="font-mono text-xs bg-background/50 border-border/80 focus:border-primary/50"
+          />
+          <p className="text-[9px] text-muted-foreground mt-1">
+            Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).
+          </p>
+        </div>
+
+        <div className="pt-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={runTest}
+            disabled={testing}
+            className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
+          >
+            {testing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+            {testing ? "Testing Connection..." : "Test Local Host Software Connection"}
+          </Button>
+          {testResult && (
+            <div
+              className={`mt-3 rounded-lg p-3 border text-xs whitespace-pre-line leading-relaxed font-mono ${
+                testResult.success
+                  ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
+                  : "border-rose-500/30 bg-rose-500/5 text-rose-400"
+              }`}
+            >
+              <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
+                {testResult.success ? "✓ AI Connection Successful" : "✗ Connection Failed"}
+              </div>
+              <div className="text-[10px]">{testResult.message}</div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
         <Button
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => applyDefaults("cloud")}
+          onClick={() => applyDefaults("lmstudio")}
           className="font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -298,99 +289,97 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
             </div>
           </div>
 
-          {llmProvider !== "cloud" && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                  Base URL (OpenAI Compatible)
-                </label>
-                <Input
-                  type="text"
-                  value={llmBaseUrl}
-                  onChange={(e) => {
-                    setLlmBaseUrl(e.target.value);
-                    setTestResult(null);
-                  }}
-                  placeholder={activeProviderInfo?.url || "http://localhost:1234/v1"}
-                  className="font-mono text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                  API Token / Permission Key (Optional)
-                </label>
-                <Input
-                  type="password"
-                  value={llmApiKey}
-                  onChange={(e) => {
-                    setLlmApiKey(e.target.value);
-                    setTestResult(null);
-                  }}
-                  placeholder="Enter LM Studio token or Bearer key if required"
-                  className="font-mono text-xs"
-                />
-                <p className="text-[9px] text-muted-foreground mt-1">
-                  Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).
-                </p>
-              </div>
-
-              <div>
-                <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
-                  Model ID (e.g. liquid/lfm2.5-1.2b)
-                </label>
-                <Input
-                  type="text"
-                  value={llmModelId}
-                  onChange={(e) => {
-                    setLlmModelId(e.target.value);
-                    setTestResult(null);
-                  }}
-                  placeholder="e.g. liquid/lfm2.5-1.2b, llama-3-8b-instruct"
-                  className="font-mono text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  The model must support tool-calling schemas to function properly as an Advisor.
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={runTest}
-                  disabled={testing}
-                  className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
-                >
-                  {testing ? "Testing Connection..." : "Test Connection"}
-                </Button>
-                {testResult && (
-                  <div
-                    className={`mt-3 rounded-md p-3 border text-xs ${
-                      testResult.success
-                        ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
-                        : "border-rose-500/30 bg-rose-500/5 text-rose-400"
-                    }`}
-                  >
-                    <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
-                      {testResult.success ? "✓ Connection OK" : "✗ Connection Failed"}
-                    </div>
-                    <div className="whitespace-pre-line leading-relaxed font-sans">
-                      {testResult.message}
-                    </div>
-                  </div>
-                )}
-              </div>
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Base URL (OpenAI Compatible)
+              </label>
+              <Input
+                type="text"
+                value={llmBaseUrl}
+                onChange={(e) => {
+                  setLlmBaseUrl(e.target.value);
+                  setTestResult(null);
+                }}
+                placeholder={activeProviderInfo?.url || "http://localhost:1234/v1"}
+                className="font-mono text-xs"
+              />
             </div>
-          )}
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                API Token / Permission Key (Optional)
+              </label>
+              <Input
+                type="password"
+                value={llmApiKey}
+                onChange={(e) => {
+                  setLlmApiKey(e.target.value);
+                  setTestResult(null);
+                }}
+                placeholder="Enter LM Studio token or Bearer key if required"
+                className="font-mono text-xs"
+              />
+              <p className="text-[9px] text-muted-foreground mt-1">
+                Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).
+              </p>
+            </div>
+
+            <div>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 block">
+                Model ID (e.g. liquid/lfm2.5-1.2b)
+              </label>
+              <Input
+                type="text"
+                value={llmModelId}
+                onChange={(e) => {
+                  setLlmModelId(e.target.value);
+                  setTestResult(null);
+                }}
+                placeholder="e.g. liquid/lfm2.5-1.2b, llama-3-8b-instruct"
+                className="font-mono text-xs"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                The model must support tool-calling schemas to function properly as an Advisor.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={runTest}
+                disabled={testing}
+                className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
+              >
+                {testing ? "Testing Connection..." : "Test Connection"}
+              </Button>
+              {testResult && (
+                <div
+                  className={`mt-3 rounded-md p-3 border text-xs ${
+                    testResult.success
+                      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
+                      : "border-rose-500/30 bg-rose-500/5 text-rose-400"
+                  }`}
+                >
+                  <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
+                    {testResult.success ? "✓ Connection OK" : "✗ Connection Failed"}
+                  </div>
+                  <div className="whitespace-pre-line leading-relaxed font-sans">
+                    {testResult.message}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="hairline-t flex items-center justify-between gap-2 px-4 py-3 bg-panel shrink-0 border-t border-border/60">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => applyDefaults("cloud")}
+            onClick={() => applyDefaults("lmstudio")}
             className="gap-1.5 cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />

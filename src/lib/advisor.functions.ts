@@ -77,7 +77,7 @@ interface AdvisorResult {
 
 // Prompts and schemas extracted to advisor.prompts.ts
 
-function localFallback(payload: AdvisorPayload): AdvisorResult {
+export function localAdvisorFallback(payload: AdvisorPayload): AdvisorResult {
   const tips: AdvisorTip[] = [];
   const laps = payload.laps;
   const avgBrake = laps.reduce((a, l) => a + l.maxBrakePct, 0) / Math.max(1, laps.length);
@@ -282,109 +282,3 @@ function localFallback(payload: AdvisorPayload): AdvisorResult {
     tips: tips.slice(0, 6),
   };
 }
-
-const AdvisorPayloadSchema = z.object({
-  mode: z.enum(["style", "setup"]),
-  track: z.string().min(1).max(255),
-  car: z.string().min(1).max(255),
-  trackType: z.enum(["road", "oval"]),
-  cornerBias: z.enum(["left", "right", "mixed"]),
-  symptoms: z
-    .array(
-      z.enum([
-        "understeer_entry",
-        "understeer_apex",
-        "understeer_exit",
-        "oversteer_entry",
-        "oversteer_apex",
-        "oversteer_exit",
-        "brake_lockup_front",
-        "brake_lockup_rear",
-        "poor_traction_exit",
-        "snap_oversteer",
-        "tyres_overheating_front",
-        "tyres_overheating_rear",
-        "bouncy_over_curbs",
-      ]),
-    )
-    .max(20)
-    .optional(),
-  laps: z
-    .array(
-      z.object({
-        lapTimeS: z.number(),
-        maxBrakePct: z.number(),
-        maxThrottlePct: z.number(),
-        peakLatG: z.number(),
-        peakLonG: z.number(),
-        tireAvgC: z.number(),
-        fuelUsedL: z.number(),
-        isValid: z.boolean(),
-      }),
-    )
-    .min(1)
-    .max(60),
-  pbS: z.number().nullable(),
-  conditions: z.object({ airTempC: z.number(), trackTempC: z.number() }),
-  setup: z.object({ brakeBias: z.number(), diffMap: z.number() }),
-  tires: z.object({
-    fl: z.object({ tempC: z.number(), pressureBar: z.number() }),
-    fr: z.object({ tempC: z.number(), pressureBar: z.number() }),
-    rl: z.object({ tempC: z.number(), pressureBar: z.number() }),
-    rr: z.object({ tempC: z.number(), pressureBar: z.number() }),
-  }),
-});
-
-export const advisorCall = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => AdvisorPayloadSchema.parse(data) as AdvisorPayload)
-  .handler(
-    async ({
-      data,
-    }): Promise<{ result: AdvisorResult; fallback?: "no-key" | "local" } | { error: string }> => {
-      if (!data.laps || data.laps.length < 3) {
-        return { error: "Need at least 3 completed laps to give meaningful advice." };
-      }
-      const apiKey = process.env.LOVABLE_API_KEY;
-      if (!apiKey) {
-        return { result: localFallback(data), fallback: "no-key" };
-      }
-      // wsCtx and extrasSnapshot are injected by llm.ts for the cloud path
-      const { wsCtx, extrasSnapshot, ...coreData } = data as any;
-      const userMsg = buildAdvisorUserMessage({ ...coreData, wsCtx, extrasSnapshot });
-      try {
-        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-pro",
-            messages: [
-              { role: "system", content: getAdvisorSystemPrompt(coreData) },
-              { role: "user", content: userMsg },
-            ],
-            tools: [{ type: "function", function: ADVISOR_SCHEMA }],
-            tool_choice: { type: "function", function: { name: ADVISOR_SCHEMA.name } },
-          }),
-        });
-        if (resp.status === 429) return { error: "Rate limit hit — try again in a moment." };
-        if (resp.status === 402)
-          return { error: "AI credits exhausted. Add credits in Settings → Workspace → Usage." };
-        if (!resp.ok) return { result: localFallback(data), fallback: "local" };
-        const json = await resp.json();
-        const args = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-        if (!args) return { result: localFallback(data), fallback: "local" };
-        try {
-          const obj = JSON.parse(args);
-          if (!Array.isArray(obj?.tips) || obj.tips.length === 0) {
-            return { result: localFallback(data), fallback: "local" };
-          }
-          return { result: { mode: data.mode, ...obj } as AdvisorResult };
-        } catch {
-          return { result: localFallback(data), fallback: "local" };
-        }
-      } catch (e) {
-        console.error("[advisor] failed", e);
-        return { result: localFallback(data), fallback: "local" };
-      }
-    },
-  );

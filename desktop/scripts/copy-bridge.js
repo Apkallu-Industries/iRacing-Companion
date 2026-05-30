@@ -15,7 +15,7 @@ const src = path.join(__dirname, '..', '..', 'local-bridge');
 const dest = path.join(__dirname, '..', 'bridge');
 
 // Directories / files to skip during copy
-const SKIP = new Set(['node_modules', '.git', 'dist', '.env']);
+const SKIP = new Set(['.git', 'dist', '.env']);
 
 function copyRecursiveSync(srcDir, destDir) {
   if (!fs.existsSync(srcDir)) {
@@ -45,14 +45,23 @@ function copyRecursiveSync(srcDir, destDir) {
 }
 
 try {
-  // First, copy the React UI build to the local bridge's public folder
-  const viteDist = path.join(__dirname, '..', '..', 'dist', 'client');
+  const viteClient = path.join(__dirname, '..', '..', 'dist', 'client');
+  const viteServer = path.join(__dirname, '..', '..', 'dist', 'server');
   const bridgePublic = path.join(src, 'public');
-  if (fs.existsSync(viteDist)) {
-    console.log(`[copy-bridge] Syncing UI build from ${viteDist} to ${bridgePublic}`);
-    copyRecursiveSync(viteDist, bridgePublic);
+  const bridgeServer = path.join(src, 'server');
+  
+  if (fs.existsSync(viteClient)) {
+    console.log(`[copy-bridge] Syncing UI client from ${viteClient} to ${bridgePublic}`);
+    copyRecursiveSync(viteClient, bridgePublic);
   } else {
-    console.warn(`[copy-bridge] ⚠️ UI build not found at ${viteDist}. You should run 'npm run build' first.`);
+    console.warn(`[copy-bridge] ⚠️ UI client not found at ${viteClient}.`);
+  }
+
+  if (fs.existsSync(viteServer)) {
+    console.log(`[copy-bridge] Syncing UI server from ${viteServer} to ${bridgeServer}`);
+    copyRecursiveSync(viteServer, bridgeServer);
+  } else {
+    console.warn(`[copy-bridge] ⚠️ UI server not found at ${viteServer}.`);
   }
 
   copyRecursiveSync(src, dest);

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
+    "@whatwg-node/server": "^0.10.18",
     "dotenv": "^16.4.7",
     "irsdk-node": "^4.4.0",
     "ws": "^8.18.0"

@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TeamGuideRouteImport } from './routes/team-guide'
 import { Route as TeamRouteImport } from './routes/team'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RuntimeRouteImport } from './routes/runtime'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
@@ -38,11 +37,6 @@ const TeamGuideRoute = TeamGuideRouteImport.update({
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -143,7 +137,6 @@ export interface FileRoutesByFullPath {
   '/roadmap': typeof RoadmapRoute
   '/runtime': typeof RuntimeRoute
   '/settings': typeof SettingsRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
   '/team-guide': typeof TeamGuideRoute
   '/detached/$instrument': typeof DetachedInstrumentRoute
@@ -165,7 +158,6 @@ export interface FileRoutesByTo {
   '/roadmap': typeof RoadmapRoute
   '/runtime': typeof RuntimeRoute
   '/settings': typeof SettingsRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
   '/team-guide': typeof TeamGuideRoute
   '/detached/$instrument': typeof DetachedInstrumentRoute
@@ -188,7 +180,6 @@ export interface FileRoutesById {
   '/roadmap': typeof RoadmapRoute
   '/runtime': typeof RuntimeRoute
   '/settings': typeof SettingsRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team': typeof TeamRoute
   '/team-guide': typeof TeamGuideRoute
   '/detached/$instrument': typeof DetachedInstrumentRoute
@@ -212,7 +203,6 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/runtime'
     | '/settings'
-    | '/sitemap.xml'
     | '/team'
     | '/team-guide'
     | '/detached/$instrument'
@@ -234,7 +224,6 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/runtime'
     | '/settings'
-    | '/sitemap.xml'
     | '/team'
     | '/team-guide'
     | '/detached/$instrument'
@@ -256,7 +245,6 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/runtime'
     | '/settings'
-    | '/sitemap.xml'
     | '/team'
     | '/team-guide'
     | '/detached/$instrument'
@@ -279,7 +267,6 @@ export interface RootRouteChildren {
   RoadmapRoute: typeof RoadmapRoute
   RuntimeRoute: typeof RuntimeRoute
   SettingsRoute: typeof SettingsRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TeamRoute: typeof TeamRoute
   TeamGuideRoute: typeof TeamGuideRoute
   DetachedInstrumentRoute: typeof DetachedInstrumentRoute
@@ -304,13 +291,6 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -447,7 +427,6 @@ const rootRouteChildren: RootRouteChildren = {
   RoadmapRoute: RoadmapRoute,
   RuntimeRoute: RuntimeRoute,
   SettingsRoute: SettingsRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TeamRoute: TeamRoute,
   TeamGuideRoute: TeamGuideRoute,
   DetachedInstrumentRoute: DetachedInstrumentRoute,

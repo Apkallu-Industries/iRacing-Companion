@@ -1,3 +1,21 @@
+## [1.2.16-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.16-alpha.exe
+- Commit: feat: implement local bridge deployment and sync assets between desktop and local environments
+
+# Changelog
+
+## [1.2.15-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.15-alpha.exe
+- Commit: feat: implement local bridge deployment and sync assets between desktop and local environments
+
+# Changelog
+
+## [1.2.14-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.14-alpha.exe
+- Commit: feat: implement local bridge deployment and sync assets between desktop and local environments
+
+# Changelog
+
 ## [1.2.13-alpha] - 2026-05-30
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.13-alpha.exe
 - Commit: Allow the user to choose between a local or remote bridge.
