@@ -92,10 +92,10 @@ async function resolveUrl() {
     return;
   }
 
-  // Fallback: If neither local server is reachable, just use BRIDGE_UI and wait for it to come up.
+  // Fallback: If neither local server is reachable, load our local animated fallback splash screen
   BASE_URL      = BRIDGE_UI;
-  DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
-  console.log(`[desktop] loading local bridge UI (may take a moment to start) → ${DASHBOARD_URL}`);
+  DASHBOARD_URL = `file://${path.join(__dirname, "assets", "fallback.html")}`;
+  console.log(`[desktop] loading local fallback splash screen → ${DASHBOARD_URL}`);
 }
 
 // Prefer the source-tree bridge over the bundled copy (dev workflow).

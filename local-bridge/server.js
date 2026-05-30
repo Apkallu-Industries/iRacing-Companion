@@ -1423,15 +1423,15 @@ function startAssettoCorsaBridge() {
           wasConnected = true;
           
           startRecordingSession({
-            track: data.static?.track || "unknown",
-            car: data.static?.carModel || "unknown",
+            track: data.static?.track ? `ac-${data.static.track}` : "ac-unknown",
+            car: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
             driver: data.static?.playerName || "unknown",
             sessionInfoYaml: "",
           });
           vehicleIdentityRuntime.initializeSession({
-            carId: data.static?.carModel || "unknown",
+            carId: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
             carNumber: "0",
-            carName: data.static?.carModel || "Unknown Car",
+            carName: data.static?.carModel ? `ac-${data.static.carModel}` : "Unknown Car",
             teamId: process.env.TEAM_CODE || "local",
             driverId: data.static?.playerName || "unknown",
             env: {
@@ -1607,9 +1607,9 @@ function mapAssettoCorsaTelemetry(d) {
   return {
     connected: true,
     source: "live",
-    session: `${g.session === 0 ? "PRACTICE" : g.session === 1 ? "QUALIFY" : g.session === 2 ? "RACE" : "SESSION"} — ${s.track || "TRACK"}`.toUpperCase(),
-    track: s.track || "—",
-    car: s.carModel || "—",
+    session: `${g.session === 0 ? "PRACTICE" : g.session === 1 ? "QUALIFY" : g.session === 2 ? "RACE" : "SESSION"} — ac-${s.track || "TRACK"}`.toUpperCase(),
+    track: s.track ? `ac-${s.track}` : "ac-—",
+    car: s.carModel ? `ac-${s.carModel}` : "ac-—",
     carNumber: "0",
     sdkVersion: "acshm v1.0",
     latencyMs: 0,

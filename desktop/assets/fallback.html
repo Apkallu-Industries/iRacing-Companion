@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pit Wall Workstation — Starting Up...</title>
+  <style>
+    body {
+      background-color: #05070A;
+      color: #E2E4E8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+    .container {
+      text-align: center;
+      max-width: 480px;
+      padding: 32px;
+      border: 1px solid #1C2430;
+      background-color: #0B0F14;
+      border-radius: 4px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+    .header {
+      font-family: sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -0.05em;
+      margin-bottom: 4px;
+      color: #FFF;
+    }
+    .subtitle {
+      font-size: 8px;
+      letter-spacing: 0.3em;
+      color: #7A828C;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      font-weight: bold;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(59, 130, 246, 0.1);
+      border-top-color: #3B82F6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 32px;
+    }
+    .status {
+      font-size: 10px;
+      color: #7A828C;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+    }
+    .details {
+      font-size: 10px;
+      color: #3B82F6;
+      background-color: #05070A;
+      padding: 10px 16px;
+      border: 1px solid #1C2430;
+      border-radius: 2px;
+      margin-bottom: 24px;
+      word-break: break-all;
+    }
+    .btn-manual {
+      display: inline-block;
+      padding: 8px 16px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #E2E4E8;
+      background-color: #11161D;
+      border: 1px solid #1C2430;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+    .btn-manual:hover {
+      background-color: #161C24;
+      border-color: #3B82F6;
+      color: #FFF;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">PIT WALL</div>
+    <div class="subtitle">Motorsport Telemetry System</div>
+    
+    <div class="spinner"></div>
+    
+    <div class="status" id="status-text">WORKSTATION INITIALIZING</div>
+    <div class="details" id="details-text">Probing local telemetry bridge daemon...</div>
+    
+    <button class="btn-manual" onclick="window.location.reload()">Force Retry</button>
+  </div>
+
+  <script>
+    const BRIDGE_UI = "http://localhost:3001";
+    const HEALTH_URL = "http://localhost:3001/health";
+    let attempts = 0;
+    
+    async function checkBridge() {
+      attempts++;
+      try {
+        const res = await fetch(HEALTH_URL, { cache: "no-store" });
+        if (res.ok) {
+          document.getElementById("status-text").innerText = "DAEMONS OPERATIONAL";
+          document.getElementById("status-text").style.color = "#00D17F";
+          document.getElementById("details-text").innerText = "Redirecting to Pit Wall dashboard...";
+          document.getElementById("details-text").style.color = "#00D17F";
+          setTimeout(() => {
+            window.location.href = BRIDGE_UI + "/runtime";
+          }, 600);
+          return;
+        }
+      } catch (e) {
+        // Not reachable yet
+        if (attempts > 5) {
+          document.getElementById("details-text").innerText = "Waiting for background telemetry bridge to start (Attempt " + attempts + ")...";
+        }
+      }
+      
+      setTimeout(checkBridge, 1000);
+    }
+    
+    // Start polling check
+    setTimeout(checkBridge, 800);
+  </script>
+</body>
+</html>

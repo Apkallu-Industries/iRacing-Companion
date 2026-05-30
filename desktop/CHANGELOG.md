@@ -1,3 +1,9 @@
+## [1.2.21-alpha] - 2026-05-30
+- .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.21-alpha.exe
+- Commit: feat: implement local bridge server with analytical threading and telemetry recording
+
+# Changelog
+
 ## [1.2.20-alpha] - 2026-05-30
 - .exe build generated: desktop/dist-installer/Pit Wall Setup 1.2.20-alpha.exe
 - Commit: feat: implement local-bridge architecture and desktop integration with new auth and advisor modules
