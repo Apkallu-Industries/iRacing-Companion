@@ -108,31 +108,50 @@ async function resolveUrl() {
     const portsToTry = [8080, 8081, 3000, 5173];
     const hosts = ["127.0.0.1", "localhost"];
 
-    // Try each host:port combination with a short timeout. Retry briefly if nothing responds immediately.
+    // Try each host:port combination in parallel with a short timeout. Retry briefly if nothing responds immediately.
     for (let attempt = 0; attempt < 6; attempt++) {
-      console.log(`[desktop] Scanning Vite ports, attempt ${attempt + 1}/6...`);
+      console.log(`[desktop] Scanning Vite ports in parallel, attempt ${attempt + 1}/6...`);
+      
+      const probePromises = [];
+      const urlMap = [];
+      
       for (const p of portsToTry) {
         for (const h of hosts) {
           const url = `http://${h}:${p}`;
-          // eslint-disable-next-line no-await-in-loop
-          if (await isReachable(url, 700)) {
-            BASE_URL = url;
-            DASHBOARD_URL = `${url}/runtime`;
-            console.log(`[desktop] dev mode → ${DASHBOARD_URL} (detected on ${h}:${p}, attempt ${attempt + 1})`);
-            return;
-          }
+          urlMap.push(url);
+          probePromises.push(isReachable(url, 700));
         }
       }
+      
+      const results = await Promise.all(probePromises);
+      const activeIndex = results.indexOf(true);
+      
+      if (activeIndex !== -1) {
+        const activeUrl = urlMap[activeIndex];
+        BASE_URL = activeUrl;
+        DASHBOARD_URL = `${activeUrl}/runtime`;
+        console.log(`[desktop] dev mode → ${DASHBOARD_URL} (detected on ${activeUrl}, attempt ${attempt + 1})`);
+        return;
+      }
+      
       // Small back-off between attempts to allow Vite to finish startup
-      // eslint-disable-next-line no-await-in-loop
       console.log(`[desktop] No ports active on attempt ${attempt + 1}, waiting 300ms...`);
       await new Promise((r) => setTimeout(r, 300));
     }
 
-    // Fallback to standard VITE default if none responded
-    BASE_URL = `${VITE_HOST}:${VITE_DEFAULT_PORT}`;
-    DASHBOARD_URL = `${BASE_URL}/runtime`;
-    console.log(`[desktop] dev mode (fallback) → ${DASHBOARD_URL}`);
+    // Fallback: If no Vite ports responded, see if local bridge is running
+    console.log("[desktop] dev mode - no Vite server detected, probing local bridge UI...");
+    if (await isReachable(BRIDGE_UI)) {
+      BASE_URL = BRIDGE_UI;
+      DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
+      console.log(`[desktop] dev mode (fallback to local bridge) → ${DASHBOARD_URL}`);
+      return;
+    }
+
+    // Fallback: If neither Vite nor Bridge is active, load our local animated fallback splash screen
+    BASE_URL      = BRIDGE_UI;
+    DASHBOARD_URL = `file://${path.join(__dirname, "assets", "fallback.html")}`;
+    console.log(`[desktop] dev mode (fallback to animated splash screen) → ${DASHBOARD_URL}`);
     return;
   }
 
