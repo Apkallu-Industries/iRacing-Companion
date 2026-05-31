@@ -49,13 +49,13 @@ const CAR_PROFILES: Record<string, CarProfile> = {
     badge: "GTP PROTOTYPE",
     headOnUrl: "/images/GTP-Head-ON.png",
     sideOnUrl: "/images/GTP-Side-ON.png",
-    frontWheelX: -61,  // Facing left, so front wheel is on negative x-axis
-    rearWheelX: 59,    // Rear wheel is on positive x-axis
-    wheelY: 11.5,      // Wheel center Y
+    frontWheelX: -54,  // Perfectly centered horizontally on the GTP front wheel hub
+    rearWheelX: 64,    // Perfectly centered horizontally on the GTP rear wheel hub
+    wheelY: 11.5,      // Shift down to rest perfectly on the ground line (y = 23)
     wheelScale: 11.5,
     carImageScale: 225,
-    yOffset: 2.5,      // Shift down to rest perfectly on the ground
-    frontViewWheelX: 47,
+    yOffset: 5.5,      // Shift car image down to align tire bottoms perfectly with y = 23 ground line
+    frontViewWheelX: 58,
     frontViewWheelY: 11.5,
     frontViewTireWidth: 14,
     frontViewTireHeight: 23,
@@ -79,8 +79,8 @@ const CAR_PROFILES: Record<string, CarProfile> = {
   nascar_truck: {
     name: "NASCAR Craftsman Truck",
     badge: "NASCAR TRUCK",
-    headOnUrl: "/images/NASCAR Truck-Head-ON.png",
-    sideOnUrl: "/images/NASCAR Truck-Side-ON.png",
+    headOnUrl: "/images/NASCAR%20Truck-Head-ON.png",
+    sideOnUrl: "/images/NASCAR%20Truck-Side-ON.png",
     frontWheelX: -53,  // Facing left, so front wheel is on negative x-axis
     rearWheelX: 51,    // Rear wheel is on positive x-axis
     wheelY: 11.5,      // Wheel center Y
@@ -178,7 +178,7 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
   const brake = t.brake ?? 0;
 
   // Real-time pitches and rolls
-  const pitchVal = -gLon * 1.8; // degrees pitch nose down
+  const pitchVal = gLon * 1.8; // degrees pitch nose up/down (squat under accel, dive under braking)
   const rollVal = gLat * 2.2;   // degrees roll right
 
   // Four-corner shock deflections (0 = fully extended, 100 = bump stop)
@@ -398,11 +398,11 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
 
     // Wheel nominal positions inside rotated/static space
     if (viewMode === "side") {
-      // Aligned wheel offsets from active profile
-      const frontNomX = profile.frontWheelX;
-      const frontNomY = profile.wheelY;
-      const rearNomX = profile.rearWheelX;
-      const rearNomY = profile.wheelY;
+      // Aligned wheel offsets from active profile (fallback to wireframe hubs when no image is loaded)
+      const frontNomX = hasImage ? profile.frontWheelX : -40;
+      const frontNomY = hasImage ? profile.wheelY : 12;
+      const rearNomX = hasImage ? profile.rearWheelX : 50;
+      const rearNomY = hasImage ? profile.wheelY : 12;
 
       const activeFrontY = frontNomY + frWOffset;
       const activeRearY = rearNomY + rrWOffset;
@@ -471,7 +471,7 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.strokeStyle = "rgba(251, 184, 0, 0.85)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(0, 0, profile.wheelScale, 0, Math.PI * 2);
+      ctx.arc(0, 0, hasImage ? profile.wheelScale : 13, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       
@@ -479,7 +479,7 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.lineWidth = 0.75;
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(profile.wheelScale * 0.6, 0);
+      ctx.lineTo((hasImage ? profile.wheelScale : 13) * 0.6, 0);
       ctx.stroke();
       
       ctx.fillStyle = "#FFB800";
@@ -495,7 +495,7 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.strokeStyle = "rgba(139, 92, 246, 0.85)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(0, 0, profile.wheelScale + 0.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, (hasImage ? profile.wheelScale : 13) + 0.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       
@@ -503,7 +503,7 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.lineWidth = 0.75;
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo((profile.wheelScale + 0.5) * 0.6, 0);
+      ctx.lineTo(((hasImage ? profile.wheelScale : 13) + 0.5) * 0.6, 0);
       ctx.stroke();
       
       ctx.fillStyle = "#8B5CF6";
@@ -526,10 +526,10 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.fillText("PIVOT", 6, 8);
 
     } else {
-      // Front view wheel layout
-      const leftNomX = -profile.frontViewWheelX;
-      const rightNomX = profile.frontViewWheelX;
-      const wheelNomY = profile.frontViewWheelY;
+      // Front view wheel layout (fallback to wireframe hubs when no image is loaded)
+      const leftNomX = -(hasImage ? profile.frontViewWheelX : 46);
+      const rightNomX = hasImage ? profile.frontViewWheelX : 46;
+      const wheelNomY = hasImage ? profile.frontViewWheelY : 12;
 
       const activeLeftY = wheelNomY + flWOffset;
       const activeRightY = wheelNomY + frWOffset;
@@ -599,12 +599,14 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.fillStyle = "rgba(9, 13, 20, 0.55)";
       ctx.strokeStyle = "rgba(251, 184, 0, 0.85)";
       ctx.lineWidth = 1;
-      ctx.fillRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
-      ctx.strokeRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
+      const wTire = hasImage ? profile.frontViewTireWidth : 14;
+      const hTire = hasImage ? profile.frontViewTireHeight : 23;
+      ctx.fillRect(-wTire / 2, -hTire / 2, wTire, hTire);
+      ctx.strokeRect(-wTire / 2, -hTire / 2, wTire, hTire);
       ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
       ctx.beginPath();
-      ctx.moveTo(0, -profile.frontViewTireHeight * 0.35);
-      ctx.lineTo(0, profile.frontViewTireHeight * 0.35);
+      ctx.moveTo(0, -hTire * 0.35);
+      ctx.lineTo(0, hTire * 0.35);
       ctx.stroke();
       ctx.fillStyle = "#FFB800";
       ctx.beginPath();
@@ -619,12 +621,14 @@ export function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }: C
       ctx.fillStyle = "rgba(9, 13, 20, 0.55)";
       ctx.strokeStyle = "rgba(251, 184, 0, 0.85)";
       ctx.lineWidth = 1;
-      ctx.fillRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
-      ctx.strokeRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
+      const wTireR = hasImage ? profile.frontViewTireWidth : 14;
+      const hTireR = hasImage ? profile.frontViewTireHeight : 23;
+      ctx.fillRect(-wTireR / 2, -hTireR / 2, wTireR, hTireR);
+      ctx.strokeRect(-wTireR / 2, -hTireR / 2, wTireR, hTireR);
       ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
       ctx.beginPath();
-      ctx.moveTo(0, -profile.frontViewTireHeight * 0.35);
-      ctx.lineTo(0, profile.frontViewTireHeight * 0.35);
+      ctx.moveTo(0, -hTireR * 0.35);
+      ctx.lineTo(0, hTireR * 0.35);
       ctx.stroke();
       ctx.fillStyle = "#FFB800";
       ctx.beginPath();

@@ -76,6 +76,10 @@ function getProxiedClient() {
                 (builder as any)._eqId = val;
                 return builder;
               },
+              limit: (num: number) => {
+                (builder as any)._limit = num;
+                return builder;
+              },
               single: () => builder,
               insert: (payload: any) => {
                 (builder as any)._insertPayload = payload;
@@ -98,6 +102,9 @@ function getProxiedClient() {
                     resolve(res);
                   } else {
                     const res = await getLocalSessions();
+                    if (res && res.data && typeof (builder as any)._limit === "number") {
+                      res.data = res.data.slice(0, (builder as any)._limit);
+                    }
                     resolve(res);
                   }
                 } catch (err: any) {

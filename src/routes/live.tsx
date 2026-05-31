@@ -3,7 +3,7 @@ import { Settings, Palette } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BackButton } from "@/components/BackButton";
 import { useWorkbench } from "@/lib/store";
-import { WORKSPACES } from "@/lib/workspaces";
+import { WORKSPACES, type WorkspaceKey } from "@/lib/workspaces";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { allowSimulator } from "@/lib/runtimeConfig";
 import { useTelemetryBuffer, type Sample } from "@/lib/useTelemetryBuffer";
@@ -267,13 +267,18 @@ function Dashboard() {
                 <ConfigurableChannelList t={t} />
               </div>
 
+              {/* Real-time Incident Event Timeline (Moved here for premium readability & larger size) */}
+              <div className="h-[280px] shrink-0 border-b border-[#1C2430]">
+                <TelemetryEventTimeline />
+              </div>
+
               {/* Fast Sector Splits splits */}
               <div className="border-b border-[#1C2430] bg-[#0B0F14]">
                 <SectorPanel t={t} />
               </div>
 
               {/* Tyre State and pressure diagnostics */}
-              <div className="flex-1 min-h-0 overflow-y-auto bg-[#0B0F14]">
+              <div className="h-[180px] shrink-0 overflow-y-auto bg-[#0B0F14]">
                 <TirePanel t={t} />
               </div>
             </section>
@@ -365,22 +370,17 @@ function Dashboard() {
                 </span>
               </div>
 
-              {/* Scatter / G-G Analysis panels */}
-              <div className="flex-1 min-h-0 overflow-hidden border-b border-[#1C2430]">
+              {/* Live Assistant Coach Panel (Moved to top of right rail and extended for better readability) */}
+              <div className="h-[460px] shrink-0 border-b border-[#1C2430] bg-[#0B0F14] overflow-y-auto">
+                <LiveCoach t={t} />
+              </div>
+
+              {/* Scatter / G-G Analysis panels (Moved below coach) */}
+              <div className="flex-1 min-h-0 overflow-hidden">
                 <TabedAnalysisPanel
                   samples={samples}
                   ggScatterComponent={<GGScatterPanel samples={samples} />}
                 />
-              </div>
-
-              {/* Real-time Incident Event Timeline */}
-              <div className="h-[200px] shrink-0 border-b border-[#1C2430]">
-                <TelemetryEventTimeline />
-              </div>
-
-              {/* Live Assistant Coach Panel (Moved to bottom of right rail for premium readability) */}
-              <div className="h-[320px] shrink-0 bg-[#0B0F14] overflow-y-auto border-t border-[#1C2430]/40">
-                <LiveCoach t={t} />
               </div>
             </section>
           </div>
@@ -437,7 +437,7 @@ function TopBar({ t }: { t: Telemetry }) {
           value={activeWorkspace}
           aria-label="Profile"
           title="Profile"
-          onChange={(e) => setActiveWorkspace(e.target.value as string)}
+          onChange={(e) => setActiveWorkspace(e.target.value as WorkspaceKey)}
           className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
         >
           {Object.values(WORKSPACES).map((w) => (

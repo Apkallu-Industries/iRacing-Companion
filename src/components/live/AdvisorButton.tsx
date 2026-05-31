@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Lightbulb,
   Loader2,
@@ -96,8 +96,8 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
   useLapAggregate(t, handleLapComplete);
 
   const validLaps = laps.filter((l) => l.isValid);
-  const canAsk = validLaps.length >= MIN_LAPS;
-  const needed = Math.max(0, MIN_LAPS - validLaps.length);
+  const canAsk = laps.length >= MIN_LAPS;
+  const needed = Math.max(0, MIN_LAPS - laps.length);
 
   const toggleSymptom = (s: Symptom) =>
     setSymptoms((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -108,8 +108,8 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
     setError(null);
     setFallback(null);
     try {
-      const latest = validLaps[validLaps.length - 1];
-      const pbS = validLaps.reduce<number | null>(
+      const latest = laps[laps.length - 1];
+      const pbS = laps.reduce<number | null>(
         (m, l) => (m == null || l.lapTimeS < m ? l.lapTimeS : m),
         null,
       );
@@ -120,7 +120,7 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
         trackType,
         cornerBias,
         symptoms: mode === "setup" && symptoms.length ? symptoms : undefined,
-        laps: validLaps
+        laps: laps
           .slice(-5)
           .map(
             ({
@@ -179,7 +179,7 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
           Advisor
         </h2>
         <span className="font-mono text-[10px] text-muted-foreground">
-          {validLaps.length} valid lap{validLaps.length === 1 ? "" : "s"}
+          {laps.length} completed ({validLaps.length} clean)
           {!canAsk && ` · ${needed} more to unlock`}
         </span>
       </div>
@@ -309,7 +309,7 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
 
       {!canAsk && !result && (
         <div className="rounded-md bg-muted/50 p-3 text-center text-xs text-muted-foreground">
-          Complete {MIN_LAPS} clean laps and I'll read the data to coach style or recommend setup
+          Complete {MIN_LAPS} laps (clean or with incidents) and I'll read the data to coach style or recommend setup
           changes.
         </div>
       )}
