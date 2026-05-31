@@ -18,6 +18,21 @@ const { spawn } = require("child_process");
 const os = require("os");
 const supervisor = require("./runtimeSupervisor.cjs");
 
+// ─── Unhandled Exception Handlers ─────────────────────────────────────────────
+process.on("uncaughtException", (error) => {
+  console.error("\n[desktop:CRITICAL] Uncaught Exception in main process:\n", error);
+  if (typeof writeBridgeLog === "function") {
+    writeBridgeLog(`[main:uncaughtException] ${error?.stack || error}`);
+  }
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("\n[desktop:CRITICAL] Unhandled Rejection in main process at:\n", promise, "\nReason:\n", reason);
+  if (typeof writeBridgeLog === "function") {
+    writeBridgeLog(`[main:unhandledRejection] reason=${reason}`);
+  }
+});
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const isDev = process.argv.includes("--dev") || process.env.DEV === "1";
@@ -50,15 +65,32 @@ let DASHBOARD_URL = `${BASE_URL}/runtime`;
  * Probe a URL with a short timeout. Returns true if the server is up.
  */
 async function isReachable(url, timeoutMs = 1500) {
+  console.log(`[desktop] Probing reachability of: ${url}...`);
   const { net } = require("electron");
   return new Promise((resolve) => {
     try {
       const req = net.request({ method: "HEAD", url });
-      const timer = setTimeout(() => { try { req.abort(); } catch {} resolve(false); }, timeoutMs);
-      req.on("response", () => { clearTimeout(timer); resolve(true); });
-      req.on("error",    () => { clearTimeout(timer); resolve(false); });
+      const timer = setTimeout(() => {
+        console.log(`[desktop] Probe timed out for ${url}`);
+        try { req.abort(); } catch {}
+        resolve(false);
+      }, timeoutMs);
+      
+      req.on("response", () => {
+        console.log(`[desktop] Probe success for ${url}`);
+        clearTimeout(timer);
+        resolve(true);
+      });
+      
+      req.on("error", (err) => {
+        console.log(`[desktop] Probe error for ${url}: ${err.message}`);
+        clearTimeout(timer);
+        resolve(false);
+      });
+      
       req.end();
-    } catch {
+    } catch (e) {
+      console.log(`[desktop] Probe exception for ${url}: ${e.message}`);
       resolve(false);
     }
   });
@@ -69,13 +101,16 @@ async function isReachable(url, timeoutMs = 1500) {
  * Called once during app startup (after bridge has had a moment to start).
  */
 async function resolveUrl() {
+  console.log("[desktop] Starting resolveUrl()...");
   if (isDev) {
+    console.log("[desktop] dev mode enabled - starting Vite port scanning loop");
     // Dev mode: probe common local Vite ports (in case Vite auto-incremented)
     const portsToTry = [8080, 8081, 3000, 5173];
     const hosts = ["127.0.0.1", "localhost"];
 
     // Try each host:port combination with a short timeout. Retry briefly if nothing responds immediately.
     for (let attempt = 0; attempt < 6; attempt++) {
+      console.log(`[desktop] Scanning Vite ports, attempt ${attempt + 1}/6...`);
       for (const p of portsToTry) {
         for (const h of hosts) {
           const url = `http://${h}:${p}`;
@@ -90,6 +125,7 @@ async function resolveUrl() {
       }
       // Small back-off between attempts to allow Vite to finish startup
       // eslint-disable-next-line no-await-in-loop
+      console.log(`[desktop] No ports active on attempt ${attempt + 1}, waiting 300ms...`);
       await new Promise((r) => setTimeout(r, 300));
     }
 
@@ -100,9 +136,11 @@ async function resolveUrl() {
     return;
   }
 
+  console.log("[desktop] Production mode - waiting 1200ms for bridge startup...");
   // Give the bridge a moment if it just started
   await new Promise(r => setTimeout(r, 1200));
 
+  console.log("[desktop] Probing VITE_URL:", VITE_URL);
   if (await isReachable(VITE_URL)) {
     BASE_URL      = VITE_URL;
     DASHBOARD_URL = `${VITE_URL}/runtime`;
@@ -420,6 +458,40 @@ function createWindow() {
       // Allow audio output device selection (setSinkId) — requires this flag
       experimentalFeatures: true,
     },
+  });
+
+  // ─── Debug & Crash Logging for Main Window ──────────────────────────────────
+  mainWindow.webContents.on("did-start-loading", () => {
+    console.log(`[desktop] Window started loading: ${DASHBOARD_URL}`);
+  });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    console.log(`[desktop] Window finished loading successfully.`);
+  });
+
+  mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`[desktop:ERROR] Window failed to load URL: ${validatedURL}`);
+    console.error(`[desktop:ERROR] Code: ${errorCode} (${errorDescription})`);
+  });
+
+  mainWindow.webContents.on("render-process-gone", (event, details) => {
+    console.error(`[desktop:CRITICAL] Renderer process gone! Reason: ${details.reason}, Exit Code: ${details.exitCode}`);
+  });
+
+  mainWindow.webContents.on("unresponsive", () => {
+    console.warn(`[desktop:WARN] Window has become unresponsive (UI thread hung)!`);
+  });
+
+  mainWindow.webContents.on("responsive", () => {
+    console.log(`[desktop] Window became responsive again.`);
+  });
+
+  // Forward renderer console logs directly to terminal stdout/stderr
+  mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
+    const levels = ["DEBUG", "INFO", "WARN", "ERROR"];
+    const lvl = levels[level] || "LOG";
+    const file = sourceId ? path.basename(sourceId) : "unknown";
+    console.log(`[renderer:${lvl}] (${file}:${line}) ${message}`);
   });
 
   if (windowState.maximized) {
