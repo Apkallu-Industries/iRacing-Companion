@@ -85,7 +85,7 @@
   "author": "Apkallu Industries",
   "license": "UNLICENSED",
   "devDependencies": {
-    "electron": "31.7.7",
-    "electron-builder": "25.1.8"
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1"
   }
 }
