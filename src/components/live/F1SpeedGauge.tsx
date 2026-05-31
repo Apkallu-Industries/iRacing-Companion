@@ -1,11 +1,13 @@
+import { useTelemetry } from "@/lib/useTelemetry";
 import type { Telemetry } from "@/lib/telemetry-types";
 
 /**
  * F1-style circular speed gauge.
  * Red arc, large central speed readout, KM/H label.
  */
-export function F1SpeedGauge({ t }: { t: Telemetry }) {
-  const speed = Math.round(t.speedKph);
+export function F1SpeedGauge({ t }: { t?: Telemetry }) {
+  const telemetry = t ?? useTelemetry();
+  const speed = Math.round(telemetry.speedKph);
   const maxSpeed = 340; // F1-class ceiling
   const pct = Math.min(1, speed / maxSpeed);
 

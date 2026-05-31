@@ -5,8 +5,9 @@ import { BackButton } from "@/components/BackButton";
 import { useWorkbench } from "@/lib/store";
 import { WORKSPACES, type WorkspaceKey } from "@/lib/workspaces";
 import { useTelemetry } from "@/lib/useTelemetry";
+import { useTelemetryThrottled, useThrottledSamples } from "@/lib/useTelemetryStore";
 import { allowSimulator } from "@/lib/runtimeConfig";
-import { useTelemetryBuffer, type Sample } from "@/lib/useTelemetryBuffer";
+import { type Sample } from "@/lib/useTelemetryBuffer";
 import { useBridgeDiagnostics } from "@/lib/bridgeDiagnostics";
 import type { Telemetry } from "@/lib/telemetry-types";
 import { LiveCoach } from "@/components/live/LiveCoach";
@@ -62,8 +63,8 @@ export const Route = createFileRoute("/live")({
 });
 
 function Dashboard() {
-  const t = useTelemetry();
-  const samples = useTelemetryBuffer(t, 30_000, 60);
+  const t = useTelemetryThrottled(100); // 10Hz updates for layout
+  const samples = useThrottledSamples(50); // 20Hz updates for charts
   const diagnostics = useBridgeDiagnostics(t, t.connected);
   const [smoothing, setSmoothing] = useState<SmoothingMode>("none");
   const [smoothWindow, setSmoothWindow] = useState<number>(5);
@@ -125,7 +126,7 @@ function Dashboard() {
     <main className="min-h-screen bg-background text-foreground font-mono p-0 select-none flex flex-col overflow-hidden">
       <TopBar t={t} />
       <BridgeConnectionBanner t={t} />
-      <RpmBar rpm={t.rpm} warn={t.rpmShiftWarn} red={t.rpmShiftRedline} max={t.rpmMax} />
+      <RpmBar />
 
 
       {isRaceCommand ? (
@@ -153,7 +154,7 @@ function Dashboard() {
 
               {/* Speed gauge + Gear */}
               <div className="flex-1 flex flex-col items-center justify-center border-b border-border px-3 py-2">
-                <F1SpeedGauge t={t} />
+                <F1SpeedGauge />
                 <div className="mt-1 text-center">
                   <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Gear</div>
                   <div className="font-mono text-[32px] font-bold leading-none text-foreground">{t.gear}</div>
@@ -520,14 +521,30 @@ function Field({
 
 /* ──────────────────────────────────────────────────────────── RPM bar */
 
-function RpmBar({ rpm, warn, red, max }: { rpm: number; warn: number; red: number; max: number }) {
+function RpmBar({
+  rpm: propRpm,
+  warn: propWarn,
+  red: propRed,
+  max: propMax,
+}: {
+  rpm?: number;
+  warn?: number;
+  red?: number;
+  max?: number;
+} = {}) {
+  const t = useTelemetry();
+  const rpm = propRpm ?? t.rpm;
+  const warn = propWarn ?? t.rpmShiftWarn;
+  const red = propRed ?? t.rpmShiftRedline;
+  const max = propMax ?? t.rpmMax;
+
   const pct = Math.max(0, Math.min(1, rpm / max));
   const warnFrac = warn / max;
   const redFrac = red / max;
   const color = rpm > red ? "bg-rose-500" : rpm > warn ? "bg-amber-400" : "bg-emerald-500";
   return (
     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-sm bg-muted relative">
-      <div className={`h-full ${color} transition-[width]`} style={{ width: `${pct * 100}%` }} />
+      <div className={`h-full ${color}`} style={{ width: `${pct * 100}%` }} />
       <div
         className="absolute inset-y-0 w-px bg-amber-500/50"
         style={{ left: `${warnFrac * 100}%` }}

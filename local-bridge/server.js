@@ -1757,11 +1757,61 @@ function mapAssettoCorsaTelemetry(d) {
 // Start active telemetry bridge on startup
 initActiveTelemetryBridge();
 
-// 60Hz local WebSocket broadcast (Binary & JSON adaptive transport)
+let broadcastTick = 0;
+
+function getDeltaPacket(full) {
+  return {
+    isDelta: true,
+    connected: full.connected,
+    source: full.source,
+    session: full.session,
+    track: full.track,
+    car: full.car,
+    carNumber: full.carNumber,
+    gear: full.gear,
+    speedKph: full.speedKph,
+    rpm: full.rpm,
+    rpmMax: full.rpmMax,
+    rpmShiftWarn: full.rpmShiftWarn,
+    rpmShiftRedline: full.rpmShiftRedline,
+    throttle: full.throttle,
+    brake: full.brake,
+    clutch: full.clutch,
+    steeringDeg: full.steeringDeg,
+    gLat: full.gLat,
+    gLon: full.gLon,
+    deltaSec: full.deltaSec,
+    lastLap: full.lastLap,
+    bestLap: full.bestLap,
+    sectors: full.sectors,
+    extras: {
+      YawRate: full.extras?.YawRate ?? 0,
+      Yaw: full.extras?.Yaw ?? 0,
+      LFshockDefl: full.extras?.LFshockDefl ?? 0,
+      RFshockDefl: full.extras?.RFshockDefl ?? 0,
+      LRshockDefl: full.extras?.LRshockDefl ?? 0,
+      RRshockDefl: full.extras?.RRshockDefl ?? 0,
+      BrakeLinePressureLF: full.extras?.BrakeLinePressureLF ?? 0,
+      BrakeLinePressureRF: full.extras?.BrakeLinePressureRF ?? 0,
+      BrakeLinePressureLR: full.extras?.BrakeLinePressureLR ?? 0,
+      BrakeLinePressureRR: full.extras?.BrakeLinePressureRR ?? 0,
+      LFwheelSpeed: full.extras?.LFwheelSpeed ?? 0,
+      RFwheelSpeed: full.extras?.RFwheelSpeed ?? 0,
+      LRwheelSpeed: full.extras?.LRwheelSpeed ?? 0,
+      RRwheelSpeed: full.extras?.RRwheelSpeed ?? 0,
+    }
+  };
+}
+
+// 60Hz local WebSocket broadcast (Binary & JSON adaptive transport with frequency splitting)
 setInterval(() => {
   if (!latest || wss.clients.size === 0) return;
 
-  let jsonMsg = null;
+  broadcastTick++;
+  const isSyncTick = broadcastTick % 6 === 0; // Full sync at 10Hz, delta at 60Hz
+
+  let jsonMsgFull = null;
+  let jsonMsgDelta = null;
   let binaryMsg = null;
 
   for (const client of wss.clients) {
@@ -1772,15 +1822,27 @@ setInterval(() => {
         }
         client.send(binaryMsg);
       } else {
-        if (!jsonMsg) {
-          jsonMsg = JSON.stringify({
-            carId: latest.carNumber || "963",
-            teamId: "team_pitwall",
-            driverId: latest.driver || "driver_A",
-            payload: latest
-          });
+        if (isSyncTick) {
+          if (!jsonMsgFull) {
+            jsonMsgFull = JSON.stringify({
+              carId: latest.carNumber || "963",
+              teamId: "team_pitwall",
+              driverId: latest.driver || "driver_A",
+              payload: latest
+            });
+          }
+          client.send(jsonMsgFull);
+        } else {
+          if (!jsonMsgDelta) {
+            jsonMsgDelta = JSON.stringify({
+              carId: latest.carNumber || "963",
+              teamId: "team_pitwall",
+              driverId: latest.driver || "driver_A",
+              payload: getDeltaPacket(latest)
+            });
+          }
+          client.send(jsonMsgDelta);
         }
-        client.send(jsonMsg);
       }
     }
   }
