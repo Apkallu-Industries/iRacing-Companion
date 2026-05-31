@@ -18,21 +18,21 @@ if (-not $node -or -not $npm) {
         exit
     }
 
-    Write-Host "🌐 Downloading official Node.js target engine (v24.13.0) for Windows x64..." -ForegroundColor Yellow
+    Write-Host "[info] Downloading official Node.js target engine (v24.13.0) for Windows x64..." -ForegroundColor Yellow
     $msiUrl = "https://nodejs.org/dist/v24.13.0/node-v24.13.0-x64.msi"
     $msiPath = "$env:TEMP\node-installer.msi"
 
     # Download MSI silently
     Invoke-WebRequest -Uri $msiUrl -OutFile $msiPath -UseBasicParsing
 
-    Write-Host "📦 Installing Node.js v24.13.0. Please accept any security dialogs..." -ForegroundColor Yellow
+    Write-Host "[info] Installing Node.js v24.13.0. Please accept any security dialogs..." -ForegroundColor Yellow
     # Silent install via msiexec
     $process = Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet /norestart" -Wait -PassThru
 
     if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
-        Write-Host "✅ Node.js installed successfully!" -ForegroundColor Green
+        Write-Host "[success] Node.js installed successfully!" -ForegroundColor Green
     } else {
-        Write-Host "❌ Node.js installation failed with exit code $($process.ExitCode)." -ForegroundColor Red
+        Write-Host "[error] Node.js installation failed with exit code $($process.ExitCode)." -ForegroundColor Red
         if (Test-Path $msiPath) { Remove-Item $msiPath -Force }
         exit 1
     }
@@ -41,7 +41,7 @@ if (-not $node -or -not $npm) {
     if (Test-Path $msiPath) { Remove-Item $msiPath -Force }
 
     # Refresh current session's PATH environment variables so it immediately resolves NPM without a PC restart
-    Write-Host "⚡ Refreshing system Environment PATH in active session..." -ForegroundColor Yellow
+    Write-Host "[info] Refreshing system Environment PATH in active session..." -ForegroundColor Yellow
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 }
 
@@ -50,20 +50,22 @@ $node = Get-Command node -ErrorAction SilentlyContinue
 $npm = Get-Command npm -ErrorAction SilentlyContinue
 
 if (-not $node -or -not $npm) {
-    Write-Host "❌ Failed to resolve Node.js or NPM in this console. Please restart your PC and run 'setup.bat' again." -ForegroundColor Red
+    Write-Host "[error] Failed to resolve Node.js or NPM in this console. Please restart your PC and run 'setup.bat' again." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "✅ Verified Node.js: $(node -v)" -ForegroundColor Green
-Write-Host "✅ Verified NPM: $(npm -v)" -ForegroundColor Green
+$nodeVersion = & node -v
+$npmVersion = & npm -v
+Write-Host "[success] Verified Node.js: $nodeVersion" -ForegroundColor Green
+Write-Host "[success] Verified NPM: $npmVersion" -ForegroundColor Green
 
 # Navigate to root directory (one level up from scripts/) and install workspace
-Write-Host "📦 Installing global workspace dependencies (React, Electron, Telemetry Bridge)..." -ForegroundColor Yellow
+Write-Host "[info] Installing global workspace dependencies (React, Electron, Telemetry Bridge)..." -ForegroundColor Yellow
 Set-Location "$PSScriptRoot\.."
 & npm install
 
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host " 🎉 Pit Wall Workstation Setup Complete! " -ForegroundColor Green
+Write-Host "          Pit Wall Workstation Setup Complete!            " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host "You can now run the developer workstation by double-clicking 'start-dev.bat' in the project root." -ForegroundColor Cyan
 Write-Host "This will automatically spin up the web app, local telemetry bridge, and supervisions." -ForegroundColor Cyan
