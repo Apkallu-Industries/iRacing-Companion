@@ -27,6 +27,7 @@
       border-radius: 4px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
       position: relative;
+      -webkit-app-region: drag; /* allow dragging the window from the splash container */
     }
     .header {
       font-family: sans-serif;
@@ -85,6 +86,7 @@
       text-decoration: none;
       text-transform: uppercase;
       transition: all 0.2s ease;
+      -webkit-app-region: no-drag; /* interactive element must not be draggable */
     }
     .btn-manual:hover {
       background-color: #161C24;

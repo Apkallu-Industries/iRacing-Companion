@@ -12,6 +12,7 @@
   "HandbrakeRaw",
   "BrakeABSactive",
   "dcBrakeBias",
+  "dcBrakeMisc",
   "dpLFTireColdPress",
   "dpRFTireColdPress",
   "dpLRTireColdPress",

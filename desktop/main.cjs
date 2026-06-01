@@ -456,6 +456,10 @@ function createWindow() {
     height: windowState.height,
     x: windowState.x,
     y: windowState.y,
+    // Ensure these are explicit so the window can be moved/resized across displays
+    movable: true,
+    resizable: true,
+    maximizable: true,
     minWidth: 1100,
     minHeight: 700,
     backgroundColor: "#09090b",

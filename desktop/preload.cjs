@@ -97,3 +97,64 @@ contextBridge.exposeInMainWorld("pitWallRuntime", {
   },
   getTelemetrySchema: () => ipcRenderer.invoke("supervisor:get-telemetry-schema"),
 });
+
+// Inject a small draggable strip and a visible draggable handle at the
+// top of the page so windows with hidden title bars can be reliably
+// moved by the user. The thin strip provides a large hit area while the
+// visible handle gives a clear target to pick up the window.
+try {
+  window.addEventListener("DOMContentLoaded", () => {
+    try {
+      // Thin invisible strip across full width (10px)
+      if (!document.getElementById("pw-dragbar")) {
+        const strip = document.createElement("div");
+        strip.id = "pw-dragbar";
+        strip.style.position = "fixed";
+        strip.style.top = "0";
+        strip.style.left = "0";
+        strip.style.right = "0";
+        strip.style.height = "10px";
+        strip.style.zIndex = "2147483645";
+        strip.style.webkitAppRegion = "drag";
+        strip.style.background = "transparent";
+        strip.style.pointerEvents = "auto";
+        document.body.appendChild(strip);
+      }
+
+      // Visible draggable handle in the top-left corner
+      if (!document.getElementById("pw-draghandle")) {
+        const h = document.createElement("div");
+        h.id = "pw-draghandle";
+        h.title = "Drag window";
+        h.setAttribute("aria-label", "Drag window");
+        h.style.position = "fixed";
+        h.style.top = "8px";
+        h.style.left = "8px";
+        h.style.width = "36px";
+        h.style.height = "36px";
+        h.style.zIndex = "2147483647";
+        h.style.display = "flex";
+        h.style.alignItems = "center";
+        h.style.justifyContent = "center";
+        h.style.borderRadius = "6px";
+        h.style.background = "rgba(255,255,255,0.04)";
+        h.style.color = "rgba(255,255,255,0.8)";
+        h.style.fontSize = "11px";
+        h.style.fontFamily = "sans-serif";
+        h.style.webkitAppRegion = "drag";
+        h.style.pointerEvents = "auto";
+        h.style.cursor = "grab";
+        h.style.userSelect = "none";
+        h.innerText = "≡";
+
+        // Switch cursor on mousedown/up for better feedback
+        h.addEventListener("mousedown", () => (h.style.cursor = "grabbing"));
+        h.addEventListener("mouseup", () => (h.style.cursor = "grab"));
+
+        document.body.appendChild(h);
+      }
+    } catch (e) {
+      // fail silently
+    }
+  });
+} catch (e) {}
