@@ -37,22 +37,30 @@ function encodeTelemetry(t) {
   const buffer = new ArrayBuffer(PACKET_BYTES);
   const view = new Float32Array(buffer);
 
-  // Fallbacks map default values in case elements are missing
-  view[OFFSETS.tick]              = parseFloat(t.tick || t.all?.Tick || 0);
-  view[OFFSETS.timestamp]         = parseFloat(t.timestamp || Date.now());
-  view[OFFSETS.speedKph]          = parseFloat(t.speedKph || 0);
-  view[OFFSETS.rpm]               = parseFloat(t.rpm || 0);
-  view[OFFSETS.gear]              = parseFloat(t.gear || 0);
-  view[OFFSETS.throttle]          = parseFloat(t.throttle || 0);
-  view[OFFSETS.brake]             = parseFloat(t.brake || 0);
-  view[OFFSETS.steeringDeg]       = parseFloat(t.steeringDeg || 0);
-  view[OFFSETS.fuelRemainingL]    = parseFloat(t.fuelRemainingL || 0);
-  view[OFFSETS.lapLastLapTimeSec] = parseFloat(t.lapLastLapTimeSec || t.all?.LapLastLapTime || 0);
-  view[OFFSETS.liveAirTempC]      = parseFloat(t.liveAirTempC || 0);
-  view[OFFSETS.liveTrackTempC]     = parseFloat(t.liveTrackTempC || 0);
-  view[OFFSETS.gLat]              = parseFloat(t.gLat || 0);
-  view[OFFSETS.gLon]              = parseFloat(t.gLon || 0);
-  view[OFFSETS.yawRate]           = parseFloat(t.extras?.YawRate || t.all?.YawRate || 0);
+  try {
+    if (!t) {
+      return buffer;
+    }
+
+    // Fallbacks map default values in case elements are missing
+    view[OFFSETS.tick]              = parseFloat(t.tick || t.all?.Tick || 0) || 0;
+    view[OFFSETS.timestamp]         = parseFloat(t.timestamp || Date.now()) || 0;
+    view[OFFSETS.speedKph]          = parseFloat(t.speedKph || 0) || 0;
+    view[OFFSETS.rpm]               = parseFloat(t.rpm || 0) || 0;
+    view[OFFSETS.gear]              = parseFloat(t.gear || 0) || 0;
+    view[OFFSETS.throttle]          = parseFloat(t.throttle || 0) || 0;
+    view[OFFSETS.brake]             = parseFloat(t.brake || 0) || 0;
+    view[OFFSETS.steeringDeg]       = parseFloat(t.steeringDeg || 0) || 0;
+    view[OFFSETS.fuelRemainingL]    = parseFloat(t.fuelRemainingL || 0) || 0;
+    view[OFFSETS.lapLastLapTimeSec] = parseFloat(t.lapLastLapTimeSec || t.all?.LapLastLapTime || 0) || 0;
+    view[OFFSETS.liveAirTempC]      = parseFloat(t.liveAirTempC || 0) || 0;
+    view[OFFSETS.liveTrackTempC]     = parseFloat(t.liveTrackTempC || 0) || 0;
+    view[OFFSETS.gLat]              = parseFloat(t.gLat || 0) || 0;
+    view[OFFSETS.gLon]              = parseFloat(t.gLon || 0) || 0;
+    view[OFFSETS.yawRate]           = parseFloat(t.extras?.YawRate || t.all?.YawRate || 0) || 0;
+  } catch (err) {
+    console.error("[binary-encoder] Safe encode caught error:", err.message);
+  }
 
   return buffer;
 }

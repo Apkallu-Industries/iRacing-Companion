@@ -1805,53 +1805,65 @@ function getDeltaPacket(full) {
 
 // 60Hz local WebSocket broadcast (Binary & JSON adaptive transport with frequency splitting)
 setInterval(() => {
-  if (!latest || wss.clients.size === 0) return;
+  try {
+    if (!latest || wss.clients.size === 0) return;
 
-  broadcastTick++;
-  const isSyncTick = broadcastTick % 6 === 0; // Full sync at 10Hz, delta at 60Hz
+    broadcastTick++;
+    const isSyncTick = broadcastTick % 6 === 0; // Full sync at 10Hz, delta at 60Hz
 
-  let jsonMsgFull = null;
-  let jsonMsgDelta = null;
-  let binaryMsg = null;
+    let jsonMsgFull = null;
+    let jsonMsgDelta = null;
+    let binaryMsg = null;
 
-  for (const client of wss.clients) {
-    if (client.readyState === 1) {
-      if (client.isBinary) {
-        if (!binaryMsg) {
-          binaryMsg = binaryEncoder.encodeTelemetry(latest);
-        }
-        client.send(binaryMsg);
-      } else {
-        if (isSyncTick) {
-          if (!jsonMsgFull) {
-            jsonMsgFull = JSON.stringify({
-              carId: latest.carNumber || "963",
-              teamId: "team_pitwall",
-              driverId: latest.driver || "driver_A",
-              payload: latest
-            });
+    for (const client of wss.clients) {
+      try {
+        if (client.readyState === 1) {
+          if (client.isBinary) {
+            if (!binaryMsg) {
+              binaryMsg = binaryEncoder.encodeTelemetry(latest);
+            }
+            client.send(binaryMsg);
+          } else {
+            if (isSyncTick) {
+              if (!jsonMsgFull) {
+                jsonMsgFull = JSON.stringify({
+                  carId: latest.carNumber || "963",
+                  teamId: "team_pitwall",
+                  driverId: latest.driver || "driver_A",
+                  payload: latest
+                });
+              }
+              client.send(jsonMsgFull);
+            } else {
+              if (!jsonMsgDelta) {
+                jsonMsgDelta = JSON.stringify({
+                  carId: latest.carNumber || "963",
+                  teamId: "team_pitwall",
+                  driverId: latest.driver || "driver_A",
+                  payload: getDeltaPacket(latest)
+                });
+              }
+              client.send(jsonMsgDelta);
+            }
           }
-          client.send(jsonMsgFull);
-        } else {
-          if (!jsonMsgDelta) {
-            jsonMsgDelta = JSON.stringify({
-              carId: latest.carNumber || "963",
-              teamId: "team_pitwall",
-              driverId: latest.driver || "driver_A",
-              payload: getDeltaPacket(latest)
-            });
-          }
-          client.send(jsonMsgDelta);
         }
+      } catch (wsError) {
+        console.warn("[bridge] Error sending to dashboard client:", wsError.message);
       }
     }
+  } catch (loopError) {
+    console.error("[bridge] Fatal error in 60Hz broadcast loop:", loopError.message);
   }
 }, 1000 / TICK_HZ);
 
 // 2Hz team relay publish (Supabase Realtime — no-op if TEAM_CODE not set)
 setInterval(() => {
-  if (!latest) return;
-  teamRelay.publish(latest);
+  try {
+    if (!latest) return;
+    teamRelay.publish(latest);
+  } catch (relayError) {
+    console.error("[bridge] Fatal error in 2Hz team relay publish loop:", relayError.message);
+  }
 }, 500); // 2Hz = every 500ms
 
 wss.on("connection", (ws) => {
