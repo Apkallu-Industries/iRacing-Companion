@@ -134,8 +134,12 @@ if (typeof window !== "undefined") {
   }
 
   // Subscribe to events changes and persist them
-  useTelemetryRuntimeStore.subscribe((s) => s.events, (events) => {
-    persistEvents(events);
+  let prevEvents = useTelemetryRuntimeStore.getState().events;
+  useTelemetryRuntimeStore.subscribe((state) => {
+    if (state.events !== prevEvents) {
+      prevEvents = state.events;
+      persistEvents(state.events);
+    }
   });
 }
 

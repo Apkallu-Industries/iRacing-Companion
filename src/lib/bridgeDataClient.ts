@@ -24,7 +24,7 @@ export interface BridgeConfig {
  * Bridge client lifecycle events.
  */
 export type BridgeEvent = {
-  type: "connect" | "disconnect" | "error" | "telemetry" | "license";
+  type: "connect" | "disconnect" | "error" | "telemetry" | "license" | "event";
   data?: unknown;
 };
 

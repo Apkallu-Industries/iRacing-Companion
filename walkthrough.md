@@ -1,32 +1,54 @@
-# Walkthrough — iRacing Companion Hardening & Package Upgrades
+# TypeScript Type-Safety Fixes & Packaging Verification
 
-We have successfully resolved the package installation errors, updated all outdated npm packages in the root and local-bridge workspaces, and hardened the live telemetry ingest loop and multi-driver Team Relay (`teamRelay.js`).
+## Problem
 
-## Changes Made
+`npx tsc --noEmit` found **15 TypeScript errors** across 4 files that the normal Vite build didn't catch (Vite transpiles only, no full type-check). These fell into 3 root causes:
 
-### 1. Dependency Resolution & Upgrades
-* **Root `package.json`**:
-  * Upgraded outdated dependencies including `@cloudflare/vite-plugin` (`^1.39.1`), `@hookform/resolvers` (`^5.4.0`), `@supabase/supabase-js` (`^2.106.2`), `@tanstack/react-query` (`^5.100.14`), `@tanstack/react-router` (`^1.170.10`), `@tanstack/react-start` (`^1.168.18`), `@tanstack/router-plugin` (`^1.168.13`), `date-fns` (`^4.4.0`), `lucide-react` (`^1.17.0`), `react-day-picker` (`^10.0.1`), `react-hook-form` (`^7.77.0`), `react-resizable-panels` (`^4.11.2`), `recharts` (`^3.8.1`), `zod` (`^4.4.3`), and root devDependencies like `@eslint/js` (`^10.0.1`), `@vitejs/plugin-react` (`^6.0.2`), `eslint` (`^10.4.1`), `eslint-plugin-react-hooks` (`^7.1.1`), `eslint-plugin-react-refresh` (`^0.5.2`), `globals` (`^17.6.0`), `typescript` (`^6.0.3`), `typescript-eslint` (`^8.60.0`), and `vite` (`^8.0.16`).
-  * Added `nodemon` (`^3.1.0`) to devDependencies for auto-restarting capabilities.
-  * Resolved the `ETARGET` error on `@types/react-dom` by pinning `@types/react` and `@types/react-dom` to the stable `^19.2.0` range.
-* **Workspace `local-bridge/package.json`**:
-  * Updated dependencies matching the root packages, including `@supabase/supabase-js` (`^2.106.2`), `@tanstack/react-router` (`^1.170.10`), `@tanstack/react-start` (`^1.168.18`), `dotenv` (`^17.4.2`), `h3-v2` (`npm:h3@2.0.1-rc.22`), `mongodb` (`^7.2.0`), and `ws` (`^8.21.0`).
-
-### 2. Telemetry Ingest Loop Hardening (`local-bridge/binaryEncoder.js`)
-* Wrapped the inner properties assignment in `encodeTelemetry` inside a high-resilience `try...catch` block.
-* Applied protective `parseFloat(...) || 0` fallback checks on every telemetry metric to completely eliminate `NaN` propagation or process crashes from missing/corrupted incoming attributes.
-
-### 3. Bulletproof Team Relay & Reconnections (`local-bridge/teamRelay.js`)
-* Implemented **self-healing exponential backoff reconnection logic** that schedules re-init attempts on `CHANNEL_ERROR`, `TIMED_OUT`, or subscription drops, scaling from 2 seconds up to a maximum 30-second interval.
-* Added structured logging timestamps on subscription status changes.
-* Completely wrapped `publish` inside a comprehensive `try...catch` block to ensure runtime exceptions from downstream identity functions cannot terminate the telemetry server.
-
-### 4. Bridge Main Server Robustness (`local-bridge/server.js`)
-* Protected the 60Hz local WebSocket broadcast loop and the 2Hz Team Relay interval tick with outer try-catch blocks to prevent active telemetry anomalies or write errors from halting the node process.
+1. **Bridge runtime event type gap** — `BridgeEvent.type` didn't include `"event"`
+2. **Recharts v3 type drift** — shadcn `chart.tsx` used stale props after recharts 2→3 upgrade
+3. **react-day-picker v10 ClassNames drift** — `calendar.tsx` used string key `"table"` instead of enum `"month_grid"`
+4. **Zustand v5 `.subscribe()` API change** — selector-based overload requires `subscribeWithSelector` middleware
 
 ---
 
-## Verification Results
+## Changes Made
 
-* **Dependency Auditing**: Running `npm install` completed with **0 vulnerabilities** across 816 packages.
-* **Resilience Testing**: Malformed input coordinates, connection drops, and empty structures are now intercepted gracefully without terminating the active telemetry loop or throwing unhandled promise rejections.
+### 1. Bridge Event Type — [bridgeDataClient.ts](file:///c:/Dev/iRacing-Companion/src/lib/bridgeDataClient.ts#L27)
+
+Added `"event"` to the `BridgeEvent.type` union. The bridge emits `type: "event"` for runtime events (`PREDICTION_WARNING`, `STINT_UPDATED`) but the type union only listed lifecycle types. This fixed:
+- `TS2322` in the emitter (line 89)
+- `TS2367` in the consumer [useBridgeEvents.ts](file:///c:/Dev/iRacing-Companion/src/lib/useBridgeEvents.ts#L15)
+
+### 2. Recharts v3 Chart Component — [chart.tsx](file:///c:/Dev/iRacing-Companion/src/components/ui/chart.tsx)
+
+Recharts v3 moved `payload`, `label`, `active` to context-only on `TooltipProps` and `payload`/`verticalAlign` on `LegendProps`. The shadcn component wraps these as content renderers where recharts *does* still pass them, so we:
+- Declared explicit `ChartTooltipContentProps` and `ChartLegendContentProps` types
+- Imported `Payload` and `LegendPayload` types directly from recharts internals
+- Added explicit type annotations on `.filter()`/`.map()` callbacks
+- Fixed `item.dataKey` used as React key (can be a function in v3)
+
+This resolved **10 errors** in chart.tsx.
+
+### 3. Calendar ClassNames — [calendar.tsx](file:///c:/Dev/iRacing-Companion/src/components/ui/calendar.tsx#L76)
+
+react-day-picker v10 switched `ClassNames` from string-keyed to enum-keyed (`UI | SelectionState | DayFlag | Animation`). Changed `table` → `month_grid` to match the `UI.MonthGrid` enum value.
+
+### 4. Zustand Subscribe — [telemetryRuntimeStore.ts](file:///c:/Dev/iRacing-Companion/src/lib/telemetryRuntimeStore.ts#L136-L143)
+
+Zustand v5 removed the `subscribe(selector, listener)` overload from the base store (it's now in `subscribeWithSelector` middleware). Replaced with `subscribe(listener)` + manual reference-equality diffing on `state.events`.
+
+---
+
+## Packaging Verification
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | ✅ 0 errors |
+| `npm run build` | ✅ clean (1.89s client + 1.34s server) |
+| `npm run lint` | ✅ clean (exit 0) |
+| `npm audit` (root) | ✅ 0 vulnerabilities |
+| `npm audit` (desktop) | ✅ 0 vulnerabilities (927 deps) |
+| `npm ls` (local-bridge) | ✅ all 11 deps resolve via workspace symlink |
+
+> [!NOTE]
+> The desktop audit came back clean (0 vulnerabilities). If you saw high-severity advisories earlier, the most recent `npm install` may have updated transitive dependency resolutions in `package-lock.json`.
