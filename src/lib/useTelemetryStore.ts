@@ -79,7 +79,21 @@ if (typeof window !== "undefined") {
     isLive = true;
     useTelemetryStore.setState((prev) => {
       // Merge delta frames or full sync frames into active state
-      const merged = { ...prev.telemetry, ...data, connected: true, source: "live" as const };
+      const merged = {
+        ...prev.telemetry,
+        ...data,
+        tires: data.tires
+          ? {
+              fl: { ...prev.telemetry.tires.fl, ...data.tires.fl },
+              fr: { ...prev.telemetry.tires.fr, ...data.tires.fr },
+              rl: { ...prev.telemetry.tires.rl, ...data.tires.rl },
+              rr: { ...prev.telemetry.tires.rr, ...data.tires.rr },
+            }
+          : prev.telemetry.tires,
+        extras: data.extras ? { ...prev.telemetry.extras, ...data.extras } : prev.telemetry.extras,
+        connected: true,
+        source: "live" as const,
+      };
 
       // Accumulate samples at 60Hz in the raw in-memory array
       const now = performance.now();

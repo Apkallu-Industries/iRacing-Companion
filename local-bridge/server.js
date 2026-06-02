@@ -1764,16 +1764,9 @@ function getDeltaPacket(full) {
     isDelta: true,
     connected: full.connected,
     source: full.source,
-    session: full.session,
-    track: full.track,
-    car: full.car,
-    carNumber: full.carNumber,
     gear: full.gear,
     speedKph: full.speedKph,
     rpm: full.rpm,
-    rpmMax: full.rpmMax,
-    rpmShiftWarn: full.rpmShiftWarn,
-    rpmShiftRedline: full.rpmShiftRedline,
     throttle: full.throttle,
     brake: full.brake,
     clutch: full.clutch,
@@ -1781,9 +1774,6 @@ function getDeltaPacket(full) {
     gLat: full.gLat,
     gLon: full.gLon,
     deltaSec: full.deltaSec,
-    lastLap: full.lastLap,
-    bestLap: full.bestLap,
-    sectors: full.sectors,
     extras: {
       YawRate: full.extras?.YawRate ?? 0,
       Yaw: full.extras?.Yaw ?? 0,
@@ -1799,6 +1789,71 @@ function getDeltaPacket(full) {
       RFwheelSpeed: full.extras?.RFwheelSpeed ?? 0,
       LRwheelSpeed: full.extras?.LRwheelSpeed ?? 0,
       RRwheelSpeed: full.extras?.RRwheelSpeed ?? 0,
+      LFtireForceLatN: full.extras?.LFtireForceLatN ?? 0,
+      RFtireForceLatN: full.extras?.RFtireForceLatN ?? 0,
+      Pitch: full.extras?.Pitch ?? 0,
+      Roll: full.extras?.Roll ?? 0,
+      PitchRate: full.extras?.PitchRate ?? 0,
+      RollRate: full.extras?.RollRate ?? 0,
+      VelocityX: full.extras?.VelocityX ?? 0,
+      VelocityY: full.extras?.VelocityY ?? 0,
+      VelocityZ: full.extras?.VelocityZ ?? 0,
+    }
+  };
+}
+
+function getMediumSyncPacket(full) {
+  return {
+    isDelta: false,
+    connected: full.connected,
+    source: full.source,
+    gear: full.gear,
+    speedKph: full.speedKph,
+    rpm: full.rpm,
+    throttle: full.throttle,
+    brake: full.brake,
+    clutch: full.clutch,
+    steeringDeg: full.steeringDeg,
+    gLat: full.gLat,
+    gLon: full.gLon,
+    deltaSec: full.deltaSec,
+    fuelRemainingL: full.fuelRemainingL,
+    fuelUsePerHour: full.fuelUsePerHour,
+    lapLastLapTimeSec: full.lapLastLapTimeSec,
+    lapsEstimated: full.lapsEstimated,
+    lap: full.lap,
+    lastLap: full.lastLap,
+    bestLap: full.bestLap,
+    sectors: full.sectors,
+    tires: full.tires,
+    drsAvailable: full.drsAvailable,
+    brakeBias: full.brakeBias,
+    diffMap: full.diffMap,
+    latencyMs: full.latencyMs,
+    extras: {
+      YawRate: full.extras?.YawRate ?? 0,
+      Yaw: full.extras?.Yaw ?? 0,
+      LFshockDefl: full.extras?.LFshockDefl ?? 0,
+      RFshockDefl: full.extras?.RFshockDefl ?? 0,
+      LRshockDefl: full.extras?.LRshockDefl ?? 0,
+      RRshockDefl: full.extras?.RRshockDefl ?? 0,
+      BrakeLinePressureLF: full.extras?.BrakeLinePressureLF ?? 0,
+      BrakeLinePressureRF: full.extras?.BrakeLinePressureRF ?? 0,
+      BrakeLinePressureLR: full.extras?.BrakeLinePressureLR ?? 0,
+      BrakeLinePressureRR: full.extras?.BrakeLinePressureRR ?? 0,
+      LFwheelSpeed: full.extras?.LFwheelSpeed ?? 0,
+      RFwheelSpeed: full.extras?.RFwheelSpeed ?? 0,
+      LRwheelSpeed: full.extras?.LRwheelSpeed ?? 0,
+      RRwheelSpeed: full.extras?.RRwheelSpeed ?? 0,
+      LFtireForceLatN: full.extras?.LFtireForceLatN ?? 0,
+      RFtireForceLatN: full.extras?.RFtireForceLatN ?? 0,
+      Pitch: full.extras?.Pitch ?? 0,
+      Roll: full.extras?.Roll ?? 0,
+      PitchRate: full.extras?.PitchRate ?? 0,
+      RollRate: full.extras?.RollRate ?? 0,
+      VelocityX: full.extras?.VelocityX ?? 0,
+      VelocityY: full.extras?.VelocityY ?? 0,
+      VelocityZ: full.extras?.VelocityZ ?? 0,
     }
   };
 }
@@ -1808,10 +1863,10 @@ setInterval(() => {
   try {
     if (!latest || wss.clients.size === 0) return;
 
-    broadcastTick++;
-    const isSyncTick = broadcastTick % 6 === 0; // Full sync at 10Hz, delta at 60Hz
+    broadcastTick = (broadcastTick + 1) % 3600;
 
     let jsonMsgFull = null;
+    let jsonMsgMedium = null;
     let jsonMsgDelta = null;
     let binaryMsg = null;
 
@@ -1824,7 +1879,8 @@ setInterval(() => {
             }
             client.send(binaryMsg);
           } else {
-            if (isSyncTick) {
+            if (broadcastTick % 60 === 0) {
+              // 1Hz Full Sync (Tier 3)
               if (!jsonMsgFull) {
                 jsonMsgFull = JSON.stringify({
                   carId: latest.carNumber || "963",
@@ -1834,7 +1890,19 @@ setInterval(() => {
                 });
               }
               client.send(jsonMsgFull);
+            } else if (broadcastTick % 6 === 0) {
+              // 10Hz Medium Sync (Tier 2)
+              if (!jsonMsgMedium) {
+                jsonMsgMedium = JSON.stringify({
+                  carId: latest.carNumber || "963",
+                  teamId: "team_pitwall",
+                  driverId: latest.driver || "driver_A",
+                  payload: getMediumSyncPacket(latest)
+                });
+              }
+              client.send(jsonMsgMedium);
             } else {
+              // 60Hz Delta (Tier 1)
               if (!jsonMsgDelta) {
                 jsonMsgDelta = JSON.stringify({
                   carId: latest.carNumber || "963",

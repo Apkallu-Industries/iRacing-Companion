@@ -15,7 +15,6 @@ import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/themeContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useTelemetry } from "@/lib/useTelemetry";
 import { useBridgeEvents } from "@/lib/useBridgeEvents";
 import { LiveBridgeSync } from "@/components/LiveBridgeSync";
 import { DesktopLapSync } from "@/components/live/DesktopLapSync";
@@ -81,7 +80,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
@@ -160,7 +159,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-  const t = useTelemetry();
   useBridgeEvents();
 
   useEffect(() => {
@@ -186,7 +184,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <LiveBridgeSync t={t} />
+          <LiveBridgeSync />
           <DesktopLapSync />
           <HelpSystem />
           <GlobalSettingsDialog />
