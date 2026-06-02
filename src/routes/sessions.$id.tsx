@@ -558,7 +558,7 @@ function WorkbenchPage() {
   }
 
   return (
-    <div className={`flex h-screen flex-col bg-background text-foreground workspace-focus-${focusMode}`}>
+    <div className={`flex h-full w-full flex-col overflow-hidden bg-background text-foreground workspace-focus-${focusMode}`}>
       <AppHeader>
         <span className="font-mono uppercase tracking-wider">{sess?.track ?? "…"}</span>
         <span className="text-muted-foreground">·</span>

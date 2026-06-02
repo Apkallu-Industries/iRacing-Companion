@@ -51,7 +51,7 @@ function RuntimePage() {
   if (!isMounted) {
     return (
       <div
-        className="flex h-screen w-screen items-center justify-center font-mono text-[10px] text-[#7A828C] select-none"
+        className="flex h-full w-full items-center justify-center font-mono text-[10px] text-[#7A828C] select-none"
         style={{ backgroundColor: "#030508" }}
       >
         <span className="animate-pulse">INITIALIZING…</span>
@@ -62,7 +62,7 @@ function RuntimePage() {
   if (!isElectron) {
     return (
       <div
-        className="flex h-screen w-screen items-center justify-center font-mono text-[10px] text-[#7A828C] select-none"
+        className="flex h-full w-full items-center justify-center font-mono text-[10px] text-[#7A828C] select-none"
         style={{ backgroundColor: "#030508" }}
       >
         <span className="animate-pulse">REDIRECTING…</span>

@@ -999,7 +999,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
   };
 
   return (
-    <div className="w-full max-w-[100vw] min-h-screen bg-[#05070a] text-[#E2E4E8] flex flex-col font-mono relative select-none overflow-x-hidden p-0 rounded-none border-0">
+    <div className="h-full w-full bg-[#05070a] text-[#E2E4E8] flex flex-col font-mono relative select-none overflow-hidden p-0 rounded-none border-0">
       {/* Raster Backing Scanlines */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1C2430_1px,transparent_1px),linear-gradient(to_bottom,#1C2430_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-[0.03] pointer-events-none" />
 

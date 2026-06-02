@@ -48,7 +48,7 @@ function DetachedInstrumentPage() {
 
   if (!InstrumentComponent) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#05070A] font-mono text-[10px] text-[#FF4D4D] p-6 border border-[#FF4D4D]/20">
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#05070A] font-mono text-[10px] text-[#FF4D4D] p-6 border border-[#FF4D4D]/20">
         <Sliders className="h-6 w-6 mb-2 animate-bounce" />
         <span className="font-bold tracking-widest uppercase">INVALID MONITOR IDENTIFIER</span>
         <span className="text-[#7A828C] mt-1 text-[8px]">ID: "{instrument}" NOT REGISTERED IN WORKSTATION CORE.</span>
@@ -58,7 +58,7 @@ function DetachedInstrumentPage() {
 
   // Render basic instrument visualizer
   return (
-    <div className={`h-screen w-screen bg-[#05070A] p-2 flex flex-col overflow-hidden select-none workspace-focus-${focusMode}`}>
+    <div className={`h-full w-full bg-[#05070A] p-2 flex flex-col overflow-hidden select-none workspace-focus-${focusMode}`}>
       {/* Detached Diagnostics Header */}
       <div className="px-3 py-1.5 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between text-[8px] font-mono text-[#7A828C] mb-1.5 uppercase tracking-wider shrink-0 select-none">
         <div className="flex items-center gap-1.5 font-bold">
@@ -95,7 +95,7 @@ function DetachedInstrumentPage() {
 // ─── COMMAND SURFACE: Timing & Sectors Monitor ─────────────────────────────
 function TimingMonitorScreen({ t, mode, cursorTick }: { t: any; mode: string; cursorTick: number }) {
   return (
-    <div className="h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
+    <div className="h-full w-full bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
       <div className="px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none">
         <span className="font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 text-[#3B82F6]" /> TIMING & LAP MONITOR
@@ -169,7 +169,7 @@ function HybridMonitorScreen({ t, mode, cursorTick }: { t: any; mode: string; cu
   const regen = t?.extras?.mgukRegenKw ?? 0;
 
   return (
-    <div className="h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
+    <div className="h-full w-full bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
       <div className="px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none">
         <span className="font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
           <Zap className="h-3.5 w-3.5 text-[#8B5CF6]" /> HYBRID ENERGY MONITOR
@@ -272,7 +272,7 @@ function TireWallScreen({ t, mode, cursorTick }: { t: any; mode: string; cursorT
   };
 
   return (
-    <div className="h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
+    <div className="h-full w-full bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
       <div className="px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none">
         <span className="font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
           <Flame className="h-3.5 w-3.5 text-[#FFB800]" /> TIRE OPERATING PORTFOLIO
@@ -356,7 +356,7 @@ function TireWallScreen({ t, mode, cursorTick }: { t: any; mode: string; cursorT
 // ─── COMMAND SURFACE: Strategy Screen ──────────────────────────────────
 function StrategyScreen({ t, mode, cursorTick }: { t: any; mode: string; cursorTick: number }) {
   return (
-    <div className="h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
+    <div className="h-full w-full bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none">
       <div className="px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none">
         <span className="font-bold text-white tracking-widest uppercase flex items-center gap-1.5">
           <Compass className="h-3.5 w-3.5 text-[#00D17F]" /> TACTICAL STRATEGY WINDOW

@@ -62,7 +62,7 @@ let BASE_URL    = isDev ? VITE_URL : BRIDGE_UI;
 let DASHBOARD_URL = `${BASE_URL}/runtime`;
 
 /**
- * Probe a URL with a short timeout. Returns true if the server is up.
+ * Probe a URL with a short timeout. Returns true if the server is up and responsive.
  */
 async function isReachable(url, timeoutMs = 1500) {
   console.log(`[desktop] Probing reachability of: ${url}...`);
@@ -76,10 +76,16 @@ async function isReachable(url, timeoutMs = 1500) {
         resolve(false);
       }, timeoutMs);
       
-      req.on("response", () => {
-        console.log(`[desktop] Probe success for ${url}`);
-        clearTimeout(timer);
-        resolve(true);
+      req.on("response", (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 400) {
+          console.log(`[desktop] Probe success for ${url}: status ${res.statusCode}`);
+          clearTimeout(timer);
+          resolve(true);
+        } else {
+          console.log(`[desktop] Probe rejected for ${url}: status ${res.statusCode}`);
+          clearTimeout(timer);
+          resolve(false);
+        }
       });
       
       req.on("error", (err) => {
@@ -104,8 +110,8 @@ async function resolveUrl() {
   console.log("[desktop] Starting resolveUrl()...");
   if (isDev) {
     console.log("[desktop] dev mode enabled - starting Vite port scanning loop");
-    // Dev mode: probe common local Vite ports (in case Vite auto-incremented)
-    const portsToTry = [8080, 8081, 3000, 5173];
+    // Dev mode: probe common local Vite ports, expanding range to handle auto-incrementation
+    const portsToTry = [8080, 8081, 8082, 8083, 8084, 8085, 3000, 5173];
     const hosts = ["127.0.0.1", "localhost"];
 
     // Try each host:port combination in parallel with a short timeout. Retry briefly if nothing responds immediately.
@@ -119,7 +125,8 @@ async function resolveUrl() {
         for (const h of hosts) {
           const url = `http://${h}:${p}`;
           urlMap.push(url);
-          probePromises.push(isReachable(url, 700));
+          // Probe the specific /runtime route to verify it's our application
+          probePromises.push(isReachable(`${url}/runtime`, 700));
         }
       }
       
@@ -139,9 +146,9 @@ async function resolveUrl() {
       await new Promise((r) => setTimeout(r, 300));
     }
 
-    // Fallback: If no Vite ports responded, see if local bridge is running
+    // Fallback: If no Vite ports responded, see if local bridge is running (probe its guaranteed /health endpoint)
     console.log("[desktop] dev mode - no Vite server detected, probing local bridge UI...");
-    if (await isReachable(BRIDGE_UI)) {
+    if (await isReachable(`${BRIDGE_UI}/health`)) {
       BASE_URL = BRIDGE_UI;
       DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
       console.log(`[desktop] dev mode (fallback to local bridge) → ${DASHBOARD_URL}`);
@@ -160,14 +167,14 @@ async function resolveUrl() {
   await new Promise(r => setTimeout(r, 1200));
 
   console.log("[desktop] Probing VITE_URL:", VITE_URL);
-  if (await isReachable(VITE_URL)) {
+  if (await isReachable(`${VITE_URL}/runtime`)) {
     BASE_URL      = VITE_URL;
     DASHBOARD_URL = `${VITE_URL}/runtime`;
     console.log(`[desktop] local Vite dev server detected → ${DASHBOARD_URL}`);
     return;
   }
 
-  if (await isReachable(BRIDGE_UI)) {
+  if (await isReachable(`${BRIDGE_UI}/health`)) {
     BASE_URL      = BRIDGE_UI;
     DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
     console.log(`[desktop] local bridge UI detected → ${DASHBOARD_URL}`);

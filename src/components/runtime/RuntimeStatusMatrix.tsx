@@ -219,7 +219,7 @@ export function RuntimeStatusMatrix({ onReady }: RuntimeStatusMatrixProps) {
 
   return (
     <div
-      className="flex h-screen w-screen flex-col overflow-hidden font-mono select-none"
+      className="flex h-full w-full flex-col overflow-hidden font-mono select-none"
       style={{ backgroundColor: "#030508" }}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}

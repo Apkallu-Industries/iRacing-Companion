@@ -123,7 +123,7 @@ function Dashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-background text-foreground font-mono p-0 select-none flex flex-col overflow-hidden">
+    <main className="h-full w-full bg-background text-foreground font-mono p-0 select-none flex flex-col overflow-hidden">
       <TopBar t={t} />
       <BridgeConnectionBanner t={t} />
       <RpmBar />
