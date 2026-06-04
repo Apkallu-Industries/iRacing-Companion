@@ -47,8 +47,8 @@ export interface RuntimeStatus {
   advance: () => void;
 }
 
-const BRIDGE_HEALTH_URL  = "http://localhost:3001/health";
-const BRIDGE_MONGO_URL   = "http://localhost:3001/api/mongo/status";
+const BRIDGE_HEALTH_URL = "http://localhost:3001/health";
+const BRIDGE_MONGO_URL = "http://localhost:3001/api/mongo/status";
 // Use a lightweight, stable endpoint for reachability checks to avoid
 // noisy 404s from API root paths. `generate_204` returns 204 and is
 // ideal for connectivity probes.
@@ -121,14 +121,22 @@ function checkSessionStore(): boolean {
   }
 }
 
-async function probeMongoDB(): Promise<{ connected: boolean; sampleCount: number; sessionId: string | null }> {
+async function probeMongoDB(): Promise<{
+  connected: boolean;
+  sampleCount: number;
+  sessionId: string | null;
+}> {
   try {
     const res = await fetch(BRIDGE_MONGO_URL, {
       signal: AbortSignal.timeout(1500),
       cache: "no-store",
     });
     if (!res.ok) return { connected: false, sampleCount: 0, sessionId: null };
-    const data = await res.json() as { connected: boolean; sampleCount: number; sessionId: string | null };
+    const data = (await res.json()) as {
+      connected: boolean;
+      sampleCount: number;
+      sessionId: string | null;
+    };
     return data;
   } catch {
     return { connected: false, sampleCount: 0, sessionId: null };
@@ -148,7 +156,10 @@ export function useRuntimeStatus(): RuntimeStatus {
   const [sessionStore, setSessionStore] = useState<ServiceState>({ ...INITIAL_SERVICE });
   const [workstation, setWorkstation] = useState<ServiceState>({ ...INITIAL_SERVICE });
   const [mongoDB, setMongoDB] = useState<ServiceState>({ ...INITIAL_SERVICE });
-  const [localAi, setLocalAi] = useState<ServiceState & { aiMode: AiMode }>({ ...INITIAL_SERVICE, aiMode: "cloud" });
+  const [localAi, setLocalAi] = useState<ServiceState & { aiMode: AiMode }>({
+    ...INITIAL_SERVICE,
+    aiMode: "cloud",
+  });
   const [mode, setMode] = useState<"workstation" | "portable" | "unknown">("unknown");
   const [advanced, setAdvanced] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -181,8 +192,7 @@ export function useRuntimeStatus(): RuntimeStatus {
 
     // ── Workstation identity ──
     const isElectron =
-      typeof window !== "undefined" &&
-      (window as any).pitWallRuntime !== undefined;
+      typeof window !== "undefined" && (window as any).pitWallRuntime !== undefined;
 
     setWorkstation({
       status: "active",
@@ -203,11 +213,8 @@ export function useRuntimeStatus(): RuntimeStatus {
 
     setBridge({
       status: bridgeStatus,
-      label: bridgeStatus === "active"
-        ? "ACTIVE"
-        : bridgeStatus === "degraded"
-          ? "DEGRADED"
-          : "OFFLINE",
+      label:
+        bridgeStatus === "active" ? "ACTIVE" : bridgeStatus === "degraded" ? "DEGRADED" : "OFFLINE",
       detail: bridgeResult.ok
         ? `ws://localhost:3001 · ${bridgeResult.latencyMs}ms${bridgeResult.version ? ` · v${bridgeResult.version}` : ""}`
         : "Bridge not reachable on port 3001 — start the local bridge",
@@ -281,12 +288,16 @@ export function useRuntimeStatus(): RuntimeStatus {
     const aiRouterState = await probeLocalAi();
     setLocalAi({
       status: aiRouterState.mode !== "cloud" ? "active" : "offline",
-      label: aiRouterState.mode !== "cloud"
-        ? aiRouterState.mode === "lmstudio" ? "LM STUDIO" : "OLLAMA"
-        : "CLOUD FALLBACK",
-      detail: aiRouterState.mode !== "cloud"
-        ? `Local inference · ${aiRouterState.modelName ?? "model detected"}`
-        : "No local AI server detected — using cloud Gemini",
+      label:
+        aiRouterState.mode !== "cloud"
+          ? aiRouterState.mode === "lmstudio"
+            ? "LM STUDIO"
+            : "OLLAMA"
+          : "CLOUD FALLBACK",
+      detail:
+        aiRouterState.mode !== "cloud"
+          ? `Local inference · ${aiRouterState.modelName ?? "model detected"}`
+          : "No local AI server detected — using cloud Gemini",
       aiMode: aiRouterState.mode,
       lastCheckedAt: now(),
     });
@@ -316,7 +327,7 @@ export function useRuntimeStatus(): RuntimeStatus {
   }, [runChecks, advance]);
 
   const allSettled = [bridge, iracing, aiEngine, sessionStore, workstation].every(
-    (s) => s.status !== "initializing"
+    (s) => s.status !== "initializing",
   );
 
   const ready =

@@ -6,11 +6,11 @@
  */
 
 export interface ConfidenceChain {
-  sensorReliabilityIndex: number;      // raw sensor accuracy (0 to 100)
-  tireThermalConfidence: number;        // propagated tyre temp confidence
-  aeroStabilityConfidence: number;      // propagated downforce confidence
-  stintStrategyConfidence: number;      // strategy pathway confidence
-  overallAdvisoryAuthority: number;     // final AI recommendation weight (0 to 100)
+  sensorReliabilityIndex: number; // raw sensor accuracy (0 to 100)
+  tireThermalConfidence: number; // propagated tyre temp confidence
+  aeroStabilityConfidence: number; // propagated downforce confidence
+  stintStrategyConfidence: number; // strategy pathway confidence
+  overallAdvisoryAuthority: number; // final AI recommendation weight (0 to 100)
   reasons: string[];
 }
 
@@ -28,13 +28,13 @@ export function propagateConfidenceChain(
   telemetrySpikeCount: number,
   isAeroBottoming: boolean,
   weatherUnpredictability = 10,
-  activeObjectiveMode = "RACE_STINT"
+  activeObjectiveMode = "RACE_STINT",
 ): ConfidenceChain {
   const reasons: string[] = [];
 
   // 1. Calculate Tire Thermal Confidence
   // Sensor noise and rapid high-frequency spikes degrade temperature estimation accuracy
-  let tireThermal = sensorReliability - (telemetrySpikeCount * 2.5);
+  let tireThermal = sensorReliability - telemetrySpikeCount * 2.5;
   if (telemetrySpikeCount > 5) {
     reasons.push("High-frequency telemetry jitter detected on carcass sensors.");
   }
@@ -42,7 +42,7 @@ export function propagateConfidenceChain(
 
   // 2. Propagate down to Aero Stability Confidence
   // Splitter bottomings and low tyre thermal confidence degrade downforce model accuracy
-  let aeroStability = tireThermal * 0.90;
+  let aeroStability = tireThermal * 0.9;
   if (isAeroBottoming) {
     aeroStability -= 15;
     reasons.push("Splitter grounding pitch moments degrade diffuser vacuum flow seal models.");
@@ -51,7 +51,7 @@ export function propagateConfidenceChain(
 
   // 3. Propagate down to Stint Strategy Confidence
   // Weather volatility and low aero confidence degrade strategic window estimations
-  let strategyConfidence = aeroStability * 0.95 - (weatherUnpredictability * 0.4);
+  let strategyConfidence = aeroStability * 0.95 - weatherUnpredictability * 0.4;
   if (weatherUnpredictability > 35) {
     reasons.push("High environmental volatility (rain onset) dampens overcut/undercut forecasts.");
   }
@@ -66,7 +66,7 @@ export function propagateConfidenceChain(
     reasons.push("Qualifying performance mode gates strategic stint projections.");
   } else if (activeObjectiveMode === "SAFETY_CAR") {
     // Safety car simplifies pitstop timelines, boosting strategic authority
-    overallAuthority = Math.min(99, overallAuthority * 1.10);
+    overallAuthority = Math.min(99, overallAuthority * 1.1);
     reasons.push("Safety Car caution pacing elevates cheap pitstop strategic authority.");
   }
 
@@ -76,6 +76,6 @@ export function propagateConfidenceChain(
     aeroStabilityConfidence: Math.round(aeroStability),
     stintStrategyConfidence: Math.round(strategyConfidence),
     overallAdvisoryAuthority: Math.round(overallAuthority),
-    reasons
+    reasons,
   };
 }

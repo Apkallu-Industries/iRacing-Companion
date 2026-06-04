@@ -147,7 +147,7 @@ export class ReplayCacheEngine {
       derivedCached: this.derivedSignalCache.size,
       overlaysCached: this.eventOverlayCache.size,
       estimatedMemoryUsageBytes: this.tickIndexMap.size * 312,
-      playheadTick: this.playheadTick
+      playheadTick: this.playheadTick,
     };
   }
 }

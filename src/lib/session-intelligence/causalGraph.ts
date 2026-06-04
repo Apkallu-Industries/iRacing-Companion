@@ -23,7 +23,7 @@ export interface CausalAnalysis {
 export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
-  
+
   // Base physical observations
   const lockups = report.driver.releaseVariancePct > 15;
   const bottoming = report.aero.bottomingCount > 2;
@@ -36,13 +36,19 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       id: "splitter_grounding",
       label: translateToMotorsportLingo("Splitter grounding"),
       category: "aero",
-      description: translateExplanation("splitter_grounding", "Packer compression collapses splitter ride height."),
+      description: translateExplanation(
+        "splitter_grounding",
+        "Packer compression collapses splitter ride height.",
+      ),
     });
     nodes.push({
       id: "diffuser_seal_collapse",
       label: translateToMotorsportLingo("Diffuser Vacuum Stall"),
       category: "aero",
-      description: translateExplanation("diffuser_seal_collapse", "Loss of low-pressure diffuser flow seal."),
+      description: translateExplanation(
+        "diffuser_seal_collapse",
+        "Loss of low-pressure diffuser flow seal.",
+      ),
     });
   }
 
@@ -51,7 +57,10 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       id: "rear_traction_loss",
       label: translateToMotorsportLingo("Rear Lockup"), // Maps to "Transient rear axle friction lock under trail brake release"
       category: "stability",
-      description: translateExplanation("rear_traction_loss", "Longitudinal driven footprint slip threshold breached."),
+      description: translateExplanation(
+        "rear_traction_loss",
+        "Longitudinal driven footprint slip threshold breached.",
+      ),
     });
   }
 
@@ -60,13 +69,19 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       id: "abrupt_brake_release",
       label: translateToMotorsportLingo("Brake Release Instability"),
       category: "inputs",
-      description: translateExplanation("abrupt_brake_release", "Brake trailing release curve collapses abruptly."),
+      description: translateExplanation(
+        "abrupt_brake_release",
+        "Brake trailing release curve collapses abruptly.",
+      ),
     });
     nodes.push({
       id: "axle_lockup",
       label: translateToMotorsportLingo("Front Axle Lockup"),
       category: "stability",
-      description: translateExplanation("axle_lockup", "Tyre sliding friction lock under line pressure."),
+      description: translateExplanation(
+        "axle_lockup",
+        "Tyre sliding friction lock under line pressure.",
+      ),
     });
   }
 
@@ -75,7 +90,10 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       id: "fr_carcass_overheat",
       label: translateToMotorsportLingo("FR Carcass Thermal Saturation"),
       category: "performance",
-      description: translateExplanation("fr_carcass_overheat", "Tyre core temp saturates outside operating envelope."),
+      description: translateExplanation(
+        "fr_carcass_overheat",
+        "Tyre core temp saturates outside operating envelope.",
+      ),
     });
   }
 
@@ -85,7 +103,8 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       id: "steady_state",
       label: "Steady State Platform",
       category: "performance",
-      description: "Rake, thermals, and driver inputs stabilized within nominal operational windows.",
+      description:
+        "Rake, thermals, and driver inputs stabilized within nominal operational windows.",
     });
   }
 
@@ -96,7 +115,7 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       to: "diffuser_seal_collapse",
       label: "STALLS DIFFUSER FLOW",
     });
-    
+
     if (wheelspin && rear_traction_loss_exist()) {
       edges.push({
         from: "diffuser_seal_collapse",
@@ -112,7 +131,7 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
       to: "axle_lockup",
       label: "OVERLOADS FRONT AXLE",
     });
-    
+
     if (frHeat && fr_carcass_overheat_exist()) {
       edges.push({
         from: "axle_lockup",
@@ -131,28 +150,40 @@ export function computeCausalGraph(report: StintAnalysisReport): CausalAnalysis 
   }
 
   // Helpers to prevent drawing to missing nodes
-  function diffuser_seal_collapse_exist() { return nodes.some(n => n.id === "diffuser_seal_collapse"); }
-  function rear_traction_loss_exist() { return nodes.some(n => n.id === "rear_traction_loss"); }
-  function axle_lockup_exist() { return nodes.some(n => n.id === "axle_lockup"); }
-  function fr_carcass_overheat_exist() { return nodes.some(n => n.id === "fr_carcass_overheat"); }
+  function diffuser_seal_collapse_exist() {
+    return nodes.some((n) => n.id === "diffuser_seal_collapse");
+  }
+  function rear_traction_loss_exist() {
+    return nodes.some((n) => n.id === "rear_traction_loss");
+  }
+  function axle_lockup_exist() {
+    return nodes.some((n) => n.id === "axle_lockup");
+  }
+  function fr_carcass_overheat_exist() {
+    return nodes.some((n) => n.id === "fr_carcass_overheat");
+  }
 
   // Generate the Narrative
-  let rootCauseNarrative = "Platform thermals and vehicle dynamics stabilized in nominal ranges. No critical causal cascades flagged. Maintain current mechanical parameters.";
+  let rootCauseNarrative =
+    "Platform thermals and vehicle dynamics stabilized in nominal ranges. No critical causal cascades flagged. Maintain current mechanical parameters.";
 
   if (bottoming && wheelspin) {
-    rootCauseNarrative = "CAUSAL ANALYSIS BRIEFING:\n" +
+    rootCauseNarrative =
+      "CAUSAL ANALYSIS BRIEFING:\n" +
       "1. Dynamic heave downforce packer bottoming collapses splitter underbody ride height past critical limits.\n" +
       "2. Diffuser vacuum flow seal collapses transiently, degrading vertical rear downforce by an estimated 8%.\n" +
       "3. The resultant decay of rear axle footprint vertical load transfer triggers longitudinal driven tyre slip under exit throttle.\n" +
       "RECOMMENDATION: Raise front mechanical packers +1.0mm or stiffen heave packers to protect splitter ride bounds.";
   } else if (lockups && frHeat) {
-    rootCauseNarrative = "CAUSAL ANALYSIS BRIEFING:\n" +
+    rootCauseNarrative =
+      "CAUSAL ANALYSIS BRIEFING:\n" +
       "1. Driver corner entry deceleration release rate collapses abruptly (+18% trail-brake release slope variance).\n" +
       "2. Abrupt forward load transfer triggers transient front axle longitudinal friction lockup under steering angle inputs.\n" +
       "3. Friction locked sliding contact saturates front-right core carcass thermal growth (+15.2°C growth).\n" +
       "RECOMMENDATION: Shift initial brake bias +0.5% forward, soften front suspension high-speed compression damping, and smooth pedal release rate.";
   } else if (wheelspin) {
-    rootCauseNarrative = "CAUSAL ANALYSIS BRIEFING:\n" +
+    rootCauseNarrative =
+      "CAUSAL ANALYSIS BRIEFING:\n" +
       "1. Driven axle footprint lateral-to-longitudinal slip saturation exceeds optimal exit limits.\n" +
       "2. ERS MGU-K deploy torque profile discharges too aggressively relative to rear tyre vertical adhesion limits.\n" +
       "RECOMMENDATION: Reduce initial exit ERS torque deployment rates and soften rear anti-roll bar.";

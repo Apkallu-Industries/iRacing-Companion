@@ -7,8 +7,8 @@
 
 export interface WakeDynamicsMetrics {
   inWake: boolean;
-  aeroWashPct: number;              // Downforce splitter load loss percentage (0 - 100%)
-  coolingLoadImpactPct: number;     // Oil/coolant temperature acceleration rate increase
+  aeroWashPct: number; // Downforce splitter load loss percentage (0 - 100%)
+  coolingLoadImpactPct: number; // Oil/coolant temperature acceleration rate increase
   defensiveErsMapRecommendation: string;
 }
 
@@ -25,7 +25,7 @@ export function calculateWakeDynamics(
   speedMps: number,
   steerVelocity: number,
   yawRate: number,
-  coolantTempC: number
+  coolantTempC: number,
 ): WakeDynamicsMetrics {
   const speedKmH = speedMps * 3.6;
 
@@ -33,16 +33,22 @@ export function calculateWakeDynamics(
   const inWake = timeGapSec > 0 && timeGapSec < 1.8;
 
   if (!inWake) {
-    return { inWake: false, aeroWashPct: 0, coolingLoadImpactPct: 0, defensiveErsMapRecommendation: "Standard straightaway ERS harvesting active." };
+    return {
+      inWake: false,
+      aeroWashPct: 0,
+      coolingLoadImpactPct: 0,
+      defensiveErsMapRecommendation: "Standard straightaway ERS harvesting active.",
+    };
   }
 
   // 1. Calculate Aerodynamic Wash downforce loss
   // Splitter wash is highly sensitive to time gap and squared speed vectors
   // wash% = (coeff / gap) * (speed / baselineSpeed)^2
   const baseGap = Math.max(0.2, timeGapSec);
-  const aeroFactor = speedKmH > 120 
-    ? Math.min(48, (12.5 / baseGap) * Math.pow(speedKmH / 140, 2)) 
-    : Math.min(20, 6.0 / baseGap);
+  const aeroFactor =
+    speedKmH > 120
+      ? Math.min(48, (12.5 / baseGap) * Math.pow(speedKmH / 140, 2))
+      : Math.min(20, 6.0 / baseGap);
 
   // If driver is making aggressive steering corrections inside the wake, scale wash percentage
   const steerCorrectionCorrection = steerVelocity > 1.2 ? 1.15 : 1.0;
@@ -50,16 +56,18 @@ export function calculateWakeDynamics(
 
   // 2. Cooling degradation impact
   // Blocked clean airflow raises core fluid temperature acceleration by up to 35%
-  const thermalImpact = inWake 
-    ? Math.min(35, (18.0 / timeGapSec) * Math.max(1.0, coolantTempC / 95.0)) 
+  const thermalImpact = inWake
+    ? Math.min(35, (18.0 / timeGapSec) * Math.max(1.0, coolantTempC / 95.0))
     : 0;
 
   // 3. Defensive ERS map recommendations
   let defensiveAdvice = "Standard race ERS sweeps.";
   if (finalAeroWash > 25) {
-    defensiveAdvice = "Splitter wash compromises apex rotation. Switch ERS to Map 3 (Defensive Deploy) to guard exit lines.";
+    defensiveAdvice =
+      "Splitter wash compromises apex rotation. Switch ERS to Map 3 (Defensive Deploy) to guard exit lines.";
   } else if (thermalImpact > 20) {
-    defensiveAdvice = "Radiator clean air flow blocked. Disengage draft tow, steer 0.5m out-of-line on straights to cool fluid cores.";
+    defensiveAdvice =
+      "Radiator clean air flow blocked. Disengage draft tow, steer 0.5m out-of-line on straights to cool fluid cores.";
   }
 
   return {

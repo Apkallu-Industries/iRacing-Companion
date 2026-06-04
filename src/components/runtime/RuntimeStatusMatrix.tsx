@@ -15,7 +15,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRuntimeStatus, type ServiceState, type ServiceStatus } from "@/hooks/useRuntimeStatus";
-import { Activity, Wifi, Database, Cpu, Monitor, CheckCircle, AlertTriangle, XCircle, Loader2, ArrowRight, RefreshCw } from "lucide-react";
+import {
+  Activity,
+  Wifi,
+  Database,
+  Cpu,
+  Monitor,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Loader2,
+  ArrowRight,
+  RefreshCw,
+} from "lucide-react";
 
 interface RuntimeStatusMatrixProps {
   /** Called when the user dismisses or the auto-advance timer fires */
@@ -26,35 +38,48 @@ interface RuntimeStatusMatrixProps {
 
 function statusColor(status: ServiceStatus): string {
   switch (status) {
-    case "active":       return "#00D17F";
-    case "degraded":     return "#FFB800";
-    case "offline":      return "#FF4D4D";
-    case "initializing": return "#7A828C";
+    case "active":
+      return "#00D17F";
+    case "degraded":
+      return "#FFB800";
+    case "offline":
+      return "#FF4D4D";
+    case "initializing":
+      return "#7A828C";
   }
 }
 
 function statusBg(status: ServiceStatus): string {
   switch (status) {
-    case "active":       return "rgba(0,209,127,0.06)";
-    case "degraded":     return "rgba(255,184,0,0.06)";
-    case "offline":      return "rgba(255,77,77,0.06)";
-    case "initializing": return "rgba(122,130,140,0.04)";
+    case "active":
+      return "rgba(0,209,127,0.06)";
+    case "degraded":
+      return "rgba(255,184,0,0.06)";
+    case "offline":
+      return "rgba(255,77,77,0.06)";
+    case "initializing":
+      return "rgba(122,130,140,0.04)";
   }
 }
 
 function statusBorder(status: ServiceStatus): string {
   switch (status) {
-    case "active":       return "rgba(0,209,127,0.15)";
-    case "degraded":     return "rgba(255,184,0,0.15)";
-    case "offline":      return "rgba(255,77,77,0.15)";
-    case "initializing": return "#1C2430";
+    case "active":
+      return "rgba(0,209,127,0.15)";
+    case "degraded":
+      return "rgba(255,184,0,0.15)";
+    case "offline":
+      return "rgba(255,77,77,0.15)";
+    case "initializing":
+      return "#1C2430";
   }
 }
 
 function StatusIcon({ status }: { status: ServiceStatus }) {
   const color = statusColor(status);
   const size = "h-3.5 w-3.5";
-  if (status === "initializing") return <Loader2 className={`${size} animate-spin`} style={{ color }} />;
+  if (status === "initializing")
+    return <Loader2 className={`${size} animate-spin`} style={{ color }} />;
   if (status === "active") return <CheckCircle className={size} style={{ color }} />;
   if (status === "degraded") return <AlertTriangle className={size} style={{ color }} />;
   return <XCircle className={size} style={{ color }} />;
@@ -102,10 +127,7 @@ function ServiceRow({
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
             <StatusIcon status={service.status} />
-            <span
-              className="text-[9px] font-black uppercase tracking-widest"
-              style={{ color }}
-            >
+            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color }}>
               {service.label}
             </span>
             {service.latencyMs !== undefined && service.status !== "offline" && (
@@ -115,9 +137,7 @@ function ServiceRow({
             )}
           </div>
         </div>
-        <span className="text-[9px] leading-relaxed text-[#7A828C] truncate">
-          {service.detail}
-        </span>
+        <span className="text-[9px] leading-relaxed text-[#7A828C] truncate">{service.detail}</span>
       </div>
     </div>
   );
@@ -145,29 +165,39 @@ function useBootLog(status: ReturnType<typeof useRuntimeStatus>): LogEntry[] {
   };
 
   useEffect(() => {
-    if (status.bridge.status === "active") push("✓ Bridge daemon online — ws://localhost:3001", "ok");
-    if (status.bridge.status === "degraded") push("⚠ Bridge responding with elevated latency", "warn");
-    if (status.bridge.status === "offline") push("✕ Bridge offline — run local-bridge/server.js", "error");
+    if (status.bridge.status === "active")
+      push("✓ Bridge daemon online — ws://localhost:3001", "ok");
+    if (status.bridge.status === "degraded")
+      push("⚠ Bridge responding with elevated latency", "warn");
+    if (status.bridge.status === "offline")
+      push("✕ Bridge offline — run local-bridge/server.js", "error");
   }, [status.bridge.status]);
 
   useEffect(() => {
-    if (status.iracing.status === "active") push("✓ iRacing simulator telemetry stream active", "ok");
-    if (status.iracing.status === "degraded") push("⚠ Bridge connected — waiting for iRacing launch", "warn");
-    if (status.iracing.status === "offline") push("  iRacing not detected (bridge required first)", "info");
+    if (status.iracing.status === "active")
+      push("✓ iRacing simulator telemetry stream active", "ok");
+    if (status.iracing.status === "degraded")
+      push("⚠ Bridge connected — waiting for iRacing launch", "warn");
+    if (status.iracing.status === "offline")
+      push("  iRacing not detected (bridge required first)", "info");
   }, [status.iracing.status]);
 
   useEffect(() => {
-    if (status.sessionStore.status === "active") push("✓ Session store initialized — IndexedDB ready", "ok");
-    if (status.sessionStore.status === "offline") push("✕ Session store inaccessible — check browser storage permissions", "error");
+    if (status.sessionStore.status === "active")
+      push("✓ Session store initialized — IndexedDB ready", "ok");
+    if (status.sessionStore.status === "offline")
+      push("✕ Session store inaccessible — check browser storage permissions", "error");
   }, [status.sessionStore.status]);
 
   useEffect(() => {
     if (status.aiEngine.status === "active") push("✓ AI engine reachable — cloud LLM online", "ok");
-    if (status.aiEngine.status === "offline") push("⚠ AI engine offline — check internet connectivity", "warn");
+    if (status.aiEngine.status === "offline")
+      push("⚠ AI engine offline — check internet connectivity", "warn");
   }, [status.aiEngine.status]);
 
   useEffect(() => {
-    if (status.mode === "workstation") push("✓ WORKSTATION MODE — local bridge providing telemetry", "ok");
+    if (status.mode === "workstation")
+      push("✓ WORKSTATION MODE — local bridge providing telemetry", "ok");
     if (status.mode === "portable") push("  PORTABLE MODE — running without local bridge", "info");
   }, [status.mode]);
 
@@ -208,14 +238,13 @@ export function RuntimeStatusMatrix({ onReady }: RuntimeStatusMatrixProps) {
   }, [status.ready, status.settled, onReady]);
 
   const elapsedSec = (status.elapsedMs / 1000).toFixed(1);
-  const overallStatus: ServiceStatus =
-    !status.settled
-      ? "initializing"
-      : status.ready
-        ? "active"
-        : [status.bridge, status.iracing].some((s) => s.status === "offline")
-          ? "degraded"
-          : "active";
+  const overallStatus: ServiceStatus = !status.settled
+    ? "initializing"
+    : status.ready
+      ? "active"
+      : [status.bridge, status.iracing].some((s) => s.status === "offline")
+        ? "degraded"
+        : "active";
 
   return (
     <div
@@ -245,9 +274,7 @@ export function RuntimeStatusMatrix({ onReady }: RuntimeStatusMatrixProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-[9px] text-[#7A828C] tabular-nums">
-            T+{elapsedSec}s
-          </span>
+          <span className="text-[9px] text-[#7A828C] tabular-nums">T+{elapsedSec}s</span>
           <div
             className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[9px] font-bold uppercase tracking-widest"
             style={{
@@ -276,26 +303,10 @@ export function RuntimeStatusMatrix({ onReady }: RuntimeStatusMatrixProps) {
 
           {/* Service rows */}
           <div className="flex flex-col flex-1">
-            <ServiceRow
-              icon={Wifi}
-              name="LOCAL BRIDGE"
-              service={status.bridge}
-            />
-            <ServiceRow
-              icon={Activity}
-              name="iRACING SIMULATOR"
-              service={status.iracing}
-            />
-            <ServiceRow
-              icon={Cpu}
-              name="AI ENGINE"
-              service={status.aiEngine}
-            />
-            <ServiceRow
-              icon={Database}
-              name="SESSION STORE"
-              service={status.sessionStore}
-            />
+            <ServiceRow icon={Wifi} name="LOCAL BRIDGE" service={status.bridge} />
+            <ServiceRow icon={Activity} name="iRACING SIMULATOR" service={status.iracing} />
+            <ServiceRow icon={Cpu} name="AI ENGINE" service={status.aiEngine} />
+            <ServiceRow icon={Database} name="SESSION STORE" service={status.sessionStore} />
             <ServiceRow
               icon={Monitor}
               name="WORKSTATION RUNTIME"

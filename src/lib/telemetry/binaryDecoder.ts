@@ -41,7 +41,7 @@ export const BINARY_OFFSETS = {
   liveTrackTempC: 11,
   gLat: 12,
   gLon: 13,
-  yawRate: 14
+  yawRate: 14,
 };
 
 /**
@@ -53,29 +53,29 @@ export const BINARY_OFFSETS = {
  */
 export function decodeTelemetry(
   buffer: ArrayBuffer,
-  out?: Partial<DecodedTelemetryFrame>
+  out?: Partial<DecodedTelemetryFrame>,
 ): DecodedTelemetryFrame {
   const view = new Float32Array(buffer);
-  
+
   const frame = (out || {}) as DecodedTelemetryFrame;
   frame.connected = true;
   frame.source = "live_binary";
 
-  frame.tick              = view[BINARY_OFFSETS.tick];
-  frame.timestamp         = view[BINARY_OFFSETS.timestamp];
-  frame.speedKph          = view[BINARY_OFFSETS.speedKph];
-  frame.rpm               = view[BINARY_OFFSETS.rpm];
-  frame.gear              = view[BINARY_OFFSETS.gear];
-  frame.throttle          = view[BINARY_OFFSETS.throttle];
-  frame.brake             = view[BINARY_OFFSETS.brake];
-  frame.steeringDeg       = view[BINARY_OFFSETS.steeringDeg];
-  frame.fuelRemainingL    = view[BINARY_OFFSETS.fuelRemainingL];
+  frame.tick = view[BINARY_OFFSETS.tick];
+  frame.timestamp = view[BINARY_OFFSETS.timestamp];
+  frame.speedKph = view[BINARY_OFFSETS.speedKph];
+  frame.rpm = view[BINARY_OFFSETS.rpm];
+  frame.gear = view[BINARY_OFFSETS.gear];
+  frame.throttle = view[BINARY_OFFSETS.throttle];
+  frame.brake = view[BINARY_OFFSETS.brake];
+  frame.steeringDeg = view[BINARY_OFFSETS.steeringDeg];
+  frame.fuelRemainingL = view[BINARY_OFFSETS.fuelRemainingL];
   frame.lapLastLapTimeSec = view[BINARY_OFFSETS.lapLastLapTimeSec];
-  frame.liveAirTempC      = view[BINARY_OFFSETS.liveAirTempC];
-  frame.liveTrackTempC     = view[BINARY_OFFSETS.liveTrackTempC];
-  frame.gLat              = view[BINARY_OFFSETS.gLat];
-  frame.gLon              = view[BINARY_OFFSETS.gLon];
-  frame.yawRate           = view[BINARY_OFFSETS.yawRate];
+  frame.liveAirTempC = view[BINARY_OFFSETS.liveAirTempC];
+  frame.liveTrackTempC = view[BINARY_OFFSETS.liveTrackTempC];
+  frame.gLat = view[BINARY_OFFSETS.gLat];
+  frame.gLon = view[BINARY_OFFSETS.gLon];
+  frame.yawRate = view[BINARY_OFFSETS.yawRate];
 
   return frame;
 }

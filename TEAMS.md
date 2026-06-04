@@ -6,11 +6,11 @@
 
 > Find your role below and **only read that section**. You do not need to read the full document.
 
-| Role | What you do | Jump to |
-|---|---|---|
-| 🏆 **Team Owner** | Sets up the database, generates the Team Code, controls who has access | [→ Team Owner Guide](#team-owner-guide) |
-| 🏎️ **Driver** | Receives a pre-filled config file from the Team Owner, starts the bridge, drives | [→ Driver Guide](#driver-guide) |
-| 🎧 **Pit Crew** | Receives a Team Code from the Team Owner, opens the app in a browser | [→ Pit Crew Guide](#pit-crew-guide) |
+| Role              | What you do                                                                      | Jump to                                 |
+| ----------------- | -------------------------------------------------------------------------------- | --------------------------------------- |
+| 🏆 **Team Owner** | Sets up the database, generates the Team Code, controls who has access           | [→ Team Owner Guide](#team-owner-guide) |
+| 🏎️ **Driver**     | Receives a pre-filled config file from the Team Owner, starts the bridge, drives | [→ Driver Guide](#driver-guide)         |
+| 🎧 **Pit Crew**   | Receives a Team Code from the Team Owner, opens the app in a browser             | [→ Pit Crew Guide](#pit-crew-guide)     |
 
 ---
 
@@ -83,11 +83,13 @@ These are the credentials you will share with your drivers. Pit crew do **not** 
 3. Find and copy these two values:
 
 **Project URL** — looks like:
+
 ```
 https://abcdefghijklm.supabase.co
 ```
 
 **Anon Public Key** — a very long string starting with `eyJ`:
+
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp...
 ```
@@ -111,9 +113,9 @@ This is your **Team Code**. It links all drivers and pit crew to the same live d
 
 You now have three pieces of information to share:
 
-| Who gets what | Items to send |
-|---|---|
-| **Each Driver** | The pre-filled `.env` file (see below) |
+| Who gets what            | Items to send                                          |
+| ------------------------ | ------------------------------------------------------ |
+| **Each Driver**          | The pre-filled `.env` file (see below)                 |
 | **Each Pit Crew member** | The Team Code only (e.g. `PITWALL-A1B2`) + the app URL |
 
 #### Creating the Driver `.env` File
@@ -157,7 +159,6 @@ Before the race, open the Team page and verify:
 
 ---
 
-
 ---
 
 ## Driver Guide
@@ -170,13 +171,11 @@ Before the race, open the Team page and verify:
 
 Your Team Owner will send you a file called .env. Place it inside your local-bridge folder:
 
-`
-iRacing-Companion\
+`iRacing-Companion\
   local-bridge\
     .env          <- put it here
     server.js
-    ...
-`
+    ...`
 
 > **Windows tip:** If .env files are invisible in File Explorer, click the **View** tab and tick **"Hidden items"** and **"File name extensions"**.
 
@@ -186,9 +185,7 @@ iRacing-Companion\
 
 Open .env in Notepad and fill in the last line:
 
-`
-DRIVER_NAME=Danny M
-`
+`DRIVER_NAME=Danny M`
 
 Save and close.
 
@@ -198,23 +195,20 @@ Save and close.
 
 Open a terminal in the local-bridge folder and run:
 
-`
-npm start
-`
+`npm start`
 
 You should see this within a few seconds:
 
-`
-[team-relay] * Connected to channel "team:PITWALL-A1B2" -- publishing at 2Hz
-`
+`[team-relay] * Connected to channel "team:PITWALL-A1B2" -- publishing at 2Hz`
 
 **That is it. You are live on the team wall.** Start iRacing as normal. Your car data appears automatically once you are on track.
 
 #### Driver Checklist
+
 - [ ] .env file from Team Owner placed in local-bridge\ folder
 - [ ] DRIVER_NAME= filled in with your name
-- [ ] 
-pm start run in the local-bridge folder
+- [ ]
+  pm start run in the local-bridge folder
 - [ ] Terminal shows Connected message
 - [ ] Your car card appears on team wall with green **LIVE** badge
 
@@ -296,17 +290,18 @@ You now have full access to the Team Command page. The live data updates automat
 
 Each driver's car has a card showing:
 
-| What it shows | What it means |
-|---|---|
-| Green **LIVE** / grey **+Xs ago** | Whether that driver is actively connected |
-| Fuel: `42.1L ~13 laps` | Current fuel in tank and how many laps it will last |
-| Last lap time | The driver's previous completed lap |
+| What it shows                      | What it means                                                              |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| Green **LIVE** / grey **+Xs ago**  | Whether that driver is actively connected                                  |
+| Fuel: `42.1L ~13 laps`             | Current fuel in tank and how many laps it will last                        |
+| Last lap time                      | The driver's previous completed lap                                        |
 | Tyre temp bars (FL / FR / RL / RR) | Colour-coded: **green** = optimal, **amber** = warm, **red** = overheating |
-| Tyre wear bars | **Green** = good grip remaining, **amber** = degrading, **red** = pit soon |
+| Tyre wear bars                     | **Green** = good grip remaining, **amber** = degrading, **red** = pit soon |
 
 #### Race Timeline
 
 Shows all driver stints as horizontal bars on a timeline. Click any stint to see:
+
 - Driver name
 - Planned start and end time
 - Notes and fuel target
@@ -314,6 +309,7 @@ Shows all driver stints as horizontal bars on a timeline. Click any stint to see
 #### Fuel & Stint Calculator
 
 Enter your car's fuel burn rate and the calculator will tell you:
+
 - How many laps per stint
 - How many pit stops you need
 - Total fuel required for the race
@@ -323,6 +319,7 @@ Click **"↺ Sync"** to automatically fill in the burn rate from whichever drive
 #### Endurance Planner
 
 For 24hr races. Shows:
+
 - Total pit stop count for the full race distance
 - Fuel load required per stint and in total
 - Driver fatigue tracking (FIA 4-hour limit warnings)
@@ -375,6 +372,7 @@ The bridge is connected but the team wall browser is subscribed to a different c
 No drivers are currently connected, or the team code is wrong.
 
 ✅ **Fix:**
+
 1. Check the code is correct — ask your Team Owner
 2. Make sure at least one driver has started their bridge and seen the `✓ Connected` message
 3. Try clicking **"Leave"** then re-pasting the code and clicking **"Join"** again
@@ -431,10 +429,10 @@ A: No. When the co-driver takes over, they start their own bridge. The team wall
 
 ## File Reference (Team Owner Only)
 
-| File | What it is |
-|---|---|
-| `local-bridge/.env.example` | Template — fill this in and send it to each driver as `.env` |
-| `local-bridge/.env` | Your personal config — never commit to GitHub |
-| `local-bridge/teamRelay.js` | The relay module — do not edit |
-| `local-bridge/server.js` | The bridge server — do not edit |
-| `supabase/migrations/20260526_team_sessions.sql` | The SQL you paste into Supabase once during setup |
+| File                                             | What it is                                                   |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `local-bridge/.env.example`                      | Template — fill this in and send it to each driver as `.env` |
+| `local-bridge/.env`                              | Your personal config — never commit to GitHub                |
+| `local-bridge/teamRelay.js`                      | The relay module — do not edit                               |
+| `local-bridge/server.js`                         | The bridge server — do not edit                              |
+| `supabase/migrations/20260526_team_sessions.sql` | The SQL you paste into Supabase once during setup            |

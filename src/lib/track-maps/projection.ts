@@ -8,9 +8,12 @@
  * @param spline Prebuilt spline node array of [x, y] coordinates in [0..1]
  * @param pct Distance percentage along lap (0.0 to 1.0)
  */
-export function getCoordinatesAtPct(spline: [number, number][], pct: number): { x: number; y: number } {
+export function getCoordinatesAtPct(
+  spline: [number, number][],
+  pct: number,
+): { x: number; y: number } {
   if (!spline || spline.length === 0) return { x: 0, y: 0 };
-  
+
   // Cleanly wrap pct if out of bounds (lap dist wraps naturally around finish line)
   let p = pct % 1.0;
   if (p < 0) p += 1.0;
@@ -37,9 +40,13 @@ export function getCoordinatesAtPct(spline: [number, number][], pct: number): { 
  * @param width Target canvas/box width
  * @param height Target canvas/box height
  */
-export function getSvgPathFromSpline(spline: [number, number][], width: number, height: number): string {
+export function getSvgPathFromSpline(
+  spline: [number, number][],
+  width: number,
+  height: number,
+): string {
   if (!spline || spline.length === 0) return "";
-  
+
   let d = `M ${spline[0][0] * width} ${spline[0][1] * height}`;
   for (let i = 1; i < spline.length; i++) {
     d += ` L ${spline[i][0] * width} ${spline[i][1] * height}`;

@@ -82,8 +82,4 @@ function diffSetups(a, b) {
   }
   return out;
 }
-export {
-  diffSetups as d,
-  extractCarSetupYaml as e,
-  parseCarSetup as p
-};
+export { diffSetups as d, extractCarSetupYaml as e, parseCarSetup as p };

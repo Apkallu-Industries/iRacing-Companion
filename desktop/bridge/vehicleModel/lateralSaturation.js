@@ -21,7 +21,7 @@ function calculateLateralSaturation(
   speedMps,
   verticalLoadN,
   tireTempC,
-  globalFrictionCoeff = 1.0
+  globalFrictionCoeff = 1.0,
 ) {
   // Convert steering to wheel angle (approximate steering ratio 14:1)
   const steeringWheelRad = (steeringDeg * Math.PI) / 180;
@@ -35,7 +35,7 @@ function calculateLateralSaturation(
   let thermalFactor = 1.0;
   if (tireTempC > 105) {
     // Thermal overheating degradation
-    thermalFactor = Math.max(0.70, 1.0 - (tireTempC - 105) * 0.007);
+    thermalFactor = Math.max(0.7, 1.0 - (tireTempC - 105) * 0.007);
   } else if (tireTempC < 65) {
     // Tire carcass too cold to adhere
     thermalFactor = Math.max(0.75, 1.0 - (65 - tireTempC) * 0.009);
@@ -46,7 +46,7 @@ function calculateLateralSaturation(
   // 3. Peak lateral grip (saturates near 7-9 degrees = ~0.14 radians)
   const absSlipAngle = Math.abs(slipAngleRad);
   let saturationFactor = 1.0;
-  
+
   if (absSlipAngle > 0.14) {
     // Tire is sliding/scrubbing past maximum adhesion peak
     const excessSlip = absSlipAngle - 0.14;
@@ -69,10 +69,10 @@ function calculateLateralSaturation(
   return {
     slipAngleRad: Number(slipAngleRad.toFixed(3)),
     corneringYawLimit,
-    lateralG: Number(lateralG.toFixed(2))
+    lateralG: Number(lateralG.toFixed(2)),
   };
 }
 
 module.exports = {
-  calculateLateralSaturation
+  calculateLateralSaturation,
 };

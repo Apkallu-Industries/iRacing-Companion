@@ -23,10 +23,18 @@ let isReady = false;
 let lastError = null;
 let publishCount = 0;
 
-function getTeamCode() { return process.env.TEAM_CODE?.trim() || ""; }
-function getDriverName() { return process.env.DRIVER_NAME?.trim() || ""; }
-function getSupabaseUrl() { return process.env.SUPABASE_URL?.trim() || ""; }
-function getSupabaseAnonKey() { return process.env.SUPABASE_ANON_KEY?.trim() || ""; }
+function getTeamCode() {
+  return process.env.TEAM_CODE?.trim() || "";
+}
+function getDriverName() {
+  return process.env.DRIVER_NAME?.trim() || "";
+}
+function getSupabaseUrl() {
+  return process.env.SUPABASE_URL?.trim() || "";
+}
+function getSupabaseAnonKey() {
+  return process.env.SUPABASE_ANON_KEY?.trim() || "";
+}
 
 /** Initialise Supabase client and subscribe to the team channel. */
 function init() {
@@ -108,15 +116,13 @@ function publish(t, sessionData) {
     publishCount: ++publishCount,
     carOperationalState: {
       ...digest,
-      activeDriver: getDriverName() || digest.activeDriver
-    }
+      activeDriver: getDriverName() || digest.activeDriver,
+    },
   };
 
-  channel
-    .send({ type: "broadcast", event: "telemetry", payload })
-    .catch((err) => {
-      console.warn("[team-relay] Publish error:", err.message);
-    });
+  channel.send({ type: "broadcast", event: "telemetry", payload }).catch((err) => {
+    console.warn("[team-relay] Publish error:", err.message);
+  });
 }
 
 /** Graceful disconnect on bridge shutdown. */

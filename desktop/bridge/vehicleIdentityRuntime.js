@@ -17,7 +17,7 @@ const SCHEMA_VERSION = 2;
 
 // ─── Ring buffer limits ─────────────────────────────────────────────────────────
 const DELTA_RING_LIMIT = 500;
-const HISTORY_INTERVAL_MS = 10_000;   // write car_state_history every 10 seconds
+const HISTORY_INTERVAL_MS = 10_000; // write car_state_history every 10 seconds
 
 /**
  * Deep-copies an object and sorts keys recursively, filtering out volatile
@@ -96,7 +96,7 @@ class VehicleIdentityRuntime {
       cumulativeFatigue: {
         chassis: 0,
         gearbox: 0,
-        brakes: 100,      // 100% pad life remaining
+        brakes: 100, // 100% pad life remaining
         ersHealth: 100,
         aeroStability: 100,
       },
@@ -140,7 +140,7 @@ class VehicleIdentityRuntime {
     this._state = Object.freeze(initialState);
 
     console.log(
-      `[vehicle-identity] Session initialized — Car: ${carNumber} | Driver: ${process.env.DRIVER_NAME || driverId} | EpochID: ${this._state.adaptationEpochId}`
+      `[vehicle-identity] Session initialized — Car: ${carNumber} | Driver: ${process.env.DRIVER_NAME || driverId} | EpochID: ${this._state.adaptationEpochId}`,
     );
 
     return this._state;
@@ -160,7 +160,8 @@ class VehicleIdentityRuntime {
     this._sequenceId += 1;
 
     // Detect driver swap
-    const swapDetected = prevDriver && prevDriver !== incomingDriver && prevDriver !== "Unknown Driver";
+    const swapDetected =
+      prevDriver && prevDriver !== incomingDriver && prevDriver !== "Unknown Driver";
 
     // Build the new drivers array non-destructively
     let nextPreviousDrivers = [...prevState.previousDrivers];
@@ -172,7 +173,9 @@ class VehicleIdentityRuntime {
     const nextEpochId = swapDetected ? this._generateEpochId() : prevState.adaptationEpochId;
 
     // Stint Continuity & Swap logic
-    const nextStintNumber = swapDetected ? prevState.currentStint.stintNumber + 1 : prevState.currentStint.stintNumber;
+    const nextStintNumber = swapDetected
+      ? prevState.currentStint.stintNumber + 1
+      : prevState.currentStint.stintNumber;
     const nextLapStart = swapDetected ? lapNumber : prevState.currentStint.lapStart;
     const nextLapsCompleted = Math.max(0, lapNumber - nextLapStart);
 
@@ -181,8 +184,12 @@ class VehicleIdentityRuntime {
       nextFuelBurnPerLap = t.fuelBurnPerLap;
     }
     const fuelVolumeL = t.fuelRemainingL || 0;
-    const lapsRemaining = nextFuelBurnPerLap > 0 && fuelVolumeL > 0 ? fuelVolumeL / nextFuelBurnPerLap : 0;
-    const nextProjectedPitLap = lapsRemaining > 0 ? Math.floor(lapNumber + lapsRemaining) : prevState.currentStint.projectedPitLap;
+    const lapsRemaining =
+      nextFuelBurnPerLap > 0 && fuelVolumeL > 0 ? fuelVolumeL / nextFuelBurnPerLap : 0;
+    const nextProjectedPitLap =
+      lapsRemaining > 0
+        ? Math.floor(lapNumber + lapsRemaining)
+        : prevState.currentStint.projectedPitLap;
 
     const nextStint = {
       stintNumber: nextStintNumber,
@@ -310,7 +317,9 @@ class VehicleIdentityRuntime {
           details: `Stint ${nextStintNumber} begins at Lap ${lapNumber} | EpochID: ${nextEpochId}`,
         },
       });
-      console.log(`[vehicle-identity] DRIVER SWAP: ${prevDriver} → ${incomingDriver} at Lap ${lapNumber}`);
+      console.log(
+        `[vehicle-identity] DRIVER SWAP: ${prevDriver} → ${incomingDriver} at Lap ${lapNumber}`,
+      );
     }
 
     this._detectPitEvent(t, lapNumber);
@@ -449,11 +458,13 @@ class VehicleIdentityRuntime {
     const stateDoc = this._buildPersistenceDoc(sessionId, this._state);
 
     try {
-      await db.collection("car_states").updateOne(
-        { session_id: stateDoc.session_id, car_number: this._state.carNumber },
-        { $set: stateDoc },
-        { upsert: true }
-      );
+      await db
+        .collection("car_states")
+        .updateOne(
+          { session_id: stateDoc.session_id, car_number: this._state.carNumber },
+          { $set: stateDoc },
+          { upsert: true },
+        );
 
       if (now - this._lastHistoryFlush >= HISTORY_INTERVAL_MS) {
         this._lastHistoryFlush = now;
@@ -470,9 +481,7 @@ class VehicleIdentityRuntime {
     if (!db || this._deltaRing.length === 0) return;
 
     const { ObjectId } = require("mongodb");
-    const sid = ObjectId.isValid(String(sessionId))
-      ? new ObjectId(String(sessionId))
-      : sessionId;
+    const sid = ObjectId.isValid(String(sessionId)) ? new ObjectId(String(sessionId)) : sessionId;
 
     const docs = this._deltaRing.map((d) => ({
       session_id: sid,
@@ -538,7 +547,9 @@ class VehicleIdentityRuntime {
       });
     }
 
-    this._pitEntryBrakeWear = inPit ? (this._state?.cumulativeFatigue?.brakes ?? 100) : this._pitEntryBrakeWear;
+    this._pitEntryBrakeWear = inPit
+      ? (this._state?.cumulativeFatigue?.brakes ?? 100)
+      : this._pitEntryBrakeWear;
     this._inPitPrev = inPit;
   }
 
@@ -551,17 +562,11 @@ class VehicleIdentityRuntime {
 
   _computeHash(state) {
     const canonical = canonicalize(state);
-    return crypto
-      .createHash("sha256")
-      .update(JSON.stringify(canonical))
-      .digest("hex")
-      .slice(0, 16);
+    return crypto.createHash("sha256").update(JSON.stringify(canonical)).digest("hex").slice(0, 16);
   }
 
   _generateEpochId() {
-    return crypto.randomUUID
-      ? crypto.randomUUID()
-      : crypto.randomBytes(16).toString("hex");
+    return crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString("hex");
   }
 
   _buildPersistenceDoc(sessionId, state) {

@@ -44,7 +44,6 @@ function buildWorkspaceContext(): string {
   ].join("\n");
 }
 
-
 /**
  * Executes a Local LLM call using the OpenAI /v1/chat/completions format.
  * This is compatible with LMStudio, Ollama, LlamaEdge/Lemonade, and HuggingFace TGI.
@@ -54,11 +53,7 @@ export function resolveLLMUrl(baseUrl: string): string {
   if (!url) return "http://localhost:1234/api/v1/chat";
 
   // If the user already pasted a full endpoint, just use it
-  if (
-    url.endsWith("/chat/completions") ||
-    url.endsWith("/chat") ||
-    url.endsWith("/v1/chat")
-  ) {
+  if (url.endsWith("/chat/completions") || url.endsWith("/chat") || url.endsWith("/v1/chat")) {
     return url;
   }
 

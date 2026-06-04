@@ -85,12 +85,14 @@ function SettingsPage() {
                 <Palette className="h-3.5 w-3.5" /> Appearance
               </div>
               <p className="mb-3 text-xs text-muted-foreground">
-                Pick a UI style — this changes the layout, color theme, and dashboard widgets.
-                The F1 style unlocks the full F1 telemetry dashboard on the Live page.
+                Pick a UI style — this changes the layout, color theme, and dashboard widgets. The
+                F1 style unlocks the full F1 telemetry dashboard on the Live page.
               </p>
               <LayoutStylePicker />
               <div className="mt-3 pt-3 border-t border-border">
-                <p className="mb-2 text-[10px] text-muted-foreground uppercase tracking-wider">Fine-tune individual color tokens</p>
+                <p className="mb-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                  Fine-tune individual color tokens
+                </p>
                 <ThemeEditor />
               </div>
             </div>

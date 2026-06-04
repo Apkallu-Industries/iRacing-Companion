@@ -25,9 +25,7 @@
       "triggerValue": 84.5,
       "narrativeDescription": "Front axle brake pressure exceeded 82% threshold target under trail deceleration.",
       "physicsTruthBoundary": {
-        "sourceTypes": [
-          "deterministic_physics"
-        ]
+        "sourceTypes": ["deterministic_physics"]
       }
     },
     {
@@ -47,9 +45,7 @@
       "triggerValue": 12.8,
       "narrativeDescription": "Rear driven exit wheel speed mismatched by more than 12% under re-application.",
       "physicsTruthBoundary": {
-        "sourceTypes": [
-          "behavioral_model"
-        ]
+        "sourceTypes": ["behavioral_model"]
       }
     }
   ],
@@ -59,27 +55,18 @@
       "title": "Rear Tire Thermal Saturation Cascade",
       "startTime": "2026-05-27T22:00:15Z",
       "isActive": true,
-      "precursorEvents": [
-        "THERMAL_REAR_OVERLOAD"
-      ],
-      "triggerConditions": [
-        "Consecutive lateral slips under abrasive track evolution"
-      ],
+      "precursorEvents": ["THERMAL_REAR_OVERLOAD"],
+      "triggerConditions": ["Consecutive lateral slips under abrasive track evolution"],
       "progressionStages": [
         {
           "stageIndex": 1,
           "description": "Lateral scrub loading raises rear tread values past 95 degrees limit.",
-          "detectedEventIds": [
-            "evt_traction_rr_002"
-          ]
+          "detectedEventIds": ["evt_traction_rr_002"]
         }
       ],
       "mitigationAdvised": "Soften rear rebound dampers or raise dynamic traction harvest ratios.",
       "physicsTruthBoundary": {
-        "sourceTypes": [
-          "deterministic_physics",
-          "behavioral_model"
-        ]
+        "sourceTypes": ["deterministic_physics", "behavioral_model"]
       }
     }
   ],
@@ -102,21 +89,14 @@
           "threshold": 2
         }
       ],
-      "activeCorrelations": [
-        "Rear tires overheating under high traction exit loads"
-      ],
-      "relatedEpisodes": [
-        "eps_tire_overload_01"
-      ],
+      "activeCorrelations": ["Rear tires overheating under high traction exit loads"],
+      "relatedEpisodes": ["eps_tire_overload_01"],
       "driverTraitsInfluence": {
         "cornerEntryRotationPreference": "medium",
         "rearAxleStabilityTolerance": "neutral"
       },
       "physicsTruthBoundary": {
-        "sourceTypes": [
-          "deterministic_physics",
-          "historical_correlation"
-        ]
+        "sourceTypes": ["deterministic_physics", "historical_correlation"]
       }
     }
   ],
@@ -127,9 +107,7 @@
     "driverConfidenceTrend": "stable",
     "keyMechanicalNarrative": "Chassis decay stable. Heavy entry trail lockups observed at Turn 8 under downforce rake.",
     "physicsTruthBoundary": {
-      "sourceTypes": [
-        "behavioral_model"
-      ]
+      "sourceTypes": ["behavioral_model"]
     }
   },
   "driverTraits": {
@@ -138,9 +116,7 @@
     "brakeReleaseStyle": "linear",
     "throttleCommitmentConfidence": "progressive",
     "physicsTruthBoundary": {
-      "sourceTypes": [
-        "behavioral_model"
-      ]
+      "sourceTypes": ["behavioral_model"]
     }
   },
   "ontologyVersion": "1.0.0",

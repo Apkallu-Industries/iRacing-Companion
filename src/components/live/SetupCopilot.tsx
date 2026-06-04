@@ -80,7 +80,7 @@ Based on this specific car, track, and environmental conditions, what setup adju
       setResponse(
         "Error asking Setup Copilot: " +
           e.message +
-          `\n\nMake sure your local LLM server is running at "${llmBaseUrl}" and CORS is enabled (e.g. OLLAMA_ORIGINS="*" for Ollama, or --cors parameter for other systems).`
+          `\n\nMake sure your local LLM server is running at "${llmBaseUrl}" and CORS is enabled (e.g. OLLAMA_ORIGINS="*" for Ollama, or --cors parameter for other systems).`,
       );
     } finally {
       setLoading(false);

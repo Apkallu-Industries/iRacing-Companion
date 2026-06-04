@@ -19,6 +19,4 @@ function parseIbtInWorker(buffer, onProgress) {
     worker.postMessage({ buffer }, [buffer]);
   });
 }
-export {
-  parseIbtInWorker as p
-};
+export { parseIbtInWorker as p };

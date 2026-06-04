@@ -300,7 +300,6 @@ export function useLiveRecorder(t: Telemetry) {
 
         if (!res.ok) throw new Error(res.error || "Failed inserting session metadata");
         return { sessionId: res.id, filename };
-
       } finally {
         setState("idle");
       }

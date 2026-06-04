@@ -16,7 +16,10 @@ const date = new Date().toISOString().slice(0, 10);
 let commitMessage = "Build created.";
 
 try {
-  const message = execSync("git log -1 --pretty=%s", { cwd: path.join(__dirname, ".."), stdio: ["ignore", "pipe", "ignore"] })
+  const message = execSync("git log -1 --pretty=%s", {
+    cwd: path.join(__dirname, ".."),
+    stdio: ["ignore", "pipe", "ignore"],
+  })
     .toString()
     .trim();
   if (message) commitMessage = message;

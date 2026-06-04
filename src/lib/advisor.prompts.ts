@@ -92,13 +92,17 @@ export function buildAdvisorUserMessage(data: {
   setup: any;
   tires: any;
   laps: LapAggregateInput[];
-  extrasSnapshot?: { peakYawRateRads: number; peakShockFL: number; maxBrakeLinePressTotal: number } | null;
+  extrasSnapshot?: {
+    peakYawRateRads: number;
+    peakShockFL: number;
+    maxBrakeLinePressTotal: number;
+  } | null;
   wsCtx?: string;
 }): string {
   const extrasLine =
     data.extrasSnapshot && data.extrasSnapshot.maxBrakeLinePressTotal > 0
       ? `\nBRIDGE EXTRAS (peak-per-lap from iRacing shared memory):\n  - Yaw rate peak: ${data.extrasSnapshot.peakYawRateRads.toFixed(3)} rad/s\n  - Shock deflection FL peak: ${data.extrasSnapshot.peakShockFL.toFixed(4)} m\n  - Brake line pressure total max: ${data.extrasSnapshot.maxBrakeLinePressTotal.toFixed(2)}`
-    : "";
+      : "";
   const wsLine = data.wsCtx ? `\n${data.wsCtx}` : "";
   return `MODE: ${data.mode.toUpperCase()}\nTRACK: ${data.track} (${data.trackType}, bias=${data.cornerBias})\nCAR: ${data.car}\nPB: ${data.pbS ?? "none"}\nSYMPTOMS: ${data.symptoms?.join(", ") || "(none reported — infer from data)"}\nCONDITIONS: ${JSON.stringify(data.conditions)}\nSETUP: ${JSON.stringify(data.setup)}\nTIRES: ${JSON.stringify(data.tires)}${extrasLine}${wsLine}\nLAPS: ${JSON.stringify(data.laps)}\n\nCall the function with 3-6 prioritized ${data.mode === "style" ? "driving-style" : "setup"} tips. Reference the numbers.${data.mode === "setup" ? " Every tip MUST include a citation from the Setup Bible." : ""}`;
 }

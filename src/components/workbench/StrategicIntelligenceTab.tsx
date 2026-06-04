@@ -57,8 +57,8 @@ export function StrategicIntelligenceTab({
   // --- States ---
   const [activeMode, setActiveMode] = useState<SessionObjectiveMode>("RACE_STINT");
   const [ambientTemp, setAmbientTemp] = useState(19.0); // cool conditions triggering correlation trap!
-  const [rearRebound, setRearRebound] = useState(4);    // >3 ticks rebound triggering Spa trap!
-  const [timeGap, setTimeGap] = useState(0.85);        // trailing <1.8s triggering active wake modeling!
+  const [rearRebound, setRearRebound] = useState(4); // >3 ticks rebound triggering Spa trap!
+  const [timeGap, setTimeGap] = useState(0.85); // trailing <1.8s triggering active wake modeling!
   const [pitstopPenalty, setPitstopPenalty] = useState(24.5);
 
   const objective = getObjectiveConstraints(activeMode);
@@ -74,7 +74,7 @@ export function StrategicIntelligenceTab({
     32.4, // fuel level remaining
     mockTireTemps,
     mockBrakeTemps,
-    mockSoCPct
+    mockSoCPct,
   );
 
   // 2. Wake dynamics
@@ -83,7 +83,7 @@ export function StrategicIntelligenceTab({
     42.8, // current speed mps
     1.42, // steering rate
     0.35, // yaw rate
-    92.0  // coolant temp
+    92.0, // coolant temp
   );
 
   // 3. Strategy timeline forecast
@@ -92,16 +92,18 @@ export function StrategicIntelligenceTab({
     stintState.tireGripPct,
     stintState.fuelLapsRemaining,
     ambientTemp,
-    pitstopPenalty
+    pitstopPenalty,
   );
 
   // 4. Institutional knowledge correlations
   const mockHistoricalChanges = [
-    { change_type: "Rear Rebound", parameter: "> 3 ticks", notes: "Spa cool ambient rebound damping instability in T8" }
+    {
+      change_type: "Rear Rebound",
+      parameter: "> 3 ticks",
+      notes: "Spa cool ambient rebound damping instability in T8",
+    },
   ];
-  const mockHistoricalEvents = [
-    { track: "Spa-Francorchamps", car, severity: "critical" }
-  ];
+  const mockHistoricalEvents = [{ track: "Spa-Francorchamps", car, severity: "critical" }];
   const correlation = calculateSessionCorrelations(
     track,
     car,
@@ -109,7 +111,7 @@ export function StrategicIntelligenceTab({
     ambientTemp,
     activeLap,
     mockHistoricalChanges,
-    mockHistoricalEvents
+    mockHistoricalEvents,
   );
 
   return (
@@ -128,7 +130,9 @@ export function StrategicIntelligenceTab({
             <span className="font-bold text-[#FF4D4D] uppercase text-[9px] tracking-wider">
               {correlation.title}
             </span>
-            <p className="text-[8.5px] leading-relaxed text-[#E2E8F0]">{correlation.narrativeDescription}</p>
+            <p className="text-[8.5px] leading-relaxed text-[#E2E8F0]">
+              {correlation.narrativeDescription}
+            </p>
             <div className="text-[8px] text-[#FFB800] mt-1.5 font-bold uppercase tracking-wider">
               PRE-EMPTIVE STRATEGY COMMAND: {correlation.recommendedPreemptiveDelta}
             </div>
@@ -177,9 +181,20 @@ export function StrategicIntelligenceTab({
               Active Constraints:
             </span>
             <div className="flex flex-col gap-1">
-              <span>● Wheelspin sens: <span className="text-white font-bold">{objective.wheelspinSensitivityCoeff}x</span></span>
-              <span>● Brake threshold: <span className="text-white font-bold">{(objective.brakeLockupThreshold * 100).toFixed(0)}%</span></span>
-              <span>● AI Narrative: <span className="text-white font-bold">{objective.aiNarrativeTone}</span></span>
+              <span>
+                ● Wheelspin sens:{" "}
+                <span className="text-white font-bold">{objective.wheelspinSensitivityCoeff}x</span>
+              </span>
+              <span>
+                ● Brake threshold:{" "}
+                <span className="text-white font-bold">
+                  {(objective.brakeLockupThreshold * 100).toFixed(0)}%
+                </span>
+              </span>
+              <span>
+                ● AI Narrative:{" "}
+                <span className="text-white font-bold">{objective.aiNarrativeTone}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -198,28 +213,52 @@ export function StrategicIntelligenceTab({
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Tire Grip Limit</span>
-              <span className="text-white text-base font-bold tabular-nums">{stintState.tireGripPct}%</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Tire Grip Limit
+              </span>
+              <span className="text-white text-base font-bold tabular-nums">
+                {stintState.tireGripPct}%
+              </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Average Fuel Burn</span>
-              <span className="text-white text-base font-bold tabular-nums">{stintState.fuelBurnPerLapL} L/lap</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Average Fuel Burn
+              </span>
+              <span className="text-white text-base font-bold tabular-nums">
+                {stintState.fuelBurnPerLapL} L/lap
+              </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Laps on Fuel Remaining</span>
-              <span className="text-[#00D17F] text-base font-bold tabular-nums">{stintState.fuelLapsRemaining} laps</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Laps on Fuel Remaining
+              </span>
+              <span className="text-[#00D17F] text-base font-bold tabular-nums">
+                {stintState.fuelLapsRemaining} laps
+              </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Thermal Saturation</span>
-              <span className="text-white text-base font-bold tabular-nums">{(stintState.thermalSaturationIndex * 100).toFixed(0)}%</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Thermal Saturation
+              </span>
+              <span className="text-white text-base font-bold tabular-nums">
+                {(stintState.thermalSaturationIndex * 100).toFixed(0)}%
+              </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Brake Fatigue Fade</span>
-              <span className="text-white text-base font-bold tabular-nums">{(stintState.brakeFatigueIndex * 100).toFixed(0)}%</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Brake Fatigue Fade
+              </span>
+              <span className="text-white text-base font-bold tabular-nums">
+                {(stintState.brakeFatigueIndex * 100).toFixed(0)}%
+              </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">ERS Depletion rate</span>
-              <span className="text-white text-base font-bold tabular-nums">{stintState.ersDepletionRatePct}% SoC/Straight</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                ERS Depletion rate
+              </span>
+              <span className="text-white text-base font-bold tabular-nums">
+                {stintState.ersDepletionRatePct}% SoC/Straight
+              </span>
             </div>
           </div>
         </div>
@@ -248,8 +287,8 @@ export function StrategicIntelligenceTab({
                   ms.severity === "critical"
                     ? "rgba(255,77,77,0.04)"
                     : ms.severity === "warning"
-                    ? "rgba(255,184,0,0.04)"
-                    : "transparent",
+                      ? "rgba(255,184,0,0.04)"
+                      : "transparent",
               }}
             >
               <span
@@ -259,14 +298,14 @@ export function StrategicIntelligenceTab({
                     ms.severity === "critical"
                       ? "rgba(255,77,77,0.15)"
                       : ms.severity === "warning"
-                      ? "rgba(255,184,0,0.15)"
-                      : "rgba(59,130,246,0.15)",
+                        ? "rgba(255,184,0,0.15)"
+                        : "rgba(59,130,246,0.15)",
                   color:
                     ms.severity === "critical"
                       ? "#FF4D4D"
                       : ms.severity === "warning"
-                      ? "#FFB800"
-                      : "#3B82F6",
+                        ? "#FFB800"
+                        : "#3B82F6",
                 }}
               >
                 Lap {ms.lapNumber}
@@ -354,7 +393,9 @@ export function StrategicIntelligenceTab({
               <span
                 className="px-2 py-0.5 rounded-sm text-[8px] font-black uppercase"
                 style={{
-                  backgroundColor: wakeDynamics.inWake ? "rgba(255,184,0,0.15)" : "rgba(113,128,150,0.15)",
+                  backgroundColor: wakeDynamics.inWake
+                    ? "rgba(255,184,0,0.15)"
+                    : "rgba(113,128,150,0.15)",
                   color: wakeDynamics.inWake ? "#FFB800" : "#718096",
                 }}
               >

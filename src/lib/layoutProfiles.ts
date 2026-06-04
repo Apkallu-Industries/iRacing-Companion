@@ -11,7 +11,15 @@
  * individual tokens after selecting a style.
  */
 
-export type LayoutProfile = "motec" | "modern" | "studio" | "engineer" | "carbon" | "f1" | "indycar" | "racecommand";
+export type LayoutProfile =
+  | "motec"
+  | "modern"
+  | "studio"
+  | "engineer"
+  | "carbon"
+  | "f1"
+  | "indycar"
+  | "racecommand";
 
 export interface LayoutProfileMeta {
   id: LayoutProfile;
@@ -51,8 +59,7 @@ export const LAYOUT_PROFILES: LayoutProfileMeta[] = [
     id: "engineer",
     label: "Light Engineer",
     subtitle: "Professional Light Mode",
-    description:
-      "Professional light mode. Reduces eye strain during long analysis sessions.",
+    description: "Professional light mode. Reduces eye strain during long analysis sessions.",
     swatches: ["#f5f6f8", "#ffffff", "#0066cc", "#16a34a"],
   },
   {
@@ -101,7 +108,21 @@ export function applyLayout(profile: LayoutProfile): void {
 export function loadSavedLayout(): LayoutProfile {
   if (typeof localStorage === "undefined") return "motec";
   const saved = localStorage.getItem(LS_KEY);
-  if (saved && (["motec", "modern", "studio", "engineer", "carbon", "f1", "indycar", "racecommand"] as string[]).includes(saved)) {
+  if (
+    saved &&
+    (
+      [
+        "motec",
+        "modern",
+        "studio",
+        "engineer",
+        "carbon",
+        "f1",
+        "indycar",
+        "racecommand",
+      ] as string[]
+    ).includes(saved)
+  ) {
     return saved as LayoutProfile;
   }
   return "motec";

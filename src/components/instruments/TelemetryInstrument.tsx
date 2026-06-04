@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Sliders, Maximize2, Sparkles, Volume2, Shield, Settings, Play, Pause, Loader2, ExternalLink } from "lucide-react";
+import {
+  Sliders,
+  Maximize2,
+  Sparkles,
+  Volume2,
+  Shield,
+  Settings,
+  Play,
+  Pause,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface TelemetryInstrumentProps {
@@ -36,15 +47,19 @@ export function TelemetryInstrument({
 
       const titleLower = title.toLowerCase();
       if (titleLower.includes("brake")) {
-        matched = ["brake", "bias", "press", "tempc"].some(k => channel.includes(k));
+        matched = ["brake", "bias", "press", "tempc"].some((k) => channel.includes(k));
       } else if (titleLower.includes("hybrid") || titleLower.includes("ers")) {
-        matched = ["ers", "soc", "mgu", "hybrid", "power", "charge"].some(k => channel.includes(k));
+        matched = ["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) =>
+          channel.includes(k),
+        );
       } else if (titleLower.includes("suspension") || titleLower.includes("chassis")) {
-        matched = ["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(k => channel.includes(k));
+        matched = ["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(
+          (k) => channel.includes(k),
+        );
       } else if (titleLower.includes("tire") || titleLower.includes("grip")) {
-        matched = ["temp", "press", "wear", "tire", "grip"].some(k => channel.includes(k));
+        matched = ["temp", "press", "wear", "tire", "grip"].some((k) => channel.includes(k));
       } else if (titleLower.includes("input") || titleLower.includes("control")) {
-        matched = ["throttle", "steer", "clutch", "input"].some(k => channel.includes(k));
+        matched = ["throttle", "steer", "clutch", "input"].some((k) => channel.includes(k));
       }
 
       if (matched) {
@@ -86,7 +101,7 @@ export function TelemetryInstrument({
           color: "#fff",
           fontFamily: "monospace",
           fontSize: "10px",
-        }
+        },
       });
     } else {
       toast.error("Multi-monitor detach blocked by browser window blocker.");
@@ -96,9 +111,13 @@ export function TelemetryInstrument({
   return (
     <div
       className={`border bg-[#0B0F14] flex flex-col font-mono text-xs select-none transition-all duration-200 ${
-        highlighted ? "border-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.35)] ring-1 ring-[#FFB800]/40 scale-[1.01]" : "border-[#1C2430]"
+        highlighted
+          ? "border-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.35)] ring-1 ring-[#FFB800]/40 scale-[1.01]"
+          : "border-[#1C2430]"
       } ${
-        expanded ? "fixed inset-4 z-50 bg-[#0B0F14]/95 backdrop-blur shadow-2xl" : "h-full min-h-[220px]"
+        expanded
+          ? "fixed inset-4 z-50 bg-[#0B0F14]/95 backdrop-blur shadow-2xl"
+          : "h-full min-h-[220px]"
       }`}
     >
       {/* Instrument Title Bar */}
@@ -107,11 +126,11 @@ export function TelemetryInstrument({
           <span className="p-1 rounded bg-[#05070A] border border-[#1C2430] text-[#3B82F6]">
             <Sliders className="h-3 w-3" />
           </span>
-          <span className="font-bold text-white uppercase tracking-wider text-[10px]">
-            {title}
-          </span>
+          <span className="font-bold text-white uppercase tracking-wider text-[10px]">{title}</span>
           {activeStatus && (
-            <span className={`text-[8px] font-bold tracking-widest px-1.5 py-0.5 border ${activeStatusColor}`}>
+            <span
+              className={`text-[8px] font-bold tracking-widest px-1.5 py-0.5 border ${activeStatusColor}`}
+            >
               {activeStatus}
             </span>
           )}
@@ -127,9 +146,7 @@ export function TelemetryInstrument({
                   key={m}
                   onClick={() => onModeChange(m)}
                   className={`px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold cursor-pointer ${
-                    mode === m
-                      ? "bg-[#3B82F6] text-white"
-                      : "text-[#7A828C] hover:text-[#E2E4E8]"
+                    mode === m ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"
                   }`}
                 >
                   {m}
@@ -176,9 +193,7 @@ export function TelemetryInstrument({
       {/* Instrument Body split with AI overlay */}
       <div className="flex-1 min-h-0 flex flex-col relative bg-[#05070A]">
         {/* Core Instrument Child Visualizer */}
-        <div className="flex-1 min-h-0 relative">
-          {children}
-        </div>
+        <div className="flex-1 min-h-0 relative">{children}</div>
 
         {/* Dynamic AI Advisor Panel overlay */}
         {showAi && (

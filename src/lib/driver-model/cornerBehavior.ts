@@ -32,7 +32,7 @@ export function analyzeCornerBehavior(
   startTick: number,
   apexTick: number,
   endTick: number,
-  channels: Record<string, number[]>
+  channels: Record<string, number[]>,
 ): CornerBehaviorMetrics {
   const speed = channels["Speed"] || [];
   const brake = channels["Brake"] || [];
@@ -54,7 +54,7 @@ export function analyzeCornerBehavior(
     const spd = speed[i] || 1;
     const lf = lfSpeed[i] || 0;
     const lr = lrSpeed[i] || 0;
-    
+
     // Front slip (locking indicator)
     const frontMismatch = Math.abs(spd - lf) / spd;
     wheelSlip.push(frontMismatch);

@@ -40,11 +40,9 @@ OUTPUT FORMAT: Return ONLY the raw JSON string. Do NOT wrap it in markdown code 
 /**
  * Generate a telemetry scanner DSL rule from a natural language request.
  */
-export async function generateScannerRule(
-  prompt: string
-): Promise<DSLRule | null> {
+export async function generateScannerRule(prompt: string): Promise<DSLRule | null> {
   const systemPrompt = SYSTEM_PROMPT.trim();
-  
+
   // Try local first
   const result = await completeLocal(prompt, {
     systemPrompt,
@@ -59,14 +57,19 @@ export async function generateScannerRule(
   }
 
   try {
-    const cleaned = result.trim().replace(/^```json|```$/g, "").trim();
+    const cleaned = result
+      .trim()
+      .replace(/^```json|```$/g, "")
+      .trim();
     const rule = JSON.parse(cleaned) as DSLRule;
     if (rule && rule.name && Array.isArray(rule.conditions) && rule.conditions.length > 0) {
       const validation = validateDSLRule(rule);
       if (validation.valid) {
         return rule;
       } else {
-        console.warn(`[aiScannerAuthoring] Generated rule failed sandbox checks: ${validation.reason}`);
+        console.warn(
+          `[aiScannerAuthoring] Generated rule failed sandbox checks: ${validation.reason}`,
+        );
       }
     }
     return getFallbackRule(prompt);
@@ -77,9 +80,18 @@ export async function generateScannerRule(
 }
 
 const VALID_CHANNELS = new Set([
-  "Brake", "Throttle", "Speed", "pitch", "roll", 
-  "LFspeed", "LRspeed", "LFtempCL", "MgukDeploykW", 
-  "EnergyStorePct", "YawRate", "ShockDeflectionFL"
+  "Brake",
+  "Throttle",
+  "Speed",
+  "pitch",
+  "roll",
+  "LFspeed",
+  "LRspeed",
+  "LFtempCL",
+  "MgukDeploykW",
+  "EnergyStorePct",
+  "YawRate",
+  "ShockDeflectionFL",
 ]);
 
 const VALID_OPERATORS = new Set([">", "<", "==", "!=", "mismatch"]);
@@ -100,7 +112,7 @@ export function validateDSLRule(rule: DSLRule): { valid: boolean; reason?: strin
   if (rule.durationSec < 0.01 || rule.durationSec > 10.0) {
     return { valid: false, reason: `Duration out of bounds: ${rule.durationSec}s` };
   }
-  
+
   for (const cond of rule.conditions) {
     if (!VALID_CHANNELS.has(cond.channel)) {
       return { valid: false, reason: `Unvalidated channel name: ${cond.channel}` };
@@ -127,10 +139,11 @@ function getFallbackRule(prompt: string): DSLRule {
       channels: ["Brake", "Speed"],
       conditions: [
         { channel: "Brake", operator: ">", value: 0.75 },
-        { channel: "Speed", operator: ">", value: 15.0 }
+        { channel: "Speed", operator: ">", value: 15.0 },
       ],
       durationSec: 0.2,
-      descriptionTemplate: "Braking pressure exceeded 75% threshold under high-speed deceleration. Potential transient locking risk."
+      descriptionTemplate:
+        "Braking pressure exceeded 75% threshold under high-speed deceleration. Potential transient locking risk.",
     };
   }
 
@@ -141,11 +154,10 @@ function getFallbackRule(prompt: string): DSLRule {
       category: "dynamics",
       severity: "warning",
       channels: ["pitch"],
-      conditions: [
-        { channel: "pitch", operator: "<", value: -0.012 }
-      ],
+      conditions: [{ channel: "pitch", operator: "<", value: -0.012 }],
       durationSec: 0.1,
-      descriptionTemplate: "Splitter pitch compression exceeded ground threshold, risking splitter grounding and vacuum seal loss."
+      descriptionTemplate:
+        "Splitter pitch compression exceeded ground threshold, risking splitter grounding and vacuum seal loss.",
     };
   }
 
@@ -156,11 +168,10 @@ function getFallbackRule(prompt: string): DSLRule {
       category: "hybrid",
       severity: "info",
       channels: ["MgukDeploykW"],
-      conditions: [
-        { channel: "MgukDeploykW", operator: ">", value: 110.0 }
-      ],
+      conditions: [{ channel: "MgukDeploykW", operator: ">", value: 110.0 }],
       durationSec: 2.0,
-      descriptionTemplate: "Energy store deployment remained saturated at peak output limits (>110 kW) on straightaway."
+      descriptionTemplate:
+        "Energy store deployment remained saturated at peak output limits (>110 kW) on straightaway.",
     };
   }
 
@@ -173,9 +184,10 @@ function getFallbackRule(prompt: string): DSLRule {
     channels: ["Throttle", "Speed"],
     conditions: [
       { channel: "Throttle", operator: ">", value: 0.9 },
-      { channel: "Speed", operator: ">", value: 10.0 }
+      { channel: "Speed", operator: ">", value: 10.0 },
     ],
     durationSec: 0.15,
-    descriptionTemplate: "Telemetry trigger detected based on custom inputs and velocity parameters."
+    descriptionTemplate:
+      "Telemetry trigger detected based on custom inputs and velocity parameters.",
   };
 }

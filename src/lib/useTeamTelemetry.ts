@@ -142,95 +142,124 @@ export function useTeamTelemetry(teamCode: string | null): UseTeamTelemetryResul
       config: { broadcast: { ack: false } },
     });
 
-    ch.on(
-      "broadcast",
-      { event: "telemetry" },
-      ({ payload }: { payload: any }) => {
-        if (!payload?.carNumber) return;
+    ch.on("broadcast", { event: "telemetry" }, ({ payload }: { payload: any }) => {
+      if (!payload?.carNumber) return;
 
-        // Perform smart mapping from carOperationalState to legacy top-level properties
-        const opState = payload.carOperationalState as CarOperationalDigest | undefined;
-        const activeDriver = opState?.activeDriver || "Unknown Driver";
-        const brakesWear = opState?.fatigueSummary?.brakes ?? 100;
+      // Perform smart mapping from carOperationalState to legacy top-level properties
+      const opState = payload.carOperationalState as CarOperationalDigest | undefined;
+      const activeDriver = opState?.activeDriver || "Unknown Driver";
+      const brakesWear = opState?.fatigueSummary?.brakes ?? 100;
 
-        const mappedTeammate: DriverTelemetrySnapshot = {
-          carNumber: payload.carNumber,
-          carName: payload.carName || "Unknown Car",
-          driverName: activeDriver,
-          carOperationalState: opState,
+      const mappedTeammate: DriverTelemetrySnapshot = {
+        carNumber: payload.carNumber,
+        carName: payload.carName || "Unknown Car",
+        driverName: activeDriver,
+        carOperationalState: opState,
 
-          // Populated advisory legacy fields from OperationalDigest where possible
-          lastLapSec: 0,
-          lastLap: "--:--.---",
-          bestLap: "--:--.---",
-          deltaSec: 0,
-          fuelRemainingL: 0,
-          fuelBurnPerLap: 0,
-          lapsEstimated: opState?.projectedPitLap ? Math.max(0, opState.projectedPitLap) : 0,
-          speedKph: 0,
-          gear: 0,
-          rpm: 0,
-          trackTempC: 0,
-          trackWetness: 0,
+        // Populated advisory legacy fields from OperationalDigest where possible
+        lastLapSec: 0,
+        lastLap: "--:--.---",
+        bestLap: "--:--.---",
+        deltaSec: 0,
+        fuelRemainingL: 0,
+        fuelBurnPerLap: 0,
+        lapsEstimated: opState?.projectedPitLap ? Math.max(0, opState.projectedPitLap) : 0,
+        speedKph: 0,
+        gear: 0,
+        rpm: 0,
+        trackTempC: 0,
+        trackWetness: 0,
 
-          tires: opState?.fatigueSummary
-            ? {
-                fl: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
-                fr: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
-                rl: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
-                rr: { tempC: 80, pressureBar: 2.0, wearPct: brakesWear, estWearPct: brakesWear, brakeTempC: 300, state: "ok" },
-              }
-            : null,
-
-          enduranceState: opState?.fatigueSummary
-            ? {
-                chassisFatigue: opState.fatigueSummary.chassis,
-                brakeWear: opState.fatigueSummary.brakes,
-                gearboxStress: opState.fatigueSummary.gearbox,
-                ersHealth: opState.fatigueSummary.ersHealth,
-              }
-            : null,
-
-          adaptationState: opState?.adaptationWindow
-            ? {
-                event: opState.adaptationWindow.active ? "DRIVER_ADAPTATION_ACTIVE" : "DRIVER_ADAPTATION_INACTIVE",
-                incomingDriver: activeDriver,
-                currentLapInWindow: opState.adaptationWindow.currentLapInWindow,
-                brakeBiteMismatchPct: 0,
-                steeringJitterMismatchPct: 0,
-                tireThermalGradientDelta: 0,
-              }
-            : null,
-
-          timestamp: payload.timestamp || Date.now(),
-          publishCount: payload.publishCount || 1,
-          isOnline: true,
-          staleness: 0,
-        };
-
-        setDrivers((prev) => {
-          const existing = prev.get(payload.carNumber);
-          if (existing) {
-            const existingSeq = existing.carOperationalState?.sequenceId ?? 0;
-            const incomingSeq = mappedTeammate.carOperationalState?.sequenceId ?? 0;
-            const existingTs = existing.timestamp ?? 0;
-            const incomingTs = mappedTeammate.timestamp ?? 0;
-
-            // Reject out-of-order or duplicate stale sequences under network packet storms
-            if (incomingSeq < existingSeq || (incomingSeq === existingSeq && incomingTs <= existingTs)) {
-              console.warn(
-                `[telemetry-sync] Discarded out-of-order/stale packet: Car ${payload.carNumber} | Inbound Seq: ${incomingSeq} (Existing: ${existingSeq}) | Inbound Ts: ${incomingTs} (Existing: ${existingTs})`
-              );
-              return prev;
+        tires: opState?.fatigueSummary
+          ? {
+              fl: {
+                tempC: 80,
+                pressureBar: 2.0,
+                wearPct: brakesWear,
+                estWearPct: brakesWear,
+                brakeTempC: 300,
+                state: "ok",
+              },
+              fr: {
+                tempC: 80,
+                pressureBar: 2.0,
+                wearPct: brakesWear,
+                estWearPct: brakesWear,
+                brakeTempC: 300,
+                state: "ok",
+              },
+              rl: {
+                tempC: 80,
+                pressureBar: 2.0,
+                wearPct: brakesWear,
+                estWearPct: brakesWear,
+                brakeTempC: 300,
+                state: "ok",
+              },
+              rr: {
+                tempC: 80,
+                pressureBar: 2.0,
+                wearPct: brakesWear,
+                estWearPct: brakesWear,
+                brakeTempC: 300,
+                state: "ok",
+              },
             }
-          }
+          : null,
 
-          const next = new Map(prev);
-          next.set(payload.carNumber, mappedTeammate);
-          return next;
-        });
-      }
-    );
+        enduranceState: opState?.fatigueSummary
+          ? {
+              chassisFatigue: opState.fatigueSummary.chassis,
+              brakeWear: opState.fatigueSummary.brakes,
+              gearboxStress: opState.fatigueSummary.gearbox,
+              ersHealth: opState.fatigueSummary.ersHealth,
+            }
+          : null,
+
+        adaptationState: opState?.adaptationWindow
+          ? {
+              event: opState.adaptationWindow.active
+                ? "DRIVER_ADAPTATION_ACTIVE"
+                : "DRIVER_ADAPTATION_INACTIVE",
+              incomingDriver: activeDriver,
+              currentLapInWindow: opState.adaptationWindow.currentLapInWindow,
+              brakeBiteMismatchPct: 0,
+              steeringJitterMismatchPct: 0,
+              tireThermalGradientDelta: 0,
+            }
+          : null,
+
+        timestamp: payload.timestamp || Date.now(),
+        publishCount: payload.publishCount || 1,
+        isOnline: true,
+        staleness: 0,
+      };
+
+      setDrivers((prev) => {
+        const existing = prev.get(payload.carNumber);
+        if (existing) {
+          const existingSeq = existing.carOperationalState?.sequenceId ?? 0;
+          const incomingSeq = mappedTeammate.carOperationalState?.sequenceId ?? 0;
+          const existingTs = existing.timestamp ?? 0;
+          const incomingTs = mappedTeammate.timestamp ?? 0;
+
+          // Reject out-of-order or duplicate stale sequences under network packet storms
+          if (
+            incomingSeq < existingSeq ||
+            (incomingSeq === existingSeq && incomingTs <= existingTs)
+          ) {
+            console.warn(
+              `[telemetry-sync] Discarded out-of-order/stale packet: Car ${payload.carNumber} | Inbound Seq: ${incomingSeq} (Existing: ${existingSeq}) | Inbound Ts: ${incomingTs} (Existing: ${existingTs})`,
+            );
+            return prev;
+          }
+        }
+
+        const next = new Map(prev);
+        next.set(payload.carNumber, mappedTeammate);
+        return next;
+      });
+    });
 
     ch.subscribe((status: "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED") => {
       setConnected(status === "SUBSCRIBED");

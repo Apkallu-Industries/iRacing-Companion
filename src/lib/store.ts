@@ -133,10 +133,10 @@ export const useWorkbench = create<WorkbenchState>()(
         // Cursor starts at the fastest lap so widgets reflect the best run.
         const startTick =
           bestLap != null ? (p!.laps.find((l) => l.lap === bestLap)?.startTick ?? 0) : 0;
-        
+
         const activeKey = get().activeWorkspace ?? "lite";
         const config = WORKSPACES[activeKey];
-        
+
         set(() => ({
           parsed: p,
           cursorTick: startTick,
@@ -220,7 +220,9 @@ export const useWorkbench = create<WorkbenchState>()(
         const config = WORKSPACES[w];
         set((s) => ({
           activeWorkspace: w,
-          selectedChannels: s.parsed ? config.defaultChannels.filter((c) => c in s.parsed!.channels) : config.defaultChannels,
+          selectedChannels: s.parsed
+            ? config.defaultChannels.filter((c) => c in s.parsed!.channels)
+            : config.defaultChannels,
           mathExpressions: config.mathExpressions,
         }));
       },
@@ -247,6 +249,6 @@ export const useWorkbench = create<WorkbenchState>()(
         activeWorkspace: state.activeWorkspace,
         activeGame: state.activeGame,
       }),
-    }
-  )
+    },
+  ),
 );

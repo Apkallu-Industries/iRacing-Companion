@@ -25,7 +25,7 @@ function calculateTireTemp(
   speedMps,
   ambientC,
   brakeHeatC,
-  dt = 1 / 60
+  dt = 1 / 60,
 ) {
   // 1. Friction heat generation (sliding mechanical energy converts to thermal energy)
   const lateralFrictionWork = Math.abs(verticalLoadN * Math.sin(slipAngleRad) * speedMps * 0.12);
@@ -48,5 +48,5 @@ function calculateTireTemp(
 }
 
 module.exports = {
-  calculateTireTemp
+  calculateTireTemp,
 };

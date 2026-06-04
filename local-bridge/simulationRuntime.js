@@ -44,7 +44,7 @@ function simulateCounterfactualStint(baseTicks, adj) {
     // Expose raw telemetry fields safely
     const c = sample.channels || {};
     const getVal = (chKey, fallback = 0) => {
-      return c[chKey] && typeof c[chKey] === "object" ? c[chKey].avg : (sample[chKey] || fallback);
+      return c[chKey] && typeof c[chKey] === "object" ? c[chKey].avg : sample[chKey] || fallback;
     };
 
     const speed = getVal("speedKph", 0) / 3.6; // m/s
@@ -67,7 +67,7 @@ function simulateCounterfactualStint(baseTicks, adj) {
       54.5 + frontBias, // base bias is 54.5% front
       3000.0, // normal load
       padTemp,
-      speed
+      speed,
     );
     padTemp = braking.padTempC;
 
@@ -78,7 +78,7 @@ function simulateCounterfactualStint(baseTicks, adj) {
       currentSoC,
       2, // Balanced
       speed,
-      dt
+      dt,
     );
     currentSoC = energy.nextSoCPct;
 
@@ -88,15 +88,33 @@ function simulateCounterfactualStint(baseTicks, adj) {
       pitch,
       frontDeflect,
       frontPackers,
-      rearRideHeightDelta
+      rearRideHeightDelta,
     );
 
     // 5. Tire temperature updates under counterfactual loads
-    const normalLoadF = 3500.0 + (aero.downforceN * 0.45);
-    const normalLoadR = 4000.0 + (aero.downforceN * 0.55);
+    const normalLoadF = 3500.0 + aero.downforceN * 0.45;
+    const normalLoadR = 4000.0 + aero.downforceN * 0.55;
 
-    tireTempFL = calculateTireTemp(tireTempFL, normalLoadF, 0.05, 0.0, speed, 20.0, padTemp * 0.1, dt);
-    tireTempFR = calculateTireTemp(tireTempFR, normalLoadF, 0.05, 0.0, speed, 20.0, padTemp * 0.1, dt);
+    tireTempFL = calculateTireTemp(
+      tireTempFL,
+      normalLoadF,
+      0.05,
+      0.0,
+      speed,
+      20.0,
+      padTemp * 0.1,
+      dt,
+    );
+    tireTempFR = calculateTireTemp(
+      tireTempFR,
+      normalLoadF,
+      0.05,
+      0.0,
+      speed,
+      20.0,
+      padTemp * 0.1,
+      dt,
+    );
     tireTempRL = calculateTireTemp(tireTempRL, normalLoadR, 0.02, 0.02, speed, 20.0, 30.0, dt);
     tireTempRR = calculateTireTemp(tireTempRR, normalLoadR, 0.02, 0.02, speed, 20.0, 30.0, dt);
 
@@ -108,7 +126,7 @@ function simulateCounterfactualStint(baseTicks, adj) {
       75,
       95,
       track.globalFrictionGripCoeff,
-      energy.mguKDeploykW
+      energy.mguKDeploykW,
     );
 
     // 7. Lateral Saturation & scrub factors
@@ -118,13 +136,14 @@ function simulateCounterfactualStint(baseTicks, adj) {
       speed,
       normalLoadR,
       (tireTempFL + tireTempFR) / 2,
-      track.globalFrictionGripCoeff
+      track.globalFrictionGripCoeff,
     );
 
     // 8. Output simulated performance changes (delta effects)
     // Stiffer rear rebound improves aero stability, softening ARB gains traction
-    const setupEfficiencyBonus = (rearRebound * 0.015) + (rearArb < 0 ? Math.abs(rearArb) * 0.025 : -rearArb * 0.02);
-    const speedMultiplier = 1.0 + (setupEfficiencyBonus * 0.005) - (aero.isBottoming ? 0.04 : 0);
+    const setupEfficiencyBonus =
+      rearRebound * 0.015 + (rearArb < 0 ? Math.abs(rearArb) * 0.025 : -rearArb * 0.02);
+    const speedMultiplier = 1.0 + setupEfficiencyBonus * 0.005 - (aero.isBottoming ? 0.04 : 0);
     const simulatedSpeedKph = Math.max(0, speed * 3.6 * speedMultiplier);
 
     // Build comprehensive telemetry frame payload matching uPlot tracers
@@ -138,7 +157,7 @@ function simulateCounterfactualStint(baseTicks, adj) {
         throttle,
         brake,
         steeringDeg: steering,
-        fuelRemainingL: Math.max(0, getVal("fuelRemainingL", 40.0) - (fuelDelta * 0.02)),
+        fuelRemainingL: Math.max(0, getVal("fuelRemainingL", 40.0) - fuelDelta * 0.02),
         aeroStabilityRating: aero.stabilityRakeRating,
         exitTractionRating: longGrip.exitTractionRating,
         lateralG: latGrip.lateralG,
@@ -146,12 +165,12 @@ function simulateCounterfactualStint(baseTicks, adj) {
         tireTempFL: Math.round(tireTempFL),
         tireTempFR: Math.round(tireTempFR),
         tireTempRL: Math.round(tireTempRL),
-        tireTempRR: Math.round(tireTempRR)
-      }
+        tireTempRR: Math.round(tireTempRR),
+      },
     };
   });
 }
 
 module.exports = {
-  simulateCounterfactualStint
+  simulateCounterfactualStint,
 };

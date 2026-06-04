@@ -29,27 +29,33 @@ import {
 
 function statusDotColor(status: ServiceStatus): string {
   switch (status) {
-    case "active":       return "#00D17F";
-    case "degraded":     return "#FFB800";
-    case "offline":      return "#FF4D4D";
-    case "initializing": return "#7A828C";
+    case "active":
+      return "#00D17F";
+    case "degraded":
+      return "#FFB800";
+    case "offline":
+      return "#FF4D4D";
+    case "initializing":
+      return "#7A828C";
   }
 }
 
 function statusLabel(status: ServiceStatus): string {
   switch (status) {
-    case "active":       return "ACTIVE";
-    case "degraded":     return "DEGRADED";
-    case "offline":      return "OFFLINE";
-    case "initializing": return "INIT…";
+    case "active":
+      return "ACTIVE";
+    case "degraded":
+      return "DEGRADED";
+    case "offline":
+      return "OFFLINE";
+    case "initializing":
+      return "INIT…";
   }
 }
 
 // ─── Overall health dot (compact, for the header) ───────────────────────────
 
-function overallStatus(
-  statuses: ServiceStatus[]
-): ServiceStatus {
+function overallStatus(statuses: ServiceStatus[]): ServiceStatus {
   if (statuses.some((s) => s === "initializing")) return "initializing";
   if (statuses.some((s) => s === "offline" || s === "degraded")) return "degraded";
   return "active";
@@ -77,10 +83,7 @@ function MonitorRow({
       className="flex items-start gap-2.5 px-3 py-2"
       style={{ borderBottom: "1px solid #1C2430" }}
     >
-      <Icon
-        className="h-3 w-3 mt-0.5 shrink-0"
-        style={{ color: "#7A828C" }}
-      />
+      <Icon className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "#7A828C" }} />
       <div className="flex flex-col flex-1 min-w-0 gap-0.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-white">
@@ -94,22 +97,15 @@ function MonitorRow({
                 boxShadow: status === "active" ? `0 0 4px ${color}` : "none",
               }}
             />
-            <span
-              className="text-[8px] font-black uppercase tracking-widest"
-              style={{ color }}
-            >
+            <span className="text-[8px] font-black uppercase tracking-widest" style={{ color }}>
               {statusLabel(status)}
             </span>
             {latencyMs !== undefined && status !== "offline" && (
-              <span className="text-[8px] text-[#3D4751] tabular-nums">
-                {latencyMs}ms
-              </span>
+              <span className="text-[8px] text-[#3D4751] tabular-nums">{latencyMs}ms</span>
             )}
           </div>
         </div>
-        <span className="text-[8px] text-[#7A828C] truncate leading-tight">
-          {detail}
-        </span>
+        <span className="text-[8px] text-[#7A828C] truncate leading-tight">{detail}</span>
       </div>
     </div>
   );
@@ -123,10 +119,7 @@ export function RuntimeMonitor() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const status = useRuntimeStatus();
 
-  const health = overallStatus([
-    status.bridge.status,
-    status.sessionStore.status,
-  ]);
+  const health = overallStatus([status.bridge.status, status.sessionStore.status]);
 
   const dotColor = statusDotColor(health);
   const isElectron = typeof window !== "undefined" && (window as any).pitWallRuntime !== undefined;
@@ -333,12 +326,19 @@ export function RuntimeMonitor() {
             </div>
 
             {/* Bridge + MongoDB + AI controls */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1" style={{ borderTop: "1px solid #1C2430" }}>
+            <div
+              className="flex flex-wrap items-center gap-1.5 pt-1"
+              style={{ borderTop: "1px solid #1C2430" }}
+            >
               <button
                 id="runtime-restart-bridge"
                 onClick={handleRestartBridge}
                 className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[8px] font-bold uppercase tracking-wider transition-all hover:opacity-80"
-                style={{ backgroundColor: "#1C2430", color: "#7A828C", border: "1px solid #263241" }}
+                style={{
+                  backgroundColor: "#1C2430",
+                  color: "#7A828C",
+                  border: "1px solid #263241",
+                }}
               >
                 <RefreshCw className="h-2.5 w-2.5" />
                 Bridge
@@ -349,7 +349,11 @@ export function RuntimeMonitor() {
                     id="runtime-ensure-mongodb"
                     onClick={handleEnsureMongoDB}
                     className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[8px] font-bold uppercase tracking-wider transition-all hover:opacity-80"
-                    style={{ backgroundColor: "#1C2430", color: "#7A828C", border: "1px solid #263241" }}
+                    style={{
+                      backgroundColor: "#1C2430",
+                      color: "#7A828C",
+                      border: "1px solid #263241",
+                    }}
                   >
                     <PlayCircle className="h-2.5 w-2.5" />
                     Start MongoDB
@@ -358,7 +362,11 @@ export function RuntimeMonitor() {
                     id="runtime-refresh-ai"
                     onClick={handleRefreshAiMode}
                     className="flex items-center gap-1.5 rounded-sm px-2 py-1 text-[8px] font-bold uppercase tracking-wider transition-all hover:opacity-80"
-                    style={{ backgroundColor: "#1C2430", color: "#7A828C", border: "1px solid #263241" }}
+                    style={{
+                      backgroundColor: "#1C2430",
+                      color: "#7A828C",
+                      border: "1px solid #263241",
+                    }}
                   >
                     <Brain className="h-2.5 w-2.5" />
                     Probe AI

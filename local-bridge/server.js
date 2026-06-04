@@ -82,7 +82,9 @@ if (fs.existsSync(configPath)) {
     if (config.driverName) process.env.DRIVER_NAME = config.driverName;
     if (config.iracingId) process.env.IRACING_ID = config.iracingId;
     if (config.teamCode) process.env.TEAM_CODE = config.teamCode;
-    console.log(`[bridge] Loaded saved driver config: ${config.driverName} (ID: ${config.iracingId}) | Team: ${config.teamCode}`);
+    console.log(
+      `[bridge] Loaded saved driver config: ${config.driverName} (ID: ${config.iracingId}) | Team: ${config.teamCode}`,
+    );
   } catch (e) {
     console.warn("[bridge] Failed to load driver-config.json:", e.message);
   }
@@ -106,7 +108,7 @@ if (fs.existsSync(gameConfigPath)) {
 // MONGO_URI is injected by the Electron Runtime Supervisor via env.
 // If absent, recording silently degrades — bridge still works without MongoDB.
 const MONGO_URI = process.env.MONGO_URI || null;
-const USER_ID   = process.env.PITWALL_USER_ID || "local";
+const USER_ID = process.env.PITWALL_USER_ID || "local";
 
 /** @type {import('./telemetry-recorder').TelemetryRecorder | null} */
 let recorder = null;
@@ -136,7 +138,7 @@ async function startRecordingSession(sessionInfo) {
     // Asynchronously run tiered retention compaction
     try {
       const { executeRetentionPolicy } = require("./retention");
-      executeRetentionPolicy(recorder.db).catch(err => {
+      executeRetentionPolicy(recorder.db).catch((err) => {
         console.warn("[bridge] Retention policy sweep warning:", err.message);
       });
     } catch (e) {
@@ -162,8 +164,11 @@ let IRacingSDK = null;
 let iracingInstance = null;
 let currentIracingConnected = false;
 const bridgeVersion = (() => {
-  try { return require("./package.json").version || "unknown"; }
-  catch { return "unknown"; }
+  try {
+    return require("./package.json").version || "unknown";
+  } catch {
+    return "unknown";
+  }
 })();
 const serverStartedAt = Date.now();
 
@@ -181,7 +186,7 @@ let activeLicense = {
   hwid: licensing.getHWID(),
   tier: "lite",
   expires: "never",
-  error: "No license key installed."
+  error: "No license key installed.",
 };
 
 const LICENSE_FILE = path.join(__dirname, "license.key");
@@ -195,7 +200,7 @@ if (fs.existsSync(LICENSE_FILE)) {
         hwid: result.hwid,
         tier: result.tier,
         expires: result.expires,
-        error: null
+        error: null,
       };
       console.log(`[bridge] Loaded valid license key (Tier: ${result.tier.toUpperCase()})`);
     } else {
@@ -237,10 +242,10 @@ const MIME = {
 let ssrHandler = null;
 (async function initSSR() {
   try {
-    const serverPath = path.join(__dirname, 'server', 'server.js');
+    const serverPath = path.join(__dirname, "server", "server.js");
     if (fs.existsSync(serverPath)) {
-      const { createServerAdapter } = await import('@whatwg-node/server');
-      const ssrModule = await import("file://" + serverPath.replace(/\\/g, '/'));
+      const { createServerAdapter } = await import("@whatwg-node/server");
+      const ssrModule = await import("file://" + serverPath.replace(/\\/g, "/"));
       ssrHandler = createServerAdapter(ssrModule.default.fetch);
       console.log("[bridge] Mounted TanStack Start SSR Handler");
     }
@@ -267,15 +272,17 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/health" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      connected: true,
-      iRacingConnected: currentIracingConnected,
-      assettoCorsaConnected: currentAssettoConnected,
-      activeGame: activeGame,
-      version: bridgeVersion,
-      uptimeMs: Date.now() - serverStartedAt,
-      timestamp: Date.now(),
-    }));
+    res.end(
+      JSON.stringify({
+        connected: true,
+        iRacingConnected: currentIracingConnected,
+        assettoCorsaConnected: currentAssettoConnected,
+        activeGame: activeGame,
+        version: bridgeVersion,
+        uptimeMs: Date.now() - serverStartedAt,
+        timestamp: Date.now(),
+      }),
+    );
     return;
   }
 
@@ -289,23 +296,25 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/game/config" && req.method === "POST") {
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
         const payload = JSON.parse(body);
         const { game } = payload;
         if (game === "iracing" || game === "assettocorsa") {
           activeGame = game;
-          
+
           // Save to file
           const gameConfigPath = path.join(__dirname, "game-config.json");
           fs.writeFileSync(gameConfigPath, JSON.stringify({ activeGame }, null, 2), "utf8");
-          
+
           console.log(`[bridge] Swapped active game to: ${activeGame}`);
-          
+
           // Hot swap bridges dynamically
           initActiveTelemetryBridge();
-          
+
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, activeGame }));
         } else {
@@ -337,26 +346,34 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/driver/config" && req.method === "POST") {
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
         const payload = JSON.parse(body);
         const { driverName, iracingId, teamCode } = payload;
-        
+
         // Save to file
         const configPath = path.join(__dirname, "driver-config.json");
-        fs.writeFileSync(configPath, JSON.stringify({ driverName, iracingId, teamCode }, null, 2), "utf8");
-        
+        fs.writeFileSync(
+          configPath,
+          JSON.stringify({ driverName, iracingId, teamCode }, null, 2),
+          "utf8",
+        );
+
         // Update environment variables
         process.env.DRIVER_NAME = driverName || "";
         process.env.IRACING_ID = iracingId || "";
         process.env.TEAM_CODE = teamCode || "";
-        
-        console.log(`[bridge] Configured driver: ${driverName} (ID: ${iracingId}) | Team: ${teamCode}`);
-        
+
+        console.log(
+          `[bridge] Configured driver: ${driverName} (ID: ${iracingId}) | Team: ${teamCode}`,
+        );
+
         // Re-initialize team relay dynamically
         teamRelay.init();
-        
+
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, driverName, iracingId, teamCode }));
       } catch (err) {
@@ -369,12 +386,14 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/replay/command" && req.method === "POST") {
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       try {
         const payload = JSON.parse(body);
         const { command } = payload;
-        
+
         if (!iracingInstance || !currentIracingConnected) {
           res.writeHead(503, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: false, error: "iRacing SDK not connected" }));
@@ -386,7 +405,9 @@ const server = http.createServer(async (req, res) => {
             const sessionNum = parseInt(payload.sessionNum ?? 0, 10);
             const sessionTimeMS = parseInt(payload.sessionTimeMS ?? 0, 10);
             iracingInstance.triggerReplaySessionSearch(sessionNum, sessionTimeMS);
-            console.log(`[bridge] Replay seek sent: session ${sessionNum}, time ${sessionTimeMS}ms`);
+            console.log(
+              `[bridge] Replay seek sent: session ${sessionNum}, time ${sessionTimeMS}ms`,
+            );
             break;
           }
           case "speed": {
@@ -420,7 +441,9 @@ const server = http.createServer(async (req, res) => {
             const groupVal = parseInt(payload.group ?? 1, 10);
             const cameraVal = parseInt(payload.camera ?? 0, 10);
             iracingInstance.changeCameraPosition(positionVal, groupVal, cameraVal);
-            console.log(`[bridge] Camera position switch sent: position ${positionVal}, group ${groupVal}, camera ${cameraVal}`);
+            console.log(
+              `[bridge] Camera position switch sent: position ${positionVal}, group ${groupVal}, camera ${cameraVal}`,
+            );
             break;
           }
           default:
@@ -455,7 +478,7 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/license" && req.method === "POST") {
     let body = "";
-    req.on("data", chunk => {
+    req.on("data", (chunk) => {
       body += chunk;
     });
     req.on("end", () => {
@@ -470,9 +493,11 @@ const server = http.createServer(async (req, res) => {
             hwid: result.hwid,
             tier: result.tier,
             expires: result.expires,
-            error: null
+            error: null,
           };
-          console.log(`[bridge] Activated license successfully (Tier: ${result.tier.toUpperCase()})`);
+          console.log(
+            `[bridge] Activated license successfully (Tier: ${result.tier.toUpperCase()})`,
+          );
           broadcastLicenseStatus();
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ success: true, tier: result.tier, expires: result.expires }));
@@ -492,12 +517,14 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/mongo/status" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      connected: recorderConnected,
-      uri: MONGO_URI ? MONGO_URI.replace(/:([^@]+)@/, ":***@") : null,
-      sessionId: recorderSessionId ? recorderSessionId.toString() : null,
-      sampleCount: recorderSampleCount,
-    }));
+    res.end(
+      JSON.stringify({
+        connected: recorderConnected,
+        uri: MONGO_URI ? MONGO_URI.replace(/:([^@]+)@/, ":***@") : null,
+        sessionId: recorderSessionId ? recorderSessionId.toString() : null,
+        sampleCount: recorderSampleCount,
+      }),
+    );
     return;
   }
 
@@ -598,11 +625,11 @@ const server = http.createServer(async (req, res) => {
         filter = parsedQuery.filter;
         projection = parsedQuery.projection;
       } else {
-        if (params.get("track"))    filter.track    = params.get("track");
-        if (params.get("car"))      filter.car      = params.get("car");
+        if (params.get("track")) filter.track = params.get("track");
+        if (params.get("car")) filter.car = params.get("car");
         if (params.get("category")) filter.category = params.get("category");
         if (params.get("severity")) filter.severity = params.get("severity");
-        if (params.get("corner"))   filter.cornerNumber = parseInt(params.get("corner"), 10);
+        if (params.get("corner")) filter.cornerNumber = parseInt(params.get("corner"), 10);
       }
 
       // Shape and optimize query using Phase 13 QueryPlanner
@@ -616,10 +643,7 @@ const server = http.createServer(async (req, res) => {
         cursor.hint(planned.hint);
       }
 
-      const events = await cursor
-        .sort({ timestamp: -1 })
-        .limit(planned.limit)
-        .toArray();
+      const events = await cursor.sort({ timestamp: -1 }).limit(planned.limit).toArray();
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ events }));
@@ -637,14 +661,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const payload = JSON.parse(body);
         const { events } = payload;
         if (Array.isArray(events) && events.length > 0) {
           const { ObjectId } = require("mongodb");
-          const docs = events.map(ev => {
+          const docs = events.map((ev) => {
             let sid = null;
             if (ev.session_id) {
               sid = ObjectId.isValid(ev.session_id) ? new ObjectId(ev.session_id) : ev.session_id;
@@ -717,14 +743,20 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const payload = JSON.parse(body);
-        const { session_id, lap_number, change_type, parameter, delta, consequences, notes } = payload;
+        const { session_id, lap_number, change_type, parameter, delta, consequences, notes } =
+          payload;
         const { ObjectId } = require("mongodb");
         const doc = {
-          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          session_id:
+            session_id && ObjectId.isValid(session_id)
+              ? new ObjectId(session_id)
+              : recorderSessionId || null,
           timestamp: new Date(),
           lap_number: lap_number != null ? parseInt(lap_number, 10) : 0,
           change_type: change_type || "general",
@@ -751,10 +783,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
-      const profiles = await recorder.db
-        .collection("team_profiles")
-        .find({})
-        .toArray();
+      const profiles = await recorder.db.collection("team_profiles").find({}).toArray();
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ profiles }));
     } catch (e) {
@@ -771,7 +800,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const profile = JSON.parse(body);
@@ -781,11 +812,9 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        await recorder.db.collection("team_profiles").updateOne(
-          { id: profile.id },
-          { $set: profile },
-          { upsert: true }
-        );
+        await recorder.db
+          .collection("team_profiles")
+          .updateOne({ id: profile.id }, { $set: profile }, { upsert: true });
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, profile }));
       } catch (err) {
@@ -831,21 +860,38 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const payload = JSON.parse(body);
-        const { session_id, lap_number, corner_number, engineer_name, notes, linked_incident_id, replay_bookmark_sec } = payload;
+        const {
+          session_id,
+          lap_number,
+          corner_number,
+          engineer_name,
+          notes,
+          linked_incident_id,
+          replay_bookmark_sec,
+        } = payload;
         const { ObjectId } = require("mongodb");
         const doc = {
-          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          session_id:
+            session_id && ObjectId.isValid(session_id)
+              ? new ObjectId(session_id)
+              : recorderSessionId || null,
           timestamp: new Date(),
           lap_number: lap_number != null ? parseInt(lap_number, 10) : undefined,
           corner_number: corner_number != null ? parseInt(corner_number, 10) : undefined,
           engineer_name: engineer_name || "Lead Engineer",
           notes: notes || "",
-          linked_incident_id: linked_incident_id && ObjectId.isValid(linked_incident_id) ? new ObjectId(linked_incident_id) : undefined,
-          replay_bookmark_sec: replay_bookmark_sec != null ? parseFloat(replay_bookmark_sec) : undefined,
+          linked_incident_id:
+            linked_incident_id && ObjectId.isValid(linked_incident_id)
+              ? new ObjectId(linked_incident_id)
+              : undefined,
+          replay_bookmark_sec:
+            replay_bookmark_sec != null ? parseFloat(replay_bookmark_sec) : undefined,
         };
         await recorder.db.collection("session_notes").insertOne(doc);
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -895,14 +941,19 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const payload = JSON.parse(body);
         const { session_id, title, content, engineer_name, tags } = payload;
         const { ObjectId } = require("mongodb");
         const doc = {
-          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          session_id:
+            session_id && ObjectId.isValid(session_id)
+              ? new ObjectId(session_id)
+              : recorderSessionId || null,
           timestamp: new Date(),
           title: title || "Stint Strategy Update",
           content: content || "",
@@ -955,14 +1006,19 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const payload = JSON.parse(body);
         const { session_id, lap_number, replay_tick, label, description } = payload;
         const { ObjectId } = require("mongodb");
         const doc = {
-          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          session_id:
+            session_id && ObjectId.isValid(session_id)
+              ? new ObjectId(session_id)
+              : recorderSessionId || null,
           timestamp: new Date(),
           lap_number: lap_number != null ? parseInt(lap_number, 10) : 1,
           replay_tick: replay_tick != null ? parseInt(replay_tick, 10) : 0,
@@ -1015,14 +1071,27 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       try {
         const payload = JSON.parse(body);
-        const { session_id, lap_number, chassis_profile, springs, dampers, wing_angle, tire_pressures } = payload;
+        const {
+          session_id,
+          lap_number,
+          chassis_profile,
+          springs,
+          dampers,
+          wing_angle,
+          tire_pressures,
+        } = payload;
         const { ObjectId } = require("mongodb");
         const doc = {
-          session_id: session_id && ObjectId.isValid(session_id) ? new ObjectId(session_id) : (recorderSessionId || null),
+          session_id:
+            session_id && ObjectId.isValid(session_id)
+              ? new ObjectId(session_id)
+              : recorderSessionId || null,
           timestamp: new Date(),
           lap_number: lap_number != null ? parseInt(lap_number, 10) : 1,
           chassis_profile: chassis_profile || "gt3",
@@ -1059,11 +1128,21 @@ const server = http.createServer(async (req, res) => {
       // Query historical setup changes and scanner events to feed the correlation builder
       const [changes, events] = await Promise.all([
         recorder.db.collection("setup_changes").find({}).limit(50).toArray(),
-        recorder.db.collection("scanner_events").find({}).limit(100).toArray()
+        recorder.db.collection("scanner_events").find({}).limit(100).toArray(),
       ]);
 
-      const { calculateSessionCorrelations } = require("../src/lib/session-intelligence/correlationEngine");
-      const correlation = calculateSessionCorrelations(track, car, rebound, ambient, laps, changes, events);
+      const {
+        calculateSessionCorrelations,
+      } = require("../src/lib/session-intelligence/correlationEngine");
+      const correlation = calculateSessionCorrelations(
+        track,
+        car,
+        rebound,
+        ambient,
+        laps,
+        changes,
+        events,
+      );
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ correlation }));
@@ -1126,14 +1205,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     let body = "";
-    req.on("data", chunk => { body += chunk; });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", async () => {
       const startQueryTime = Date.now();
       try {
         const payload = JSON.parse(body);
         const { sessionId, adjustments } = payload;
         const { ObjectId } = require("mongodb");
-        
+
         if (!sessionId) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "sessionId is required for scenario cloning" }));
@@ -1151,8 +1232,16 @@ const server = http.createServer(async (req, res) => {
 
         // Enforce Replay Sort Normalization Guarantees: sort strictly by (sequenceId ASC, timestamp ASC) keys
         samples.sort((a, b) => {
-          const seqA = a.sequence_id || a.channels?.sequenceId || a.channels?.carOperationalState?.sequenceId || 0;
-          const seqB = b.sequence_id || b.channels?.sequenceId || b.channels?.carOperationalState?.sequenceId || 0;
+          const seqA =
+            a.sequence_id ||
+            a.channels?.sequenceId ||
+            a.channels?.carOperationalState?.sequenceId ||
+            0;
+          const seqB =
+            b.sequence_id ||
+            b.channels?.sequenceId ||
+            b.channels?.carOperationalState?.sequenceId ||
+            0;
           if (seqA !== seqB) return seqA - seqB;
           const tsA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
           const tsB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
@@ -1160,17 +1249,22 @@ const server = http.createServer(async (req, res) => {
         });
 
         // Run counterfactual physical stint simulation using our Physics layer
-        const counterfactual = simulationRuntime.simulateCounterfactualStint(samples, adjustments || {});
+        const counterfactual = simulationRuntime.simulateCounterfactualStint(
+          samples,
+          adjustments || {},
+        );
 
         // Log query planning performance to our self-monitoring observability tracker
         observability.recordQueryLatency(Date.now() - startQueryTime);
 
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          success: true,
-          count: counterfactual.length,
-          counterfactual
-        }));
+        res.end(
+          JSON.stringify({
+            success: true,
+            count: counterfactual.length,
+            counterfactual,
+          }),
+        );
       } catch (err) {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: err.message }));
@@ -1181,10 +1275,12 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === "/api/observability/metrics" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      success: true,
-      metrics: observability.getMetrics()
-    }));
+    res.end(
+      JSON.stringify({
+        success: true,
+        metrics: observability.getMetrics(),
+      }),
+    );
     return;
   }
 
@@ -1220,7 +1316,10 @@ const server = http.createServer(async (req, res) => {
           return ssrHandler(req, res);
         } catch (err) {
           try {
-            console.warn("[bridge] SSR handler error — disabling SSR fallback:", err && err.message ? err.message : err);
+            console.warn(
+              "[bridge] SSR handler error — disabling SSR fallback:",
+              err && err.message ? err.message : err,
+            );
           } catch (_) {}
           // Disable SSR for subsequent requests and fall back to SPA index.html
           ssrHandler = null;
@@ -1264,7 +1363,10 @@ try {
     }
   });
 } catch (e) {
-  console.warn('[bridge] Failed to subscribe runtimeBus -> wss relay:', e && e.message ? e.message : e);
+  console.warn(
+    "[bridge] Failed to subscribe runtimeBus -> wss relay:",
+    e && e.message ? e.message : e,
+  );
 }
 server.listen(PORT, () => {
   console.log(`[bridge] dashboard:  http://localhost:${PORT}`);
@@ -1308,10 +1410,10 @@ function startIRacingBridge() {
     console.warn("[bridge] Cannot start iRacing bridge: irsdk-node is unavailable.");
     return;
   }
-  
+
   const iracing = iracingInstance || new IRacingSDK({ autoEnableTelemetry: true });
   iracingInstance = iracing;
-  
+
   telemetryInterval = setInterval(() => {
     const connected = iracing.sessionStatusOK || iracing.startSDK();
     currentIracingConnected = Boolean(connected);
@@ -1325,8 +1427,8 @@ function startIRacingBridge() {
         const driverInfo = sessionData?.DriverInfo;
         const me = driverInfo?.Drivers?.[driverInfo?.DriverCarIdx] ?? {};
         startRecordingSession({
-          track:  weekend?.TrackDisplayName ?? "unknown",
-          car:    me.CarScreenName ?? "unknown",
+          track: weekend?.TrackDisplayName ?? "unknown",
+          car: me.CarScreenName ?? "unknown",
           driver: process.env.DRIVER_NAME || me.UserName || "unknown",
           sessionInfoYaml: "",
         });
@@ -1339,7 +1441,7 @@ function startIRacingBridge() {
           env: {
             trackTempC: weekend?.WeekendOptions?.TrackTemp ?? 0,
             airTempC: weekend?.WeekendOptions?.AirTemp ?? 0,
-          }
+          },
         });
       } else {
         // Stop recording when iRacing disconnects
@@ -1360,11 +1462,16 @@ function startIRacingBridge() {
     // Phase 15 Endurance State calculations
     carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
     const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
-    
+
     // Authoritative Ingest to produce deterministic nextState & sequences
     const enduranceState = carStateRuntime.getCurrentState();
-    const nextState = vehicleIdentityRuntime.ingestFrame(latest, enduranceState, swapReport, currentLap);
-    
+    const nextState = vehicleIdentityRuntime.ingestFrame(
+      latest,
+      enduranceState,
+      swapReport,
+      currentLap,
+    );
+
     // Add authoritative state to frame projection
     latest.carOperationalState = nextState;
     latest.enduranceState = enduranceState;
@@ -1395,7 +1502,7 @@ function startIRacingBridge() {
         mgukDeploykW: latest.all?.MgukDeploykW || 0,
         frontLeftDeflection: latest.all?.LFshockDefl || latest.all?.LFshockDefl_ST || 0,
         rearRightSpeedMps: latest.all?.RRspeed || 0,
-        rearLeftSpeedMps: latest.all?.LRspeed || 0
+        rearLeftSpeedMps: latest.all?.LRspeed || 0,
       };
 
       analyticalWorker.postMessage({
@@ -1403,8 +1510,8 @@ function startIRacingBridge() {
         payload: {
           current: currentTick,
           previous: previousFrame || currentTick,
-          hz: TICK_HZ
-        }
+          hz: TICK_HZ,
+        },
       });
 
       previousFrame = currentTick;
@@ -1472,7 +1579,7 @@ function startAssettoCorsaBridge() {
   const readline = require("readline");
   const rl = readline.createInterface({
     input: assettoProcess.stdout,
-    terminal: false
+    terminal: false,
   });
 
   rl.on("line", (line) => {
@@ -1480,11 +1587,11 @@ function startAssettoCorsaBridge() {
       const data = JSON.parse(line);
       if (data.connected) {
         currentAssettoConnected = true;
-        
+
         if (!wasConnected) {
           console.log("[bridge] Assetto Corsa connected");
           wasConnected = true;
-          
+
           startRecordingSession({
             track: data.static?.track ? `ac-${data.static.track}` : "ac-unknown",
             car: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
@@ -1498,9 +1605,13 @@ function startAssettoCorsaBridge() {
             teamId: process.env.TEAM_CODE || "local",
             driverId: data.static?.playerName || "unknown",
             env: {
-              trackTempC: data.physics?.tyreCoreTemperature ? (data.physics.tyreCoreTemperature.reduce((a,b)=>a+b,0)/4) : 0,
-              airTempC: data.physics?.tyreCoreTemperature ? (data.physics.tyreCoreTemperature.reduce((a,b)=>a+b,0)/4) : 0,
-            }
+              trackTempC: data.physics?.tyreCoreTemperature
+                ? data.physics.tyreCoreTemperature.reduce((a, b) => a + b, 0) / 4
+                : 0,
+              airTempC: data.physics?.tyreCoreTemperature
+                ? data.physics.tyreCoreTemperature.reduce((a, b) => a + b, 0) / 4
+                : 0,
+            },
           });
         }
 
@@ -1510,10 +1621,15 @@ function startAssettoCorsaBridge() {
 
         carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
         const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
-        
+
         const enduranceState = carStateRuntime.getCurrentState();
-        const nextState = vehicleIdentityRuntime.ingestFrame(latest, enduranceState, swapReport, currentLap);
-        
+        const nextState = vehicleIdentityRuntime.ingestFrame(
+          latest,
+          enduranceState,
+          swapReport,
+          currentLap,
+        );
+
         latest.carOperationalState = nextState;
         latest.enduranceState = enduranceState;
         if (swapReport) {
@@ -1540,7 +1656,7 @@ function startAssettoCorsaBridge() {
             mgukDeploykW: 0,
             frontLeftDeflection: data.physics?.suspensionTravel?.[0] || 0,
             rearRightSpeedMps: latest.speedKph / 3.6,
-            rearLeftSpeedMps: latest.speedKph / 3.6
+            rearLeftSpeedMps: latest.speedKph / 3.6,
           };
 
           analyticalWorker.postMessage({
@@ -1548,8 +1664,8 @@ function startAssettoCorsaBridge() {
             payload: {
               current: currentTick,
               previous: previousFrame || currentTick,
-              hz: TICK_HZ
-            }
+              hz: TICK_HZ,
+            },
           });
 
           previousFrame = currentTick;
@@ -1566,7 +1682,7 @@ function startAssettoCorsaBridge() {
               latest.lapLastLapTimeSec,
               latest.fuelRemainingL,
               latest.trackTempC,
-              latest.airTempC
+              latest.airTempC,
             );
           }
         }
@@ -1670,7 +1786,8 @@ function mapAssettoCorsaTelemetry(d) {
   return {
     connected: true,
     source: "live",
-    session: `${g.session === 0 ? "PRACTICE" : g.session === 1 ? "QUALIFY" : g.session === 2 ? "RACE" : "SESSION"} — ac-${s.track || "TRACK"}`.toUpperCase(),
+    session:
+      `${g.session === 0 ? "PRACTICE" : g.session === 1 ? "QUALIFY" : g.session === 2 ? "RACE" : "SESSION"} — ac-${s.track || "TRACK"}`.toUpperCase(),
     track: s.track ? `ac-${s.track}` : "ac-—",
     car: s.carModel ? `ac-${s.carModel}` : "ac-—",
     carNumber: "0",
@@ -1702,10 +1819,42 @@ function mapAssettoCorsaTelemetry(d) {
     lapsEstimated: 99,
 
     tires: {
-      fl: { tempC: p.tyreCoreTemperature?.[0] ?? 0, pressureBar: flPresBar, wearPct: flWear, estWearPct: flWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
-      fr: { tempC: p.tyreCoreTemperature?.[1] ?? 0, pressureBar: frPresBar, wearPct: frWear, estWearPct: frWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
-      rl: { tempC: p.tyreCoreTemperature?.[2] ?? 0, pressureBar: rlPresBar, wearPct: rlWear, estWearPct: rlWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
-      rr: { tempC: p.tyreCoreTemperature?.[3] ?? 0, pressureBar: rrPresBar, wearPct: rrWear, estWearPct: rrWear, brakeTempC: 0, brakeLinePress: 0, state: "ok" },
+      fl: {
+        tempC: p.tyreCoreTemperature?.[0] ?? 0,
+        pressureBar: flPresBar,
+        wearPct: flWear,
+        estWearPct: flWear,
+        brakeTempC: 0,
+        brakeLinePress: 0,
+        state: "ok",
+      },
+      fr: {
+        tempC: p.tyreCoreTemperature?.[1] ?? 0,
+        pressureBar: frPresBar,
+        wearPct: frWear,
+        estWearPct: frWear,
+        brakeTempC: 0,
+        brakeLinePress: 0,
+        state: "ok",
+      },
+      rl: {
+        tempC: p.tyreCoreTemperature?.[2] ?? 0,
+        pressureBar: rlPresBar,
+        wearPct: rlWear,
+        estWearPct: rlWear,
+        brakeTempC: 0,
+        brakeLinePress: 0,
+        state: "ok",
+      },
+      rr: {
+        tempC: p.tyreCoreTemperature?.[3] ?? 0,
+        pressureBar: rrPresBar,
+        wearPct: rrWear,
+        estWearPct: rrWear,
+        brakeTempC: 0,
+        brakeLinePress: 0,
+        state: "ok",
+      },
     },
 
     gLat: p.accG?.[0] ?? 0,
@@ -1750,7 +1899,7 @@ function mapAssettoCorsaTelemetry(d) {
       VelocityX: p.velocity?.[0] ?? 0,
       VelocityY: p.velocity?.[1] ?? 0,
       VelocityZ: p.velocity?.[2] ?? 0,
-    }
+    },
   };
 }
 
@@ -1798,7 +1947,7 @@ function getDeltaPacket(full) {
       VelocityX: full.extras?.VelocityX ?? 0,
       VelocityY: full.extras?.VelocityY ?? 0,
       VelocityZ: full.extras?.VelocityZ ?? 0,
-    }
+    },
   };
 }
 
@@ -1854,7 +2003,7 @@ function getMediumSyncPacket(full) {
       VelocityX: full.extras?.VelocityX ?? 0,
       VelocityY: full.extras?.VelocityY ?? 0,
       VelocityZ: full.extras?.VelocityZ ?? 0,
-    }
+    },
   };
 }
 
@@ -1886,7 +2035,7 @@ setInterval(() => {
                   carId: latest.carNumber || "963",
                   teamId: "team_pitwall",
                   driverId: latest.driver || "driver_A",
-                  payload: latest
+                  payload: latest,
                 });
               }
               client.send(jsonMsgFull);
@@ -1897,7 +2046,7 @@ setInterval(() => {
                   carId: latest.carNumber || "963",
                   teamId: "team_pitwall",
                   driverId: latest.driver || "driver_A",
-                  payload: getMediumSyncPacket(latest)
+                  payload: getMediumSyncPacket(latest),
                 });
               }
               client.send(jsonMsgMedium);
@@ -1908,7 +2057,7 @@ setInterval(() => {
                   carId: latest.carNumber || "963",
                   teamId: "team_pitwall",
                   driverId: latest.driver || "driver_A",
-                  payload: getDeltaPacket(latest)
+                  payload: getDeltaPacket(latest),
                 });
               }
               client.send(jsonMsgDelta);
@@ -1941,12 +2090,14 @@ wss.on("connection", (ws) => {
     if (ws.isBinary) {
       ws.send(binaryEncoder.encodeTelemetry(latest));
     } else {
-      ws.send(JSON.stringify({
-        carId: latest.carNumber || "963",
-        teamId: "team_pitwall",
-        driverId: latest.driver || "driver_A",
-        payload: latest
-      }));
+      ws.send(
+        JSON.stringify({
+          carId: latest.carNumber || "963",
+          teamId: "team_pitwall",
+          driverId: latest.driver || "driver_A",
+          payload: latest,
+        }),
+      );
     }
   }
 
@@ -1970,7 +2121,7 @@ wss.on("connection", (ws) => {
 });
 
 // Graceful shutdown — close recorder, stop reader processes, and disconnect team relay cleanly
-process.on("SIGINT",  async () => {
+process.on("SIGINT", async () => {
   stopAssettoCorsaBridge();
   await stopRecordingSession();
   teamRelay.disconnect();
@@ -2047,8 +2198,8 @@ function mapTelemetry(v, session) {
     sectors: updateSectors(v, session),
 
     fuelRemainingL: v.FuelLevel ?? 0,
-    fuelUsePerHour: v.FuelUsePerHour ?? 0,       // kg/hr from iRacing (≈ L/hr for petrol)
-    lapLastLapTimeSec: v.LapLastLapTime ?? 0,     // raw seconds — lets UI compute burn per lap
+    fuelUsePerHour: v.FuelUsePerHour ?? 0, // kg/hr from iRacing (≈ L/hr for petrol)
+    lapLastLapTimeSec: v.LapLastLapTime ?? 0, // raw seconds — lets UI compute burn per lap
     lapsEstimated: estimateLaps(v),
 
     tires: {

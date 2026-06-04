@@ -32,7 +32,7 @@ import {
   History,
   FileCode,
   Info,
-  HelpCircle
+  HelpCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/team-guide")({
@@ -63,7 +63,7 @@ function TeamGuidePage() {
     codeGenerated: false,
     envDistributed: false,
     bridgeRunning: false,
-    rdyVerify: false
+    rdyVerify: false,
   });
 
   const [driverChecklist, setDriverChecklist] = useState({
@@ -77,19 +77,19 @@ function TeamGuidePage() {
     urlOpened: false,
     teamCodePasted: false,
     joinedSuccessfully: false,
-    strategyPlanned: false
+    strategyPlanned: false,
   });
 
   const toggleOwnerCheck = (key: keyof typeof ownerChecklist) => {
-    setOwnerChecklist(prev => ({ ...prev, [key]: !prev[key] }));
+    setOwnerChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleDriverCheck = (key: keyof typeof driverChecklist) => {
-    setDriverChecklist(prev => ({ ...prev, [key]: !prev[key] }));
+    setDriverChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleCrewCheck = (key: keyof typeof crewChecklist) => {
-    setCrewChecklist(prev => ({ ...prev, [key]: !prev[key] }));
+    setCrewChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Stopwatch state
@@ -120,7 +120,7 @@ function TeamGuidePage() {
   };
 
   const handleLap = () => {
-    setStopwatchLaps(prev => [formatStopwatchTime(stopwatchTime), ...prev]);
+    setStopwatchLaps((prev) => [formatStopwatchTime(stopwatchTime), ...prev]);
   };
 
   const formatStopwatchTime = (timeMs: number) => {
@@ -129,7 +129,7 @@ function TeamGuidePage() {
     const seconds = Math.floor((timeMs % 60000) / 1000);
     const centiseconds = Math.floor((timeMs % 1000) / 10);
 
-    const pad = (num: number, size: number = 2) => num.toString().padStart(size, '0');
+    const pad = (num: number, size: number = 2) => num.toString().padStart(size, "0");
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(centiseconds, 2)}`;
   };
 
@@ -141,13 +141,17 @@ function TeamGuidePage() {
 
   // SQL & Env compiler state variables
   const [ownerSupabaseUrl, setOwnerSupabaseUrl] = useState("https://abcdefghijklm.supabase.co");
-  const [ownerSupabaseKey, setOwnerSupabaseKey] = useState("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp...");
+  const [ownerSupabaseKey, setOwnerSupabaseKey] = useState(
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp...",
+  );
   const [ownerTeamCode, setOwnerTeamCode] = useState("PITWALL-A1B2");
-  
+
   const [driverName, setDriverName] = useState("Danny M");
   const [driverTeamCode, setDriverTeamCode] = useState("PITWALL-A1B2");
   const [driverSupabaseUrl, setDriverSupabaseUrl] = useState("https://abcdefghijklm.supabase.co");
-  const [driverSupabaseKey, setDriverSupabaseKey] = useState("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp...");
+  const [driverSupabaseKey, setDriverSupabaseKey] = useState(
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJp...",
+  );
 
   // Copy indicator states
   const [sqlCopied, setSqlCopied] = useState(false);
@@ -161,7 +165,7 @@ function TeamGuidePage() {
   const [bridgeIntervalId, setBridgeIntervalId] = useState<any>(null);
   const [bridgeLogs, setBridgeLogs] = useState<string[]>([
     "SYS_BRIDGE STATUS: IDLE",
-    "Enter parameters above and click [RUN TELEMETRY BRIDGE] to spin up pub/sub server simulator."
+    "Enter parameters above and click [RUN TELEMETRY BRIDGE] to spin up pub/sub server simulator.",
   ]);
   const simulatedTickRef = useRef(0);
   const terminalBottomRef = useRef<HTMLDivElement>(null);
@@ -170,7 +174,10 @@ function TeamGuidePage() {
     if (bridgeRunning) {
       clearInterval(bridgeIntervalId);
       setBridgeRunning(false);
-      setBridgeLogs(prev => [...prev, "[team-relay] ✗ Broadcast server stopped manually. Channel idle."]);
+      setBridgeLogs((prev) => [
+        ...prev,
+        "[team-relay] ✗ Broadcast server stopped manually. Channel idle.",
+      ]);
       return;
     }
 
@@ -191,7 +198,7 @@ function TeamGuidePage() {
     let step = 0;
     const interval = setInterval(() => {
       if (step < logsList.length) {
-        setBridgeLogs(prev => [...prev, logsList[step]]);
+        setBridgeLogs((prev) => [...prev, logsList[step]]);
         step++;
       } else {
         const speed = Math.floor(220 + Math.random() * 45);
@@ -200,8 +207,11 @@ function TeamGuidePage() {
         const fuel = (42.1 - simulatedTickRef.current * 0.04).toFixed(2);
         const tickTime = (simulatedTickRef.current * 0.5).toFixed(1);
 
-        setBridgeLogs(prev => {
-          const next = [...prev, `[team-relay] [T+${tickTime}s] PUBLISHING -> SPEED: ${speed} km/h | GEAR: ${gear} | RPM: ${rpm} | FUEL: ${fuel}L | TYRES_OK: true`];
+        setBridgeLogs((prev) => {
+          const next = [
+            ...prev,
+            `[team-relay] [T+${tickTime}s] PUBLISHING -> SPEED: ${speed} km/h | GEAR: ${gear} | RPM: ${rpm} | FUEL: ${fuel}L | TYRES_OK: true`,
+          ];
           // prevent memory bloat
           if (next.length > 60) next.shift();
           return next;
@@ -287,13 +297,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.team_sessions;`;
       "pg_client: EXEC -> CREATE POLICY team_sessions_owner_write (SUCCESS)",
       "pg_client: EXEC -> CREATE POLICY team_sessions_insert_anon (SUCCESS)",
       "pg_client: EXEC -> ALTER PUBLICATION supabase_realtime ADD TABLE team_sessions (SUCCESS)",
-      "pg_client: Commit complete. 0 warnings. Row migration success."
+      "pg_client: Commit complete. 0 warnings. Row migration success.",
     ];
 
     let step = 0;
     const interval = setInterval(() => {
       if (step < logs.length) {
-        setSqlSimLogs(prev => [...prev, logs[step]]);
+        setSqlSimLogs((prev) => [...prev, logs[step]]);
         step++;
       } else {
         clearInterval(interval);
@@ -369,34 +379,34 @@ DRIVER_NAME=${name}`;
   // Frequently Asked Questions state
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const toggleFaq = (index: number) => {
-    setExpandedFaq(prev => (prev === index ? null : index));
+    setExpandedFaq((prev) => (prev === index ? null : index));
   };
 
   const faqs = [
     {
       q: "Can pit crew members edit the Race Timeline and Stint Calculator?",
-      a: "Yes — all pit crew members with the Team Code have full access to the Team Command interface. They can update the timeline, adjust the fuel calculator, and add stint notes. These changes are stored locally in the browser storage. To persist shared edits across all team screens, designate one engineer as the primary strategist operator to prevent manual override conflicts."
+      a: "Yes — all pit crew members with the Team Code have full access to the Team Command interface. They can update the timeline, adjust the fuel calculator, and add stint notes. These changes are stored locally in the browser storage. To persist shared edits across all team screens, designate one engineer as the primary strategist operator to prevent manual override conflicts.",
     },
     {
       q: "Can two pit crew members cause conflicts by editing the calculator at the same time?",
-      a: "Currently, calculator changes are stored in the client browser's local state. Telemetry updates (fuel, tyre temperature/wear, speed, gear, RPM) are shared in real-time because they are published directly by the driver's local bridge to the Supabase channel. Therefore, there is zero backend conflict; they each see the same live telemetry but can run separate strategic simulations independently."
+      a: "Currently, calculator changes are stored in the client browser's local state. Telemetry updates (fuel, tyre temperature/wear, speed, gear, RPM) are shared in real-time because they are published directly by the driver's local bridge to the Supabase channel. Therefore, there is zero backend conflict; they each see the same live telemetry but can run separate strategic simulations independently.",
     },
     {
       q: "Does a pit crew member's phone work as a team wall?",
-      a: "Yes. Open the app in any mobile browser (Safari, Chrome, Firefox), navigate to the Team page, click '+ Join Team' inside the active HUD header, and input the Team Code. The high-density timing console layout dynamically compresses its panel columns to adapt to smaller screens."
+      a: "Yes. Open the app in any mobile browser (Safari, Chrome, Firefox), navigate to the Team page, click '+ Join Team' inside the active HUD header, and input the Team Code. The high-density timing console layout dynamically compresses its panel columns to adapt to smaller screens.",
     },
     {
       q: "What happens to the team channel when the race ends?",
-      a: "The team channel is ephemeral — it only exists while at least one driver's bridge is connected and broadcasting. When all bridges stop publishing, the channel goes idle. The database team code remains valid for 48 hours before the migration's auto-expiry triggers. You can always generate a fresh code for the next race."
+      a: "The team channel is ephemeral — it only exists while at least one driver's bridge is connected and broadcasting. When all bridges stop publishing, the channel goes idle. The database team code remains valid for 48 hours before the migration's auto-expiry triggers. You can always generate a fresh code for the next race.",
     },
     {
       q: "Can I have separate team codes for separate cars?",
-      a: "Yes. There is one team code per active team session. If your organisation is running multiple separate vehicles (e.g. an LMP2 car and a GT3 car) and you want separate timing walls, simply click \"+ Join Team\" -> \"✦ Generate New Code\" for each, keeping two isolated strategy desks."
+      a: 'Yes. There is one team code per active team session. If your organisation is running multiple separate vehicles (e.g. an LMP2 car and a GT3 car) and you want separate timing walls, simply click "+ Join Team" -> "✦ Generate New Code" for each, keeping two isolated strategy desks.',
     },
     {
       q: "We have a co-driver sharing a car. Does anything change?",
-      a: "No. When the co-driver takes over the driver's cockpit, they start their own bridge publish script. The team wall automatically detects the incoming stream and switches seamlessly to represent the active pilot and vehicle telemetry when they take the wheel."
-    }
+      a: "No. When the co-driver takes over the driver's cockpit, they start their own bridge publish script. The team wall automatically detects the incoming stream and switches seamlessly to represent the active pilot and vehicle telemetry when they take the wheel.",
+    },
   ];
 
   return (
@@ -407,16 +417,24 @@ DRIVER_NAME=${name}`;
       {/* Operations Branding Header */}
       <header className="h-10 border-b border-[#1c2430] bg-[#0b0f14] px-3 flex items-center justify-between relative z-10 shrink-0 select-none">
         <div className="flex items-center gap-2">
-          <span className="text-white font-black italic tracking-widest text-[11px] bg-gradient-to-r from-red-600 to-red-800 px-1.5 py-0.5 border border-red-500/20 rounded-none font-orbitron">PITWALL</span>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-[#7a828c] font-bold font-rajdhani hidden sm:inline">SETUP MANUAL & OPERATIONS CONSOLE</span>
+          <span className="text-white font-black italic tracking-widest text-[11px] bg-gradient-to-r from-red-600 to-red-800 px-1.5 py-0.5 border border-red-500/20 rounded-none font-orbitron">
+            PITWALL
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[#7a828c] font-bold font-rajdhani hidden sm:inline">
+            SETUP MANUAL & OPERATIONS CONSOLE
+          </span>
         </div>
 
         {/* Diagnostic coordinates */}
         <div className="flex items-center gap-6 text-[8.5px] font-rajdhani">
           <div className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-[#3B82F6] shadow-[0_0_6px_#3B82F6]" />
-            <span className="font-bold text-[#3B82F6] uppercase tracking-widest text-[9.5px]">SYS_DOC</span>
-            <span className="text-[#7a828c] uppercase font-bold hidden md:inline tracking-widest text-[9px]">iRSDK REALTIME RELAY SPEC v2</span>
+            <span className="font-bold text-[#3B82F6] uppercase tracking-widest text-[9.5px]">
+              SYS_DOC
+            </span>
+            <span className="text-[#7a828c] uppercase font-bold hidden md:inline tracking-widest text-[9px]">
+              iRSDK REALTIME RELAY SPEC v2
+            </span>
           </div>
 
           <div className="h-3 w-px bg-[#1c2430]" />
@@ -429,14 +447,14 @@ DRIVER_NAME=${name}`;
 
         {/* Global Navigation Link Back */}
         <div className="flex items-center gap-2 text-[9px] font-rajdhani">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-[8.5px] font-black text-[#7a828c] hover:text-white uppercase tracking-widest border border-[#1c2430] bg-[#11161d] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer hover:bg-zinc-800"
           >
             ← MENU
           </Link>
-          <Link 
-            to="/team" 
+          <Link
+            to="/team"
             className="text-[8.5px] font-black text-[#3B82F6] hover:bg-[#3B82F6]/10 uppercase tracking-widest border border-[#3B82F6]/25 bg-[#3B82F6]/5 px-2 py-0.5 rounded-none flex items-center gap-1 transition-all"
           >
             ← BACK TO WALL
@@ -445,11 +463,10 @@ DRIVER_NAME=${name}`;
       </header>
 
       {/* Main Grid Deck splits into Column 1 (Left), Column 2 (Center), and Column 3 (Right) - Zero Margins */}
-      <div 
+      <div
         className="flex-1 grid gap-0 relative z-10 min-h-0 bg-[#05070a] border-b border-[#1c2430] rounded-none"
         style={{ gridTemplateColumns: "18% 64% 18%" }}
       >
-        
         {/* COLUMN 1: TACTICAL ROLE CHANNELS (Left) */}
         <section className="border-r border-[#1c2430] bg-[#0b0f14] flex flex-col justify-start select-none overflow-hidden h-full rounded-none">
           <div className="px-2.5 py-1.5 bg-[#11161d] border-b border-[#1c2430] flex items-center justify-between select-none">
@@ -461,12 +478,42 @@ DRIVER_NAME=${name}`;
           {/* Interactive Role Options */}
           <div className="p-1.5 space-y-1.5 flex-1 overflow-y-auto scrollbar-hide">
             {[
-              { id: "owner", title: "🏆 TEAM OWNER GUIDE", desc: "Database setup, codes, & pre-filled creds", icon: Database, color: "#FFB800" },
-              { id: "driver", title: "🏎️ DRIVER GUIDE", desc: "Place .env file & start bridge relay", icon: CarIcon, color: "#FF4D4D" },
-              { id: "crew", title: "🎧 PIT CREW GUIDE", desc: "Join team channel & monitor strategy", icon: Users, color: "#3B82F6" },
-              { id: "trouble", title: "🛠️ DIAGNOSTICS & FIXES", desc: "Terminal logs & diagnostic remedies", icon: ShieldAlert, color: "#94A3B8" },
-              { id: "faq", title: "❓ FAQS & DECK REF", desc: "FAQ matrix & core file reference sheet", icon: HelpCircle, color: "#00D17F" },
-            ].map(tab => {
+              {
+                id: "owner",
+                title: "🏆 TEAM OWNER GUIDE",
+                desc: "Database setup, codes, & pre-filled creds",
+                icon: Database,
+                color: "#FFB800",
+              },
+              {
+                id: "driver",
+                title: "🏎️ DRIVER GUIDE",
+                desc: "Place .env file & start bridge relay",
+                icon: CarIcon,
+                color: "#FF4D4D",
+              },
+              {
+                id: "crew",
+                title: "🎧 PIT CREW GUIDE",
+                desc: "Join team channel & monitor strategy",
+                icon: Users,
+                color: "#3B82F6",
+              },
+              {
+                id: "trouble",
+                title: "🛠️ DIAGNOSTICS & FIXES",
+                desc: "Terminal logs & diagnostic remedies",
+                icon: ShieldAlert,
+                color: "#94A3B8",
+              },
+              {
+                id: "faq",
+                title: "❓ FAQS & DECK REF",
+                desc: "FAQ matrix & core file reference sheet",
+                icon: HelpCircle,
+                color: "#00D17F",
+              },
+            ].map((tab) => {
               const active = activeTab === tab.id;
               return (
                 <div
@@ -480,12 +527,12 @@ DRIVER_NAME=${name}`;
                 >
                   {/* Status LED line indicator */}
                   {active && (
-                    <div 
+                    <div
                       className="absolute left-0 top-0 bottom-0 w-[3px]"
                       style={{ backgroundColor: tab.color }}
                     />
                   )}
-                  <div 
+                  <div
                     className="p-1.5 rounded-none bg-[#05070a] border border-[#1c2430] flex items-center justify-center shrink-0"
                     style={{ color: active ? tab.color : "#7a828c" }}
                   >
@@ -499,8 +546,8 @@ DRIVER_NAME=${name}`;
                       {tab.desc}
                     </span>
                   </div>
-                  <ChevronRight 
-                    className={`w-3.5 h-3.5 mt-1 shrink-0 transition-transform ${active ? "text-white translate-x-0.5" : "text-[#7a828c] opacity-0 group-hover:opacity-100"}`} 
+                  <ChevronRight
+                    className={`w-3.5 h-3.5 mt-1 shrink-0 transition-transform ${active ? "text-white translate-x-0.5" : "text-[#7a828c] opacity-0 group-hover:opacity-100"}`}
                   />
                 </div>
               );
@@ -542,14 +589,17 @@ DRIVER_NAME=${name}`;
               2 SYSTEM CONSOLE: OPERATIONAL DIRECTIVES & MANUAL
             </span>
             <div className="flex gap-2">
-              <span className="text-[7.5px] px-1 bg-red-950/40 text-red-500 border border-red-500/20 font-bold uppercase">OFFICIAL PIT MANUAL</span>
-              <span className="text-[7.5px] px-1 bg-slate-900/60 text-[#3B82F6] border border-[#3B82F6]/20 font-bold uppercase">REF: TEAMS.MD</span>
+              <span className="text-[7.5px] px-1 bg-red-950/40 text-red-500 border border-red-500/20 font-bold uppercase">
+                OFFICIAL PIT MANUAL
+              </span>
+              <span className="text-[7.5px] px-1 bg-slate-900/60 text-[#3B82F6] border border-[#3B82F6]/20 font-bold uppercase">
+                REF: TEAMS.MD
+              </span>
             </div>
           </div>
 
           {/* Setup Content Surface */}
           <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-hide text-left leading-relaxed">
-
             {/* TAB 1: TEAM OWNER GUIDE */}
             {activeTab === "owner" && (
               <div className="space-y-4">
@@ -558,9 +608,13 @@ DRIVER_NAME=${name}`;
                   <div className="absolute top-0 right-0 h-full w-1.5 bg-[#FFB800]" />
                   <Database className="w-5 h-5 text-[#FFB800] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">🏆 TEAM OWNER DIRECTIVE</h4>
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">
+                      🏆 TEAM OWNER DIRECTIVE
+                    </h4>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      As Team Owner, you are solely responsible for database deployment, schema migrations, anon pub/sub authorization, and distributing team parameters. Drivers and Pit Crew do not need accounts.
+                      As Team Owner, you are solely responsible for database deployment, schema
+                      migrations, anon pub/sub authorization, and distributing team parameters.
+                      Drivers and Pit Crew do not need accounts.
                     </p>
                   </div>
                 </div>
@@ -568,43 +622,85 @@ DRIVER_NAME=${name}`;
                 <div className="space-y-4">
                   {/* Step 1 */}
                   <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative">
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 01</div>
-                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">1. Create a Free Supabase Account</span>
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                      STEP 01
+                    </div>
+                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">
+                      1. Create a Free Supabase Account
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Supabase acts as your high-frequency database relay — matching driver telemetry broadcasts to pit crew timing stand displays instantly.
+                      Supabase acts as your high-frequency database relay — matching driver
+                      telemetry broadcasts to pit crew timing stand displays instantly.
                     </p>
                     <ul className="list-disc list-inside text-[8.5px] text-white mt-2 space-y-1 font-sans pl-1">
-                      <li>Go to <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-[#3B82F6] hover:underline font-mono">https://supabase.com</a></li>
-                      <li>Click <strong className="font-bold">"Start your project"</strong> and register via GitHub (recommended) or email.</li>
+                      <li>
+                        Go to{" "}
+                        <a
+                          href="https://supabase.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#3B82F6] hover:underline font-mono"
+                        >
+                          https://supabase.com
+                        </a>
+                      </li>
+                      <li>
+                        Click <strong className="font-bold">"Start your project"</strong> and
+                        register via GitHub (recommended) or email.
+                      </li>
                     </ul>
                     <div className="mt-2.5 p-2 bg-amber-950/20 border border-amber-500/20 text-[8px] text-[#FFB800] rounded-none">
-                      <span className="font-bold block uppercase font-rajdhani">💡 Le Mans 24hr note:</span>
-                      A full 24-hour race with 6 drivers transmits ~1 million message updates, which falls exactly within Supabase's free tier limit of 2 million free messages. If you want maximum reliability and peace of mind during endurance events, consider upgrading to the Pro Tier ($25/mo) before the green flag and canceling afterwards.
+                      <span className="font-bold block uppercase font-rajdhani">
+                        💡 Le Mans 24hr note:
+                      </span>
+                      A full 24-hour race with 6 drivers transmits ~1 million message updates, which
+                      falls exactly within Supabase's free tier limit of 2 million free messages. If
+                      you want maximum reliability and peace of mind during endurance events,
+                      consider upgrading to the Pro Tier ($25/mo) before the green flag and
+                      canceling afterwards.
                     </div>
                   </div>
 
                   {/* Step 2 */}
                   <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative">
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 02</div>
-                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">2. Create a New Project</span>
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                      STEP 02
+                    </div>
+                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">
+                      2. Create a New Project
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
                       Initialize a clean hosting cluster to bind your team sessions database.
                     </p>
                     <ul className="list-disc list-inside text-[8.5px] text-white mt-2 space-y-1 font-sans pl-1">
-                      <li>In your Supabase dashboard, click <strong className="font-bold">"New project"</strong>.</li>
-                      <li>Set project name to <code className="text-white bg-black px-1 font-mono">iRacing-Team</code>.</li>
-                      <li>Create a secure database password, and select your closest host region (e.g. Ireland for EU, Virginia for NA).</li>
+                      <li>
+                        In your Supabase dashboard, click{" "}
+                        <strong className="font-bold">"New project"</strong>.
+                      </li>
+                      <li>
+                        Set project name to{" "}
+                        <code className="text-white bg-black px-1 font-mono">iRacing-Team</code>.
+                      </li>
+                      <li>
+                        Create a secure database password, and select your closest host region (e.g.
+                        Ireland for EU, Virginia for NA).
+                      </li>
                       <li>Wait 1-2 minutes for the database cluster to fully provision.</li>
                     </ul>
                   </div>
 
                   {/* Step 3 & Ingestion Tool */}
                   <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative space-y-3">
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 03</div>
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                      STEP 03
+                    </div>
                     <div>
-                      <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">3. Set Up the Database (SQL Migration Ingestion)</span>
+                      <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">
+                        3. Set Up the Database (SQL Migration Ingestion)
+                      </span>
                       <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                        Initialize the database table schema required for real-time team synchronization. No database knowledge is required; simply paste the file.
+                        Initialize the database table schema required for real-time team
+                        synchronization. No database knowledge is required; simply paste the file.
                       </p>
                     </div>
 
@@ -620,7 +716,11 @@ DRIVER_NAME=${name}`;
                             onClick={handleCopySql}
                             className="bg-[#11161d] hover:bg-[#1c2430] border border-[#1c2430] text-[#7a828c] hover:text-white text-[7.5px] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer font-bold"
                           >
-                            {sqlCopied ? <Check className="w-3 h-3 text-[#00D17F]" /> : <Copy className="w-3 h-3" />}
+                            {sqlCopied ? (
+                              <Check className="w-3 h-3 text-[#00D17F]" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
                             {sqlCopied ? "COPIED" : "COPY SQL"}
                           </button>
                           <button
@@ -634,7 +734,7 @@ DRIVER_NAME=${name}`;
                       </div>
 
                       <pre className="p-2.5 text-[8.5px] text-[#7a828c] max-h-48 overflow-y-auto leading-normal bg-black scrollbar-hide font-mono">
-{`-- ============================================================
+                        {`-- ============================================================
 -- Migration: Multi-Driver Team Sessions
 -- ============================================================
 
@@ -665,8 +765,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.team_sessions;`}
                           </span>
                           {sqlSimLogs.map((log, idx) => (
                             <div key={idx} className="flex gap-1.5">
-                              <span className="text-[#7a828c] shrink-0">{`[${idx+1}]`}</span>
-                              <span className={log.includes("SUCCESS") || log.includes("success") ? "text-[#00D17F]" : ""}>{log}</span>
+                              <span className="text-[#7a828c] shrink-0">{`[${idx + 1}]`}</span>
+                              <span
+                                className={
+                                  log.includes("SUCCESS") || log.includes("success")
+                                    ? "text-[#00D17F]"
+                                    : ""
+                                }
+                              >
+                                {log}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -676,29 +784,59 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.team_sessions;`}
 
                   {/* Step 4 */}
                   <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative">
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 04</div>
-                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">4. Copy API Keys & Generate Team Code</span>
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                      STEP 04
+                    </div>
+                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">
+                      4. Copy API Keys & Generate Team Code
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Grab the credentials from your Supabase settings and combine them with an active Team Code inside the Paddock HUD.
+                      Grab the credentials from your Supabase settings and combine them with an
+                      active Team Code inside the Paddock HUD.
                     </p>
                     <ol className="list-decimal list-inside text-[8.5px] text-white mt-2 space-y-1.5 font-sans pl-1">
-                      <li>Go to your Supabase project dashboard → click <strong className="font-bold">Project Settings (cog icon)</strong> → select <strong className="font-bold">API</strong>.</li>
-                      <li>Copy the <strong className="text-[#3B82F6]">Project URL</strong> and the <strong className="text-[#3B82F6]">Anon Public Key</strong> (long token starting with <code className="font-mono text-[8px] bg-black px-1">eyJ</code>).</li>
-                      <li>Open this app's **Team Page**, click **"+ Join Team"** at the top right of the HUD, and click **"✦ Generate New Code"** to create a token (e.g. <code className="text-[#FFB800] font-mono">PITWALL-A1B2</code>).</li>
+                      <li>
+                        Go to your Supabase project dashboard → click{" "}
+                        <strong className="font-bold">Project Settings (cog icon)</strong> → select{" "}
+                        <strong className="font-bold">API</strong>.
+                      </li>
+                      <li>
+                        Copy the <strong className="text-[#3B82F6]">Project URL</strong> and the{" "}
+                        <strong className="text-[#3B82F6]">Anon Public Key</strong> (long token
+                        starting with{" "}
+                        <code className="font-mono text-[8px] bg-black px-1">eyJ</code>).
+                      </li>
+                      <li>
+                        Open this app's **Team Page**, click **"+ Join Team"** at the top right of
+                        the HUD, and click **"✦ Generate New Code"** to create a token (e.g.{" "}
+                        <code className="text-[#FFB800] font-mono">PITWALL-A1B2</code>).
+                      </li>
                     </ol>
                     <div className="mt-2 p-2 bg-red-950/20 border border-red-500/20 text-[8px] text-red-400 rounded-none leading-normal">
-                      <span className="font-bold block uppercase font-rajdhani">⚠️ SECURITY CONSTRAINT:</span>
-                      Only copy the public <code className="font-mono bg-black px-1">anon public</code> key. Never distribute or reference your project's <code className="font-mono bg-black px-1">service_role</code> key. The service role key bypasses Row Level Security and has full admin permissions, posing a database deletion risk if exposed.
+                      <span className="font-bold block uppercase font-rajdhani">
+                        ⚠️ SECURITY CONSTRAINT:
+                      </span>
+                      Only copy the public{" "}
+                      <code className="font-mono bg-black px-1">anon public</code> key. Never
+                      distribute or reference your project's{" "}
+                      <code className="font-mono bg-black px-1">service_role</code> key. The service
+                      role key bypasses Row Level Security and has full admin permissions, posing a
+                      database deletion risk if exposed.
                     </div>
                   </div>
 
                   {/* Step 5 - Dotenv Compiler Compiler */}
                   <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative space-y-3">
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 05</div>
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                      STEP 05
+                    </div>
                     <div>
-                      <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">5. Generate & Distribute the pre-filled .env File</span>
+                      <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">
+                        5. Generate & Distribute the pre-filled .env File
+                      </span>
                       <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                        Pre-compile the credentials below to automatically generate the config file drivers must place in their bridge directory.
+                        Pre-compile the credentials below to automatically generate the config file
+                        drivers must place in their bridge directory.
                       </p>
                     </div>
 
@@ -725,7 +863,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.team_sessions;`}
                         />
                       </div>
                       <div className="col-span-3 sm:col-span-1 flex flex-col gap-1">
-                        <label className="text-[#7a828c] uppercase font-bold">ANON PUBLIC KEY</label>
+                        <label className="text-[#7a828c] uppercase font-bold">
+                          ANON PUBLIC KEY
+                        </label>
                         <input
                           type="text"
                           value={ownerSupabaseKey}
@@ -745,12 +885,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.team_sessions;`}
                           onClick={() => handleCopyEnv(true)}
                           className="bg-[#FFB800]/10 hover:bg-[#FFB800]/20 border border-[#FFB800]/30 text-[#FFB800] text-[7.5px] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer font-bold"
                         >
-                          {envCopied ? <Check className="w-3 h-3 text-[#00D17F]" /> : <Copy className="w-3 h-3" />}
+                          {envCopied ? (
+                            <Check className="w-3 h-3 text-[#00D17F]" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
                           {envCopied ? "COPIED .ENV FILE" : "COPY FILE CONTENT"}
                         </button>
                       </div>
                       <pre className="p-2.5 text-[8.5px] text-[#7a828c] bg-black font-mono leading-normal">
-{`SUPABASE_URL=${ownerSupabaseUrl}
+                        {`SUPABASE_URL=${ownerSupabaseUrl}
 SUPABASE_ANON_KEY=${ownerSupabaseKey}
 TEAM_CODE=${ownerTeamCode}
 DRIVER_NAME=`}
@@ -758,16 +902,29 @@ DRIVER_NAME=`}
                     </div>
 
                     <div className="text-[8.5px] text-[#7a828c] leading-normal font-sans">
-                      Save this generated block as a file named <code className="text-[#FF4D4D] font-bold font-mono bg-black px-1 border border-[#1c2430]">.env</code> (make sure it doesn't end in `.env.txt`) and distribute it securely to your drivers. They will place it inside their <code className="font-mono bg-black px-1 text-white">local-bridge/</code> folder.
+                      Save this generated block as a file named{" "}
+                      <code className="text-[#FF4D4D] font-bold font-mono bg-black px-1 border border-[#1c2430]">
+                        .env
+                      </code>{" "}
+                      (make sure it doesn't end in `.env.txt`) and distribute it securely to your
+                      drivers. They will place it inside their{" "}
+                      <code className="font-mono bg-black px-1 text-white">local-bridge/</code>{" "}
+                      folder.
                     </div>
                   </div>
 
                   {/* Step 6 & 7 */}
                   <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative">
-                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 06</div>
-                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">6. Send Pit Crew the Code & Confirm Feeds</span>
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                      STEP 06
+                    </div>
+                    <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-wider font-rajdhani">
+                      6. Send Pit Crew the Code & Confirm Feeds
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Share the **Team Code** (e.g. `PITWALL-A1B2`) and your hosted **App URL** to all strategists and pit crew. They open a browser, paste the code, and their dashboards will connect to the active stream automatically.
+                      Share the **Team Code** (e.g. `PITWALL-A1B2`) and your hosted **App URL** to
+                      all strategists and pit crew. They open a browser, paste the code, and their
+                      dashboards will connect to the active stream automatically.
                     </p>
                   </div>
                 </div>
@@ -782,24 +939,35 @@ DRIVER_NAME=`}
                   <div className="absolute top-0 right-0 h-full w-1.5 bg-[#FF4D4D]" />
                   <CarIcon className="w-5 h-5 text-[#FF4D4D] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">🏎️ DRIVER COCKPIT OPERATION</h4>
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">
+                      🏎️ DRIVER COCKPIT OPERATION
+                    </h4>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      As a team driver, you do not need a database account. Simply place the config file received from your owner, declare your name, and start the local bridge.
+                      As a team driver, you do not need a database account. Simply place the config
+                      file received from your owner, declare your name, and start the local bridge.
                     </p>
                   </div>
                 </div>
 
                 {/* Step 1 */}
                 <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative space-y-2">
-                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 01</div>
-                  <span className="text-[10px] font-black text-[#FF4D4D] uppercase tracking-wider font-rajdhani">1. Place the .env Configuration File</span>
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                    STEP 01
+                  </div>
+                  <span className="text-[10px] font-black text-[#FF4D4D] uppercase tracking-wider font-rajdhani">
+                    1. Place the .env Configuration File
+                  </span>
                   <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                    Save the pre-filled <code className="text-white font-mono bg-black px-1 border border-[#1c2430]">.env</code> file received from your Team Owner directly inside your local bridge directory:
+                    Save the pre-filled{" "}
+                    <code className="text-white font-mono bg-black px-1 border border-[#1c2430]">
+                      .env
+                    </code>{" "}
+                    file received from your Team Owner directly inside your local bridge directory:
                   </p>
-                  
+
                   {/* Folder Structure ASCII Tree */}
                   <pre className="p-2 bg-black border border-[#1c2430] text-[8.5px] leading-relaxed text-[#7a828c] font-mono">
-{`iRacing-Companion/
+                    {`iRacing-Companion/
   ├── src/
   ├── local-bridge/
   │    ├── .env             <-- SAVE FILE DIRECTLY HERE
@@ -808,20 +976,30 @@ DRIVER_NAME=`}
   │    └── package-lock.json
   └── TEAMS.md`}
                   </pre>
-                  
+
                   <div className="p-2 bg-slate-900/60 border border-[#1c2430] text-[8px] text-[#7a828c] rounded-none">
-                    <span className="font-bold text-white block uppercase font-rajdhani">💡 Windows Explorer tip:</span>
-                    If file name extensions or hidden files are invisible on your OS, click the **View** tab inside File Explorer, and ensure both **"File name extensions"** and **"Hidden items"** are checked so you can rename the file accurately to `.env` (not `.env.txt`).
+                    <span className="font-bold text-white block uppercase font-rajdhani">
+                      💡 Windows Explorer tip:
+                    </span>
+                    If file name extensions or hidden files are invisible on your OS, click the
+                    **View** tab inside File Explorer, and ensure both **"File name extensions"**
+                    and **"Hidden items"** are checked so you can rename the file accurately to
+                    `.env` (not `.env.txt`).
                   </div>
                 </div>
 
                 {/* Step 2 */}
                 <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative space-y-3">
-                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 02</div>
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                    STEP 02
+                  </div>
                   <div>
-                    <span className="text-[10px] font-black text-[#FF4D4D] uppercase tracking-wider font-rajdhani">2. Declare Your Pilot Name</span>
+                    <span className="text-[10px] font-black text-[#FF4D4D] uppercase tracking-wider font-rajdhani">
+                      2. Declare Your Pilot Name
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Open your `.env` file in Notepad and declare your name. The timing stand reads this to identify your vehicle in the live telemetry grid.
+                      Open your `.env` file in Notepad and declare your name. The timing stand reads
+                      this to identify your vehicle in the live telemetry grid.
                     </p>
                   </div>
 
@@ -857,12 +1035,16 @@ DRIVER_NAME=`}
                         onClick={() => handleCopyEnv(false)}
                         className="bg-[#FF4D4D]/10 hover:bg-[#FF4D4D]/20 border border-[#FF4D4D]/30 text-[#FF4D4D] text-[7.5px] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer font-bold"
                       >
-                        {driverEnvCopied ? <Check className="w-3 h-3 text-[#00D17F]" /> : <Copy className="w-3 h-3" />}
+                        {driverEnvCopied ? (
+                          <Check className="w-3 h-3 text-[#00D17F]" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
                         {driverEnvCopied ? "COPIED" : "COPY CONFIG"}
                       </button>
                     </div>
                     <pre className="p-2.5 text-[8.5px] text-[#7a828c] bg-black font-mono leading-normal">
-{`SUPABASE_URL=${driverSupabaseUrl}
+                      {`SUPABASE_URL=${driverSupabaseUrl}
 SUPABASE_ANON_KEY=${driverSupabaseKey}
 TEAM_CODE=${driverTeamCode}
 DRIVER_NAME=${driverName}`}
@@ -872,11 +1054,17 @@ DRIVER_NAME=${driverName}`}
 
                 {/* Step 3 & Simulated bridge terminal */}
                 <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative space-y-3">
-                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 03</div>
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                    STEP 03
+                  </div>
                   <div>
-                    <span className="text-[10px] font-black text-[#FF4D4D] uppercase tracking-wider font-rajdhani">3. Start the Publish Bridge (Transmitter Simulation)</span>
+                    <span className="text-[10px] font-black text-[#FF4D4D] uppercase tracking-wider font-rajdhani">
+                      3. Start the Publish Bridge (Transmitter Simulation)
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Open a Command Prompt or Terminal inside your local-bridge folder, and execute `npm start`. You can run our interactive simulation console below to test your connection:
+                      Open a Command Prompt or Terminal inside your local-bridge folder, and execute
+                      `npm start`. You can run our interactive simulation console below to test your
+                      connection:
                     </p>
                   </div>
 
@@ -895,7 +1083,11 @@ DRIVER_NAME=${driverName}`}
                             : "bg-[#00D17F]/10 text-[#00D17F] border-[#00D17F]/30"
                         }`}
                       >
-                        {bridgeRunning ? <Pause className="w-3 h-3 text-[#FF4D4D] animate-pulse" /> : <Play className="w-3 h-3 text-[#00D17F]" />}
+                        {bridgeRunning ? (
+                          <Pause className="w-3 h-3 text-[#FF4D4D] animate-pulse" />
+                        ) : (
+                          <Play className="w-3 h-3 text-[#00D17F]" />
+                        )}
                         {bridgeRunning ? "TERMINATE TRANSMITTER" : "RUN TELEMETRY BRIDGE"}
                       </button>
                     </div>
@@ -904,13 +1096,19 @@ DRIVER_NAME=${driverName}`}
                       {bridgeLogs.map((log, idx) => (
                         <div key={idx} className="flex items-start gap-1">
                           <span className="text-[#7a828c] shrink-0 select-none">{`>`}</span>
-                          <span className={
-                            log.includes("Connected") || log.includes("PUBLISHING") || log.includes("✓") 
-                              ? "text-[#00D17F]" 
-                              : log.includes("✗") || log.includes("failed") || log.includes("fatal") 
-                              ? "text-[#FF4D4D]" 
-                              : "text-[#7a828c]"
-                          }>
+                          <span
+                            className={
+                              log.includes("Connected") ||
+                              log.includes("PUBLISHING") ||
+                              log.includes("✓")
+                                ? "text-[#00D17F]"
+                                : log.includes("✗") ||
+                                    log.includes("failed") ||
+                                    log.includes("fatal")
+                                  ? "text-[#FF4D4D]"
+                                  : "text-[#7a828c]"
+                            }
+                          >
                             {log}
                           </span>
                         </div>
@@ -918,9 +1116,14 @@ DRIVER_NAME=${driverName}`}
                       <div ref={terminalBottomRef} />
                     </div>
                   </div>
-                  
+
                   <div className="text-[8.5px] text-[#7a828c] leading-normal font-sans">
-                    Once the server console displays the <code className="font-mono bg-black px-1 text-[#00D17F]">✓ Connected to channel</code> tick, you are live. Sit in the cockpit and drive; once on track, your telemetry feeds the pit wall.
+                    Once the server console displays the{" "}
+                    <code className="font-mono bg-black px-1 text-[#00D17F]">
+                      ✓ Connected to channel
+                    </code>{" "}
+                    tick, you are live. Sit in the cockpit and drive; once on track, your telemetry
+                    feeds the pit wall.
                   </div>
                 </div>
               </div>
@@ -934,34 +1137,57 @@ DRIVER_NAME=${driverName}`}
                   <div className="absolute top-0 right-0 h-full w-1.5 bg-[#3B82F6]" />
                   <Users className="w-5 h-5 text-[#3B82F6] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">🎧 PIT CREW & ENGINEER INTERFACE</h4>
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">
+                      🎧 PIT CREW & ENGINEER INTERFACE
+                    </h4>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      No software installations, local servers, or config settings are required. Simply launch your web browser on any device and enter the Team Code.
+                      No software installations, local servers, or config settings are required.
+                      Simply launch your web browser on any device and enter the Team Code.
                     </p>
                   </div>
                 </div>
 
                 {/* Steps */}
                 <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative">
-                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">STEP 01 - 03</div>
-                  <span className="text-[10px] font-black text-[#3B82F6] uppercase tracking-wider font-rajdhani">1. Connect Browser & Input Team Code</span>
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                    STEP 01 - 03
+                  </div>
+                  <span className="text-[10px] font-black text-[#3B82F6] uppercase tracking-wider font-rajdhani">
+                    1. Connect Browser & Input Team Code
+                  </span>
                   <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                    Open your web browser, load the App URL, and navigate to the **Team Strategy Command**.
+                    Open your web browser, load the App URL, and navigate to the **Team Strategy
+                    Command**.
                   </p>
                   <ol className="list-decimal list-inside text-[8.5px] text-white mt-2 space-y-1.5 font-sans pl-1">
-                    <li>Within the timing desk header in the third column, click **"+ JOIN TEAM"** (or **"🔗 Team"** if a channel was cached).</li>
-                    <li>Paste your alphanumeric code (e.g. <code className="font-mono bg-black px-1 text-[#FFB800]">PITWALL-A1B2</code>) and click **"Join"**.</li>
-                    <li>Teammate cards and active telemetry slots populate within 2-3 seconds. The code is saved locally in your browser cache for fast future startup.</li>
+                    <li>
+                      Within the timing desk header in the third column, click **"+ JOIN TEAM"** (or
+                      **"🔗 Team"** if a channel was cached).
+                    </li>
+                    <li>
+                      Paste your alphanumeric code (e.g.{" "}
+                      <code className="font-mono bg-black px-1 text-[#FFB800]">PITWALL-A1B2</code>)
+                      and click **"Join"**.
+                    </li>
+                    <li>
+                      Teammate cards and active telemetry slots populate within 2-3 seconds. The
+                      code is saved locally in your browser cache for fast future startup.
+                    </li>
                   </ol>
                 </div>
 
                 {/* Hover Inspector Tool */}
                 <div className="border border-[#1c2430] bg-[#0b0f14] p-3 rounded-none relative space-y-3">
-                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">HOVER INSPECTOR</div>
+                  <div className="absolute top-0 right-0 px-2 py-0.5 bg-[#1c2430] text-[8px] text-[#7a828c] uppercase font-bold font-mono">
+                    HOVER INSPECTOR
+                  </div>
                   <div>
-                    <span className="text-[10px] font-black text-[#3B82F6] uppercase tracking-wider font-rajdhani">Interactive Telemetry Metric Inspector</span>
+                    <span className="text-[10px] font-black text-[#3B82F6] uppercase tracking-wider font-rajdhani">
+                      Interactive Telemetry Metric Inspector
+                    </span>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Hover over any parameter inside the timing telemetry card mockup below to retrieve high-density strategical details.
+                      Hover over any parameter inside the timing telemetry card mockup below to
+                      retrieve high-density strategical details.
                     </p>
                   </div>
 
@@ -969,79 +1195,125 @@ DRIVER_NAME=${driverName}`}
                     {/* Mock Card */}
                     <div className="border border-[#1c2430] bg-[#05070a] rounded-none overflow-hidden select-none">
                       <div className="bg-[#11161d] border-b border-[#1c2430] px-3 py-1 flex items-center justify-between">
-                        <span className="text-[8.5px] font-bold text-white uppercase font-rajdhani">VEHICLE TACKER: #83 FERRARI 499P</span>
-                        <span className="text-[7.5px] px-1 bg-[#00D17F]/10 text-[#00D17F] border border-[#00D17F]/20 font-bold uppercase animate-pulse">LIVE</span>
+                        <span className="text-[8.5px] font-bold text-white uppercase font-rajdhani">
+                          VEHICLE TACKER: #83 FERRARI 499P
+                        </span>
+                        <span className="text-[7.5px] px-1 bg-[#00D17F]/10 text-[#00D17F] border border-[#00D17F]/20 font-bold uppercase animate-pulse">
+                          LIVE
+                        </span>
                       </div>
 
                       <div className="p-3 space-y-3 text-[9px] font-mono">
                         {/* Driver & Status */}
                         <div className="flex justify-between border-b border-[#1c2430]/60 pb-1.5">
                           <span className="text-[#7a828c]">ACTIVE PILOT:</span>
-                          <span className="text-white font-bold uppercase">{driverName || "Danny M"}</span>
+                          <span className="text-white font-bold uppercase">
+                            {driverName || "Danny M"}
+                          </span>
                         </div>
 
                         {/* Telemetry sectors */}
                         <div className="grid grid-cols-2 gap-2">
                           {/* Fuel remaining block */}
-                          <div 
+                          <div
                             onMouseEnter={() => setHoveredField("fuel")}
                             className={`p-2 border transition-all cursor-pointer ${
-                              hoveredField === "fuel" ? "bg-[#3B82F6]/5 border-[#3B82F6]" : "bg-[#0b0f14] border-[#1c2430]"
+                              hoveredField === "fuel"
+                                ? "bg-[#3B82F6]/5 border-[#3B82F6]"
+                                : "bg-[#0b0f14] border-[#1c2430]"
                             }`}
                           >
-                            <span className="text-[7px] text-[#7a828c] uppercase font-bold block">FUEL REMAINING</span>
-                            <span className="text-white font-bold block mt-0.5 text-xs">42.12 L</span>
-                            <span className="text-[#3B82F6] font-bold block text-[7.5px] mt-0.5 uppercase tracking-wider">~13.4 LAPS STINT</span>
+                            <span className="text-[7px] text-[#7a828c] uppercase font-bold block">
+                              FUEL REMAINING
+                            </span>
+                            <span className="text-white font-bold block mt-0.5 text-xs">
+                              42.12 L
+                            </span>
+                            <span className="text-[#3B82F6] font-bold block text-[7.5px] mt-0.5 uppercase tracking-wider">
+                              ~13.4 LAPS STINT
+                            </span>
                           </div>
 
                           {/* Gear/RPM block */}
-                          <div 
+                          <div
                             onMouseEnter={() => setHoveredField("gearSpeed")}
                             className={`p-2 border transition-all cursor-pointer ${
-                              hoveredField === "gearSpeed" ? "bg-[#3B82F6]/5 border-[#3B82F6]" : "bg-[#0b0f14] border-[#1c2430]"
+                              hoveredField === "gearSpeed"
+                                ? "bg-[#3B82F6]/5 border-[#3B82F6]"
+                                : "bg-[#0b0f14] border-[#1c2430]"
                             }`}
                           >
-                            <span className="text-[7px] text-[#7a828c] uppercase font-bold block">POWERTRAIN DATA</span>
-                            <span className="text-white font-bold block mt-0.5 text-xs">GEAR 6</span>
-                            <span className="text-[#FF4D4D] font-bold block text-[7.5px] mt-0.5 uppercase tracking-wider">6,840 RPM | 258 KM/H</span>
+                            <span className="text-[7px] text-[#7a828c] uppercase font-bold block">
+                              POWERTRAIN DATA
+                            </span>
+                            <span className="text-white font-bold block mt-0.5 text-xs">
+                              GEAR 6
+                            </span>
+                            <span className="text-[#FF4D4D] font-bold block text-[7.5px] mt-0.5 uppercase tracking-wider">
+                              6,840 RPM | 258 KM/H
+                            </span>
                           </div>
                         </div>
 
                         {/* Tyres Temp block */}
-                        <div 
+                        <div
                           onMouseEnter={() => setHoveredField("tyreTemps")}
                           className={`p-2 border transition-all cursor-pointer ${
-                            hoveredField === "tyreTemps" ? "bg-[#3B82F6]/5 border-[#3B82F6]" : "bg-[#0b0f14] border-[#1c2430]"
+                            hoveredField === "tyreTemps"
+                              ? "bg-[#3B82F6]/5 border-[#3B82F6]"
+                              : "bg-[#0b0f14] border-[#1c2430]"
                           }`}
                         >
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-[7px] text-[#7a828c] uppercase font-bold">TYRE CORE TEMPS (FL / FR / RL / RR)</span>
+                            <span className="text-[7px] text-[#7a828c] uppercase font-bold">
+                              TYRE CORE TEMPS (FL / FR / RL / RR)
+                            </span>
                             <span className="size-1.5 rounded-full bg-[#00D17F]" />
                           </div>
                           <div className="grid grid-cols-4 gap-1 text-[8.5px] text-center font-bold">
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">88°C</div>
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">92°C</div>
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">84°C</div>
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">86°C</div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">
+                              88°C
+                            </div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">
+                              92°C
+                            </div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">
+                              84°C
+                            </div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-[#00D17F]">
+                              86°C
+                            </div>
                           </div>
                         </div>
 
                         {/* Tyres Wear block */}
-                        <div 
+                        <div
                           onMouseEnter={() => setHoveredField("tyreWear")}
                           className={`p-2 border transition-all cursor-pointer ${
-                            hoveredField === "tyreWear" ? "bg-[#3B82F6]/5 border-[#3B82F6]" : "bg-[#0b0f14] border-[#1c2430]"
+                            hoveredField === "tyreWear"
+                              ? "bg-[#3B82F6]/5 border-[#3B82F6]"
+                              : "bg-[#0b0f14] border-[#1c2430]"
                           }`}
                         >
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-[7px] text-[#7a828c] uppercase font-bold">TYRE CARCASS WEAR remaining</span>
+                            <span className="text-[7px] text-[#7a828c] uppercase font-bold">
+                              TYRE CARCASS WEAR remaining
+                            </span>
                             <span className="text-[7.5px] font-bold text-[#00D17F]">OPTIMAL</span>
                           </div>
                           <div className="grid grid-cols-4 gap-1 text-[8.5px] text-center font-bold">
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">91%</div>
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">88%</div>
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">94%</div>
-                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">92%</div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">
+                              91%
+                            </div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">
+                              88%
+                            </div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">
+                              94%
+                            </div>
+                            <div className="bg-black/60 border border-[#1c2430] p-0.5 text-white">
+                              92%
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1056,26 +1328,43 @@ DRIVER_NAME=${driverName}`}
                           {hoveredField === "tyreTemps" && "🔥 TYRE THERMAL ENVELOPE"}
                           {hoveredField === "tyreWear" && "📊 Compound Degradation limits"}
                         </span>
-                        
+
                         <div className="font-sans leading-relaxed text-[#7a828c]">
                           {hoveredField === "fuel" && (
                             <p>
-                              Displays the exact fuel capacity remaining inside the tank in Litres. The companion software continuously recalculates fuel consumption deltas on every completed lap. Strategists should click the <strong className="text-white">"↺ Sync"</strong> button inside the fuel strategy panel to import these numbers directly into the endurance stint planner.
+                              Displays the exact fuel capacity remaining inside the tank in Litres.
+                              The companion software continuously recalculates fuel consumption
+                              deltas on every completed lap. Strategists should click the{" "}
+                              <strong className="text-white">"↺ Sync"</strong> button inside the
+                              fuel strategy panel to import these numbers directly into the
+                              endurance stint planner.
                             </p>
                           )}
                           {hoveredField === "gearSpeed" && (
                             <p>
-                              Feeds real-time engine telemetry. Displays selected gear, active engine RPM, and speed in kilometers per hour. Engineers monitor this to ensure drivers are meeting specific fuel targets (e.g. lift-and-coast or early shifting vectors to stretch stint ranges) and checking RPM thresholds to avoid drivetrain component failure.
+                              Feeds real-time engine telemetry. Displays selected gear, active
+                              engine RPM, and speed in kilometers per hour. Engineers monitor this
+                              to ensure drivers are meeting specific fuel targets (e.g.
+                              lift-and-coast or early shifting vectors to stretch stint ranges) and
+                              checking RPM thresholds to avoid drivetrain component failure.
                             </p>
                           )}
                           {hoveredField === "tyreTemps" && (
                             <p>
-                              Represents real-time tread core temperatures. Color bands signal state: <strong className="text-[#00D17F]">GREEN</strong> represents optimal performance (75°C - 100°C); <strong className="text-[#FFB800]">AMBER</strong> warns of under-heating or glazing; <strong className="text-[#FF4D4D]">RED</strong> alerts you to severe sliding, causing blistering and instant traction loss.
+                              Represents real-time tread core temperatures. Color bands signal
+                              state: <strong className="text-[#00D17F]">GREEN</strong> represents
+                              optimal performance (75°C - 100°C);{" "}
+                              <strong className="text-[#FFB800]">AMBER</strong> warns of
+                              under-heating or glazing;{" "}
+                              <strong className="text-[#FF4D4D]">RED</strong> alerts you to severe
+                              sliding, causing blistering and instant traction loss.
                             </p>
                           )}
                           {hoveredField === "tyreWear" && (
                             <p>
-                              Exposes the remaining rubber compound wear as a percentage. Use this to predict tyre degradation curves. Strategist alert: when wear falls below 65%, plan a double-stint tyre swap to prevent punctures.
+                              Exposes the remaining rubber compound wear as a percentage. Use this
+                              to predict tyre degradation curves. Strategist alert: when wear falls
+                              below 65%, plan a double-stint tyre swap to prevent punctures.
                             </p>
                           )}
                         </div>
@@ -1099,27 +1388,44 @@ DRIVER_NAME=${driverName}`}
                   <div className="absolute top-0 right-0 h-full w-1.5 bg-[#94A3B8]" />
                   <ShieldAlert className="w-5 h-5 text-[#94A3B8] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">🛠️ SYSTEM DIAGNOSTIC PANEL</h4>
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">
+                      🛠️ SYSTEM DIAGNOSTIC PANEL
+                    </h4>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Review standard network relays, key decryption bugs, and connection timeouts below. Select an error code to display log readouts and technical remedies.
+                      Review standard network relays, key decryption bugs, and connection timeouts
+                      below. Select an error code to display log readouts and technical remedies.
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex flex-col gap-1 w-full max-w-sm text-[8.5px]">
-                    <label className="text-[#7a828c] uppercase font-bold">SELECT ACTIVE SYSTEM ERROR / WARNING</label>
+                    <label className="text-[#7a828c] uppercase font-bold">
+                      SELECT ACTIVE SYSTEM ERROR / WARNING
+                    </label>
                     <select
                       value={selectedError}
                       onChange={(e) => setSelectedError(e.target.value)}
                       className="bg-[#0b0f14] border border-[#1c2430] text-white p-1 text-[8.5px] rounded-none focus:outline-none focus:border-[#94A3B8] font-mono cursor-pointer"
                     >
-                      <option value="err01">ERR_01: Driver Terminal shows "TEAM_CODE not set"</option>
-                      <option value="err02">ERR_02: Driver Terminal shows "SUPABASE ANON_KEY missing"</option>
-                      <option value="err03">ERR_03: Driver Terminal shows "✗ Channel error" / Web Handshake</option>
-                      <option value="err04">ERR_04: Owner / Crew dashboard shows Supabase Project paused</option>
-                      <option value="info05">INFO_05: Pit Crew sees a driver card show OFFLINE / Grey status</option>
-                      <option value="info06">INFO_06: Local strategy stint adjustments are missing on co-engineer views</option>
+                      <option value="err01">
+                        ERR_01: Driver Terminal shows "TEAM_CODE not set"
+                      </option>
+                      <option value="err02">
+                        ERR_02: Driver Terminal shows "SUPABASE ANON_KEY missing"
+                      </option>
+                      <option value="err03">
+                        ERR_03: Driver Terminal shows "✗ Channel error" / Web Handshake
+                      </option>
+                      <option value="err04">
+                        ERR_04: Owner / Crew dashboard shows Supabase Project paused
+                      </option>
+                      <option value="info05">
+                        INFO_05: Pit Crew sees a driver card show OFFLINE / Grey status
+                      </option>
+                      <option value="info06">
+                        INFO_06: Local strategy stint adjustments are missing on co-engineer views
+                      </option>
                     </select>
                   </div>
 
@@ -1142,44 +1448,117 @@ DRIVER_NAME=${driverName}`}
                     <div className="text-[8.5px] text-[#7a828c] font-sans leading-normal">
                       {selectedError === "err01" && (
                         <ul className="list-disc list-inside space-y-1 pl-1 text-white">
-                          <li>Open your `.env` config file inside the <code className="font-mono bg-black px-1 text-[#FF4D4D]">local-bridge/</code> folder.</li>
-                          <li>Verify that the line <code className="font-mono bg-black px-1">TEAM_CODE=...</code> exists and is filled with your owner's exact generated code.</li>
-                          <li>Ensure the file is named exactly <strong className="text-white">.env</strong> and is not a template (like `.env.example`).</li>
+                          <li>
+                            Open your `.env` config file inside the{" "}
+                            <code className="font-mono bg-black px-1 text-[#FF4D4D]">
+                              local-bridge/
+                            </code>{" "}
+                            folder.
+                          </li>
+                          <li>
+                            Verify that the line{" "}
+                            <code className="font-mono bg-black px-1">TEAM_CODE=...</code> exists
+                            and is filled with your owner's exact generated code.
+                          </li>
+                          <li>
+                            Ensure the file is named exactly{" "}
+                            <strong className="text-white">.env</strong> and is not a template (like
+                            `.env.example`).
+                          </li>
                         </ul>
                       )}
                       {selectedError === "err02" && (
                         <ul className="list-disc list-inside space-y-1 pl-1 text-white">
-                          <li>Check your `.env` configuration file inside the <code className="font-mono bg-black px-1 text-[#FF4D4D]">local-bridge/</code> folder.</li>
-                          <li>Confirm both <code className="font-mono bg-black px-1">SUPABASE_URL=...</code> and <code className="font-mono bg-black px-1">SUPABASE_ANON_KEY=...</code> lines are populated with your project keys.</li>
-                          <li>If they are empty, request your Team Owner to re-send the pre-filled config template.</li>
+                          <li>
+                            Check your `.env` configuration file inside the{" "}
+                            <code className="font-mono bg-black px-1 text-[#FF4D4D]">
+                              local-bridge/
+                            </code>{" "}
+                            folder.
+                          </li>
+                          <li>
+                            Confirm both{" "}
+                            <code className="font-mono bg-black px-1">SUPABASE_URL=...</code> and{" "}
+                            <code className="font-mono bg-black px-1">SUPABASE_ANON_KEY=...</code>{" "}
+                            lines are populated with your project keys.
+                          </li>
+                          <li>
+                            If they are empty, request your Team Owner to re-send the pre-filled
+                            config template.
+                          </li>
                         </ul>
                       )}
                       {selectedError === "err03" && (
                         <ul className="list-disc list-inside space-y-1 pl-1 text-white">
                           <li>Verify that your PC has an active internet connection.</li>
-                          <li>Check with your Team Owner that the Supabase Anon key has not been regenerated or rotated in settings.</li>
-                          <li>Confirm that the Supabase Postgres instance is not blocked by a regional corporate VPN or severe firewall configurations.</li>
+                          <li>
+                            Check with your Team Owner that the Supabase Anon key has not been
+                            regenerated or rotated in settings.
+                          </li>
+                          <li>
+                            Confirm that the Supabase Postgres instance is not blocked by a regional
+                            corporate VPN or severe firewall configurations.
+                          </li>
                         </ul>
                       )}
                       {selectedError === "err04" && (
                         <ul className="list-disc list-inside space-y-1 pl-1 text-white">
-                          <li>Free-tier Supabase projects are automatically paused after 7 days of API inactivity.</li>
-                          <li>Log in directly at <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-[#3B82F6] hover:underline font-mono">https://supabase.com/dashboard</a>.</li>
-                          <li>Select your project block and click the green <strong className="text-[#00D17F]">"Restore project"</strong> button. The restore completes in 1-2 minutes.</li>
+                          <li>
+                            Free-tier Supabase projects are automatically paused after 7 days of API
+                            inactivity.
+                          </li>
+                          <li>
+                            Log in directly at{" "}
+                            <a
+                              href="https://supabase.com/dashboard"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#3B82F6] hover:underline font-mono"
+                            >
+                              https://supabase.com/dashboard
+                            </a>
+                            .
+                          </li>
+                          <li>
+                            Select your project block and click the green{" "}
+                            <strong className="text-[#00D17F]">"Restore project"</strong> button.
+                            The restore completes in 1-2 minutes.
+                          </li>
                         </ul>
                       )}
                       {selectedError === "info05" && (
                         <ul className="list-disc list-inside space-y-1 pl-1 text-white">
-                          <li>This represents a telemetry publishing dropout. The driver's local bridge node script may have been stopped, closed, or experienced an internet hiccup.</li>
-                          <li>The driver needs to open their Command Prompt, navigate to the <code className="font-mono bg-black px-1">local-bridge/</code> folder, and run <strong className="text-white">npm start</strong> to restore the feed.</li>
-                          <li>The status card will re-connect and switch from grey back to pulsing green automatically.</li>
+                          <li>
+                            This represents a telemetry publishing dropout. The driver's local
+                            bridge node script may have been stopped, closed, or experienced an
+                            internet hiccup.
+                          </li>
+                          <li>
+                            The driver needs to open their Command Prompt, navigate to the{" "}
+                            <code className="font-mono bg-black px-1">local-bridge/</code> folder,
+                            and run <strong className="text-white">npm start</strong> to restore the
+                            feed.
+                          </li>
+                          <li>
+                            The status card will re-connect and switch from grey back to pulsing
+                            green automatically.
+                          </li>
                         </ul>
                       )}
                       {selectedError === "info06" && (
                         <ul className="list-disc list-inside space-y-1 pl-1 text-white">
-                          <li>Stint calculators, endurance checklists, and lap deltas are currently kept within each operator's browser session.</li>
-                          <li>This avoids telemetry write-conflicts in high-frequency multi-crew environments.</li>
-                          <li>To coordinate strategy changes seamlessly, designate one engineer as the primary strategist operator to run the math deck.</li>
+                          <li>
+                            Stint calculators, endurance checklists, and lap deltas are currently
+                            kept within each operator's browser session.
+                          </li>
+                          <li>
+                            This avoids telemetry write-conflicts in high-frequency multi-crew
+                            environments.
+                          </li>
+                          <li>
+                            To coordinate strategy changes seamlessly, designate one engineer as the
+                            primary strategist operator to run the math deck.
+                          </li>
                         </ul>
                       )}
                     </div>
@@ -1196,9 +1575,12 @@ DRIVER_NAME=${driverName}`}
                   <div className="absolute top-0 right-0 h-full w-1.5 bg-[#00D17F]" />
                   <HelpCircle className="w-5 h-5 text-[#00D17F] shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">❓ DECK DEFIANCE: FREQUENTLY ASKED QUESTIONS</h4>
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-wider font-rajdhani">
+                      ❓ DECK DEFIANCE: FREQUENTLY ASKED QUESTIONS
+                    </h4>
                     <p className="text-[8.5px] text-[#7a828c] mt-1 font-sans leading-normal">
-                      Expose strategy intricacies, timing limits, co-driver telemetry handovers, and full file reference sheets below.
+                      Expose strategy intricacies, timing limits, co-driver telemetry handovers, and
+                      full file reference sheets below.
                     </p>
                   </div>
                 </div>
@@ -1208,11 +1590,11 @@ DRIVER_NAME=${driverName}`}
                   {faqs.map((faq, idx) => {
                     const expanded = expandedFaq === idx;
                     return (
-                      <div 
+                      <div
                         key={idx}
                         className="border border-[#1c2430] bg-[#0b0f14] rounded-none overflow-hidden"
                       >
-                        <div 
+                        <div
                           onClick={() => toggleFaq(idx)}
                           className="px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-[#11161d] transition-colors"
                         >
@@ -1240,24 +1622,48 @@ DRIVER_NAME=${driverName}`}
                   <span className="text-[9.5px] font-black text-[#00D17F] uppercase tracking-wider block font-rajdhani">
                     📂 CORE DIRECTORY FILE REFERENCE
                   </span>
-                  
+
                   <div className="border border-[#1c2430] rounded-none overflow-hidden text-[8.5px] font-mono">
                     {/* Grid Headings */}
                     <div className="grid grid-cols-12 bg-[#11161d] border-b border-[#1c2430] px-2.5 py-1 text-[#7a828c] font-bold font-rajdhani text-[9px] uppercase tracking-wider">
-                      <div className="col-span-5 border-r border-[#1c2430]/60">TARGET FILE PATH</div>
-                      <div className="col-span-3 border-r border-[#1c2430]/60 pl-2">FILE CLASSIFICATION</div>
+                      <div className="col-span-5 border-r border-[#1c2430]/60">
+                        TARGET FILE PATH
+                      </div>
+                      <div className="col-span-3 border-r border-[#1c2430]/60 pl-2">
+                        FILE CLASSIFICATION
+                      </div>
                       <div className="col-span-4 pl-2">TACTICAL FUNCTION</div>
                     </div>
 
                     {/* Grid Rows */}
                     {[
-                      { path: "local-bridge/.env.example", type: "Template Config", func: "Reference config setup file." },
-                      { path: "local-bridge/.env", type: "Private Config", func: "Private keys store. Never commit to Git." },
-                      { path: "local-bridge/teamRelay.js", type: "Publishing Script", func: "Telemetry publisher engine module." },
-                      { path: "local-bridge/server.js", type: "Bridge Host", func: "High-frequency bridge server file." },
-                      { path: "supabase/migrations/20260526_team_sessions.sql", type: "Postgres Migration", func: "Ingests required SQL relay tables." },
+                      {
+                        path: "local-bridge/.env.example",
+                        type: "Template Config",
+                        func: "Reference config setup file.",
+                      },
+                      {
+                        path: "local-bridge/.env",
+                        type: "Private Config",
+                        func: "Private keys store. Never commit to Git.",
+                      },
+                      {
+                        path: "local-bridge/teamRelay.js",
+                        type: "Publishing Script",
+                        func: "Telemetry publisher engine module.",
+                      },
+                      {
+                        path: "local-bridge/server.js",
+                        type: "Bridge Host",
+                        func: "High-frequency bridge server file.",
+                      },
+                      {
+                        path: "supabase/migrations/20260526_team_sessions.sql",
+                        type: "Postgres Migration",
+                        func: "Ingests required SQL relay tables.",
+                      },
                     ].map((row, idx) => (
-                      <div 
+                      <div
                         key={idx}
                         className={`grid grid-cols-12 px-2.5 py-1.5 border-b border-[#1c2430]/40 last:border-0 ${
                           idx % 2 === 0 ? "bg-[#05070a]/40" : "bg-[#0b0f14]"
@@ -1278,7 +1684,6 @@ DRIVER_NAME=${driverName}`}
                 </div>
               </div>
             )}
-
           </div>
         </section>
 
@@ -1292,11 +1697,12 @@ DRIVER_NAME=${driverName}`}
 
           {/* Checklist content */}
           <div className="p-3 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
-            
             {/* Owner checklist - Highlight if owner guide is active */}
-            <div className={`space-y-2 p-1.5 border transition-all ${
-              activeTab === "owner" ? "bg-[#FFB800]/5 border-[#FFB800]/25" : "border-transparent"
-            }`}>
+            <div
+              className={`space-y-2 p-1.5 border transition-all ${
+                activeTab === "owner" ? "bg-[#FFB800]/5 border-[#FFB800]/25" : "border-transparent"
+              }`}
+            >
               <span className="text-[8.5px] font-black text-[#FFB800] uppercase tracking-widest border-b border-[#FFB800]/20 pb-1 block font-rajdhani">
                 🏆 OWNER READY CHECKLIST
               </span>
@@ -1309,10 +1715,10 @@ DRIVER_NAME=${driverName}`}
                   { id: "codeGenerated", label: "Generate PITWALL code" },
                   { id: "envDistributed", label: "Send pre-filled .env" },
                   { id: "bridgeRunning", label: "Start owner local bridge" },
-                  { id: "rdyVerify", label: "Verify active team HUD" }
-                ].map(item => (
-                  <div 
-                    key={item.id} 
+                  { id: "rdyVerify", label: "Verify active team HUD" },
+                ].map((item) => (
+                  <div
+                    key={item.id}
                     onClick={() => toggleOwnerCheck(item.id as any)}
                     className="flex items-center gap-1.5 cursor-pointer hover:bg-[#11161d] p-0.5 border border-transparent hover:border-[#1c2430] transition-colors"
                   >
@@ -1321,7 +1727,13 @@ DRIVER_NAME=${driverName}`}
                     ) : (
                       <Square className="w-3 h-3 text-[#7a828c] shrink-0" />
                     )}
-                    <span className={ownerChecklist[item.id as keyof typeof ownerChecklist] ? "line-through text-[#7a828c] font-bold" : ""}>
+                    <span
+                      className={
+                        ownerChecklist[item.id as keyof typeof ownerChecklist]
+                          ? "line-through text-[#7a828c] font-bold"
+                          : ""
+                      }
+                    >
                       {item.label}
                     </span>
                   </div>
@@ -1330,9 +1742,11 @@ DRIVER_NAME=${driverName}`}
             </div>
 
             {/* Driver checklist - Highlight if driver guide is active */}
-            <div className={`space-y-2 p-1.5 border transition-all ${
-              activeTab === "driver" ? "bg-[#FF4D4D]/5 border-[#FF4D4D]/25" : "border-transparent"
-            }`}>
+            <div
+              className={`space-y-2 p-1.5 border transition-all ${
+                activeTab === "driver" ? "bg-[#FF4D4D]/5 border-[#FF4D4D]/25" : "border-transparent"
+              }`}
+            >
               <span className="text-[8.5px] font-black text-[#FF4D4D] uppercase tracking-widest border-b border-[#FF4D4D]/20 pb-1 block font-rajdhani">
                 🏎️ DRIVER ACTIVE FOR RELAY
               </span>
@@ -1342,9 +1756,9 @@ DRIVER_NAME=${driverName}`}
                   { id: "nameConfigured", label: "Configure DRIVER_NAME" },
                   { id: "bridgeRunning", label: "Run bridge via npm start" },
                   { id: "liveBadgeVerified", label: "Verify Live console badge" },
-                ].map(item => (
-                  <div 
-                    key={item.id} 
+                ].map((item) => (
+                  <div
+                    key={item.id}
                     onClick={() => toggleDriverCheck(item.id as any)}
                     className="flex items-center gap-1.5 cursor-pointer hover:bg-[#11161d] p-0.5 border border-transparent hover:border-[#1c2430] transition-colors"
                   >
@@ -1353,7 +1767,13 @@ DRIVER_NAME=${driverName}`}
                     ) : (
                       <Square className="w-3 h-3 text-[#7a828c] shrink-0" />
                     )}
-                    <span className={driverChecklist[item.id as keyof typeof driverChecklist] ? "line-through text-[#7a828c] font-bold" : ""}>
+                    <span
+                      className={
+                        driverChecklist[item.id as keyof typeof driverChecklist]
+                          ? "line-through text-[#7a828c] font-bold"
+                          : ""
+                      }
+                    >
                       {item.label}
                     </span>
                   </div>
@@ -1362,9 +1782,11 @@ DRIVER_NAME=${driverName}`}
             </div>
 
             {/* Crew checklist - Highlight if crew guide is active */}
-            <div className={`space-y-2 p-1.5 border transition-all ${
-              activeTab === "crew" ? "bg-[#3B82F6]/5 border-[#3B82F6]/25" : "border-transparent"
-            }`}>
+            <div
+              className={`space-y-2 p-1.5 border transition-all ${
+                activeTab === "crew" ? "bg-[#3B82F6]/5 border-[#3B82F6]/25" : "border-transparent"
+              }`}
+            >
               <span className="text-[8.5px] font-black text-[#3B82F6] uppercase tracking-widest border-b border-[#3B82F6]/20 pb-1 block font-rajdhani">
                 🎧 CREW CO-STRATEGY SYNC
               </span>
@@ -1373,10 +1795,10 @@ DRIVER_NAME=${driverName}`}
                   { id: "urlOpened", label: "Open browser team page" },
                   { id: "teamCodePasted", label: "Paste team code in HUD" },
                   { id: "joinedSuccessfully", label: "Confirm teammate live feeds" },
-                  { id: "strategyPlanned", label: "Configure stint timelines" }
-                ].map(item => (
-                  <div 
-                    key={item.id} 
+                  { id: "strategyPlanned", label: "Configure stint timelines" },
+                ].map((item) => (
+                  <div
+                    key={item.id}
                     onClick={() => toggleCrewCheck(item.id as any)}
                     className="flex items-center gap-1.5 cursor-pointer hover:bg-[#11161d] p-0.5 border border-transparent hover:border-[#1c2430] transition-colors"
                   >
@@ -1385,14 +1807,19 @@ DRIVER_NAME=${driverName}`}
                     ) : (
                       <Square className="w-3 h-3 text-[#7a828c] shrink-0" />
                     )}
-                    <span className={crewChecklist[item.id as keyof typeof crewChecklist] ? "line-through text-[#7a828c] font-bold" : ""}>
+                    <span
+                      className={
+                        crewChecklist[item.id as keyof typeof crewChecklist]
+                          ? "line-through text-[#7a828c] font-bold"
+                          : ""
+                      }
+                    >
                       {item.label}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
 
           {/* Interactive Countdown Timer */}
@@ -1404,9 +1831,9 @@ DRIVER_NAME=${driverName}`}
             <div className="text-center bg-[#0b0f14] border border-[#1c2430] p-2 text-white font-mono text-sm font-black tracking-widest font-orbitron select-text">
               {formatStopwatchTime(stopwatchTime)}
             </div>
-            
+
             <div className="grid grid-cols-3 gap-1 mt-2">
-              <button 
+              <button
                 type="button"
                 onClick={handleStartStop}
                 className={`py-1 text-[7.5px] uppercase tracking-widest font-bold rounded-none cursor-pointer transition-all border ${
@@ -1417,7 +1844,7 @@ DRIVER_NAME=${driverName}`}
               >
                 {stopwatchRunning ? "PAUSE" : "START"}
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={handleLap}
                 disabled={!stopwatchRunning}
@@ -1425,7 +1852,7 @@ DRIVER_NAME=${driverName}`}
               >
                 LAP
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={handleReset}
                 className="py-1 bg-[#11161d] hover:bg-[#1c2430] border border-[#1c2430] text-[#7a828c] hover:text-white text-[7.5px] uppercase tracking-widest font-bold rounded-none cursor-pointer transition-all"
@@ -1441,7 +1868,10 @@ DRIVER_NAME=${driverName}`}
                   RECORDED PIT DELTA LAPS
                 </span>
                 {stopwatchLaps.map((lap, idx) => (
-                  <div key={idx} className="flex justify-between border-b border-[#1c2430]/30 py-0.5 last:border-0">
+                  <div
+                    key={idx}
+                    className="flex justify-between border-b border-[#1c2430]/30 py-0.5 last:border-0"
+                  >
                     <span className="text-[#7a828c]">LAP {stopwatchLaps.length - idx}</span>
                     <span className="text-white font-bold">{lap}</span>
                   </div>
@@ -1450,7 +1880,6 @@ DRIVER_NAME=${driverName}`}
             )}
           </div>
         </section>
-
       </div>
 
       {/* Global Status Footer Bar */}

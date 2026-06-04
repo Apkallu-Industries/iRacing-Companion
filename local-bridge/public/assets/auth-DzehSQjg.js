@@ -1,1 +1,74 @@
-import{d as i,j as e}from"./react-core-hSJfnumv.js";import{b as n}from"./index-BF1LFLDu.js";import{A as s}from"./icons-UNkcvPbk.js";import"./vendor-CUluG-o1.js";import"./charts-DDN7mcLY.js";import"./supabase-DZ6I_NU8.js";import"./zustand-BHt0iSzh.js";import"./radix-ui-BcE8c2tf.js";function h(){const[t,a]=i.useState(!1),o=()=>{a(!0);const r={access_token:"mock-local-token",expires_at:Math.floor(Date.now()/1e3)+31536e3,user:{id:"local-user-id",email:"local-developer@apex.trace",app_metadata:{provider:"local",providers:["local"]},user_metadata:{},aud:"authenticated",role:"authenticated",created_at:new Date().toISOString()}};localStorage.setItem("apex_local_session",JSON.stringify(r)),window.location.href="/sessions"};return e.jsx("div",{className:"flex min-h-screen items-center justify-center bg-background px-6",children:e.jsxs("div",{className:"w-full max-w-sm",children:[e.jsxs(n,{to:"/",className:"mb-8 flex items-center justify-center gap-2",children:[e.jsx("div",{className:"flex h-10 w-10 items-center justify-center rounded-sm bg-primary text-primary-foreground",children:e.jsx(s,{className:"h-6 w-6"})}),e.jsx("span",{className:"font-mono text-xl tracking-wider",children:"PIT WALL"})]}),e.jsxs("div",{className:"hairline rounded-sm bg-panel p-6 text-center shadow-lg",children:[e.jsx("h1",{className:"text-xl font-semibold mb-2",children:"Desktop Environment"}),e.jsx("p",{className:"text-sm text-muted-foreground mb-6",children:"Running in local-only mode. No cloud authentication required."}),e.jsxs("button",{type:"button",onClick:o,disabled:t,className:"flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer",children:[e.jsx(s,{className:"h-4 w-4"}),t?"Starting...":"Enter Application"]})]})]})})}export{h as component};
+import { d as i, j as e } from "./react-core-hSJfnumv.js";
+import { b as n } from "./index-BF1LFLDu.js";
+import { A as s } from "./icons-UNkcvPbk.js";
+import "./vendor-CUluG-o1.js";
+import "./charts-DDN7mcLY.js";
+import "./supabase-DZ6I_NU8.js";
+import "./zustand-BHt0iSzh.js";
+import "./radix-ui-BcE8c2tf.js";
+function h() {
+  const [t, a] = i.useState(!1),
+    o = () => {
+      a(!0);
+      const r = {
+        access_token: "mock-local-token",
+        expires_at: Math.floor(Date.now() / 1e3) + 31536e3,
+        user: {
+          id: "local-user-id",
+          email: "local-developer@apex.trace",
+          app_metadata: { provider: "local", providers: ["local"] },
+          user_metadata: {},
+          aud: "authenticated",
+          role: "authenticated",
+          created_at: new Date().toISOString(),
+        },
+      };
+      (localStorage.setItem("apex_local_session", JSON.stringify(r)),
+        (window.location.href = "/sessions"));
+    };
+  return e.jsx("div", {
+    className: "flex min-h-screen items-center justify-center bg-background px-6",
+    children: e.jsxs("div", {
+      className: "w-full max-w-sm",
+      children: [
+        e.jsxs(n, {
+          to: "/",
+          className: "mb-8 flex items-center justify-center gap-2",
+          children: [
+            e.jsx("div", {
+              className:
+                "flex h-10 w-10 items-center justify-center rounded-sm bg-primary text-primary-foreground",
+              children: e.jsx(s, { className: "h-6 w-6" }),
+            }),
+            e.jsx("span", { className: "font-mono text-xl tracking-wider", children: "PIT WALL" }),
+          ],
+        }),
+        e.jsxs("div", {
+          className: "hairline rounded-sm bg-panel p-6 text-center shadow-lg",
+          children: [
+            e.jsx("h1", {
+              className: "text-xl font-semibold mb-2",
+              children: "Desktop Environment",
+            }),
+            e.jsx("p", {
+              className: "text-sm text-muted-foreground mb-6",
+              children: "Running in local-only mode. No cloud authentication required.",
+            }),
+            e.jsxs("button", {
+              type: "button",
+              onClick: o,
+              disabled: t,
+              className:
+                "flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer",
+              children: [
+                e.jsx(s, { className: "h-4 w-4" }),
+                t ? "Starting..." : "Enter Application",
+              ],
+            }),
+          ],
+        }),
+      ],
+    }),
+  });
+}
+export { h as component };

@@ -19,8 +19,14 @@ import {
   Volume2,
   Clock,
 } from "lucide-react";
-import { evaluateTeamStrategyBoard, type CarStintPlan } from "@/lib/session-intelligence/strategyBoardRuntime";
-import { raceTimelineEngine, type EnduranceRaceEvent } from "@/lib/session-intelligence/raceTimeline";
+import {
+  evaluateTeamStrategyBoard,
+  type CarStintPlan,
+} from "@/lib/session-intelligence/strategyBoardRuntime";
+import {
+  raceTimelineEngine,
+  type EnduranceRaceEvent,
+} from "@/lib/session-intelligence/raceTimeline";
 import { useTelemetryGraph } from "@/lib/useTelemetryGraph";
 import { toast } from "sonner";
 
@@ -59,8 +65,12 @@ export function EnduranceOperationsPanel({
         estFuelLapsRemaining: localCar.lapsEstimated || 4.2,
         projectedPitLap: (localCar.all?.Lap ?? 12) + Math.ceil(localCar.lapsEstimated || 4.2),
         tireGripRemainingPct: localCar.tires
-          ? (localCar.tires.fl.estWearPct + localCar.tires.fr.estWearPct + localCar.tires.rl.estWearPct + localCar.tires.rr.estWearPct) / 4
-          : 85.0
+          ? (localCar.tires.fl.estWearPct +
+              localCar.tires.fr.estWearPct +
+              localCar.tires.rl.estWearPct +
+              localCar.tires.rr.estWearPct) /
+            4
+          : 85.0,
       });
     }
 
@@ -74,8 +84,12 @@ export function EnduranceOperationsPanel({
         estFuelLapsRemaining: rc.lapsEstimated || 3.8,
         projectedPitLap: 24,
         tireGripRemainingPct: rc.tires
-          ? (rc.tires.fl.estWearPct + rc.tires.fr.estWearPct + rc.tires.rl.estWearPct + rc.tires.rr.estWearPct) / 4
-          : 75.0
+          ? (rc.tires.fl.estWearPct +
+              rc.tires.fr.estWearPct +
+              rc.tires.rl.estWearPct +
+              rc.tires.rr.estWearPct) /
+            4
+          : 75.0,
       });
     }
 
@@ -88,7 +102,7 @@ export function EnduranceOperationsPanel({
           lapsCompletedInStint: 14,
           estFuelLapsRemaining: 3.5,
           projectedPitLap: 24,
-          tireGripRemainingPct: 81.4
+          tireGripRemainingPct: 81.4,
         },
         {
           carNumber: "964",
@@ -96,8 +110,8 @@ export function EnduranceOperationsPanel({
           lapsCompletedInStint: 12,
           estFuelLapsRemaining: 4.8,
           projectedPitLap: 24,
-          tireGripRemainingPct: 70.8
-        }
+          tireGripRemainingPct: 70.8,
+        },
       ];
     }
 
@@ -109,9 +123,27 @@ export function EnduranceOperationsPanel({
   // Seed baseline race timeline events
   useEffect(() => {
     raceTimelineEngine.clearTimeline();
-    raceTimelineEngine.addTimelineEvent(1, "963", "Driver A", "SETUP_ADJUSTMENT", "Mechanical Rake raised +1.0mm front ride height.");
-    raceTimelineEngine.addTimelineEvent(8, "963", "Driver A", "CAUTION_PACE", "Full Course Yellow pacing active.");
-    raceTimelineEngine.addTimelineEvent(12, "964", "Driver B", "TYRE_CHANGE", "Teammate compound shifted to medium slick set.");
+    raceTimelineEngine.addTimelineEvent(
+      1,
+      "963",
+      "Driver A",
+      "SETUP_ADJUSTMENT",
+      "Mechanical Rake raised +1.0mm front ride height.",
+    );
+    raceTimelineEngine.addTimelineEvent(
+      8,
+      "963",
+      "Driver A",
+      "CAUTION_PACE",
+      "Full Course Yellow pacing active.",
+    );
+    raceTimelineEngine.addTimelineEvent(
+      12,
+      "964",
+      "Driver B",
+      "TYRE_CHANGE",
+      "Teammate compound shifted to medium slick set.",
+    );
   }, []);
 
   const timelineEvents = raceTimelineEngine.getTimelineEvents();
@@ -138,7 +170,7 @@ export function EnduranceOperationsPanel({
             multi-car persistent telemetry & coordination dashboard
           </span>
         </div>
-        
+
         {/* Workspace Role Switcher */}
         <div className="flex border border-[#1A202C] rounded-sm overflow-hidden shrink-0 bg-[#0B0F19]">
           <button
@@ -146,7 +178,7 @@ export function EnduranceOperationsPanel({
             className="px-3 py-1.5 font-bold uppercase tracking-wider text-[8px] transition-all cursor-pointer"
             style={{
               backgroundColor: activeRole === "owner" ? "#3B82F6" : "transparent",
-              color: activeRole === "owner" ? "white" : "#7A828C"
+              color: activeRole === "owner" ? "white" : "#7A828C",
             }}
           >
             Team Owner
@@ -156,7 +188,7 @@ export function EnduranceOperationsPanel({
             className="px-3 py-1.5 font-bold uppercase tracking-wider text-[8px] transition-all cursor-pointer"
             style={{
               backgroundColor: activeRole === "strategist" ? "#3B82F6" : "transparent",
-              color: activeRole === "strategist" ? "white" : "#7A828C"
+              color: activeRole === "strategist" ? "white" : "#7A828C",
             }}
           >
             Race Strategist
@@ -166,7 +198,7 @@ export function EnduranceOperationsPanel({
             className="px-3 py-1.5 font-bold uppercase tracking-wider text-[8px] transition-all cursor-pointer"
             style={{
               backgroundColor: activeRole === "performance" ? "#3B82F6" : "transparent",
-              color: activeRole === "performance" ? "white" : "#7A828C"
+              color: activeRole === "performance" ? "white" : "#7A828C",
             }}
           >
             Performance Eng
@@ -182,7 +214,9 @@ export function EnduranceOperationsPanel({
             <span className="font-bold text-[8.5px] uppercase tracking-wider text-[#FF4D4D]">
               CRITICAL ENDURANCE GARAGE ALERTS
             </span>
-            <span className="text-white font-bold leading-normal">{boardState.warnings[0].message}</span>
+            <span className="text-white font-bold leading-normal">
+              {boardState.warnings[0].message}
+            </span>
           </div>
           <div className="text-[8px] text-[#FF4D4D] font-bold border border-[#FF4D4D] px-2 py-0.5 rounded-sm uppercase shrink-0">
             Double-Stack Threat
@@ -192,10 +226,8 @@ export function EnduranceOperationsPanel({
 
       {/* Grid: Specialized Workspaces */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
-        
         {/* Left Column: Custom Active Workspace Views */}
         <div className="lg:col-span-2 flex flex-col gap-4">
-          
           {/* 1. TEAM OWNER WORKSPACE */}
           {activeRole === "owner" && (
             <div
@@ -211,23 +243,40 @@ export function EnduranceOperationsPanel({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Active Cars</span>
-                  <span className="text-white text-base font-black">{stintPlans.length} {stintPlans.length === 1 ? "Car" : "Cars"} Active</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Active Cars
+                  </span>
+                  <span className="text-white text-base font-black">
+                    {stintPlans.length} {stintPlans.length === 1 ? "Car" : "Cars"} Active
+                  </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Risk State</span>
-                  <span className="text-base font-black" style={{ color: boardState.warnings.length > 0 ? "#FF4D4D" : "#FFB800" }}>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Risk State
+                  </span>
+                  <span
+                    className="text-base font-black"
+                    style={{ color: boardState.warnings.length > 0 ? "#FF4D4D" : "#FFB800" }}
+                  >
                     {boardState.warnings.length > 0 ? "HIGH THREAT" : "OPTIMAL CONTROL"}
                   </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Stint Health</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Stint Health
+                  </span>
                   <span className="text-[#00D17F] text-base font-black">
-                    {(enduranceState ? (enduranceState.brakeWear + enduranceState.ersHealth) / 2 : 94.2).toFixed(1)}% Optimal
+                    {(enduranceState
+                      ? (enduranceState.brakeWear + enduranceState.ersHealth) / 2
+                      : 94.2
+                    ).toFixed(1)}
+                    % Optimal
                   </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Operational Confidence</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Operational Confidence
+                  </span>
                   <span className="text-white text-base font-black">
                     {boardState.warnings.length > 0 ? "78.0%" : "92.5%"}
                   </span>
@@ -241,9 +290,15 @@ export function EnduranceOperationsPanel({
                 {adaptationState ? (
                   <>
                     <p className="text-white leading-normal mb-1">
-                      Driver swap adaptation window active for incoming **{adaptationState.incomingDriver || "Incoming"}**. Core steering input jitter signature delta is {adaptationState.steeringJitterMismatchPct}%. Brake bite pressure deviation is {adaptationState.brakeBiteMismatchPct}% from outgoing baseline.
+                      Driver swap adaptation window active for incoming **
+                      {adaptationState.incomingDriver || "Incoming"}**. Core steering input jitter
+                      signature delta is {adaptationState.steeringJitterMismatchPct}%. Brake bite
+                      pressure deviation is {adaptationState.brakeBiteMismatchPct}% from outgoing
+                      baseline.
                     </p>
-                    <span className="text-[#FFB800] font-black uppercase text-[8px] block">Adaptation window: Lap {adaptationState.currentLapInWindow || 1} of 3 laps</span>
+                    <span className="text-[#FFB800] font-black uppercase text-[8px] block">
+                      Adaptation window: Lap {adaptationState.currentLapInWindow || 1} of 3 laps
+                    </span>
                   </>
                 ) : (
                   <p className="text-[#718096] leading-normal">
@@ -253,9 +308,12 @@ export function EnduranceOperationsPanel({
               </div>
 
               <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px] mt-auto">
-                <span className="text-[#718096] uppercase font-bold block mb-0.5">OWNER DIRECTIVE SUMMARY</span>
+                <span className="text-[#718096] uppercase font-bold block mb-0.5">
+                  OWNER DIRECTIVE SUMMARY
+                </span>
                 <span className="text-white leading-relaxed">
-                  Both vehicles running cleanly. Gap overlays are secure. Caution pacing Standby mode active.
+                  Both vehicles running cleanly. Gap overlays are secure. Caution pacing Standby
+                  mode active.
                 </span>
               </div>
             </div>
@@ -276,12 +334,20 @@ export function EnduranceOperationsPanel({
 
               <div className="grid grid-cols-2 gap-3 text-center">
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8.5px] block uppercase font-bold mb-0.5">Stationary Fuel time</span>
-                  <span className="text-white text-base font-bold tabular-nums">{stationaryTime.toFixed(1)}s</span>
+                  <span className="text-[#718096] text-[8.5px] block uppercase font-bold mb-0.5">
+                    Stationary Fuel time
+                  </span>
+                  <span className="text-white text-base font-bold tabular-nums">
+                    {stationaryTime.toFixed(1)}s
+                  </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8.5px] block uppercase font-bold mb-0.5">Total Pitlane Loss</span>
-                  <span className="text-white text-base font-bold tabular-nums">-{totalTimeLoss.toFixed(1)}s</span>
+                  <span className="text-[#718096] text-[8.5px] block uppercase font-bold mb-0.5">
+                    Total Pitlane Loss
+                  </span>
+                  <span className="text-white text-base font-bold tabular-nums">
+                    -{totalTimeLoss.toFixed(1)}s
+                  </span>
                 </div>
               </div>
 
@@ -291,9 +357,17 @@ export function EnduranceOperationsPanel({
                 </span>
                 <div className="flex flex-col gap-2 mt-2 font-mono text-[8.5px]">
                   {stintPlans.map((plan, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-1 border-b border-[#1B2232]">
-                      <span className="text-white font-bold">Car #{plan.carNumber} ({plan.driverName})</span>
-                      <span className="text-[#718096]">Stint laps: {plan.lapsCompletedInStint} · Pit: <span className="text-white font-bold">L{plan.projectedPitLap}</span></span>
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center py-1 border-b border-[#1B2232]"
+                    >
+                      <span className="text-white font-bold">
+                        Car #{plan.carNumber} ({plan.driverName})
+                      </span>
+                      <span className="text-[#718096]">
+                        Stint laps: {plan.lapsCompletedInStint} · Pit:{" "}
+                        <span className="text-white font-bold">L{plan.projectedPitLap}</span>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -303,7 +377,9 @@ export function EnduranceOperationsPanel({
                 <span className="text-[#718096] uppercase font-bold block mb-1">
                   Strategist Guidance Recommendation
                 </span>
-                <span className="text-[#00D17F] font-black block mb-1">{boardState.recommendations[0]}</span>
+                <span className="text-[#00D17F] font-black block mb-1">
+                  {boardState.recommendations[0]}
+                </span>
               </div>
             </div>
           )}
@@ -323,19 +399,27 @@ export function EnduranceOperationsPanel({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-white font-bold text-[10px] tabular-nums">
                 <div className="p-2.5 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">Chassis Fatigue</span>
+                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">
+                    Chassis Fatigue
+                  </span>
                   {enduranceState?.chassisFatigue.toFixed(2) ?? "0.00"}%
                 </div>
                 <div className="p-2.5 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">Brake Pad wear</span>
+                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">
+                    Brake Pad wear
+                  </span>
                   {enduranceState?.brakeWear.toFixed(2) ?? "100.00"}%
                 </div>
                 <div className="p-2.5 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">Gearbox Stress</span>
+                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">
+                    Gearbox Stress
+                  </span>
                   {enduranceState?.gearboxStress.toFixed(2) ?? "0.00"}%
                 </div>
                 <div className="p-2.5 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">Battery Retention</span>
+                  <span className="text-[7.5px] text-[#718096] block uppercase font-bold mb-0.5">
+                    Battery Retention
+                  </span>
                   {enduranceState?.ersHealth.toFixed(2) ?? "100.00"}%
                 </div>
               </div>
@@ -345,7 +429,9 @@ export function EnduranceOperationsPanel({
                   Active underbody splitters deflection
                 </span>
                 <p className="text-white leading-normal">
-                  Chassis vertical deflections conform to standard GT3 limits. Zero Splitter grounding or underbody stalls detected over the previous 4 laps. Diffuser vacuum seal rating: 98%.
+                  Chassis vertical deflections conform to standard GT3 limits. Zero Splitter
+                  grounding or underbody stalls detected over the previous 4 laps. Diffuser vacuum
+                  seal rating: 98%.
                 </p>
               </div>
 
@@ -354,7 +440,8 @@ export function EnduranceOperationsPanel({
                   Performance Engineer Action advice
                 </span>
                 <span className="text-white leading-relaxed">
-                  No immediate setup adjustments advised. Mechanical damper extension and roll bar roll margins remain safe.
+                  No immediate setup adjustments advised. Mechanical damper extension and roll bar
+                  roll margins remain safe.
                 </span>
               </div>
             </div>
@@ -363,7 +450,6 @@ export function EnduranceOperationsPanel({
 
         {/* Right Column: Stint Pit planner & Race chronological timeline */}
         <div className="flex flex-col gap-4">
-          
           {/* Pit Stop Planner */}
           <div
             className="p-4 rounded-sm border"
@@ -392,7 +478,9 @@ export function EnduranceOperationsPanel({
               </div>
 
               <div className="flex items-center justify-between border-t border-[#1A202C] pt-2">
-                <span className="text-[#718096] text-[8.5px] uppercase font-bold">Change 4 Tyres</span>
+                <span className="text-[#718096] text-[8.5px] uppercase font-bold">
+                  Change 4 Tyres
+                </span>
                 <input
                   type="checkbox"
                   checked={changeTires}
@@ -424,9 +512,14 @@ export function EnduranceOperationsPanel({
 
             <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto max-h-[220px]">
               {timelineEvents.map((ev, idx) => (
-                <div key={idx} className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px]">
+                <div
+                  key={idx}
+                  className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px]"
+                >
                   <div className="flex justify-between items-center text-[#718096] text-[7.5px] font-bold uppercase mb-0.5">
-                    <span>L{ev.lapNumber} · Car #{ev.carNumber}</span>
+                    <span>
+                      L{ev.lapNumber} · Car #{ev.carNumber}
+                    </span>
                     <span>{ev.eventType}</span>
                   </div>
                   <span className="text-white leading-relaxed">{ev.description}</span>

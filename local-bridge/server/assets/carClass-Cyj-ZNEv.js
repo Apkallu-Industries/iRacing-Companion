@@ -1,7 +1,8 @@
 const RULES = [
   {
-    match: /gt3|amggt3|m4gt3|porsche992r|audir8lms|ferrari296gt3|lamborghini.*gt3|mclaren720|bmw.*gt3|mercedes.*gt3/,
-    cls: "GT3"
+    match:
+      /gt3|amggt3|m4gt3|porsche992r|audir8lms|ferrari296gt3|lamborghini.*gt3|mclaren720|bmw.*gt3|mercedes.*gt3/,
+    cls: "GT3",
   },
   { match: /gtp|lmdh|acuraarx|cadillacvr|porsche963|ferrari499|bmwlmdh/, cls: "GTP" },
   { match: /lmp1|lmp2|lmp3|dallarap217|audir18|porsche919|hpdarx|rileymk/, cls: "LMP" },
@@ -14,16 +15,15 @@ const RULES = [
   { match: /dirt|sprint|midget|legends|streetstock|modified/, cls: "Dirt Oval" },
   { match: /indycar|dallaraindy|dallarair/, cls: "IndyCar" },
   {
-    match: /formula|f1|f3|f4|fr2\.0|skipbarber|mx5|formularenault|tatuus|fia.*f4|williams.*fw|mercedes.*amg.*f1/,
-    cls: "Formula"
+    match:
+      /formula|f1|f3|f4|fr2\.0|skipbarber|mx5|formularenault|tatuus|fia.*f4|williams.*fw|mercedes.*amg.*f1/,
+    cls: "Formula",
   },
-  { match: /radical|prototype|csl|dallara/, cls: "Prototype" }
+  { match: /radical|prototype|csl|dallara/, cls: "Prototype" },
 ];
 function classifyCar(carShortName) {
   const s = carShortName.toLowerCase().replace(/[\s_-]/g, "");
   for (const r of RULES) if (r.match.test(s)) return r.cls;
   return "Other";
 }
-export {
-  classifyCar as c
-};
+export { classifyCar as c };

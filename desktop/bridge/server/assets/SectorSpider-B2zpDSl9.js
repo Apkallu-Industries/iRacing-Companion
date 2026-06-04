@@ -6,28 +6,54 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { N as useWorkbench } from "./router-D8VllJ-f.js";
 import { Download, Activity, Flame, Waves, GitCompare, Minus, Plus, Maximize2 } from "lucide-react";
 const createShareLink = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  sessionId: z.string().uuid(),
-  refLap: z.number().int().nullable().optional(),
-  cmpLap: z.number().int().nullable().optional(),
-  expiresInDays: z.number().int().min(1).max(365).nullable().optional()
-}).parse(input)).handler(createSsrRpc("f631e086e864b55a802d3846676e9c76d6b0d78df3ae21524dfa509bbf1a00b3"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        sessionId: z.string().uuid(),
+        refLap: z.number().int().nullable().optional(),
+        cmpLap: z.number().int().nullable().optional(),
+        expiresInDays: z.number().int().min(1).max(365).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("f631e086e864b55a802d3846676e9c76d6b0d78df3ae21524dfa509bbf1a00b3"));
 const revokeShareLink = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  token: z.string().min(8).max(64)
-}).parse(input)).handler(createSsrRpc("fd2f68fb3471015b1d9ab8f139421cbbbc0df798ebba6872f1a3a0d195a1ca68"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        token: z.string().min(8).max(64),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("fd2f68fb3471015b1d9ab8f139421cbbbc0df798ebba6872f1a3a0d195a1ca68"));
 const refreshSharedSignedUrl = createServerFn({
-  method: "POST"
-}).inputValidator((input) => z.object({
-  token: z.string().min(8).max(64)
-}).parse(input)).handler(createSsrRpc("b95e7b07455f66f56ce92478f1717625e1dccf570298bb4b01e5b9406af0ffbe"));
+  method: "POST",
+})
+  .inputValidator((input) =>
+    z
+      .object({
+        token: z.string().min(8).max(64),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("b95e7b07455f66f56ce92478f1717625e1dccf570298bb4b01e5b9406af0ffbe"));
 const getSharedLap = createServerFn({
-  method: "GET"
-}).inputValidator((input) => z.object({
-  token: z.string().min(8).max(64)
-}).parse(input)).handler(createSsrRpc("036557a56b6495b1b5c08cc4f611f29aa4ea7b2c87e2456f85ff16ecf5121073"));
+  method: "GET",
+})
+  .inputValidator((input) =>
+    z
+      .object({
+        token: z.string().min(8).max(64),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("036557a56b6495b1b5c08cc4f611f29aa4ea7b2c87e2456f85ff16ecf5121073"));
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -86,11 +112,11 @@ async function exportSvgAsPng(svg, filename, scale = 2) {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    await new Promise(
-      (resolve) => canvas.toBlob((b) => {
+    await new Promise((resolve) =>
+      canvas.toBlob((b) => {
         if (b) downloadBlob(b, filename);
         resolve();
-      }, "image/png")
+      }, "image/png"),
     );
   } finally {
     URL.revokeObjectURL(url);
@@ -135,11 +161,11 @@ async function exportSvgGroupAsPng(svgs, filename, scale = 2, gap = 16) {
     }
     xCursor += it.w + gap;
   }
-  await new Promise(
-    (resolve) => canvas.toBlob((b) => {
+  await new Promise((resolve) =>
+    canvas.toBlob((b) => {
       if (b) downloadBlob(b, filename);
       resolve();
-    }, "image/png")
+    }, "image/png"),
   );
 }
 function ExportButton({ getSvg, getCanvas, filenameBase, allowSvg = true }) {
@@ -160,38 +186,37 @@ function ExportButton({ getSvg, getCanvas, filenameBase, allowSvg = true }) {
     const el = getSvg();
     if (el) exportSvgAsSvg(el, `${filenameBase}.svg`);
   };
-  return /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-    /* @__PURE__ */ jsxs(
-      "button",
-      {
+  return /* @__PURE__ */ jsxs("div", {
+    className: "relative",
+    children: [
+      /* @__PURE__ */ jsxs("button", {
         onClick: () => setOpen((o) => !o),
-        className: "flex h-5 items-center gap-1 rounded-sm border border-border bg-rail px-1.5 font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground",
+        className:
+          "flex h-5 items-center gap-1 rounded-sm border border-border bg-rail px-1.5 font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground",
         title: "Export view",
-        children: [
-          /* @__PURE__ */ jsx(Download, { className: "h-3 w-3" }),
-          " Export"
-        ]
-      }
-    ),
-    open && /* @__PURE__ */ jsxs("div", { className: "absolute right-0 top-6 z-30 flex flex-col rounded-sm border border-border bg-panel py-1 shadow-lg", children: [
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          onClick: handlePng,
-          className: "px-3 py-1 text-left font-mono text-[11px] hover:bg-accent",
-          children: "PNG"
-        }
-      ),
-      allowSvg && getSvg && /* @__PURE__ */ jsx(
-        "button",
-        {
-          onClick: handleSvg,
-          className: "px-3 py-1 text-left font-mono text-[11px] hover:bg-accent",
-          children: "SVG"
-        }
-      )
-    ] })
-  ] });
+        children: [/* @__PURE__ */ jsx(Download, { className: "h-3 w-3" }), " Export"],
+      }),
+      open &&
+        /* @__PURE__ */ jsxs("div", {
+          className:
+            "absolute right-0 top-6 z-30 flex flex-col rounded-sm border border-border bg-panel py-1 shadow-lg",
+          children: [
+            /* @__PURE__ */ jsx("button", {
+              onClick: handlePng,
+              className: "px-3 py-1 text-left font-mono text-[11px] hover:bg-accent",
+              children: "PNG",
+            }),
+            allowSvg &&
+              getSvg &&
+              /* @__PURE__ */ jsx("button", {
+                onClick: handleSvg,
+                className: "px-3 py-1 text-left font-mono text-[11px] hover:bg-accent",
+                children: "SVG",
+              }),
+          ],
+        }),
+    ],
+  });
 }
 const W = 400;
 const H = 260;
@@ -202,7 +227,10 @@ function buildLapsByDist(parsed, channelName) {
   const xy = parsed.trackXY;
   const lapDistPct = parsed.channels["LapDistPct"]?.data;
   if (!xy || !lapDistPct) return null;
-  const channelData = channelName !== "none" && channelName !== "DeltaT" ? parsed.channels[channelName]?.data : void 0;
+  const channelData =
+    channelName !== "none" && channelName !== "DeltaT"
+      ? parsed.channels[channelName]?.data
+      : void 0;
   const sessionTime = parsed.channels["SessionTime"]?.data;
   const speedData = parsed.channels["Speed"]?.data;
   const laps = [];
@@ -252,7 +280,8 @@ function buildLapsByDist(parsed, channelName) {
         speed[i] = speedData[t0] * (1 - ff) + speedData[t1] * ff;
       }
     }
-    const x0 = x[0], y0 = y[0];
+    const x0 = x[0],
+      y0 = y[0];
     for (let i = 0; i < NUM_SAMPLES; i++) {
       x[i] -= x0;
       y[i] -= y0;
@@ -328,7 +357,7 @@ function averageLaps(laps) {
       const j = (i + 1) % n;
       const ang = Math.atan2(
         closedLaps[k].y[j] - closedLaps[k].y[i],
-        closedLaps[k].x[j] - closedLaps[k].x[i]
+        closedLaps[k].x[j] - closedLaps[k].x[i],
       );
       let dh = ang - avgAng[i];
       while (dh > Math.PI) dh -= Math.PI * 2;
@@ -346,7 +375,7 @@ function lapSectorTimes(lap) {
   const n = lap.st.length;
   const t0 = lap.st[0];
   const tMid1 = lap.st[Math.floor(n / 3)];
-  const tMid2 = lap.st[Math.floor(2 * n / 3)];
+  const tMid2 = lap.st[Math.floor((2 * n) / 3)];
   const tEnd = lap.st[n - 1];
   return [tMid1 - t0, tMid2 - tMid1, tEnd - tMid2];
 }
@@ -393,13 +422,11 @@ function TrackMap({ parsed }) {
     setShowTrackBands,
     setShowDeviation,
     mapThicknessBySpeed,
-    setMapThicknessBySpeed
+    setMapThicknessBySpeed,
   } = useWorkbench();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const dragRef = useRef(
-    null
-  );
+  const dragRef = useRef(null);
   const svgRef = useRef(null);
   const [activePan, setActivePan] = useState(false);
   const [activeZoom, setActiveZoom] = useState(false);
@@ -414,55 +441,58 @@ function TrackMap({ parsed }) {
     const maxY = (H - currentVbH) / 2;
     return {
       x: Math.max(-maxX, Math.min(maxX, p.x)),
-      y: Math.max(-maxY, Math.min(maxY, p.y))
+      y: Math.max(-maxY, Math.min(maxY, p.y)),
     };
   }, []);
-  const animateTo = useCallback((nz, np, instant = false) => {
-    const clampedZ = clampZoom(nz);
-    const clampedP = clampPan(np, clampedZ);
-    targetZoomRef.current = clampedZ;
-    targetPanRef.current = clampedP;
-    if (instant) {
-      if (animRef.current !== null) {
-        cancelAnimationFrame(animRef.current);
-        animRef.current = null;
-      }
-      setZoom(clampedZ);
-      setPan(clampedP);
-      return;
-    }
-    if (animRef.current !== null) return;
-    const tick = () => {
-      let zDone = false;
-      let pDone = false;
-      setZoom((currentZ) => {
-        const diffZ = targetZoomRef.current - currentZ;
-        if (Math.abs(diffZ) < 1e-3) {
-          zDone = true;
-          return targetZoomRef.current;
+  const animateTo = useCallback(
+    (nz, np, instant = false) => {
+      const clampedZ = clampZoom(nz);
+      const clampedP = clampPan(np, clampedZ);
+      targetZoomRef.current = clampedZ;
+      targetPanRef.current = clampedP;
+      if (instant) {
+        if (animRef.current !== null) {
+          cancelAnimationFrame(animRef.current);
+          animRef.current = null;
         }
-        return currentZ + diffZ * 0.25;
-      });
-      setPan((currentP) => {
-        const diffX = targetPanRef.current.x - currentP.x;
-        const diffY = targetPanRef.current.y - currentP.y;
-        if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01) {
-          pDone = true;
-          return targetPanRef.current;
-        }
-        return {
-          x: currentP.x + diffX * 0.25,
-          y: currentP.y + diffY * 0.25
-        };
-      });
-      if (!zDone || !pDone) {
-        animRef.current = requestAnimationFrame(tick);
-      } else {
-        animRef.current = null;
+        setZoom(clampedZ);
+        setPan(clampedP);
+        return;
       }
-    };
-    animRef.current = requestAnimationFrame(tick);
-  }, [clampPan]);
+      if (animRef.current !== null) return;
+      const tick = () => {
+        let zDone = false;
+        let pDone = false;
+        setZoom((currentZ) => {
+          const diffZ = targetZoomRef.current - currentZ;
+          if (Math.abs(diffZ) < 1e-3) {
+            zDone = true;
+            return targetZoomRef.current;
+          }
+          return currentZ + diffZ * 0.25;
+        });
+        setPan((currentP) => {
+          const diffX = targetPanRef.current.x - currentP.x;
+          const diffY = targetPanRef.current.y - currentP.y;
+          if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01) {
+            pDone = true;
+            return targetPanRef.current;
+          }
+          return {
+            x: currentP.x + diffX * 0.25,
+            y: currentP.y + diffY * 0.25,
+          };
+        });
+        if (!zDone || !pDone) {
+          animRef.current = requestAnimationFrame(tick);
+        } else {
+          animRef.current = null;
+        }
+      };
+      animRef.current = requestAnimationFrame(tick);
+    },
+    [clampPan],
+  );
   const reset = useCallback(() => {
     animateTo(1, { x: 0, y: 0 }, false);
   }, [animateTo]);
@@ -472,7 +502,7 @@ function TrackMap({ parsed }) {
     if (mapMode === "drift") {
       return {
         kind: "drift",
-        bounds: { minX: xy.minX, maxX: xy.maxX, minY: xy.minY, maxY: xy.maxY }
+        bounds: { minX: xy.minX, maxX: xy.maxX, minY: xy.minY, maxY: xy.maxY },
       };
     }
     const lapsBuilt = buildLapsByDist(parsed, mapColorBy);
@@ -480,7 +510,8 @@ function TrackMap({ parsed }) {
     if (mapColorBy === "DeltaT") {
       const ref = lapsBuilt.laps.find((l) => l.lap === refLap) ?? lapsBuilt.laps[0];
       if (ref && ref.st.length === ref.x.length) {
-        let dMin = Infinity, dMax = -Infinity;
+        let dMin = Infinity,
+          dMax = -Infinity;
         const t0Ref = ref.st[0];
         for (const lap of lapsBuilt.laps) {
           if (lap.st.length !== lap.x.length || lap.c.length !== lap.x.length) continue;
@@ -502,7 +533,10 @@ function TrackMap({ parsed }) {
     if (mapMode === "averaged") {
       const avg = averageLaps(lapsBuilt.laps);
       if (!avg) return null;
-      let minX2 = Infinity, maxX2 = -Infinity, minY2 = Infinity, maxY2 = -Infinity;
+      let minX2 = Infinity,
+        maxX2 = -Infinity,
+        minY2 = Infinity,
+        maxY2 = -Infinity;
       for (let i = 0; i < avg.x.length; i++) {
         if (avg.x[i] < minX2) minX2 = avg.x[i];
         if (avg.x[i] > maxX2) maxX2 = avg.x[i];
@@ -515,10 +549,13 @@ function TrackMap({ parsed }) {
         laps: lapsBuilt.laps,
         bounds: { minX: minX2, maxX: maxX2, minY: minY2, maxY: maxY2 },
         cMin: lapsBuilt.cMin,
-        cMax: lapsBuilt.cMax
+        cMax: lapsBuilt.cMax,
       };
     }
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
     const closed = lapsBuilt.laps.map((l) => {
       const c = closeLoop(l.x, l.y);
       for (let i = 0; i < c.x.length; i++) {
@@ -534,7 +571,7 @@ function TrackMap({ parsed }) {
       laps: closed,
       bounds: { minX, maxX, minY, maxY },
       cMin: lapsBuilt.cMin,
-      cMax: lapsBuilt.cMax
+      cMax: lapsBuilt.cMax,
     };
   }, [parsed, xy, mapMode, mapColorBy, refLap]);
   const projection = useMemo(() => {
@@ -545,7 +582,7 @@ function TrackMap({ parsed }) {
     const s = Math.min(sx, sy);
     return {
       px: (vx) => PAD + (vx - minX) * s,
-      py: (vy) => H - PAD - (vy - minY) * s
+      py: (vy) => H - PAD - (vy - minY) * s,
     };
   }, [built]);
   const outlinePath = useMemo(() => {
@@ -583,10 +620,13 @@ function TrackMap({ parsed }) {
       }
       return segs;
     },
-    [projection, mapColorBy]
+    [projection, mapColorBy],
   );
   if (!xy || !built || !projection) {
-    return /* @__PURE__ */ jsx("div", { className: "flex h-full items-center justify-center text-xs text-muted-foreground", children: "No position data available" });
+    return /* @__PURE__ */ jsx("div", {
+      className: "flex h-full items-center justify-center text-xs text-muted-foreground",
+      children: "No position data available",
+    });
   }
   const dotIdx = Math.min(cursorTick, xy.x.length - 1);
   const sxOut = (W - 2 * PAD) / Math.max(1, xy.maxX - xy.minX);
@@ -609,132 +649,145 @@ function TrackMap({ parsed }) {
     };
     const refD = lapPath(refLap);
     const cmpD = lapPath(cmpLap);
-    foreground = /* @__PURE__ */ jsxs(Fragment, { children: [
-      refD && /* @__PURE__ */ jsx("path", { d: refD, fill: "none", stroke: "var(--ch-speed)", strokeWidth: 1.5 / zoom }),
-      cmpD && /* @__PURE__ */ jsx(
-        "path",
-        {
-          d: cmpD,
-          fill: "none",
-          stroke: "var(--ch-throttle)",
-          strokeWidth: 1.5 / zoom,
-          strokeDasharray: `${3 / zoom},${3 / zoom}`
-        }
-      )
-    ] });
+    foreground = /* @__PURE__ */ jsxs(Fragment, {
+      children: [
+        refD &&
+          /* @__PURE__ */ jsx("path", {
+            d: refD,
+            fill: "none",
+            stroke: "var(--ch-speed)",
+            strokeWidth: 1.5 / zoom,
+          }),
+        cmpD &&
+          /* @__PURE__ */ jsx("path", {
+            d: cmpD,
+            fill: "none",
+            stroke: "var(--ch-throttle)",
+            strokeWidth: 1.5 / zoom,
+            strokeDasharray: `${3 / zoom},${3 / zoom}`,
+          }),
+      ],
+    });
   } else if (built.kind === "aligned") {
     const refLapBuilt = built.laps.find((l) => l.lap === refLap) ?? built.laps[0];
-    foreground = /* @__PURE__ */ jsxs(Fragment, { children: [
-      built.laps.map((l) => {
-        if (l.lap === refLapBuilt.lap) return null;
-        let d = `M ${projection.px(l.x[0])} ${projection.py(l.y[0])}`;
-        for (let i = 1; i < l.x.length; i++)
-          d += ` L ${projection.px(l.x[i])} ${projection.py(l.y[i])}`;
-        return /* @__PURE__ */ jsx(
-          "path",
-          {
-            d,
-            fill: "none",
-            stroke: "var(--border-strong)",
-            strokeWidth: 0.6 / zoom,
-            opacity: 0.35
-          },
-          l.lap
-        );
-      }),
-      mapColorBy === "none" ? /* @__PURE__ */ jsx(
-        "path",
-        {
-          d: (() => {
-            let d = `M ${projection.px(refLapBuilt.x[0])} ${projection.py(refLapBuilt.y[0])}`;
-            for (let i = 1; i < refLapBuilt.x.length; i++)
-              d += ` L ${projection.px(refLapBuilt.x[i])} ${projection.py(refLapBuilt.y[i])}`;
-            return d;
-          })(),
-          fill: "none",
-          stroke: "var(--ch-speed)",
-          strokeWidth: 2 / zoom
-        }
-      ) : (() => {
-        const sp = mapThicknessBySpeed ? refLapBuilt.speed : void 0;
-        let smin = 0, smax = 0;
-        if (sp && sp.length) {
-          smin = Infinity;
-          smax = -Infinity;
-          for (let i = 0; i < sp.length; i++) {
-            if (sp[i] < smin) smin = sp[i];
-            if (sp[i] > smax) smax = sp[i];
-          }
-        }
-        return buildColoredSegments(
-          refLapBuilt.x,
-          refLapBuilt.y,
-          refLapBuilt.c,
-          built.cMin,
-          built.cMax,
-          sp,
-          smin,
-          smax
-        ).map((s, i) => /* @__PURE__ */ jsx(
-          "path",
-          {
-            d: s.d,
-            fill: "none",
-            stroke: s.color,
-            strokeWidth: 2.4 * s.w / zoom,
-            strokeLinecap: "round"
-          },
-          i
-        ));
-      })()
-    ] });
+    foreground = /* @__PURE__ */ jsxs(Fragment, {
+      children: [
+        built.laps.map((l) => {
+          if (l.lap === refLapBuilt.lap) return null;
+          let d = `M ${projection.px(l.x[0])} ${projection.py(l.y[0])}`;
+          for (let i = 1; i < l.x.length; i++)
+            d += ` L ${projection.px(l.x[i])} ${projection.py(l.y[i])}`;
+          return /* @__PURE__ */ jsx(
+            "path",
+            {
+              d,
+              fill: "none",
+              stroke: "var(--border-strong)",
+              strokeWidth: 0.6 / zoom,
+              opacity: 0.35,
+            },
+            l.lap,
+          );
+        }),
+        mapColorBy === "none"
+          ? /* @__PURE__ */ jsx("path", {
+              d: (() => {
+                let d = `M ${projection.px(refLapBuilt.x[0])} ${projection.py(refLapBuilt.y[0])}`;
+                for (let i = 1; i < refLapBuilt.x.length; i++)
+                  d += ` L ${projection.px(refLapBuilt.x[i])} ${projection.py(refLapBuilt.y[i])}`;
+                return d;
+              })(),
+              fill: "none",
+              stroke: "var(--ch-speed)",
+              strokeWidth: 2 / zoom,
+            })
+          : (() => {
+              const sp = mapThicknessBySpeed ? refLapBuilt.speed : void 0;
+              let smin = 0,
+                smax = 0;
+              if (sp && sp.length) {
+                smin = Infinity;
+                smax = -Infinity;
+                for (let i = 0; i < sp.length; i++) {
+                  if (sp[i] < smin) smin = sp[i];
+                  if (sp[i] > smax) smax = sp[i];
+                }
+              }
+              return buildColoredSegments(
+                refLapBuilt.x,
+                refLapBuilt.y,
+                refLapBuilt.c,
+                built.cMin,
+                built.cMax,
+                sp,
+                smin,
+                smax,
+              ).map((s, i) =>
+                /* @__PURE__ */ jsx(
+                  "path",
+                  {
+                    d: s.d,
+                    fill: "none",
+                    stroke: s.color,
+                    strokeWidth: (2.4 * s.w) / zoom,
+                    strokeLinecap: "round",
+                  },
+                  i,
+                ),
+              );
+            })(),
+      ],
+    });
   } else {
     const { avg } = built;
-    foreground = mapColorBy === "none" ? /* @__PURE__ */ jsx(
-      "path",
-      {
-        d: (() => {
-          let d = `M ${projection.px(avg.x[0])} ${projection.py(avg.y[0])}`;
-          for (let i = 1; i < avg.x.length; i++)
-            d += ` L ${projection.px(avg.x[i])} ${projection.py(avg.y[i])}`;
-          return d;
-        })(),
-        fill: "none",
-        stroke: "var(--primary)",
-        strokeWidth: 2.4 / zoom
-      }
-    ) : (() => {
-      const sp = mapThicknessBySpeed ? avg.speed : void 0;
-      let smin = 0, smax = 0;
-      if (sp && sp.length) {
-        smin = Infinity;
-        smax = -Infinity;
-        for (let i = 0; i < sp.length; i++) {
-          if (sp[i] < smin) smin = sp[i];
-          if (sp[i] > smax) smax = sp[i];
-        }
-      }
-      return buildColoredSegments(
-        avg.x,
-        avg.y,
-        avg.c,
-        built.cMin,
-        built.cMax,
-        sp,
-        smin,
-        smax
-      ).map((s, i) => /* @__PURE__ */ jsx(
-        "path",
-        {
-          d: s.d,
-          fill: "none",
-          stroke: s.color,
-          strokeWidth: 2.8 * s.w / zoom,
-          strokeLinecap: "round"
-        },
-        i
-      ));
-    })();
+    foreground =
+      mapColorBy === "none"
+        ? /* @__PURE__ */ jsx("path", {
+            d: (() => {
+              let d = `M ${projection.px(avg.x[0])} ${projection.py(avg.y[0])}`;
+              for (let i = 1; i < avg.x.length; i++)
+                d += ` L ${projection.px(avg.x[i])} ${projection.py(avg.y[i])}`;
+              return d;
+            })(),
+            fill: "none",
+            stroke: "var(--primary)",
+            strokeWidth: 2.4 / zoom,
+          })
+        : (() => {
+            const sp = mapThicknessBySpeed ? avg.speed : void 0;
+            let smin = 0,
+              smax = 0;
+            if (sp && sp.length) {
+              smin = Infinity;
+              smax = -Infinity;
+              for (let i = 0; i < sp.length; i++) {
+                if (sp[i] < smin) smin = sp[i];
+                if (sp[i] > smax) smax = sp[i];
+              }
+            }
+            return buildColoredSegments(
+              avg.x,
+              avg.y,
+              avg.c,
+              built.cMin,
+              built.cMax,
+              sp,
+              smin,
+              smax,
+            ).map((s, i) =>
+              /* @__PURE__ */ jsx(
+                "path",
+                {
+                  d: s.d,
+                  fill: "none",
+                  stroke: s.color,
+                  strokeWidth: (2.8 * s.w) / zoom,
+                  strokeLinecap: "round",
+                },
+                i,
+              ),
+            );
+          })();
   }
   const vbW = W / zoom;
   const vbH = H / zoom;
@@ -752,8 +805,8 @@ function TrackMap({ parsed }) {
     const targVbH = H / currentTargZ;
     const targVbX = (W - targVbW) / 2 + currentTargP.x;
     const targVbY = (H - targVbH) / 2 + currentTargP.y;
-    const mx = targVbX + (e.clientX - rect.left) / rect.width * targVbW;
-    const my = targVbY + (e.clientY - rect.top) / rect.height * targVbH;
+    const mx = targVbX + ((e.clientX - rect.left) / rect.width) * targVbW;
+    const my = targVbY + ((e.clientY - rect.top) / rect.height) * targVbH;
     const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
     const newZoom = clampZoom(currentTargZ * factor);
     if (newZoom === currentTargZ) return;
@@ -763,8 +816,8 @@ function TrackMap({ parsed }) {
     } else {
       const newVbW = W / newZoom;
       const newVbH = H / newZoom;
-      const newVbX = mx - (e.clientX - rect.left) / rect.width * newVbW;
-      const newVbY = my - (e.clientY - rect.top) / rect.height * newVbH;
+      const newVbX = mx - ((e.clientX - rect.left) / rect.width) * newVbW;
+      const newVbY = my - ((e.clientY - rect.top) / rect.height) * newVbH;
       const newPan = { x: newVbX - (W - newVbW) / 2, y: newVbY - (H - newVbH) / 2 };
       animateTo(newZoom, newPan, false);
     }
@@ -777,8 +830,7 @@ function TrackMap({ parsed }) {
       setActiveZoom(false);
       try {
         e.currentTarget.setPointerCapture(e.pointerId);
-      } catch (err) {
-      }
+      } catch (err) {}
       dragRef.current = { startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y };
     } else if (e.buttons & 1) {
       setActiveZoom(true);
@@ -802,22 +854,20 @@ function TrackMap({ parsed }) {
       dragRef.current = null;
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (err) {
-      }
+      } catch (err) {}
       return;
     }
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const dx = (e.clientX - d.startX) / rect.width * vbW;
-    const dy = (e.clientY - d.startY) / rect.height * vbH;
+    const dx = ((e.clientX - d.startX) / rect.width) * vbW;
+    const dy = ((e.clientY - d.startY) / rect.height) * vbH;
     animateTo(zoom, { x: d.panX - dx, y: d.panY - dy }, true);
   };
   const onPointerUp = (e) => {
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch (err) {
-    }
+    } catch (err) {}
     dragRef.current = null;
     setActivePan(false);
     setActiveZoom(false);
@@ -830,7 +880,8 @@ function TrackMap({ parsed }) {
       animateTo(nz, pan, false);
     }
   };
-  const colorChannel = mapColorBy !== "none" && mapColorBy !== "DeltaT" ? parsed.channels[mapColorBy] : void 0;
+  const colorChannel =
+    mapColorBy !== "none" && mapColorBy !== "DeltaT" ? parsed.channels[mapColorBy] : void 0;
   const sectorOverlay = useMemo(() => {
     if (!showSectorHeat || built.kind === "drift" || !projection) return null;
     const lapsForSec = built.kind === "averaged" ? built.laps : built.laps;
@@ -843,18 +894,19 @@ function TrackMap({ parsed }) {
         if (v != null && isFinite(v) && v > 0 && v < best[s]) best[s] = v;
       }
     }
-    const refLapBuilt = built.kind === "averaged" ? null : built.laps.find((l) => l.lap === refLap) ?? built.laps[0];
+    const refLapBuilt =
+      built.kind === "averaged"
+        ? null
+        : (built.laps.find((l) => l.lap === refLap) ?? built.laps[0]);
     const path = built.kind === "averaged" ? built.avg : refLapBuilt;
     const refTimes = built.kind === "averaged" ? best : lapSectorTimes(refLapBuilt);
-    const deltas = refTimes.map(
-      (t, i) => t == null || !isFinite(best[i]) ? null : t - best[i]
-    );
+    const deltas = refTimes.map((t, i) => (t == null || !isFinite(best[i]) ? null : t - best[i]));
     const NORM = 0.5;
     const n = path.x.length;
     const segs = [];
     for (let s = 0; s < NUM_SECTORS$1; s++) {
-      const i0 = Math.floor(s * n / NUM_SECTORS$1);
-      const i1 = Math.floor((s + 1) * n / NUM_SECTORS$1);
+      const i0 = Math.floor((s * n) / NUM_SECTORS$1);
+      const i1 = Math.floor(((s + 1) * n) / NUM_SECTORS$1);
       const d_ = deltas[s];
       if (d_ == null) continue;
       const t = Math.max(-1, Math.min(1, d_ / NORM));
@@ -907,7 +959,8 @@ function TrackMap({ parsed }) {
       const d = `M ${projection.px(avg.x[i])} ${projection.py(avg.y[i])} L ${projection.px(avg.x[i + step])} ${projection.py(avg.y[i + step])}`;
       segs.push({ d, color });
     }
-    let sumDev = 0, sumHead = 0;
+    let sumDev = 0,
+      sumHead = 0;
     for (let i = 0; i < n; i++) {
       sumDev += avg.meanDev[i];
       sumHead += avg.meanHead[i];
@@ -915,322 +968,369 @@ function TrackMap({ parsed }) {
     return {
       segs,
       meanDev: sumDev / n,
-      meanHeadDeg: sumHead / n * (180 / Math.PI),
-      maxDev
+      meanHeadDeg: (sumHead / n) * (180 / Math.PI),
+      maxDev,
     };
   }, [showDeviation, built, projection]);
   const sectorMarkers = useMemo(() => {
     if (!showSectorHeat || built.kind === "drift" || !projection) return null;
-    const path = built.kind === "averaged" ? built.avg : built.laps.find((l) => l.lap === refLap) ?? built.laps[0];
+    const path =
+      built.kind === "averaged"
+        ? built.avg
+        : (built.laps.find((l) => l.lap === refLap) ?? built.laps[0]);
     const n = path.x.length;
     const marks = [];
     for (let s = 0; s < NUM_SECTORS$1; s++) {
-      const i = Math.floor(s * n / NUM_SECTORS$1);
+      const i = Math.floor((s * n) / NUM_SECTORS$1);
       marks.push({
         cx: projection.px(path.x[i]),
         cy: projection.py(path.y[i]),
-        label: `S${s + 1}`
+        label: `S${s + 1}`,
       });
     }
     return marks;
   }, [showSectorHeat, built, projection, refLap]);
-  return /* @__PURE__ */ jsxs("div", { className: "flex h-full flex-col", children: [
-    /* @__PURE__ */ jsxs("div", { className: "hairline-b flex flex-wrap items-center justify-between gap-2 px-3 py-1.5", children: [
-      /* @__PURE__ */ jsxs("span", { className: "font-mono text-[11px] uppercase tracking-wider text-muted-foreground", children: [
-        "Track · ",
-        parsed.meta.trackDisplayName ?? parsed.meta.trackName ?? ""
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsx("div", { className: "flex items-center gap-px overflow-hidden rounded-sm border border-border", children: ["drift", "aligned", "averaged"].map((m) => /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: () => setMapMode(m),
-            className: `px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${mapMode === m ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
-            title: m === "drift" ? "Raw integrated path" : m === "aligned" ? "Per-lap aligned overlay" : "Averaged stable racing line",
-            children: m
-          },
-          m
-        )) }),
-        /* @__PURE__ */ jsxs(
-          "select",
-          {
-            value: mapColorBy,
-            onChange: (e) => setMapColorBy(e.target.value),
-            className: "rounded-sm border border-border bg-rail px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider",
-            title: "Color racing line by channel",
+  return /* @__PURE__ */ jsxs("div", {
+    className: "flex h-full flex-col",
+    children: [
+      /* @__PURE__ */ jsxs("div", {
+        className: "hairline-b flex flex-wrap items-center justify-between gap-2 px-3 py-1.5",
+        children: [
+          /* @__PURE__ */ jsxs("span", {
+            className: "font-mono text-[11px] uppercase tracking-wider text-muted-foreground",
+            children: ["Track · ", parsed.meta.trackDisplayName ?? parsed.meta.trackName ?? ""],
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx("option", { value: "none", children: "No color" }),
-              /* @__PURE__ */ jsx("option", { value: "Throttle", children: "Throttle" }),
-              /* @__PURE__ */ jsx("option", { value: "Brake", children: "Brake" }),
-              /* @__PURE__ */ jsx("option", { value: "Speed", children: "Speed" }),
-              /* @__PURE__ */ jsx("option", { value: "RPM", children: "RPM" }),
-              /* @__PURE__ */ jsx("option", { value: "Gear", children: "Gear" }),
-              /* @__PURE__ */ jsx("option", { value: "DeltaT", children: "Δt vs ref" })
-            ]
-          }
-        ),
-        /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-px overflow-hidden rounded-sm border border-border", children: [
-          /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => setMapThicknessBySpeed(!mapThicknessBySpeed),
-              className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase ${mapThicknessBySpeed ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
-              title: "Line thickness driven by speed",
+              /* @__PURE__ */ jsx("div", {
+                className:
+                  "flex items-center gap-px overflow-hidden rounded-sm border border-border",
+                children: ["drift", "aligned", "averaged"].map((m) =>
+                  /* @__PURE__ */ jsx(
+                    "button",
+                    {
+                      onClick: () => setMapMode(m),
+                      className: `px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${mapMode === m ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
+                      title:
+                        m === "drift"
+                          ? "Raw integrated path"
+                          : m === "aligned"
+                            ? "Per-lap aligned overlay"
+                            : "Averaged stable racing line",
+                      children: m,
+                    },
+                    m,
+                  ),
+                ),
+              }),
+              /* @__PURE__ */ jsxs("select", {
+                value: mapColorBy,
+                onChange: (e) => setMapColorBy(e.target.value),
+                className:
+                  "rounded-sm border border-border bg-rail px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider",
+                title: "Color racing line by channel",
+                children: [
+                  /* @__PURE__ */ jsx("option", { value: "none", children: "No color" }),
+                  /* @__PURE__ */ jsx("option", { value: "Throttle", children: "Throttle" }),
+                  /* @__PURE__ */ jsx("option", { value: "Brake", children: "Brake" }),
+                  /* @__PURE__ */ jsx("option", { value: "Speed", children: "Speed" }),
+                  /* @__PURE__ */ jsx("option", { value: "RPM", children: "RPM" }),
+                  /* @__PURE__ */ jsx("option", { value: "Gear", children: "Gear" }),
+                  /* @__PURE__ */ jsx("option", { value: "DeltaT", children: "Δt vs ref" }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "flex items-center gap-px overflow-hidden rounded-sm border border-border",
+                children: [
+                  /* @__PURE__ */ jsxs("button", {
+                    onClick: () => setMapThicknessBySpeed(!mapThicknessBySpeed),
+                    className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase ${mapThicknessBySpeed ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
+                    title: "Line thickness driven by speed",
+                    children: [/* @__PURE__ */ jsx(Activity, { className: "h-3 w-3" }), " Thick"],
+                  }),
+                  /* @__PURE__ */ jsxs("button", {
+                    onClick: () => setShowSectorHeat(!showSectorHeat),
+                    className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase ${showSectorHeat ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
+                    title: "Sector heatmap: gain / loss vs fastest sector",
+                    children: [/* @__PURE__ */ jsx(Flame, { className: "h-3 w-3" }), " Heat"],
+                  }),
+                  /* @__PURE__ */ jsxs("button", {
+                    onClick: () => setShowTrackBands(!showTrackBands),
+                    disabled: mapMode !== "averaged",
+                    className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase disabled:opacity-40 ${showTrackBands ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
+                    title: "Track-width bands estimated from lap-to-lap spread (averaged mode)",
+                    children: [/* @__PURE__ */ jsx(Waves, { className: "h-3 w-3" }), " Band"],
+                  }),
+                  /* @__PURE__ */ jsxs("button", {
+                    onClick: () => setShowDeviation(!showDeviation),
+                    disabled: mapMode !== "averaged",
+                    className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase disabled:opacity-40 ${showDeviation ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
+                    title: "Deviation: average XY distance & heading error vs averaged line",
+                    children: [/* @__PURE__ */ jsx(GitCompare, { className: "h-3 w-3" }), " Dev"],
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("span", {
+                className: "mr-1 font-mono text-[10px] tabular-nums text-muted-foreground",
+                children: [zoom.toFixed(1), "×"],
+              }),
+              /* @__PURE__ */ jsx("button", {
+                onClick: () => zoomBy(1 / 1.5),
+                className:
+                  "flex h-5 w-5 items-center justify-center rounded-sm border border-border hover:bg-accent disabled:opacity-40",
+                disabled: zoom <= 1,
+                title: "Zoom out",
+                children: /* @__PURE__ */ jsx(Minus, { className: "h-3 w-3" }),
+              }),
+              /* @__PURE__ */ jsx("button", {
+                onClick: () => zoomBy(1.5),
+                className:
+                  "flex h-5 w-5 items-center justify-center rounded-sm border border-border hover:bg-accent disabled:opacity-40",
+                disabled: zoom >= 20,
+                title: "Zoom in",
+                children: /* @__PURE__ */ jsx(Plus, { className: "h-3 w-3" }),
+              }),
+              /* @__PURE__ */ jsx("button", {
+                onClick: reset,
+                className:
+                  "flex h-5 w-5 items-center justify-center rounded-sm border border-border hover:bg-accent",
+                title: "Reset view",
+                children: /* @__PURE__ */ jsx(Maximize2, { className: "h-3 w-3" }),
+              }),
+              /* @__PURE__ */ jsx(ExportButton, {
+                getSvg: () => svgRef.current,
+                filenameBase: "track-map",
+              }),
+            ],
+          }),
+        ],
+      }),
+      /* @__PURE__ */ jsxs("div", {
+        className: "min-h-0 flex-1 overflow-hidden p-2 relative",
+        children: [
+          zoom > 1 &&
+            /* @__PURE__ */ jsxs("div", {
+              className:
+                "absolute top-4 left-4 pointer-events-none bg-black/85 border border-[#FFB800]/30 px-2 py-1 font-mono text-[8px] text-white space-y-0.5 rounded-none uppercase z-30 tracking-wider shadow-lg",
               children: [
-                /* @__PURE__ */ jsx(Activity, { className: "h-3 w-3" }),
-                " Thick"
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => setShowSectorHeat(!showSectorHeat),
-              className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase ${showSectorHeat ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
-              title: "Sector heatmap: gain / loss vs fastest sector",
-              children: [
-                /* @__PURE__ */ jsx(Flame, { className: "h-3 w-3" }),
-                " Heat"
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => setShowTrackBands(!showTrackBands),
-              disabled: mapMode !== "averaged",
-              className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase disabled:opacity-40 ${showTrackBands ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
-              title: "Track-width bands estimated from lap-to-lap spread (averaged mode)",
-              children: [
-                /* @__PURE__ */ jsx(Waves, { className: "h-3 w-3" }),
-                " Band"
-              ]
-            }
-          ),
-          /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => setShowDeviation(!showDeviation),
-              disabled: mapMode !== "averaged",
-              className: `flex h-5 items-center gap-1 px-1.5 font-mono text-[10px] uppercase disabled:opacity-40 ${showDeviation ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
-              title: "Deviation: average XY distance & heading error vs averaged line",
-              children: [
-                /* @__PURE__ */ jsx(GitCompare, { className: "h-3 w-3" }),
-                " Dev"
-              ]
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxs("span", { className: "mr-1 font-mono text-[10px] tabular-nums text-muted-foreground", children: [
-          zoom.toFixed(1),
-          "×"
-        ] }),
-        /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: () => zoomBy(1 / 1.5),
-            className: "flex h-5 w-5 items-center justify-center rounded-sm border border-border hover:bg-accent disabled:opacity-40",
-            disabled: zoom <= 1,
-            title: "Zoom out",
-            children: /* @__PURE__ */ jsx(Minus, { className: "h-3 w-3" })
-          }
-        ),
-        /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: () => zoomBy(1.5),
-            className: "flex h-5 w-5 items-center justify-center rounded-sm border border-border hover:bg-accent disabled:opacity-40",
-            disabled: zoom >= 20,
-            title: "Zoom in",
-            children: /* @__PURE__ */ jsx(Plus, { className: "h-3 w-3" })
-          }
-        ),
-        /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: reset,
-            className: "flex h-5 w-5 items-center justify-center rounded-sm border border-border hover:bg-accent",
-            title: "Reset view",
-            children: /* @__PURE__ */ jsx(Maximize2, { className: "h-3 w-3" })
-          }
-        ),
-        /* @__PURE__ */ jsx(ExportButton, { getSvg: () => svgRef.current, filenameBase: "track-map" })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs("div", { className: "min-h-0 flex-1 overflow-hidden p-2 relative", children: [
-      zoom > 1 && /* @__PURE__ */ jsxs("div", { className: "absolute top-4 left-4 pointer-events-none bg-black/85 border border-[#FFB800]/30 px-2 py-1 font-mono text-[8px] text-white space-y-0.5 rounded-none uppercase z-30 tracking-wider shadow-lg", children: [
-        /* @__PURE__ */ jsxs("div", { className: "flex justify-between gap-4", children: [
-          /* @__PURE__ */ jsx("span", { className: "text-[#FFB800] font-bold", children: "SYSTEM MAP TRACKER" }),
-          /* @__PURE__ */ jsxs("span", { className: "text-white font-black", children: [
-            zoom.toFixed(2),
-            "X"
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex justify-between gap-4 text-[7px] text-[#7a828c]", children: [
-          /* @__PURE__ */ jsx("span", { children: "PAN COORDINATES:" }),
-          /* @__PURE__ */ jsxs("span", { className: "font-bold text-white", children: [
-            "X: ",
-            pan.x.toFixed(1),
-            " | Y: ",
-            pan.y.toFixed(1)
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsxs(
-        "svg",
-        {
-          ref: svgRef,
-          viewBox: `${vbX} ${vbY} ${vbW} ${vbH}`,
-          preserveAspectRatio: "xMidYMid meet",
-          className: "block h-full w-full touch-none select-none",
-          style: {
-            cursor: activePan ? "grabbing" : activeZoom ? "crosshair" : zoom > 1 ? "grab" : "default"
-          },
-          onWheel,
-          onPointerDown,
-          onPointerMove,
-          onPointerUp,
-          onPointerCancel: onPointerUp,
-          onDoubleClick: reset,
-          onContextMenu: (e) => e.preventDefault(),
-          children: [
-            mapMode !== "averaged" && /* @__PURE__ */ jsx(
-              "path",
-              {
-                d: outlinePath,
-                fill: "none",
-                stroke: "var(--border-strong)",
-                strokeWidth: 1 / zoom,
-                opacity: mapMode === "drift" ? 0.5 : 0.18
-              }
-            ),
-            foreground,
-            bandPath && /* @__PURE__ */ jsx(
-              "path",
-              {
-                d: bandPath,
-                fill: "var(--primary)",
-                fillOpacity: 0.08,
-                stroke: "var(--primary)",
-                strokeOpacity: 0.25,
-                strokeWidth: 0.6 / zoom
-              }
-            ),
-            sectorOverlay && sectorOverlay.segs.map((s) => /* @__PURE__ */ jsx(
-              "path",
-              {
-                d: s.d,
-                fill: "none",
-                stroke: s.color,
-                strokeWidth: 4 / zoom,
-                strokeLinecap: "round",
-                opacity: 0.85
-              },
-              s.sector
-            )),
-            sectorMarkers && sectorMarkers.map((m, i) => /* @__PURE__ */ jsxs("g", { children: [
-              /* @__PURE__ */ jsx(
-                "circle",
-                {
-                  cx: m.cx,
-                  cy: m.cy,
-                  r: 3 / zoom,
-                  fill: "var(--background)",
-                  stroke: "var(--foreground)",
-                  strokeWidth: 1 / zoom
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "text",
-                {
-                  x: m.cx + 5 / zoom,
-                  y: m.cy - 5 / zoom,
-                  fontSize: 9 / zoom,
-                  fill: "var(--foreground)",
-                  fontFamily: "monospace",
-                  children: m.label
-                }
-              )
-            ] }, i)),
-            deviationOverlay && deviationOverlay.segs.map((s, i) => /* @__PURE__ */ jsx(
-              "path",
-              {
-                d: s.d,
-                fill: "none",
-                stroke: s.color,
-                strokeWidth: 2 / zoom,
-                strokeLinecap: "round"
-              },
-              `dev-${i}`
-            )),
-            /* @__PURE__ */ jsx(
-              "circle",
-              {
+                /* @__PURE__ */ jsxs("div", {
+                  className: "flex justify-between gap-4",
+                  children: [
+                    /* @__PURE__ */ jsx("span", {
+                      className: "text-[#FFB800] font-bold",
+                      children: "SYSTEM MAP TRACKER",
+                    }),
+                    /* @__PURE__ */ jsxs("span", {
+                      className: "text-white font-black",
+                      children: [zoom.toFixed(2), "X"],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs("div", {
+                  className: "flex justify-between gap-4 text-[7px] text-[#7a828c]",
+                  children: [
+                    /* @__PURE__ */ jsx("span", { children: "PAN COORDINATES:" }),
+                    /* @__PURE__ */ jsxs("span", {
+                      className: "font-bold text-white",
+                      children: ["X: ", pan.x.toFixed(1), " | Y: ", pan.y.toFixed(1)],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          /* @__PURE__ */ jsxs("svg", {
+            ref: svgRef,
+            viewBox: `${vbX} ${vbY} ${vbW} ${vbH}`,
+            preserveAspectRatio: "xMidYMid meet",
+            className: "block h-full w-full touch-none select-none",
+            style: {
+              cursor: activePan
+                ? "grabbing"
+                : activeZoom
+                  ? "crosshair"
+                  : zoom > 1
+                    ? "grab"
+                    : "default",
+            },
+            onWheel,
+            onPointerDown,
+            onPointerMove,
+            onPointerUp,
+            onPointerCancel: onPointerUp,
+            onDoubleClick: reset,
+            onContextMenu: (e) => e.preventDefault(),
+            children: [
+              mapMode !== "averaged" &&
+                /* @__PURE__ */ jsx("path", {
+                  d: outlinePath,
+                  fill: "none",
+                  stroke: "var(--border-strong)",
+                  strokeWidth: 1 / zoom,
+                  opacity: mapMode === "drift" ? 0.5 : 0.18,
+                }),
+              foreground,
+              bandPath &&
+                /* @__PURE__ */ jsx("path", {
+                  d: bandPath,
+                  fill: "var(--primary)",
+                  fillOpacity: 0.08,
+                  stroke: "var(--primary)",
+                  strokeOpacity: 0.25,
+                  strokeWidth: 0.6 / zoom,
+                }),
+              sectorOverlay &&
+                sectorOverlay.segs.map((s) =>
+                  /* @__PURE__ */ jsx(
+                    "path",
+                    {
+                      d: s.d,
+                      fill: "none",
+                      stroke: s.color,
+                      strokeWidth: 4 / zoom,
+                      strokeLinecap: "round",
+                      opacity: 0.85,
+                    },
+                    s.sector,
+                  ),
+                ),
+              sectorMarkers &&
+                sectorMarkers.map((m, i) =>
+                  /* @__PURE__ */ jsxs(
+                    "g",
+                    {
+                      children: [
+                        /* @__PURE__ */ jsx("circle", {
+                          cx: m.cx,
+                          cy: m.cy,
+                          r: 3 / zoom,
+                          fill: "var(--background)",
+                          stroke: "var(--foreground)",
+                          strokeWidth: 1 / zoom,
+                        }),
+                        /* @__PURE__ */ jsx("text", {
+                          x: m.cx + 5 / zoom,
+                          y: m.cy - 5 / zoom,
+                          fontSize: 9 / zoom,
+                          fill: "var(--foreground)",
+                          fontFamily: "monospace",
+                          children: m.label,
+                        }),
+                      ],
+                    },
+                    i,
+                  ),
+                ),
+              deviationOverlay &&
+                deviationOverlay.segs.map((s, i) =>
+                  /* @__PURE__ */ jsx(
+                    "path",
+                    {
+                      d: s.d,
+                      fill: "none",
+                      stroke: s.color,
+                      strokeWidth: 2 / zoom,
+                      strokeLinecap: "round",
+                    },
+                    `dev-${i}`,
+                  ),
+                ),
+              /* @__PURE__ */ jsx("circle", {
                 cx: dotX,
                 cy: dotY,
                 r: 5 / zoom,
                 fill: "var(--primary)",
                 stroke: "white",
-                strokeWidth: 1.5 / zoom
-              }
-            )
-          ]
-        }
-      )
-    ] }),
-    sectorOverlay && /* @__PURE__ */ jsxs("div", { className: "hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground", children: [
-      /* @__PURE__ */ jsx("span", { children: "Sectors Δ" }),
-      sectorOverlay.deltas.map((d, i) => /* @__PURE__ */ jsxs(
-        "span",
-        {
-          className: "tabular-nums",
-          style: {
-            color: d == null ? void 0 : diffColor(Math.max(-1, Math.min(1, d / 0.5)))
-          },
+                strokeWidth: 1.5 / zoom,
+              }),
+            ],
+          }),
+        ],
+      }),
+      sectorOverlay &&
+        /* @__PURE__ */ jsxs("div", {
+          className:
+            "hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground",
           children: [
-            "S",
-            i + 1,
-            " ",
-            d == null ? "—" : (d >= 0 ? "+" : "") + d.toFixed(3) + "s"
-          ]
-        },
-        i
-      )),
-      /* @__PURE__ */ jsx("span", { className: "ml-auto text-[9px]", children: "vs best sector" })
-    ] }),
-    deviationOverlay && /* @__PURE__ */ jsxs("div", { className: "hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground", children: [
-      /* @__PURE__ */ jsx("span", { children: "Dev avg" }),
-      /* @__PURE__ */ jsxs("span", { className: "tabular-nums", children: [
-        deviationOverlay.meanDev.toFixed(2),
-        " m"
-      ] }),
-      /* @__PURE__ */ jsx("span", { children: "· max" }),
-      /* @__PURE__ */ jsxs("span", { className: "tabular-nums", children: [
-        deviationOverlay.maxDev.toFixed(2),
-        " m"
-      ] }),
-      /* @__PURE__ */ jsx("span", { children: "· heading" }),
-      /* @__PURE__ */ jsxs("span", { className: "tabular-nums", children: [
-        deviationOverlay.meanHeadDeg.toFixed(2),
-        "°"
-      ] })
-    ] }),
-    mapColorBy !== "none" && built.kind !== "drift" && (colorChannel || mapColorBy === "DeltaT") && /* @__PURE__ */ jsxs("div", { className: "hairline-t flex items-center gap-2 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground", children: [
-      /* @__PURE__ */ jsx("span", { children: mapColorBy === "DeltaT" ? "Δt vs ref" : mapColorBy }),
-      /* @__PURE__ */ jsx("span", { className: "tabular-nums", children: mapColorBy === "DeltaT" ? `${built.cMin.toFixed(2)}s` : built.cMin.toFixed(1) }),
-      /* @__PURE__ */ jsx(
-        "span",
-        {
-          className: "h-1.5 flex-1 rounded-full",
-          style: {
-            background: `linear-gradient(to right, ${rampColor(mapColorBy, 0)}, ${rampColor(mapColorBy, 0.5)}, ${rampColor(mapColorBy, 1)})`
-          }
-        }
-      ),
-      /* @__PURE__ */ jsx("span", { className: "tabular-nums", children: mapColorBy === "DeltaT" ? `+${built.cMax.toFixed(2)}s` : built.cMax.toFixed(1) }),
-      colorChannel?.unit && /* @__PURE__ */ jsx("span", { children: colorChannel.unit })
-    ] })
-  ] });
+            /* @__PURE__ */ jsx("span", { children: "Sectors Δ" }),
+            sectorOverlay.deltas.map((d, i) =>
+              /* @__PURE__ */ jsxs(
+                "span",
+                {
+                  className: "tabular-nums",
+                  style: {
+                    color: d == null ? void 0 : diffColor(Math.max(-1, Math.min(1, d / 0.5))),
+                  },
+                  children: [
+                    "S",
+                    i + 1,
+                    " ",
+                    d == null ? "—" : (d >= 0 ? "+" : "") + d.toFixed(3) + "s",
+                  ],
+                },
+                i,
+              ),
+            ),
+            /* @__PURE__ */ jsx("span", {
+              className: "ml-auto text-[9px]",
+              children: "vs best sector",
+            }),
+          ],
+        }),
+      deviationOverlay &&
+        /* @__PURE__ */ jsxs("div", {
+          className:
+            "hairline-t flex items-center gap-3 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground",
+          children: [
+            /* @__PURE__ */ jsx("span", { children: "Dev avg" }),
+            /* @__PURE__ */ jsxs("span", {
+              className: "tabular-nums",
+              children: [deviationOverlay.meanDev.toFixed(2), " m"],
+            }),
+            /* @__PURE__ */ jsx("span", { children: "· max" }),
+            /* @__PURE__ */ jsxs("span", {
+              className: "tabular-nums",
+              children: [deviationOverlay.maxDev.toFixed(2), " m"],
+            }),
+            /* @__PURE__ */ jsx("span", { children: "· heading" }),
+            /* @__PURE__ */ jsxs("span", {
+              className: "tabular-nums",
+              children: [deviationOverlay.meanHeadDeg.toFixed(2), "°"],
+            }),
+          ],
+        }),
+      mapColorBy !== "none" &&
+        built.kind !== "drift" &&
+        (colorChannel || mapColorBy === "DeltaT") &&
+        /* @__PURE__ */ jsxs("div", {
+          className:
+            "hairline-t flex items-center gap-2 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground",
+          children: [
+            /* @__PURE__ */ jsx("span", {
+              children: mapColorBy === "DeltaT" ? "Δt vs ref" : mapColorBy,
+            }),
+            /* @__PURE__ */ jsx("span", {
+              className: "tabular-nums",
+              children:
+                mapColorBy === "DeltaT" ? `${built.cMin.toFixed(2)}s` : built.cMin.toFixed(1),
+            }),
+            /* @__PURE__ */ jsx("span", {
+              className: "h-1.5 flex-1 rounded-full",
+              style: {
+                background: `linear-gradient(to right, ${rampColor(mapColorBy, 0)}, ${rampColor(mapColorBy, 0.5)}, ${rampColor(mapColorBy, 1)})`,
+              },
+            }),
+            /* @__PURE__ */ jsx("span", {
+              className: "tabular-nums",
+              children:
+                mapColorBy === "DeltaT" ? `+${built.cMax.toFixed(2)}s` : built.cMax.toFixed(1),
+            }),
+            colorChannel?.unit && /* @__PURE__ */ jsx("span", { children: colorChannel.unit }),
+          ],
+        }),
+    ],
+  });
 }
 const NUM_BINS = 600;
 function buildStrips(parsed) {
@@ -1268,7 +1368,10 @@ function PianoRoll({ parsed }) {
   const strips = useMemo(() => buildStrips(parsed), [parsed]);
   const visible = strips.slice(0, maxLaps);
   if (visible.length === 0) {
-    return /* @__PURE__ */ jsx("div", { className: "flex h-full items-center justify-center text-xs text-muted-foreground", children: "Need Throttle, Brake, and LapDistPct channels" });
+    return /* @__PURE__ */ jsx("div", {
+      className: "flex h-full items-center justify-center text-xs text-muted-foreground",
+      children: "Need Throttle, Brake, and LapDistPct channels",
+    });
   }
   const W2 = 800;
   const ROW_H = 28;
@@ -1276,163 +1379,168 @@ function PianoRoll({ parsed }) {
   const LABEL_W = 64;
   const PLOT_W = W2 - LABEL_W;
   const H2 = visible.length * (ROW_H + GAP) + 18;
-  return /* @__PURE__ */ jsxs("div", { className: "flex h-full flex-col", children: [
-    /* @__PURE__ */ jsxs("div", { className: "hairline-b flex items-center justify-between px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground", children: [
-      /* @__PURE__ */ jsx("span", { children: "Piano Roll · pedals across distance" }),
-      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsxs("label", { className: "flex items-center gap-1.5 text-[10px]", children: [
-          /* @__PURE__ */ jsx("span", { children: "Laps" }),
-          /* @__PURE__ */ jsx(
-            "select",
-            {
-              value: maxLaps,
-              onChange: (e) => setMaxLaps(parseInt(e.target.value, 10)),
-              className: "rounded-sm border border-border bg-rail px-1.5 py-0.5 font-mono",
-              children: [4, 6, 8, 12, 20].map((n) => /* @__PURE__ */ jsx("option", { value: n, children: n }, n))
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsx(ExportButton, { getSvg: () => svgRef.current, filenameBase: "piano-roll" })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx("div", { className: "min-h-0 flex-1 overflow-auto p-2", children: /* @__PURE__ */ jsxs(
-      "svg",
-      {
-        ref: svgRef,
-        viewBox: `0 0 ${W2} ${H2}`,
-        className: "block w-full",
-        preserveAspectRatio: "xMidYMin meet",
+  return /* @__PURE__ */ jsxs("div", {
+    className: "flex h-full flex-col",
+    children: [
+      /* @__PURE__ */ jsxs("div", {
+        className:
+          "hairline-b flex items-center justify-between px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground",
         children: [
-          [1 / 3, 2 / 3].map((p) => /* @__PURE__ */ jsx(
-            "line",
-            {
-              x1: LABEL_W + PLOT_W * p,
-              y1: 0,
-              x2: LABEL_W + PLOT_W * p,
-              y2: H2 - 18,
-              stroke: "var(--border-strong)",
-              strokeDasharray: "2,3",
-              strokeWidth: 0.5
-            },
-            p
-          )),
-          visible.map((s, idx) => {
-            const y = idx * (ROW_H + GAP);
-            const isRef = s.lap === refLap;
-            return /* @__PURE__ */ jsxs("g", { children: [
-              /* @__PURE__ */ jsxs(
-                "text",
-                {
-                  x: 4,
-                  y: y + ROW_H / 2 + 3,
-                  fontSize: 10,
-                  fontFamily: "monospace",
-                  fill: isRef ? "var(--primary)" : "var(--muted-foreground)",
-                  children: [
-                    "L",
-                    s.lap,
-                    " ",
-                    s.timeS.toFixed(2),
-                    "s"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ jsx("rect", { x: LABEL_W, y, width: PLOT_W, height: ROW_H, fill: "var(--rail)" }),
-              Array.from(s.thr).map((v, i) => {
-                if (v < 0.02) return null;
-                const bw = PLOT_W / NUM_BINS;
-                const h = v * ROW_H / 2;
-                return /* @__PURE__ */ jsx(
-                  "rect",
-                  {
-                    x: LABEL_W + i * bw,
-                    y: y + ROW_H / 2 - h,
-                    width: bw + 0.4,
-                    height: h,
-                    fill: "var(--ch-throttle)",
-                    opacity: 0.85
-                  },
-                  `t${i}`
-                );
+          /* @__PURE__ */ jsx("span", { children: "Piano Roll · pedals across distance" }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center gap-2",
+            children: [
+              /* @__PURE__ */ jsxs("label", {
+                className: "flex items-center gap-1.5 text-[10px]",
+                children: [
+                  /* @__PURE__ */ jsx("span", { children: "Laps" }),
+                  /* @__PURE__ */ jsx("select", {
+                    value: maxLaps,
+                    onChange: (e) => setMaxLaps(parseInt(e.target.value, 10)),
+                    className: "rounded-sm border border-border bg-rail px-1.5 py-0.5 font-mono",
+                    children: [4, 6, 8, 12, 20].map((n) =>
+                      /* @__PURE__ */ jsx("option", { value: n, children: n }, n),
+                    ),
+                  }),
+                ],
               }),
-              Array.from(s.brk).map((v, i) => {
-                if (v < 0.02) return null;
-                const bw = PLOT_W / NUM_BINS;
-                const h = v * ROW_H / 2;
-                return /* @__PURE__ */ jsx(
-                  "rect",
-                  {
-                    x: LABEL_W + i * bw,
-                    y: y + ROW_H / 2,
-                    width: bw + 0.4,
-                    height: h,
-                    fill: "var(--ch-brake)",
-                    opacity: 0.85
-                  },
-                  `b${i}`
-                );
+              /* @__PURE__ */ jsx(ExportButton, {
+                getSvg: () => svgRef.current,
+                filenameBase: "piano-roll",
               }),
+            ],
+          }),
+        ],
+      }),
+      /* @__PURE__ */ jsx("div", {
+        className: "min-h-0 flex-1 overflow-auto p-2",
+        children: /* @__PURE__ */ jsxs("svg", {
+          ref: svgRef,
+          viewBox: `0 0 ${W2} ${H2}`,
+          className: "block w-full",
+          preserveAspectRatio: "xMidYMin meet",
+          children: [
+            [1 / 3, 2 / 3].map((p) =>
               /* @__PURE__ */ jsx(
                 "line",
                 {
-                  x1: LABEL_W,
-                  y1: y + ROW_H / 2,
-                  x2: LABEL_W + PLOT_W,
-                  y2: y + ROW_H / 2,
-                  stroke: "var(--border)",
-                  strokeWidth: 0.5
-                }
-              )
-            ] }, s.lap);
-          }),
-          /* @__PURE__ */ jsx(
-            "text",
-            {
+                  x1: LABEL_W + PLOT_W * p,
+                  y1: 0,
+                  x2: LABEL_W + PLOT_W * p,
+                  y2: H2 - 18,
+                  stroke: "var(--border-strong)",
+                  strokeDasharray: "2,3",
+                  strokeWidth: 0.5,
+                },
+                p,
+              ),
+            ),
+            visible.map((s, idx) => {
+              const y = idx * (ROW_H + GAP);
+              const isRef = s.lap === refLap;
+              return /* @__PURE__ */ jsxs(
+                "g",
+                {
+                  children: [
+                    /* @__PURE__ */ jsxs("text", {
+                      x: 4,
+                      y: y + ROW_H / 2 + 3,
+                      fontSize: 10,
+                      fontFamily: "monospace",
+                      fill: isRef ? "var(--primary)" : "var(--muted-foreground)",
+                      children: ["L", s.lap, " ", s.timeS.toFixed(2), "s"],
+                    }),
+                    /* @__PURE__ */ jsx("rect", {
+                      x: LABEL_W,
+                      y,
+                      width: PLOT_W,
+                      height: ROW_H,
+                      fill: "var(--rail)",
+                    }),
+                    Array.from(s.thr).map((v, i) => {
+                      if (v < 0.02) return null;
+                      const bw = PLOT_W / NUM_BINS;
+                      const h = (v * ROW_H) / 2;
+                      return /* @__PURE__ */ jsx(
+                        "rect",
+                        {
+                          x: LABEL_W + i * bw,
+                          y: y + ROW_H / 2 - h,
+                          width: bw + 0.4,
+                          height: h,
+                          fill: "var(--ch-throttle)",
+                          opacity: 0.85,
+                        },
+                        `t${i}`,
+                      );
+                    }),
+                    Array.from(s.brk).map((v, i) => {
+                      if (v < 0.02) return null;
+                      const bw = PLOT_W / NUM_BINS;
+                      const h = (v * ROW_H) / 2;
+                      return /* @__PURE__ */ jsx(
+                        "rect",
+                        {
+                          x: LABEL_W + i * bw,
+                          y: y + ROW_H / 2,
+                          width: bw + 0.4,
+                          height: h,
+                          fill: "var(--ch-brake)",
+                          opacity: 0.85,
+                        },
+                        `b${i}`,
+                      );
+                    }),
+                    /* @__PURE__ */ jsx("line", {
+                      x1: LABEL_W,
+                      y1: y + ROW_H / 2,
+                      x2: LABEL_W + PLOT_W,
+                      y2: y + ROW_H / 2,
+                      stroke: "var(--border)",
+                      strokeWidth: 0.5,
+                    }),
+                  ],
+                },
+                s.lap,
+              );
+            }),
+            /* @__PURE__ */ jsx("text", {
               x: LABEL_W,
               y: H2 - 4,
               fontSize: 9,
               fontFamily: "monospace",
               fill: "var(--muted-foreground)",
-              children: "Start"
-            }
-          ),
-          /* @__PURE__ */ jsx(
-            "text",
-            {
+              children: "Start",
+            }),
+            /* @__PURE__ */ jsx("text", {
               x: LABEL_W + PLOT_W / 3 - 8,
               y: H2 - 4,
               fontSize: 9,
               fontFamily: "monospace",
               fill: "var(--muted-foreground)",
-              children: "S2"
-            }
-          ),
-          /* @__PURE__ */ jsx(
-            "text",
-            {
-              x: LABEL_W + 2 * PLOT_W / 3 - 8,
+              children: "S2",
+            }),
+            /* @__PURE__ */ jsx("text", {
+              x: LABEL_W + (2 * PLOT_W) / 3 - 8,
               y: H2 - 4,
               fontSize: 9,
               fontFamily: "monospace",
               fill: "var(--muted-foreground)",
-              children: "S3"
-            }
-          ),
-          /* @__PURE__ */ jsx(
-            "text",
-            {
+              children: "S3",
+            }),
+            /* @__PURE__ */ jsx("text", {
               x: LABEL_W + PLOT_W - 24,
               y: H2 - 4,
               fontSize: 9,
               fontFamily: "monospace",
               fill: "var(--muted-foreground)",
-              children: "Finish"
-            }
-          )
-        ]
-      }
-    ) })
-  ] });
+              children: "Finish",
+            }),
+          ],
+        }),
+      }),
+    ],
+  });
 }
 const NUM_SECTORS = 3;
 function lapSectorMetrics(parsed, lapNum) {
@@ -1449,9 +1557,12 @@ function lapSectorMetrics(parsed, lapNum) {
   for (let s = 0; s < NUM_SECTORS; s++) {
     const lo = s / NUM_SECTORS;
     const hi = (s + 1) / NUM_SECTORS;
-    let entry = NaN, exit = NaN, vmin = Infinity;
+    let entry = NaN,
+      exit = NaN,
+      vmin = Infinity;
     let peakBrakeG = 0;
-    let thrOn = 0, thrTotal = 0;
+    let thrOn = 0,
+      thrTotal = 0;
     const steerVals = [];
     for (let t = lap.startTick; t <= lap.endTick; t++) {
       const p = pct[t];
@@ -1488,7 +1599,7 @@ function lapSectorMetrics(parsed, lapNum) {
       exitSpeed: isFinite(exit) ? exit : 0,
       brakeG: peakBrakeG,
       throttleOnPct: thrTotal > 0 ? thrOn / thrTotal : 0,
-      steerSmoothness: smooth
+      steerSmoothness: smooth,
     });
   }
   return out;
@@ -1499,7 +1610,7 @@ const AXES = [
   { key: "exitSpeed", label: "Exit V" },
   { key: "brakeG", label: "Brake G" },
   { key: "throttleOnPct", label: "Thr On" },
-  { key: "steerSmoothness", label: "Smooth" }
+  { key: "steerSmoothness", label: "Smooth" },
 ];
 function normalize(value, axis, scale) {
   return scale[axis] > 0 ? Math.max(0, Math.min(1, value / scale[axis])) : 0;
@@ -1508,15 +1619,18 @@ function SectorSpider({ parsed }) {
   const { refLap, cmpLap } = useWorkbench();
   const containerRef = useRef(null);
   const ref = useMemo(
-    () => refLap != null ? lapSectorMetrics(parsed, refLap) : null,
-    [parsed, refLap]
+    () => (refLap != null ? lapSectorMetrics(parsed, refLap) : null),
+    [parsed, refLap],
   );
   const cmp = useMemo(
-    () => cmpLap != null ? lapSectorMetrics(parsed, cmpLap) : null,
-    [parsed, cmpLap]
+    () => (cmpLap != null ? lapSectorMetrics(parsed, cmpLap) : null),
+    [parsed, cmpLap],
   );
   if (!ref) {
-    return /* @__PURE__ */ jsx("div", { className: "flex h-full items-center justify-center text-xs text-muted-foreground", children: "Pick a reference lap" });
+    return /* @__PURE__ */ jsx("div", {
+      className: "flex h-full items-center justify-center text-xs text-muted-foreground",
+      children: "Pick a reference lap",
+    });
   }
   const scale = {};
   for (const a of AXES) {
@@ -1536,117 +1650,139 @@ function SectorSpider({ parsed }) {
   const polygonForSector = (m) => {
     return AXES.map((a, i) => {
       const v = normalize(m[a.key], a.key, scale);
-      const ang = -Math.PI / 2 + i * 2 * Math.PI / AXES.length;
+      const ang = -Math.PI / 2 + (i * 2 * Math.PI) / AXES.length;
       return [cx + Math.cos(ang) * R * v, cy + Math.sin(ang) * R * v];
     });
   };
   const sectorColors = ["var(--ch-speed)", "var(--ch-throttle)", "var(--ch-brake)"];
-  return /* @__PURE__ */ jsxs("div", { className: "flex h-full flex-col", children: [
-    /* @__PURE__ */ jsxs("div", { className: "hairline-b flex items-center justify-between px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground", children: [
-      /* @__PURE__ */ jsx("span", { children: "Sector Spider" }),
-      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-        /* @__PURE__ */ jsxs("span", { className: "text-[10px]", children: [
-          "ref L",
-          refLap,
-          cmpLap != null && ` · cmp L${cmpLap} (dashed)`
-        ] }),
-        /* @__PURE__ */ jsxs(
-          "button",
-          {
-            onClick: () => {
-              const svgs = containerRef.current ? Array.from(containerRef.current.querySelectorAll("svg")) : [];
-              if (svgs.length) exportSvgGroupAsPng(svgs, "sector-spider.png");
-            },
-            className: "flex h-5 items-center gap-1 rounded-sm border border-border bg-rail px-1.5 font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground",
-            title: "Export PNG",
+  return /* @__PURE__ */ jsxs("div", {
+    className: "flex h-full flex-col",
+    children: [
+      /* @__PURE__ */ jsxs("div", {
+        className:
+          "hairline-b flex items-center justify-between px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground",
+        children: [
+          /* @__PURE__ */ jsx("span", { children: "Sector Spider" }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center gap-2",
             children: [
-              /* @__PURE__ */ jsx(Download, { className: "h-3 w-3" }),
-              " PNG"
-            ]
-          }
-        )
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx("div", { ref: containerRef, className: "min-h-0 flex-1 overflow-auto p-2", children: /* @__PURE__ */ jsx("div", { className: "grid grid-cols-3 gap-2", children: ref.map((sec, sIdx) => {
-      const refPts = polygonForSector(sec);
-      const cmpPts = cmp?.[sIdx] ? polygonForSector(cmp[sIdx]) : null;
-      return /* @__PURE__ */ jsxs("div", { className: "hairline rounded-sm bg-rail/40 p-1", children: [
-        /* @__PURE__ */ jsxs("div", { className: "text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground", children: [
-          "Sector ",
-          sIdx + 1
-        ] }),
-        /* @__PURE__ */ jsxs("svg", { viewBox: `0 0 ${W2} ${W2}`, className: "block h-auto w-full", children: [
-          [0.25, 0.5, 0.75, 1].map((r) => /* @__PURE__ */ jsx(
-            "polygon",
-            {
-              points: AXES.map((_, i) => {
-                const ang = -Math.PI / 2 + i * 2 * Math.PI / AXES.length;
-                return `${cx + Math.cos(ang) * R * r},${cy + Math.sin(ang) * R * r}`;
-              }).join(" "),
-              fill: "none",
-              stroke: "var(--border)",
-              strokeWidth: 0.5,
-              opacity: 0.6
-            },
-            r
-          )),
-          AXES.map((a, i) => {
-            const ang = -Math.PI / 2 + i * 2 * Math.PI / AXES.length;
-            const lx = cx + Math.cos(ang) * (R + 14);
-            const ly = cy + Math.sin(ang) * (R + 14);
-            return /* @__PURE__ */ jsxs("g", { children: [
-              /* @__PURE__ */ jsx(
-                "line",
-                {
-                  x1: cx,
-                  y1: cy,
-                  x2: cx + Math.cos(ang) * R,
-                  y2: cy + Math.sin(ang) * R,
-                  stroke: "var(--border-strong)",
-                  strokeWidth: 0.5,
-                  opacity: 0.5
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "text",
-                {
-                  x: lx,
-                  y: ly,
-                  fontSize: 9,
-                  textAnchor: "middle",
-                  dominantBaseline: "middle",
-                  fontFamily: "monospace",
-                  fill: "var(--muted-foreground)",
-                  children: a.label
-                }
-              )
-            ] }, a.key);
+              /* @__PURE__ */ jsxs("span", {
+                className: "text-[10px]",
+                children: ["ref L", refLap, cmpLap != null && ` · cmp L${cmpLap} (dashed)`],
+              }),
+              /* @__PURE__ */ jsxs("button", {
+                onClick: () => {
+                  const svgs = containerRef.current
+                    ? Array.from(containerRef.current.querySelectorAll("svg"))
+                    : [];
+                  if (svgs.length) exportSvgGroupAsPng(svgs, "sector-spider.png");
+                },
+                className:
+                  "flex h-5 items-center gap-1 rounded-sm border border-border bg-rail px-1.5 font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground",
+                title: "Export PNG",
+                children: [/* @__PURE__ */ jsx(Download, { className: "h-3 w-3" }), " PNG"],
+              }),
+            ],
           }),
-          /* @__PURE__ */ jsx(
-            "polygon",
-            {
-              points: refPts.map((p) => p.join(",")).join(" "),
-              fill: sectorColors[sIdx],
-              fillOpacity: 0.18,
-              stroke: sectorColors[sIdx],
-              strokeWidth: 1.5
-            }
-          ),
-          cmpPts && /* @__PURE__ */ jsx(
-            "polygon",
-            {
-              points: cmpPts.map((p) => p.join(",")).join(" "),
-              fill: "var(--ch-throttle)",
-              fillOpacity: 0.08,
-              stroke: "var(--ch-throttle)",
-              strokeWidth: 1.2,
-              strokeDasharray: "3,3"
-            }
-          )
-        ] })
-      ] }, sIdx);
-    }) }) })
-  ] });
+        ],
+      }),
+      /* @__PURE__ */ jsx("div", {
+        ref: containerRef,
+        className: "min-h-0 flex-1 overflow-auto p-2",
+        children: /* @__PURE__ */ jsx("div", {
+          className: "grid grid-cols-3 gap-2",
+          children: ref.map((sec, sIdx) => {
+            const refPts = polygonForSector(sec);
+            const cmpPts = cmp?.[sIdx] ? polygonForSector(cmp[sIdx]) : null;
+            return /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "hairline rounded-sm bg-rail/40 p-1",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className:
+                      "text-center font-mono text-[10px] uppercase tracking-wider text-muted-foreground",
+                    children: ["Sector ", sIdx + 1],
+                  }),
+                  /* @__PURE__ */ jsxs("svg", {
+                    viewBox: `0 0 ${W2} ${W2}`,
+                    className: "block h-auto w-full",
+                    children: [
+                      [0.25, 0.5, 0.75, 1].map((r) =>
+                        /* @__PURE__ */ jsx(
+                          "polygon",
+                          {
+                            points: AXES.map((_, i) => {
+                              const ang = -Math.PI / 2 + (i * 2 * Math.PI) / AXES.length;
+                              return `${cx + Math.cos(ang) * R * r},${cy + Math.sin(ang) * R * r}`;
+                            }).join(" "),
+                            fill: "none",
+                            stroke: "var(--border)",
+                            strokeWidth: 0.5,
+                            opacity: 0.6,
+                          },
+                          r,
+                        ),
+                      ),
+                      AXES.map((a, i) => {
+                        const ang = -Math.PI / 2 + (i * 2 * Math.PI) / AXES.length;
+                        const lx = cx + Math.cos(ang) * (R + 14);
+                        const ly = cy + Math.sin(ang) * (R + 14);
+                        return /* @__PURE__ */ jsxs(
+                          "g",
+                          {
+                            children: [
+                              /* @__PURE__ */ jsx("line", {
+                                x1: cx,
+                                y1: cy,
+                                x2: cx + Math.cos(ang) * R,
+                                y2: cy + Math.sin(ang) * R,
+                                stroke: "var(--border-strong)",
+                                strokeWidth: 0.5,
+                                opacity: 0.5,
+                              }),
+                              /* @__PURE__ */ jsx("text", {
+                                x: lx,
+                                y: ly,
+                                fontSize: 9,
+                                textAnchor: "middle",
+                                dominantBaseline: "middle",
+                                fontFamily: "monospace",
+                                fill: "var(--muted-foreground)",
+                                children: a.label,
+                              }),
+                            ],
+                          },
+                          a.key,
+                        );
+                      }),
+                      /* @__PURE__ */ jsx("polygon", {
+                        points: refPts.map((p) => p.join(",")).join(" "),
+                        fill: sectorColors[sIdx],
+                        fillOpacity: 0.18,
+                        stroke: sectorColors[sIdx],
+                        strokeWidth: 1.5,
+                      }),
+                      cmpPts &&
+                        /* @__PURE__ */ jsx("polygon", {
+                          points: cmpPts.map((p) => p.join(",")).join(" "),
+                          fill: "var(--ch-throttle)",
+                          fillOpacity: 0.08,
+                          stroke: "var(--ch-throttle)",
+                          strokeWidth: 1.2,
+                          strokeDasharray: "3,3",
+                        }),
+                    ],
+                  }),
+                ],
+              },
+              sIdx,
+            );
+          }),
+        }),
+      }),
+    ],
+  });
 }
 export {
   PianoRoll as P,
@@ -1656,5 +1792,5 @@ export {
   createShareLink as c,
   exportCanvasAsPng as e,
   getSharedLap as g,
-  refreshSharedSignedUrl as r
+  refreshSharedSignedUrl as r,
 };

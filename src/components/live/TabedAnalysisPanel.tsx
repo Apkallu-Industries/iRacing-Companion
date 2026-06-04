@@ -49,9 +49,7 @@ export function TabedAnalysisPanel({ samples, ggScatterComponent }: TabedAnalysi
               <div className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#8B5CF6] mb-1 px-1">
                 G-G Acceleration Vector
               </div>
-              <div className="h-[240px]">
-                {ggScatterComponent}
-              </div>
+              <div className="h-[240px]">{ggScatterComponent}</div>
             </div>
             <div className="flex-shrink-0 bg-[#0B0F14] border border-[#1C2430] rounded p-1">
               <div className="text-[9px] uppercase tracking-[0.2em] font-bold text-[#8B5CF6] mb-1 px-1">

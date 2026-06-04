@@ -243,7 +243,11 @@ export function LocalDbSettings() {
                     rel="noopener noreferrer"
                     className="flex-1"
                   >
-                    <Button variant="outline" size="sm" className="w-full text-[10px] font-mono uppercase tracking-wider h-7">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-[10px] font-mono uppercase tracking-wider h-7"
+                    >
                       Download Installer (.MSI)
                     </Button>
                   </a>
@@ -253,7 +257,11 @@ export function LocalDbSettings() {
                     rel="noopener noreferrer"
                     className="flex-1"
                   >
-                    <Button variant="outline" size="sm" className="w-full text-[10px] font-mono uppercase tracking-wider h-7">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-[10px] font-mono uppercase tracking-wider h-7"
+                    >
                       Download Compass GUI
                     </Button>
                   </a>
@@ -261,11 +269,20 @@ export function LocalDbSettings() {
 
                 <div className="mt-2 rounded bg-rail p-2.5 font-mono text-[10px] text-foreground border border-border/60 space-y-2 leading-normal">
                   <div>
-                    <span className="text-muted-foreground"># Windows MSI Installation (Recommended):</span>
+                    <span className="text-muted-foreground">
+                      # Windows MSI Installation (Recommended):
+                    </span>
                     <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-0.5 ml-1">
-                      <li>Choose <span className="text-foreground">Complete</span> setup type</li>
-                      <li>Check <span className="text-foreground">"Install MongoDB as a Service"</span></li>
-                      <li>Check <span className="text-foreground">"Install MongoDB Compass"</span></li>
+                      <li>
+                        Choose <span className="text-foreground">Complete</span> setup type
+                      </li>
+                      <li>
+                        Check{" "}
+                        <span className="text-foreground">"Install MongoDB as a Service"</span>
+                      </li>
+                      <li>
+                        Check <span className="text-foreground">"Install MongoDB Compass"</span>
+                      </li>
                     </ul>
                   </div>
 
@@ -274,7 +291,9 @@ export function LocalDbSettings() {
                     <br />
                     winget install MongoDB.Community.Server
                     <br />
-                    <span className="text-muted-foreground"># If service is stopped, run as Admin:</span>
+                    <span className="text-muted-foreground">
+                      # If service is stopped, run as Admin:
+                    </span>
                     <br />
                     Start-Service -Name MongoDB
                   </div>

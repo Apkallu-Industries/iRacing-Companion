@@ -57,18 +57,16 @@ function Timeline({ parsed }) {
         body: JSON.stringify({
           command: "seek",
           sessionNum,
-          sessionTimeMS
-        })
-      }).catch(() => {
-      });
+          sessionTimeMS,
+        }),
+      }).catch(() => {});
     }, 85);
     return () => clearTimeout(timer);
   }, [cursorTick, syncEnabled, parsed]);
   useEffect(() => {
     try {
       localStorage.setItem("pitwall.replaysync.enabled", String(syncEnabled));
-    } catch {
-    }
+    } catch {}
   }, [syncEnabled]);
   useEffect(() => {
     if (!playing) {
@@ -81,7 +79,7 @@ function Timeline({ parsed }) {
       const last = lastRef.current ?? t;
       const dtMs = t - last;
       lastRef.current = t;
-      const ticksAdv = dtMs / 1e3 * parsed.meta.tickRate * speed;
+      const ticksAdv = (dtMs / 1e3) * parsed.meta.tickRate * speed;
       const next = Math.min(total - 1, cursorTick + Math.max(1, Math.round(ticksAdv)));
       setCursorTick(next);
       if (next >= total - 1) setPlaying(false);
@@ -92,82 +90,83 @@ function Timeline({ parsed }) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [playing, speed]);
-  return /* @__PURE__ */ jsxs("div", { className: "hairline-t flex items-center gap-3 bg-panel px-3 py-2", children: [
-    /* @__PURE__ */ jsx(
-      "button",
-      {
+  return /* @__PURE__ */ jsxs("div", {
+    className: "hairline-t flex items-center gap-3 bg-panel px-3 py-2",
+    children: [
+      /* @__PURE__ */ jsx("button", {
         onClick: () => setPlaying(!playing),
-        className: "flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground hover:opacity-90",
-        children: playing ? /* @__PURE__ */ jsx(Pause, { className: "h-3.5 w-3.5" }) : /* @__PURE__ */ jsx(Play, { className: "h-3.5 w-3.5" })
-      }
-    ),
-    /* @__PURE__ */ jsxs(
-      "button",
-      {
+        className:
+          "flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-primary-foreground hover:opacity-90",
+        children: playing
+          ? /* @__PURE__ */ jsx(Pause, { className: "h-3.5 w-3.5" })
+          : /* @__PURE__ */ jsx(Play, { className: "h-3.5 w-3.5" }),
+      }),
+      /* @__PURE__ */ jsxs("button", {
         onClick: () => setSyncEnabled(!syncEnabled),
         title: syncEnabled ? "Replay Sync: Active" : "Replay Sync: Disabled",
         className: `flex h-7 px-2.5 items-center justify-center gap-1.5 rounded-sm text-xs font-semibold tracking-wider transition-all ${syncEnabled ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.15)]" : "bg-muted/10 text-muted-foreground border border-border/50 hover:bg-muted/20"}`,
         children: [
-          /* @__PURE__ */ jsx(Radio, { className: `h-3 w-3 ${syncEnabled ? "animate-pulse text-emerald-400" : ""}` }),
-          /* @__PURE__ */ jsx("span", { children: "SIM SYNC" })
-        ]
-      }
-    ),
-    /* @__PURE__ */ jsx(
-      "select",
-      {
+          /* @__PURE__ */ jsx(Radio, {
+            className: `h-3 w-3 ${syncEnabled ? "animate-pulse text-emerald-400" : ""}`,
+          }),
+          /* @__PURE__ */ jsx("span", { children: "SIM SYNC" }),
+        ],
+      }),
+      /* @__PURE__ */ jsx("select", {
         value: speed,
         onChange: (e) => setSpeed(parseFloat(e.target.value)),
         className: "rounded-sm border border-border bg-rail px-2 py-1 font-mono text-xs",
-        children: [0.25, 0.5, 1, 2, 4, 8].map((s) => /* @__PURE__ */ jsxs("option", { value: s, children: [
-          s,
-          "×"
-        ] }, s))
-      }
-    ),
-    /* @__PURE__ */ jsxs("div", { className: "relative flex-1", children: [
-      /* @__PURE__ */ jsx(
-        "input",
-        {
-          type: "range",
-          min: 0,
-          max: Math.max(0, total - 1),
-          value: cursorTick,
-          onChange: (e) => setCursorTick(parseInt(e.target.value, 10)),
-          className: "w-full accent-[color:var(--primary)]"
-        }
-      ),
-      /* @__PURE__ */ jsx("div", { className: "pointer-events-none absolute inset-x-0 top-1/2 h-2 -translate-y-1/2", children: parsed.laps.map((l) => /* @__PURE__ */ jsx(
-        "div",
-        {
-          className: "absolute h-full w-px bg-muted-foreground opacity-50",
-          style: { left: `${l.startTick / Math.max(1, total - 1) * 100}%` }
-        },
-        l.lap
-      )) })
-    ] }),
-    /* @__PURE__ */ jsx("div", { className: "font-mono text-xs tabular-nums text-muted-foreground", children: (() => {
-      const st = parsed.channels["SessionTime"]?.data;
-      const t = st ? st[cursorTick] - st[0] : cursorTick / parsed.meta.tickRate;
-      const lap = parsed.laps.find((l) => cursorTick >= l.startTick && cursorTick <= l.endTick);
-      const m = Math.floor(t / 60);
-      const s = (t - m * 60).toFixed(2).padStart(5, "0");
-      return /* @__PURE__ */ jsxs(Fragment, { children: [
-        lap ? `L${lap.lap} · ` : "",
-        /* @__PURE__ */ jsxs("span", { className: "text-foreground", children: [
-          m,
-          ":",
-          s
-        ] }),
-        /* @__PURE__ */ jsxs("span", { className: "ml-2 opacity-60", children: [
-          cursorTick,
-          "/",
-          total - 1
-        ] })
-      ] });
-    })() })
-  ] });
+        children: [0.25, 0.5, 1, 2, 4, 8].map((s) =>
+          /* @__PURE__ */ jsxs("option", { value: s, children: [s, "×"] }, s),
+        ),
+      }),
+      /* @__PURE__ */ jsxs("div", {
+        className: "relative flex-1",
+        children: [
+          /* @__PURE__ */ jsx("input", {
+            type: "range",
+            min: 0,
+            max: Math.max(0, total - 1),
+            value: cursorTick,
+            onChange: (e) => setCursorTick(parseInt(e.target.value, 10)),
+            className: "w-full accent-[color:var(--primary)]",
+          }),
+          /* @__PURE__ */ jsx("div", {
+            className: "pointer-events-none absolute inset-x-0 top-1/2 h-2 -translate-y-1/2",
+            children: parsed.laps.map((l) =>
+              /* @__PURE__ */ jsx(
+                "div",
+                {
+                  className: "absolute h-full w-px bg-muted-foreground opacity-50",
+                  style: { left: `${(l.startTick / Math.max(1, total - 1)) * 100}%` },
+                },
+                l.lap,
+              ),
+            ),
+          }),
+        ],
+      }),
+      /* @__PURE__ */ jsx("div", {
+        className: "font-mono text-xs tabular-nums text-muted-foreground",
+        children: (() => {
+          const st = parsed.channels["SessionTime"]?.data;
+          const t = st ? st[cursorTick] - st[0] : cursorTick / parsed.meta.tickRate;
+          const lap = parsed.laps.find((l) => cursorTick >= l.startTick && cursorTick <= l.endTick);
+          const m = Math.floor(t / 60);
+          const s = (t - m * 60).toFixed(2).padStart(5, "0");
+          return /* @__PURE__ */ jsxs(Fragment, {
+            children: [
+              lap ? `L${lap.lap} · ` : "",
+              /* @__PURE__ */ jsxs("span", { className: "text-foreground", children: [m, ":", s] }),
+              /* @__PURE__ */ jsxs("span", {
+                className: "ml-2 opacity-60",
+                children: [cursorTick, "/", total - 1],
+              }),
+            ],
+          });
+        })(),
+      }),
+    ],
+  });
 }
-export {
-  Timeline
-};
+export { Timeline };

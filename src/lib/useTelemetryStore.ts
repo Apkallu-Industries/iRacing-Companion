@@ -126,7 +126,7 @@ if (typeof window !== "undefined") {
     if (event.type === "disconnect") {
       isLive = false;
       useTelemetryStore.setState((prev) => ({
-        telemetry: { ...prev.telemetry, connected: false, source: "simulated" as const }
+        telemetry: { ...prev.telemetry, connected: false, source: "simulated" as const },
       }));
     } else if (event.type === "license" && event.data) {
       if (typeof localStorage !== "undefined") {

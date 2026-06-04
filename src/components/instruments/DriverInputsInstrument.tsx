@@ -8,7 +8,10 @@ interface DriverInputsInstrumentProps {
   mode?: "live" | "replay" | "compare";
 }
 
-export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live" }: DriverInputsInstrumentProps) {
+export function DriverInputsInstrument({
+  telemetry: propTelemetry,
+  mode = "live",
+}: DriverInputsInstrumentProps) {
   const liveTelemetry = useTelemetry();
   const t = propTelemetry || liveTelemetry;
 
@@ -43,13 +46,16 @@ export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live"
       title="Driver Inputs Instrument"
       mode={mode}
       activeStatus={smoothnessScore > 85 ? "INPUTSMOOTH" : "AGRESSIVEINPUT"}
-      activeStatusColor={smoothnessScore > 85 ? "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10" : "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10"}
+      activeStatusColor={
+        smoothnessScore > 85
+          ? "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10"
+          : "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10"
+      }
       onAiAnalyze={() => {}}
       aiAdvice={aiAdvice}
     >
       <div className="p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white">
         <div className="grid grid-cols-12 gap-4 flex-1">
-          
           {/* Left panel (7 cols): Input Bars (Throttle, Brake, Clutch) */}
           <div className="col-span-7 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3">
             <div className="text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider mb-2">
@@ -61,10 +67,15 @@ export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live"
               <div className="space-y-1">
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span>THROTTLE INPUT</span>
-                  <span className="text-[#00D17F] font-bold tabular-nums">{(throttle * 100).toFixed(0)}%</span>
+                  <span className="text-[#00D17F] font-bold tabular-nums">
+                    {(throttle * 100).toFixed(0)}%
+                  </span>
                 </div>
                 <div className="w-full bg-[#0B0F14] h-2.5 rounded-xs border border-[#1C2430] overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-75" style={{ width: `${throttle * 100}%` }} />
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-75"
+                    style={{ width: `${throttle * 100}%` }}
+                  />
                 </div>
               </div>
 
@@ -72,10 +83,15 @@ export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live"
               <div className="space-y-1">
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span>BRAKE INPUT</span>
-                  <span className="text-[#FF4D4D] font-bold tabular-nums">{(brake * 100).toFixed(0)}%</span>
+                  <span className="text-[#FF4D4D] font-bold tabular-nums">
+                    {(brake * 100).toFixed(0)}%
+                  </span>
                 </div>
                 <div className="w-full bg-[#0B0F14] h-2.5 rounded-xs border border-[#1C2430] overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-75" style={{ width: `${brake * 100}%` }} />
+                  <div
+                    className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-75"
+                    style={{ width: `${brake * 100}%` }}
+                  />
                 </div>
               </div>
 
@@ -83,10 +99,15 @@ export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live"
               <div className="space-y-1">
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span>CLUTCH INPUT</span>
-                  <span className="text-[#3B82F6] font-bold tabular-nums">{(clutch * 100).toFixed(0)}%</span>
+                  <span className="text-[#3B82F6] font-bold tabular-nums">
+                    {(clutch * 100).toFixed(0)}%
+                  </span>
                 </div>
                 <div className="w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden">
-                  <div className="h-full bg-blue-500 transition-all duration-75" style={{ width: `${clutch * 100}%` }} />
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-75"
+                    style={{ width: `${clutch * 100}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -101,10 +122,12 @@ export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live"
             {/* Steer wheel vector display */}
             <div className="flex-1 flex flex-col items-center justify-center my-1.5">
               <div className="relative h-12 w-12 border-2 border-dashed border-[#1C2430] rounded-full flex items-center justify-center">
-                
                 {/* Visual steer angle dial */}
-                <div className="absolute h-10 w-1 border-t-4 border-b-4 border-[#FFB800] rounded transition-transform duration-75" style={{ transform: `rotate(${steer}deg)` }} />
-                
+                <div
+                  className="absolute h-10 w-1 border-t-4 border-b-4 border-[#FFB800] rounded transition-transform duration-75"
+                  style={{ transform: `rotate(${steer}deg)` }}
+                />
+
                 {/* Angle label */}
                 <span className="absolute -bottom-4 text-[7px] text-[#FFB800] bg-[#05070A] border border-[#1C2430]/80 px-1 rounded tabular-nums font-bold">
                   {steer.toFixed(0)}°
@@ -120,7 +143,6 @@ export function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live"
                 {smoothnessScore.toFixed(0)}%
               </span>
             </div>
-
           </div>
         </div>
       </div>

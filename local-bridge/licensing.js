@@ -16,11 +16,16 @@ function getHWID() {
   let raw = "";
   if (process.platform === "win32") {
     try {
-      raw = execSync('powershell -Command "(Get-CimInstance Win32_ComputerSystemProduct).UUID"', { encoding: "utf8" }).trim();
+      raw = execSync('powershell -Command "(Get-CimInstance Win32_ComputerSystemProduct).UUID"', {
+        encoding: "utf8",
+      }).trim();
     } catch (e) {
       try {
         const out = execSync("wmic csproduct get uuid", { encoding: "utf8" });
-        const lines = out.split("\n").map(l => l.trim()).filter(Boolean);
+        const lines = out
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
         if (lines.length > 1) {
           raw = lines[1];
         }
@@ -29,7 +34,7 @@ function getHWID() {
       }
     }
   }
-  
+
   // If windows queries failed or not running on Windows
   if (!raw || raw.includes("FFFFFFFF") || raw.includes("00000000")) {
     const interfaces = os.networkInterfaces();
@@ -56,9 +61,14 @@ function signPayload(payload) {
   const dataStr = JSON.stringify({
     hwid: payload.hwid,
     tier: payload.tier,
-    expires: payload.expires
+    expires: payload.expires,
   });
-  return crypto.createHmac("sha256", MASTER_SECRET).update(dataStr).digest("hex").substring(0, 16).toUpperCase();
+  return crypto
+    .createHmac("sha256", MASTER_SECRET)
+    .update(dataStr)
+    .digest("hex")
+    .substring(0, 16)
+    .toUpperCase();
 }
 
 /**
@@ -100,7 +110,10 @@ function validateLicenseKey(key) {
     // Verify HWID
     const currentHwid = getHWID();
     if (payload.hwid !== currentHwid) {
-      return { valid: false, error: `License locked to HWID: ${payload.hwid}. This PC is: ${currentHwid}.` };
+      return {
+        valid: false,
+        error: `License locked to HWID: ${payload.hwid}. This PC is: ${currentHwid}.`,
+      };
     }
 
     // Verify Expiration
@@ -118,7 +131,7 @@ function validateLicenseKey(key) {
       valid: true,
       tier: payload.tier,
       expires: payload.expires,
-      hwid: payload.hwid
+      hwid: payload.hwid,
     };
   } catch (e) {
     return { valid: false, error: `Parsing error: ${e.message}` };
@@ -128,5 +141,5 @@ function validateLicenseKey(key) {
 module.exports = {
   getHWID,
   generateLicenseKey,
-  validateLicenseKey
+  validateLicenseKey,
 };

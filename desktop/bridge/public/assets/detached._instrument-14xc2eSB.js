@@ -1,1 +1,810 @@
-import{d as f,j as e}from"./react-core-hSJfnumv.js";import{u as p,T as j}from"./registry-DIFZ_TvW.js";import{d as u,Z as N}from"./index-BF1LFLDu.js";import{ax as b,aQ as g,u as C,aV as w,O as T,y as A}from"./icons-UNkcvPbk.js";import"./zustand-BHt0iSzh.js";import"./vendor-CUluG-o1.js";import"./charts-DDN7mcLY.js";import"./supabase-DZ6I_NU8.js";import"./radix-ui-BcE8c2tf.js";function G(){const{instrument:s}=u.useParams(),l=N(),[r,t]=f.useState("replay"),n=p(i=>i.cursorTick),d=p(i=>i.focusMode),c=p(i=>i.detachedTelemetryFrame);f.useEffect(()=>{l&&l.connected?t("live"):t("replay")},[l?.connected]);const a=r==="live"?l:c;if(s==="timing")return e.jsx(v,{t:a,mode:r,cursorTick:n});if(s==="hybrid")return e.jsx(F,{t:a,mode:r,cursorTick:n});if(s==="tires")return e.jsx(y,{t:a,mode:r,cursorTick:n});if(s==="strategy")return e.jsx(I,{t:a,mode:r,cursorTick:n});const x=j[s];return x?e.jsxs("div",{className:`h-screen w-screen bg-[#05070A] p-2 flex flex-col overflow-hidden select-none workspace-focus-${d}`,children:[e.jsxs("div",{className:"px-3 py-1.5 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between text-[8px] font-mono text-[#7A828C] mb-1.5 uppercase tracking-wider shrink-0 select-none",children:[e.jsxs("div",{className:"flex items-center gap-1.5 font-bold",children:[e.jsx("span",{className:"size-1 rounded-full bg-[#3B82F6]"}),e.jsx("span",{className:"text-white",children:"DETACHED ARRAY"}),e.jsx("span",{children:"·"}),e.jsxs("span",{children:["INSTRUMENT: ",e.jsx("span",{className:"text-[#3B82F6]",children:s})]})]}),e.jsx("div",{className:"flex items-center gap-3",children:r==="live"?e.jsxs("div",{className:"flex items-center gap-1 text-[#00D17F] font-black",children:[e.jsx(g,{className:"h-3 w-3 animate-pulse"})," LIVE STREAM"]}):e.jsxs("div",{className:"flex items-center gap-1 text-[#FFB800] font-black",children:[e.jsx(b,{className:"h-3 w-3"})," REPLAY TICK: ",e.jsx("span",{className:"text-white tabular-nums",children:n})]})})]}),e.jsx("div",{className:"flex-1 min-h-0 border border-[#1C2430] bg-[#0B0F14] rounded-sm overflow-hidden",children:a?e.jsx(x,{telemetry:a,mode:r==="live"?"live":"replay"}):e.jsx(E,{cursorTick:n})})]}):e.jsxs("div",{className:"h-screen w-screen flex flex-col items-center justify-center bg-[#05070A] font-mono text-[10px] text-[#FF4D4D] p-6 border border-[#FF4D4D]/20",children:[e.jsx(b,{className:"h-6 w-6 mb-2 animate-bounce"}),e.jsx("span",{className:"font-bold tracking-widest uppercase",children:"INVALID MONITOR IDENTIFIER"}),e.jsxs("span",{className:"text-[#7A828C] mt-1 text-[8px]",children:['ID: "',s,'" NOT REGISTERED IN WORKSTATION CORE.']})]})}function v({t:s,mode:l,cursorTick:r}){return e.jsxs("div",{className:"h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",children:[e.jsxs("div",{className:"px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",children:[e.jsxs("span",{className:"font-bold text-white tracking-widest uppercase flex items-center gap-1.5",children:[e.jsx(C,{className:"h-3.5 w-3.5 text-[#3B82F6]"})," TIMING & LAP MONITOR"]}),e.jsx("span",{className:"text-white font-bold uppercase shrink-0",children:"PIT WALL COMMAND ENGINE"})]}),e.jsxs("div",{className:"flex-1 min-h-0 grid grid-cols-3 gap-3",children:[e.jsxs("div",{className:"col-span-2 border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col overflow-hidden",children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2",children:"STINT SECTOR MATRIX"}),e.jsxs("div",{className:"flex-1 overflow-y-auto space-y-1",children:[e.jsxs("div",{className:"grid grid-cols-5 text-[#7A828C] font-bold border-b border-[#1C2430]/60 pb-1 uppercase text-[8px]",children:[e.jsx("span",{children:"LAP"}),e.jsx("span",{children:"SECTOR 1"}),e.jsx("span",{children:"SECTOR 2"}),e.jsx("span",{children:"SECTOR 3"}),e.jsx("span",{children:"LAP TIME"})]}),[{lap:1,s1:"24.120",s2:"32.188",s3:"28.944",time:"1:25.252",diff:"+0.142"},{lap:2,s1:"23.955",s2:"32.012",s3:"28.720",time:"1:24.687",diff:"-0.423"},{lap:3,s1:"23.840",s2:"31.954",s3:"28.611",time:"1:24.405",diff:"-0.282"},{lap:4,s1:"23.910",s2:"32.088",s3:"28.752",time:"1:24.750",diff:"+0.345"}].map(t=>e.jsxs("div",{className:"grid grid-cols-5 border-b border-[#1C2430]/20 py-1 tabular-nums text-white",children:[e.jsxs("span",{className:"font-bold text-[#7A828C]",children:["L",t.lap]}),e.jsxs("span",{children:[t.s1,"s"]}),e.jsxs("span",{children:[t.s2,"s"]}),e.jsxs("span",{children:[t.s3,"s"]}),e.jsx("span",{className:"font-black text-[#00D17F]",children:t.time})]},t.lap))]})]}),e.jsxs("div",{className:"border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between",children:[e.jsxs("div",{children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",children:"STINT PROJECTIONS"}),e.jsxs("div",{className:"space-y-3",children:[e.jsxs("div",{className:"flex justify-between items-center bg-[#05070A] p-2 border border-[#1C2430]/60 rounded-xs",children:[e.jsx("span",{children:"ESTIMATED FUEL BURN"}),e.jsx("span",{className:"text-white font-bold text-sm",children:"3.42 L / LAP"})]}),e.jsxs("div",{className:"flex justify-between items-center bg-[#05070A] p-2 border border-[#1C2430]/60 rounded-xs",children:[e.jsx("span",{children:"REMAINING FUEL CAPACITY"}),e.jsxs("span",{className:"text-[#FFB800] font-black text-sm",children:[s?.fuelRemainingL?s.fuelRemainingL.toFixed(1):"38.5"," L"]})]}),e.jsxs("div",{className:"flex justify-between items-center bg-[#05070A] p-2 border border-[#1C2430]/60 rounded-xs",children:[e.jsx("span",{children:"THEORETICAL LAPS TO PIT"}),e.jsx("span",{className:"text-[#00D17F] font-black text-sm",children:"11 Laps"})]})]})]}),e.jsxs("div",{className:"border-t border-[#1C2430] pt-2 mt-2",children:[e.jsx("span",{className:"text-[8px] text-[#7A828C] block uppercase font-bold mb-1",children:"active coordinate playhead"}),e.jsxs("span",{className:"text-white text-xs font-black tabular-nums",children:[r," ticks"]})]})]})]})]})}function F({t:s,mode:l,cursorTick:r}){const t=s?.extras?.ersSoc??75,n=s?.extras?.mgukDeployKw??0,d=s?.extras?.mgukRegenKw??0;return e.jsxs("div",{className:"h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",children:[e.jsxs("div",{className:"px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",children:[e.jsxs("span",{className:"font-bold text-white tracking-widest uppercase flex items-center gap-1.5",children:[e.jsx(w,{className:"h-3.5 w-3.5 text-[#8B5CF6]"})," HYBRID ENERGY MONITOR"]}),e.jsx("span",{className:"text-white font-bold uppercase shrink-0",children:"PIT WALL HYBRID SYS"})]}),e.jsxs("div",{className:"flex-1 min-h-0 grid grid-cols-2 gap-3",children:[e.jsxs("div",{className:"border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",children:[e.jsxs("div",{children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",children:"STATE-OF-CHARGE (SoC)"}),e.jsx("div",{className:"grid grid-cols-16 gap-1 bg-[#05070A] p-3 rounded-sm border border-[#1C2430] mb-4",children:Array.from({length:16}).map((c,a)=>{const o=a/16*100<t;return e.jsx("div",{className:`h-12 rounded-xs border transition-all duration-300 ${o?"bg-[#8B5CF6] border-[#8B5CF6]/40 shadow-[0_0_8px_rgba(139,92,246,0.3)]":"bg-[#0B0F14] border-[#1C2430]"}`},a)})})]}),e.jsxs("div",{className:"flex justify-between items-end",children:[e.jsxs("div",{children:[e.jsx("span",{className:"text-[8px] text-[#7A828C] block uppercase font-bold",children:"ers battery capacity"}),e.jsxs("span",{className:"text-white text-xl font-black tabular-nums",children:[t.toFixed(1),"%"]})]}),e.jsx("span",{className:"text-[8px] text-[#8B5CF6] border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-2 py-0.5 rounded font-black tracking-widest uppercase",children:"mgu-k active"})]})]}),e.jsxs("div",{className:"border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",children:[e.jsxs("div",{children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",children:"ENERGY BALANCE FLUX"}),e.jsxs("div",{className:"space-y-4",children:[e.jsxs("div",{children:[e.jsxs("div",{className:"flex justify-between items-center text-[8px] font-bold text-[#7A828C] mb-1",children:[e.jsx("span",{children:"MGU-K KINETIC DISCHARGE"}),e.jsxs("span",{className:"text-white tabular-nums",children:[n.toFixed(0)," kW"]})]}),e.jsx("div",{className:"h-6 bg-[#05070A] border border-[#1C2430] rounded-sm p-1",children:e.jsx("div",{className:"h-full rounded-xs bg-[#8B5CF6] transition-all duration-100",style:{width:`${Math.min(100,n/120*100)}%`}})})]}),e.jsxs("div",{children:[e.jsxs("div",{className:"flex justify-between items-center text-[8px] font-bold text-[#7A828C] mb-1",children:[e.jsx("span",{children:"MGU-K KINETIC HARVEST"}),e.jsxs("span",{className:"text-white tabular-nums",children:[d.toFixed(0)," kW"]})]}),e.jsx("div",{className:"h-6 bg-[#05070A] border border-[#1C2430] rounded-sm p-1",children:e.jsx("div",{className:"h-full rounded-xs bg-[#00D17F] transition-all duration-100",style:{width:`${Math.min(100,d/200*100)}%`}})})]})]})]}),e.jsxs("div",{className:"grid grid-cols-2 gap-2 text-[8px] text-[#7A828C] mt-4 border-t border-[#1C2430] pt-3",children:[e.jsxs("div",{children:[e.jsx("span",{children:"BATTERY TEMP"}),e.jsxs("span",{className:"text-white font-bold text-sm block tabular-nums",children:[s?.extras?.ersBatteryTemp?s.extras.ersBatteryTemp.toFixed(1):"42.5","°C"]})]}),e.jsxs("div",{children:[e.jsx("span",{children:"DEPLOY EFFICIENCY"}),e.jsx("span",{className:"text-[#00D17F] font-bold text-sm block",children:"93.8%"})]})]})]})]})]})}function y({t:s,mode:l,cursorTick:r}){const t=s?.tires?.fl?.tempC??80,n=s?.tires?.fr?.tempC??82,d=s?.tires?.rl?.tempC??84,c=s?.tires?.rr?.tempC??86,a=s?.tires?.fl?.pressureBar??1.8,o=s?.tires?.fr?.pressureBar??1.82,x=s?.gLat??0,i=s?.gLon??0,m=h=>h>92?"border-l-2 border-l-[#FF4D4D] bg-[#FF4D4D]/5 text-[#FF4D4D]":h>85?"border-l-2 border-l-[#FFB800] bg-[#FFB800]/5 text-[#FFB800]":"border-l-2 border-l-[#00D17F] bg-[#00D17F]/5 text-[#00D17F]";return e.jsxs("div",{className:"h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",children:[e.jsxs("div",{className:"px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",children:[e.jsxs("span",{className:"font-bold text-white tracking-widest uppercase flex items-center gap-1.5",children:[e.jsx(T,{className:"h-3.5 w-3.5 text-[#FFB800]"})," TIRE OPERATING PORTFOLIO"]}),e.jsx("span",{className:"text-white font-bold uppercase shrink-0",children:"PIT WALL TIRE WALL"})]}),e.jsxs("div",{className:"flex-1 min-h-0 grid grid-cols-3 gap-3",children:[e.jsxs("div",{className:"col-span-2 grid grid-cols-2 gap-3",children:[e.jsxs("div",{className:`border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(t)}`,children:[e.jsx("span",{className:"font-bold text-[8px] tracking-wider text-white",children:"FRONT LEFT CARCASS"}),e.jsxs("span",{className:"text-2xl font-black tracking-tighter tabular-nums",children:[t.toFixed(1),"°C"]}),e.jsxs("div",{className:"flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",children:[e.jsx("span",{children:"PRESSURE"}),e.jsxs("span",{className:"text-white font-bold",children:[(a*14.5038).toFixed(1)," PSI"]})]})]}),e.jsxs("div",{className:`border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(n)}`,children:[e.jsx("span",{className:"font-bold text-[8px] tracking-wider text-white",children:"FRONT RIGHT CARCASS"}),e.jsxs("span",{className:"text-2xl font-black tracking-tighter tabular-nums",children:[n.toFixed(1),"°C"]}),e.jsxs("div",{className:"flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",children:[e.jsx("span",{children:"PRESSURE"}),e.jsxs("span",{className:"text-white font-bold",children:[(o*14.5038).toFixed(1)," PSI"]})]})]}),e.jsxs("div",{className:`border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(d)}`,children:[e.jsx("span",{className:"font-bold text-[8px] tracking-wider text-white",children:"REAR LEFT CARCASS"}),e.jsxs("span",{className:"text-2xl font-black tracking-tighter tabular-nums",children:[d.toFixed(1),"°C"]}),e.jsxs("div",{className:"flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",children:[e.jsx("span",{children:"PRESSURE"}),e.jsxs("span",{className:"text-white font-bold",children:[(s?.tires?.rl?.pressureBar*14.5038||26.5).toFixed(1)," PSI"]})]})]}),e.jsxs("div",{className:`border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(c)}`,children:[e.jsx("span",{className:"font-bold text-[8px] tracking-wider text-white",children:"REAR RIGHT CARCASS"}),e.jsxs("span",{className:"text-2xl font-black tracking-tighter tabular-nums",children:[c.toFixed(1),"°C"]}),e.jsxs("div",{className:"flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",children:[e.jsx("span",{children:"PRESSURE"}),e.jsxs("span",{className:"text-white font-bold",children:[(s?.tires?.rr?.pressureBar*14.5038||26.8).toFixed(1)," PSI"]})]})]})]}),e.jsxs("div",{className:"border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between items-center",children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block w-full text-center",children:"G-G GRAPHICS"}),e.jsxs("div",{className:"size-36 border border-[#1C2430] rounded-full relative flex items-center justify-center bg-[#05070A]",children:[e.jsx("div",{className:"absolute inset-0 border-l border-dashed border-[#1C2430] left-1/2"}),e.jsx("div",{className:"absolute inset-0 border-t border-dashed border-[#1C2430] top-1/2"}),e.jsx("div",{className:"absolute size-2 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800] transition-all duration-75",style:{left:`${50+x*18}%`,top:`${50-i*18}%`}})]}),e.jsxs("div",{className:"w-full border-t border-[#1C2430] pt-2 mt-2 flex justify-between text-[8px]",children:[e.jsxs("span",{children:["LAT G: ",e.jsx("span",{className:"text-white font-bold",children:x.toFixed(2)})]}),e.jsxs("span",{children:["LON G: ",e.jsx("span",{className:"text-white font-bold",children:i.toFixed(2)})]})]})]})]})]})}function I({t:s,mode:l,cursorTick:r}){return e.jsxs("div",{className:"h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",children:[e.jsxs("div",{className:"px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",children:[e.jsxs("span",{className:"font-bold text-white tracking-widest uppercase flex items-center gap-1.5",children:[e.jsx(A,{className:"h-3.5 w-3.5 text-[#00D17F]"})," TACTICAL STRATEGY WINDOW"]}),e.jsx("span",{className:"text-white font-bold uppercase shrink-0",children:"PIT WALL STRATEGY"})]}),e.jsxs("div",{className:"flex-1 min-h-0 grid grid-cols-2 gap-3",children:[e.jsxs("div",{className:"border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",children:[e.jsxs("div",{children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",children:"PIT WINDOW ESTIMATION"}),e.jsx("p",{className:"leading-relaxed mb-4 text-[8.5px]",children:"Platform estimates optimal under-cut pit targets between Laps 14 and 17 based on average tire deg calculations of 1.4% traction loss per lap."}),e.jsxs("div",{className:"space-y-2",children:[e.jsxs("div",{className:"flex justify-between items-center text-white",children:[e.jsx("span",{children:"PIT OPEN WINDOW"}),e.jsx("span",{className:"font-bold",children:"LAP 14"})]}),e.jsxs("div",{className:"flex justify-between items-center text-white",children:[e.jsx("span",{children:"PIT OPTIMAL APEX"}),e.jsx("span",{className:"font-bold text-[#00D17F]",children:"LAP 16"})]}),e.jsxs("div",{className:"flex justify-between items-center text-white",children:[e.jsx("span",{children:"PIT CLOSE WINDOW"}),e.jsx("span",{className:"font-bold",children:"LAP 18"})]})]})]}),e.jsx("span",{className:"text-[7.5px] text-[#00D17F] border border-[#00D17F]/30 bg-[#00D17F]/10 px-2 py-0.5 rounded font-black tracking-widest uppercase self-start",children:"optimal pace buffer active"})]}),e.jsxs("div",{className:"border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",children:[e.jsxs("div",{children:[e.jsx("span",{className:"text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",children:"SAFETY CAR LIFT-AND-COAST MODELER"}),e.jsx("p",{className:"leading-relaxed mb-4 text-[8.5px]",children:"Activating fuel saving delta limits. Under yellow flag safety car constraints, lift-and-coast targets reduce fuel flow by 1.8 L / LAP."}),e.jsxs("div",{className:"space-y-2",children:[e.jsxs("div",{className:"flex justify-between items-center",children:[e.jsx("span",{children:"NOMINAL STINT FUEL LIMIT"}),e.jsx("span",{className:"text-white font-bold",children:"25 Laps"})]}),e.jsxs("div",{className:"flex justify-between items-center text-[#00D17F]",children:[e.jsx("span",{children:"SAFETY CAR STINT EXTENSION"}),e.jsx("span",{className:"font-bold",children:"+6 Laps available"})]})]})]}),e.jsxs("div",{className:"flex justify-between items-center border-t border-[#1C2430] pt-2 text-[8px] text-[#7A828C]",children:[e.jsx("span",{children:"STINT STRETCH TARGET"}),e.jsx("span",{className:"text-white font-bold",children:"L31 MAX"})]})]})]})]})}function E({cursorTick:s}){return e.jsxs("div",{className:"h-full w-full flex flex-col items-center justify-center text-center p-8 text-[#7A828C] font-mono text-[9px] relative",children:[e.jsx("div",{className:"absolute inset-0 bg-[linear-gradient(to_right,#1C2430_1px,transparent_1px),linear-gradient(to_bottom,#1C2430_1px,transparent_1px)] bg-[size:1.5rem_1.5rem] opacity-[0.03] pointer-events-none"}),e.jsxs("div",{className:"relative z-10 flex flex-col items-center max-w-xs animate-pulse",children:[e.jsx(b,{className:"h-5 w-5 text-[#7A828C] mb-2"}),e.jsx("span",{className:"font-bold tracking-widest text-white uppercase text-[10px]",children:"AWAITING SYSTEM SYNCHRONIZATION"}),e.jsx("p",{className:"mt-2 leading-relaxed text-[8px] uppercase tracking-wider",children:"Replay frame data is dispatched dynamically by the master workbench. Drag or scrub the telemetry playhead to synchronize visual command monitors."}),e.jsxs("span",{className:"mt-2 text-[#7A828C] text-[8px]",children:["TICK: ",s]})]})]})}export{G as component};
+import { d as f, j as e } from "./react-core-hSJfnumv.js";
+import { u as p, T as j } from "./registry-DIFZ_TvW.js";
+import { d as u, Z as N } from "./index-BF1LFLDu.js";
+import { ax as b, aQ as g, u as C, aV as w, O as T, y as A } from "./icons-UNkcvPbk.js";
+import "./zustand-BHt0iSzh.js";
+import "./vendor-CUluG-o1.js";
+import "./charts-DDN7mcLY.js";
+import "./supabase-DZ6I_NU8.js";
+import "./radix-ui-BcE8c2tf.js";
+function G() {
+  const { instrument: s } = u.useParams(),
+    l = N(),
+    [r, t] = f.useState("replay"),
+    n = p((i) => i.cursorTick),
+    d = p((i) => i.focusMode),
+    c = p((i) => i.detachedTelemetryFrame);
+  f.useEffect(() => {
+    l && l.connected ? t("live") : t("replay");
+  }, [l?.connected]);
+  const a = r === "live" ? l : c;
+  if (s === "timing") return e.jsx(v, { t: a, mode: r, cursorTick: n });
+  if (s === "hybrid") return e.jsx(F, { t: a, mode: r, cursorTick: n });
+  if (s === "tires") return e.jsx(y, { t: a, mode: r, cursorTick: n });
+  if (s === "strategy") return e.jsx(I, { t: a, mode: r, cursorTick: n });
+  const x = j[s];
+  return x
+    ? e.jsxs("div", {
+        className: `h-screen w-screen bg-[#05070A] p-2 flex flex-col overflow-hidden select-none workspace-focus-${d}`,
+        children: [
+          e.jsxs("div", {
+            className:
+              "px-3 py-1.5 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between text-[8px] font-mono text-[#7A828C] mb-1.5 uppercase tracking-wider shrink-0 select-none",
+            children: [
+              e.jsxs("div", {
+                className: "flex items-center gap-1.5 font-bold",
+                children: [
+                  e.jsx("span", { className: "size-1 rounded-full bg-[#3B82F6]" }),
+                  e.jsx("span", { className: "text-white", children: "DETACHED ARRAY" }),
+                  e.jsx("span", { children: "·" }),
+                  e.jsxs("span", {
+                    children: [
+                      "INSTRUMENT: ",
+                      e.jsx("span", { className: "text-[#3B82F6]", children: s }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsx("div", {
+                className: "flex items-center gap-3",
+                children:
+                  r === "live"
+                    ? e.jsxs("div", {
+                        className: "flex items-center gap-1 text-[#00D17F] font-black",
+                        children: [
+                          e.jsx(g, { className: "h-3 w-3 animate-pulse" }),
+                          " LIVE STREAM",
+                        ],
+                      })
+                    : e.jsxs("div", {
+                        className: "flex items-center gap-1 text-[#FFB800] font-black",
+                        children: [
+                          e.jsx(b, { className: "h-3 w-3" }),
+                          " REPLAY TICK: ",
+                          e.jsx("span", { className: "text-white tabular-nums", children: n }),
+                        ],
+                      }),
+              }),
+            ],
+          }),
+          e.jsx("div", {
+            className:
+              "flex-1 min-h-0 border border-[#1C2430] bg-[#0B0F14] rounded-sm overflow-hidden",
+            children: a
+              ? e.jsx(x, { telemetry: a, mode: r === "live" ? "live" : "replay" })
+              : e.jsx(E, { cursorTick: n }),
+          }),
+        ],
+      })
+    : e.jsxs("div", {
+        className:
+          "h-screen w-screen flex flex-col items-center justify-center bg-[#05070A] font-mono text-[10px] text-[#FF4D4D] p-6 border border-[#FF4D4D]/20",
+        children: [
+          e.jsx(b, { className: "h-6 w-6 mb-2 animate-bounce" }),
+          e.jsx("span", {
+            className: "font-bold tracking-widest uppercase",
+            children: "INVALID MONITOR IDENTIFIER",
+          }),
+          e.jsxs("span", {
+            className: "text-[#7A828C] mt-1 text-[8px]",
+            children: ['ID: "', s, '" NOT REGISTERED IN WORKSTATION CORE.'],
+          }),
+        ],
+      });
+}
+function v({ t: s, mode: l, cursorTick: r }) {
+  return e.jsxs("div", {
+    className:
+      "h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",
+    children: [
+      e.jsxs("div", {
+        className:
+          "px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",
+        children: [
+          e.jsxs("span", {
+            className: "font-bold text-white tracking-widest uppercase flex items-center gap-1.5",
+            children: [
+              e.jsx(C, { className: "h-3.5 w-3.5 text-[#3B82F6]" }),
+              " TIMING & LAP MONITOR",
+            ],
+          }),
+          e.jsx("span", {
+            className: "text-white font-bold uppercase shrink-0",
+            children: "PIT WALL COMMAND ENGINE",
+          }),
+        ],
+      }),
+      e.jsxs("div", {
+        className: "flex-1 min-h-0 grid grid-cols-3 gap-3",
+        children: [
+          e.jsxs("div", {
+            className:
+              "col-span-2 border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col overflow-hidden",
+            children: [
+              e.jsx("span", {
+                className:
+                  "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2",
+                children: "STINT SECTOR MATRIX",
+              }),
+              e.jsxs("div", {
+                className: "flex-1 overflow-y-auto space-y-1",
+                children: [
+                  e.jsxs("div", {
+                    className:
+                      "grid grid-cols-5 text-[#7A828C] font-bold border-b border-[#1C2430]/60 pb-1 uppercase text-[8px]",
+                    children: [
+                      e.jsx("span", { children: "LAP" }),
+                      e.jsx("span", { children: "SECTOR 1" }),
+                      e.jsx("span", { children: "SECTOR 2" }),
+                      e.jsx("span", { children: "SECTOR 3" }),
+                      e.jsx("span", { children: "LAP TIME" }),
+                    ],
+                  }),
+                  [
+                    {
+                      lap: 1,
+                      s1: "24.120",
+                      s2: "32.188",
+                      s3: "28.944",
+                      time: "1:25.252",
+                      diff: "+0.142",
+                    },
+                    {
+                      lap: 2,
+                      s1: "23.955",
+                      s2: "32.012",
+                      s3: "28.720",
+                      time: "1:24.687",
+                      diff: "-0.423",
+                    },
+                    {
+                      lap: 3,
+                      s1: "23.840",
+                      s2: "31.954",
+                      s3: "28.611",
+                      time: "1:24.405",
+                      diff: "-0.282",
+                    },
+                    {
+                      lap: 4,
+                      s1: "23.910",
+                      s2: "32.088",
+                      s3: "28.752",
+                      time: "1:24.750",
+                      diff: "+0.345",
+                    },
+                  ].map((t) =>
+                    e.jsxs(
+                      "div",
+                      {
+                        className:
+                          "grid grid-cols-5 border-b border-[#1C2430]/20 py-1 tabular-nums text-white",
+                        children: [
+                          e.jsxs("span", {
+                            className: "font-bold text-[#7A828C]",
+                            children: ["L", t.lap],
+                          }),
+                          e.jsxs("span", { children: [t.s1, "s"] }),
+                          e.jsxs("span", { children: [t.s2, "s"] }),
+                          e.jsxs("span", { children: [t.s3, "s"] }),
+                          e.jsx("span", {
+                            className: "font-black text-[#00D17F]",
+                            children: t.time,
+                          }),
+                        ],
+                      },
+                      t.lap,
+                    ),
+                  ),
+                ],
+              }),
+            ],
+          }),
+          e.jsxs("div", {
+            className:
+              "border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between",
+            children: [
+              e.jsxs("div", {
+                children: [
+                  e.jsx("span", {
+                    className:
+                      "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",
+                    children: "STINT PROJECTIONS",
+                  }),
+                  e.jsxs("div", {
+                    className: "space-y-3",
+                    children: [
+                      e.jsxs("div", {
+                        className:
+                          "flex justify-between items-center bg-[#05070A] p-2 border border-[#1C2430]/60 rounded-xs",
+                        children: [
+                          e.jsx("span", { children: "ESTIMATED FUEL BURN" }),
+                          e.jsx("span", {
+                            className: "text-white font-bold text-sm",
+                            children: "3.42 L / LAP",
+                          }),
+                        ],
+                      }),
+                      e.jsxs("div", {
+                        className:
+                          "flex justify-between items-center bg-[#05070A] p-2 border border-[#1C2430]/60 rounded-xs",
+                        children: [
+                          e.jsx("span", { children: "REMAINING FUEL CAPACITY" }),
+                          e.jsxs("span", {
+                            className: "text-[#FFB800] font-black text-sm",
+                            children: [
+                              s?.fuelRemainingL ? s.fuelRemainingL.toFixed(1) : "38.5",
+                              " L",
+                            ],
+                          }),
+                        ],
+                      }),
+                      e.jsxs("div", {
+                        className:
+                          "flex justify-between items-center bg-[#05070A] p-2 border border-[#1C2430]/60 rounded-xs",
+                        children: [
+                          e.jsx("span", { children: "THEORETICAL LAPS TO PIT" }),
+                          e.jsx("span", {
+                            className: "text-[#00D17F] font-black text-sm",
+                            children: "11 Laps",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className: "border-t border-[#1C2430] pt-2 mt-2",
+                children: [
+                  e.jsx("span", {
+                    className: "text-[8px] text-[#7A828C] block uppercase font-bold mb-1",
+                    children: "active coordinate playhead",
+                  }),
+                  e.jsxs("span", {
+                    className: "text-white text-xs font-black tabular-nums",
+                    children: [r, " ticks"],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function F({ t: s, mode: l, cursorTick: r }) {
+  const t = s?.extras?.ersSoc ?? 75,
+    n = s?.extras?.mgukDeployKw ?? 0,
+    d = s?.extras?.mgukRegenKw ?? 0;
+  return e.jsxs("div", {
+    className:
+      "h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",
+    children: [
+      e.jsxs("div", {
+        className:
+          "px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",
+        children: [
+          e.jsxs("span", {
+            className: "font-bold text-white tracking-widest uppercase flex items-center gap-1.5",
+            children: [
+              e.jsx(w, { className: "h-3.5 w-3.5 text-[#8B5CF6]" }),
+              " HYBRID ENERGY MONITOR",
+            ],
+          }),
+          e.jsx("span", {
+            className: "text-white font-bold uppercase shrink-0",
+            children: "PIT WALL HYBRID SYS",
+          }),
+        ],
+      }),
+      e.jsxs("div", {
+        className: "flex-1 min-h-0 grid grid-cols-2 gap-3",
+        children: [
+          e.jsxs("div", {
+            className:
+              "border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",
+            children: [
+              e.jsxs("div", {
+                children: [
+                  e.jsx("span", {
+                    className:
+                      "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",
+                    children: "STATE-OF-CHARGE (SoC)",
+                  }),
+                  e.jsx("div", {
+                    className:
+                      "grid grid-cols-16 gap-1 bg-[#05070A] p-3 rounded-sm border border-[#1C2430] mb-4",
+                    children: Array.from({ length: 16 }).map((c, a) => {
+                      const o = (a / 16) * 100 < t;
+                      return e.jsx(
+                        "div",
+                        {
+                          className: `h-12 rounded-xs border transition-all duration-300 ${o ? "bg-[#8B5CF6] border-[#8B5CF6]/40 shadow-[0_0_8px_rgba(139,92,246,0.3)]" : "bg-[#0B0F14] border-[#1C2430]"}`,
+                        },
+                        a,
+                      );
+                    }),
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className: "flex justify-between items-end",
+                children: [
+                  e.jsxs("div", {
+                    children: [
+                      e.jsx("span", {
+                        className: "text-[8px] text-[#7A828C] block uppercase font-bold",
+                        children: "ers battery capacity",
+                      }),
+                      e.jsxs("span", {
+                        className: "text-white text-xl font-black tabular-nums",
+                        children: [t.toFixed(1), "%"],
+                      }),
+                    ],
+                  }),
+                  e.jsx("span", {
+                    className:
+                      "text-[8px] text-[#8B5CF6] border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 px-2 py-0.5 rounded font-black tracking-widest uppercase",
+                    children: "mgu-k active",
+                  }),
+                ],
+              }),
+            ],
+          }),
+          e.jsxs("div", {
+            className:
+              "border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",
+            children: [
+              e.jsxs("div", {
+                children: [
+                  e.jsx("span", {
+                    className:
+                      "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",
+                    children: "ENERGY BALANCE FLUX",
+                  }),
+                  e.jsxs("div", {
+                    className: "space-y-4",
+                    children: [
+                      e.jsxs("div", {
+                        children: [
+                          e.jsxs("div", {
+                            className:
+                              "flex justify-between items-center text-[8px] font-bold text-[#7A828C] mb-1",
+                            children: [
+                              e.jsx("span", { children: "MGU-K KINETIC DISCHARGE" }),
+                              e.jsxs("span", {
+                                className: "text-white tabular-nums",
+                                children: [n.toFixed(0), " kW"],
+                              }),
+                            ],
+                          }),
+                          e.jsx("div", {
+                            className: "h-6 bg-[#05070A] border border-[#1C2430] rounded-sm p-1",
+                            children: e.jsx("div", {
+                              className:
+                                "h-full rounded-xs bg-[#8B5CF6] transition-all duration-100",
+                              style: { width: `${Math.min(100, (n / 120) * 100)}%` },
+                            }),
+                          }),
+                        ],
+                      }),
+                      e.jsxs("div", {
+                        children: [
+                          e.jsxs("div", {
+                            className:
+                              "flex justify-between items-center text-[8px] font-bold text-[#7A828C] mb-1",
+                            children: [
+                              e.jsx("span", { children: "MGU-K KINETIC HARVEST" }),
+                              e.jsxs("span", {
+                                className: "text-white tabular-nums",
+                                children: [d.toFixed(0), " kW"],
+                              }),
+                            ],
+                          }),
+                          e.jsx("div", {
+                            className: "h-6 bg-[#05070A] border border-[#1C2430] rounded-sm p-1",
+                            children: e.jsx("div", {
+                              className:
+                                "h-full rounded-xs bg-[#00D17F] transition-all duration-100",
+                              style: { width: `${Math.min(100, (d / 200) * 100)}%` },
+                            }),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className:
+                  "grid grid-cols-2 gap-2 text-[8px] text-[#7A828C] mt-4 border-t border-[#1C2430] pt-3",
+                children: [
+                  e.jsxs("div", {
+                    children: [
+                      e.jsx("span", { children: "BATTERY TEMP" }),
+                      e.jsxs("span", {
+                        className: "text-white font-bold text-sm block tabular-nums",
+                        children: [
+                          s?.extras?.ersBatteryTemp ? s.extras.ersBatteryTemp.toFixed(1) : "42.5",
+                          "°C",
+                        ],
+                      }),
+                    ],
+                  }),
+                  e.jsxs("div", {
+                    children: [
+                      e.jsx("span", { children: "DEPLOY EFFICIENCY" }),
+                      e.jsx("span", {
+                        className: "text-[#00D17F] font-bold text-sm block",
+                        children: "93.8%",
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function y({ t: s, mode: l, cursorTick: r }) {
+  const t = s?.tires?.fl?.tempC ?? 80,
+    n = s?.tires?.fr?.tempC ?? 82,
+    d = s?.tires?.rl?.tempC ?? 84,
+    c = s?.tires?.rr?.tempC ?? 86,
+    a = s?.tires?.fl?.pressureBar ?? 1.8,
+    o = s?.tires?.fr?.pressureBar ?? 1.82,
+    x = s?.gLat ?? 0,
+    i = s?.gLon ?? 0,
+    m = (h) =>
+      h > 92
+        ? "border-l-2 border-l-[#FF4D4D] bg-[#FF4D4D]/5 text-[#FF4D4D]"
+        : h > 85
+          ? "border-l-2 border-l-[#FFB800] bg-[#FFB800]/5 text-[#FFB800]"
+          : "border-l-2 border-l-[#00D17F] bg-[#00D17F]/5 text-[#00D17F]";
+  return e.jsxs("div", {
+    className:
+      "h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",
+    children: [
+      e.jsxs("div", {
+        className:
+          "px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",
+        children: [
+          e.jsxs("span", {
+            className: "font-bold text-white tracking-widest uppercase flex items-center gap-1.5",
+            children: [
+              e.jsx(T, { className: "h-3.5 w-3.5 text-[#FFB800]" }),
+              " TIRE OPERATING PORTFOLIO",
+            ],
+          }),
+          e.jsx("span", {
+            className: "text-white font-bold uppercase shrink-0",
+            children: "PIT WALL TIRE WALL",
+          }),
+        ],
+      }),
+      e.jsxs("div", {
+        className: "flex-1 min-h-0 grid grid-cols-3 gap-3",
+        children: [
+          e.jsxs("div", {
+            className: "col-span-2 grid grid-cols-2 gap-3",
+            children: [
+              e.jsxs("div", {
+                className: `border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(t)}`,
+                children: [
+                  e.jsx("span", {
+                    className: "font-bold text-[8px] tracking-wider text-white",
+                    children: "FRONT LEFT CARCASS",
+                  }),
+                  e.jsxs("span", {
+                    className: "text-2xl font-black tracking-tighter tabular-nums",
+                    children: [t.toFixed(1), "°C"],
+                  }),
+                  e.jsxs("div", {
+                    className:
+                      "flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",
+                    children: [
+                      e.jsx("span", { children: "PRESSURE" }),
+                      e.jsxs("span", {
+                        className: "text-white font-bold",
+                        children: [(a * 14.5038).toFixed(1), " PSI"],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className: `border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(n)}`,
+                children: [
+                  e.jsx("span", {
+                    className: "font-bold text-[8px] tracking-wider text-white",
+                    children: "FRONT RIGHT CARCASS",
+                  }),
+                  e.jsxs("span", {
+                    className: "text-2xl font-black tracking-tighter tabular-nums",
+                    children: [n.toFixed(1), "°C"],
+                  }),
+                  e.jsxs("div", {
+                    className:
+                      "flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",
+                    children: [
+                      e.jsx("span", { children: "PRESSURE" }),
+                      e.jsxs("span", {
+                        className: "text-white font-bold",
+                        children: [(o * 14.5038).toFixed(1), " PSI"],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className: `border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(d)}`,
+                children: [
+                  e.jsx("span", {
+                    className: "font-bold text-[8px] tracking-wider text-white",
+                    children: "REAR LEFT CARCASS",
+                  }),
+                  e.jsxs("span", {
+                    className: "text-2xl font-black tracking-tighter tabular-nums",
+                    children: [d.toFixed(1), "°C"],
+                  }),
+                  e.jsxs("div", {
+                    className:
+                      "flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",
+                    children: [
+                      e.jsx("span", { children: "PRESSURE" }),
+                      e.jsxs("span", {
+                        className: "text-white font-bold",
+                        children: [
+                          (s?.tires?.rl?.pressureBar * 14.5038 || 26.5).toFixed(1),
+                          " PSI",
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className: `border border-[#1C2430] rounded-sm p-3 flex flex-col justify-between ${m(c)}`,
+                children: [
+                  e.jsx("span", {
+                    className: "font-bold text-[8px] tracking-wider text-white",
+                    children: "REAR RIGHT CARCASS",
+                  }),
+                  e.jsxs("span", {
+                    className: "text-2xl font-black tracking-tighter tabular-nums",
+                    children: [c.toFixed(1), "°C"],
+                  }),
+                  e.jsxs("div", {
+                    className:
+                      "flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/20 pt-1 text-[8px]",
+                    children: [
+                      e.jsx("span", { children: "PRESSURE" }),
+                      e.jsxs("span", {
+                        className: "text-white font-bold",
+                        children: [
+                          (s?.tires?.rr?.pressureBar * 14.5038 || 26.8).toFixed(1),
+                          " PSI",
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          e.jsxs("div", {
+            className:
+              "border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between items-center",
+            children: [
+              e.jsx("span", {
+                className:
+                  "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block w-full text-center",
+                children: "G-G GRAPHICS",
+              }),
+              e.jsxs("div", {
+                className:
+                  "size-36 border border-[#1C2430] rounded-full relative flex items-center justify-center bg-[#05070A]",
+                children: [
+                  e.jsx("div", {
+                    className: "absolute inset-0 border-l border-dashed border-[#1C2430] left-1/2",
+                  }),
+                  e.jsx("div", {
+                    className: "absolute inset-0 border-t border-dashed border-[#1C2430] top-1/2",
+                  }),
+                  e.jsx("div", {
+                    className:
+                      "absolute size-2 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800] transition-all duration-75",
+                    style: { left: `${50 + x * 18}%`, top: `${50 - i * 18}%` },
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className:
+                  "w-full border-t border-[#1C2430] pt-2 mt-2 flex justify-between text-[8px]",
+                children: [
+                  e.jsxs("span", {
+                    children: [
+                      "LAT G: ",
+                      e.jsx("span", { className: "text-white font-bold", children: x.toFixed(2) }),
+                    ],
+                  }),
+                  e.jsxs("span", {
+                    children: [
+                      "LON G: ",
+                      e.jsx("span", { className: "text-white font-bold", children: i.toFixed(2) }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function I({ t: s, mode: l, cursorTick: r }) {
+  return e.jsxs("div", {
+    className:
+      "h-screen w-screen bg-[#05070A] p-3 flex flex-col font-mono text-[9px] text-[#7A828C] select-none",
+    children: [
+      e.jsxs("div", {
+        className:
+          "px-3 py-2 border border-[#1C2430] bg-[#11161D] rounded-sm flex items-center justify-between shrink-0 mb-3 select-none",
+        children: [
+          e.jsxs("span", {
+            className: "font-bold text-white tracking-widest uppercase flex items-center gap-1.5",
+            children: [
+              e.jsx(A, { className: "h-3.5 w-3.5 text-[#00D17F]" }),
+              " TACTICAL STRATEGY WINDOW",
+            ],
+          }),
+          e.jsx("span", {
+            className: "text-white font-bold uppercase shrink-0",
+            children: "PIT WALL STRATEGY",
+          }),
+        ],
+      }),
+      e.jsxs("div", {
+        className: "flex-1 min-h-0 grid grid-cols-2 gap-3",
+        children: [
+          e.jsxs("div", {
+            className:
+              "border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",
+            children: [
+              e.jsxs("div", {
+                children: [
+                  e.jsx("span", {
+                    className:
+                      "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",
+                    children: "PIT WINDOW ESTIMATION",
+                  }),
+                  e.jsx("p", {
+                    className: "leading-relaxed mb-4 text-[8.5px]",
+                    children:
+                      "Platform estimates optimal under-cut pit targets between Laps 14 and 17 based on average tire deg calculations of 1.4% traction loss per lap.",
+                  }),
+                  e.jsxs("div", {
+                    className: "space-y-2",
+                    children: [
+                      e.jsxs("div", {
+                        className: "flex justify-between items-center text-white",
+                        children: [
+                          e.jsx("span", { children: "PIT OPEN WINDOW" }),
+                          e.jsx("span", { className: "font-bold", children: "LAP 14" }),
+                        ],
+                      }),
+                      e.jsxs("div", {
+                        className: "flex justify-between items-center text-white",
+                        children: [
+                          e.jsx("span", { children: "PIT OPTIMAL APEX" }),
+                          e.jsx("span", {
+                            className: "font-bold text-[#00D17F]",
+                            children: "LAP 16",
+                          }),
+                        ],
+                      }),
+                      e.jsxs("div", {
+                        className: "flex justify-between items-center text-white",
+                        children: [
+                          e.jsx("span", { children: "PIT CLOSE WINDOW" }),
+                          e.jsx("span", { className: "font-bold", children: "LAP 18" }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsx("span", {
+                className:
+                  "text-[7.5px] text-[#00D17F] border border-[#00D17F]/30 bg-[#00D17F]/10 px-2 py-0.5 rounded font-black tracking-widest uppercase self-start",
+                children: "optimal pace buffer active",
+              }),
+            ],
+          }),
+          e.jsxs("div", {
+            className:
+              "border border-[#1C2430] bg-[#0B0F14] p-4 rounded-sm flex flex-col justify-between",
+            children: [
+              e.jsxs("div", {
+                children: [
+                  e.jsx("span", {
+                    className:
+                      "text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-3 block",
+                    children: "SAFETY CAR LIFT-AND-COAST MODELER",
+                  }),
+                  e.jsx("p", {
+                    className: "leading-relaxed mb-4 text-[8.5px]",
+                    children:
+                      "Activating fuel saving delta limits. Under yellow flag safety car constraints, lift-and-coast targets reduce fuel flow by 1.8 L / LAP.",
+                  }),
+                  e.jsxs("div", {
+                    className: "space-y-2",
+                    children: [
+                      e.jsxs("div", {
+                        className: "flex justify-between items-center",
+                        children: [
+                          e.jsx("span", { children: "NOMINAL STINT FUEL LIMIT" }),
+                          e.jsx("span", { className: "text-white font-bold", children: "25 Laps" }),
+                        ],
+                      }),
+                      e.jsxs("div", {
+                        className: "flex justify-between items-center text-[#00D17F]",
+                        children: [
+                          e.jsx("span", { children: "SAFETY CAR STINT EXTENSION" }),
+                          e.jsx("span", { className: "font-bold", children: "+6 Laps available" }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              e.jsxs("div", {
+                className:
+                  "flex justify-between items-center border-t border-[#1C2430] pt-2 text-[8px] text-[#7A828C]",
+                children: [
+                  e.jsx("span", { children: "STINT STRETCH TARGET" }),
+                  e.jsx("span", { className: "text-white font-bold", children: "L31 MAX" }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+function E({ cursorTick: s }) {
+  return e.jsxs("div", {
+    className:
+      "h-full w-full flex flex-col items-center justify-center text-center p-8 text-[#7A828C] font-mono text-[9px] relative",
+    children: [
+      e.jsx("div", {
+        className:
+          "absolute inset-0 bg-[linear-gradient(to_right,#1C2430_1px,transparent_1px),linear-gradient(to_bottom,#1C2430_1px,transparent_1px)] bg-[size:1.5rem_1.5rem] opacity-[0.03] pointer-events-none",
+      }),
+      e.jsxs("div", {
+        className: "relative z-10 flex flex-col items-center max-w-xs animate-pulse",
+        children: [
+          e.jsx(b, { className: "h-5 w-5 text-[#7A828C] mb-2" }),
+          e.jsx("span", {
+            className: "font-bold tracking-widest text-white uppercase text-[10px]",
+            children: "AWAITING SYSTEM SYNCHRONIZATION",
+          }),
+          e.jsx("p", {
+            className: "mt-2 leading-relaxed text-[8px] uppercase tracking-wider",
+            children:
+              "Replay frame data is dispatched dynamically by the master workbench. Drag or scrub the telemetry playhead to synchronize visual command monitors.",
+          }),
+          e.jsxs("span", { className: "mt-2 text-[#7A828C] text-[8px]", children: ["TICK: ", s] }),
+        ],
+      }),
+    ],
+  });
+}
+export { G as component };

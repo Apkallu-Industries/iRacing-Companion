@@ -62,18 +62,21 @@ Every 60Hz tick, the bridge sends a `Telemetry` JSON packet over WebSocket conta
 
 **Phone/tablet can't connect**  
 Windows Firewall is blocking port 3001. Run once in an Administrator PowerShell:
+
 ```powershell
 New-NetFirewallRule -DisplayName "Pit Wall" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow
 ```
 
 **`npm install` fails with C++ errors**  
 Delete stale modules and reinstall:
+
 ```powershell
 Remove-Item -Recurse -Force node_modules, package-lock.json -ErrorAction SilentlyContinue
 npm install
 ```
 
-**Dashboard shows "Disconnected"**  
+**Dashboard shows "Disconnected"**
+
 - Make sure iRacing is running and you are **on track** (not in the menus)
 - The bridge terminal should show `[bridge] iRacing connected`
 - If it shows `irsdk-node unavailable`, try reinstalling: `npm install irsdk-node`

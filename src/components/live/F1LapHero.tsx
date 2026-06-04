@@ -38,9 +38,7 @@ export function F1LapHero({ t }: { t: Telemetry }) {
         <div>
           <div className="text-muted-foreground uppercase tracking-wider text-[8px]">Predicted</div>
           <div className="font-mono tabular-nums text-foreground">
-            {t.lapLastLapTimeSec > 0
-              ? formatLapTime(t.lapLastLapTimeSec + t.deltaSec)
-              : "—:——.———"}
+            {t.lapLastLapTimeSec > 0 ? formatLapTime(t.lapLastLapTimeSec + t.deltaSec) : "—:——.———"}
           </div>
         </div>
       </div>

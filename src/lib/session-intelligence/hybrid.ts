@@ -21,7 +21,8 @@ export function analyzeHybrid(parsed: IbtParsed): HybridAnalysis {
       deploymentWastePct: 6.2,
       socDecayRate: 1.85,
       harvestImbalancePct: 2.1,
-      summary: "ERS deployment efficiency averages 93.8%. A minor 6.2% deployment waste occurred due to MGU-K active torque mapping firing during wheelspin exits.",
+      summary:
+        "ERS deployment efficiency averages 93.8%. A minor 6.2% deployment waste occurred due to MGU-K active torque mapping firing during wheelspin exits.",
     };
   }
 
@@ -33,17 +34,20 @@ export function analyzeHybrid(parsed: IbtParsed): HybridAnalysis {
     const dVal = deploy[t];
     if (dVal > 5) {
       totalDeployEnergy += dVal;
-      
+
       const lf = lfSpeed[t] ?? 0;
       const lr = lrSpeed[t] ?? 0;
-      const isSpinning = Math.abs(lf - lr) > (lf * 0.08); // wheel mismatch > 8%
+      const isSpinning = Math.abs(lf - lr) > lf * 0.08; // wheel mismatch > 8%
       if (isSpinning) {
         wastedDeployEnergy += dVal;
       }
     }
   }
 
-  const deploymentWastePct = totalDeployEnergy > 0 ? Number(((wastedDeployEnergy / totalDeployEnergy) * 100).toFixed(1)) : 4.5;
+  const deploymentWastePct =
+    totalDeployEnergy > 0
+      ? Number(((wastedDeployEnergy / totalDeployEnergy) * 100).toFixed(1))
+      : 4.5;
 
   // Calculate State of Charge stint decay rate
   let socDecayRate = 1.25;
@@ -60,7 +64,8 @@ export function analyzeHybrid(parsed: IbtParsed): HybridAnalysis {
   if (deploymentWastePct > 6.0) {
     summary += `ERS waste peaked at ${deploymentWastePct}% due to kinetic torque deployment firing during exit wheelspin. Adjust MGU-K map.`;
   } else {
-    summary += "Energy harvesting strategies are highly efficient, maintaining battery charge buffer.";
+    summary +=
+      "Energy harvesting strategies are highly efficient, maintaining battery charge buffer.";
   }
 
   return {

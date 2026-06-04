@@ -13,7 +13,11 @@ import { ExportPwlapDialog } from "@/components/workbench/ExportPwlapDialog";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { SetupCopilot } from "@/components/live/SetupCopilot";
 import { fetchLocalTelemetryFile } from "@/lib/history.functions";
-import { ResizablePanelGroup as ResizablePanelGroupRaw, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import {
+  ResizablePanelGroup as ResizablePanelGroupRaw,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 const ResizablePanelGroup = ResizablePanelGroupRaw as any;
 import type { IbtParsed } from "@/lib/ibt/types";
 import { WORKSPACE_PRESETS, TELEMETRY_INSTRUMENTS } from "@/components/instruments/registry";
@@ -126,16 +130,22 @@ function WorkbenchPage() {
   useEffect(() => {
     const handleChannelClick = (e: Event) => {
       const channel = ((e as CustomEvent).detail?.channel || "").toLowerCase();
-      if (["brake", "bias", "press", "tempc"].some(k => channel.includes(k))) {
+      if (["brake", "bias", "press", "tempc"].some((k) => channel.includes(k))) {
         setActivePreset("gt3");
         setBottomTab("instruments");
-      } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some(k => channel.includes(k))) {
+      } else if (
+        ["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) => channel.includes(k))
+      ) {
         setActivePreset("gtp");
         setBottomTab("instruments");
-      } else if (["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(k => channel.includes(k))) {
+      } else if (
+        ["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some((k) =>
+          channel.includes(k),
+        )
+      ) {
         setActivePreset("aero");
         setBottomTab("instruments");
-      } else if (["throttle", "steer", "clutch", "input"].some(k => channel.includes(k))) {
+      } else if (["throttle", "steer", "clutch", "input"].some((k) => channel.includes(k))) {
         setActivePreset("coach");
         setBottomTab("instruments");
       }
@@ -185,28 +195,28 @@ function WorkbenchPage() {
     if (parsed) {
       const { clearEvents, addEvent } = useTelemetryRuntimeStore.getState();
       clearEvents();
-      
+
       const scanned = scanTelemetrySession(parsed);
       if (scanned.length > 0) {
         scanned.forEach((ev) => addEvent(ev));
-        
+
         try {
           const track = parsed.meta.trackDisplayName || parsed.meta.trackName || "unknown";
           const car = parsed.meta.carName || "unknown";
           const recordedAt = parsed.meta.recordedAt ? new Date(parsed.meta.recordedAt) : new Date();
 
-          const dbEvents = scanned.map(ev => {
+          const dbEvents = scanned.map((ev) => {
             const classificationMap: Record<string, string> = {
               thermal: "STABILITY",
               inputs: "PERFORMANCE",
               dynamics: "AERO PLATFORM",
-              hybrid: "HYBRID CORE"
+              hybrid: "HYBRID CORE",
             };
-            
+
             const tick = Math.round(ev.timestampSec * 60);
-            const matchedLap = parsed.laps.find(l => tick >= l.startTick && tick <= l.endTick);
+            const matchedLap = parsed.laps.find((l) => tick >= l.startTick && tick <= l.endTick);
             const lapNumber = matchedLap ? matchedLap.lap : 1;
-            
+
             return {
               session_id: id,
               timestamp: new Date(recordedAt.getTime() + ev.timestampSec * 1000).toISOString(),
@@ -223,7 +233,7 @@ function WorkbenchPage() {
             };
           });
 
-          saveEvents(dbEvents).catch(err => {
+          saveEvents(dbEvents).catch((err) => {
             console.warn("Failed to sync scanned events to MongoDB:", err);
           });
         } catch (e) {
@@ -236,7 +246,8 @@ function WorkbenchPage() {
           label: "FRONT AXLE LOCKUP DETECTED",
           category: "thermal",
           severity: "critical",
-          description: "Front tire slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift brake bias +0.5% forward.",
+          description:
+            "Front tire slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift brake bias +0.5% forward.",
           associatedChannels: ["Brake", "LFbrakeLinePress", "SteeringWheelAngle"],
           cornerNumber: 8,
         });
@@ -245,7 +256,8 @@ function WorkbenchPage() {
           label: "ERS DEPLOYMENT SATURATION",
           category: "hybrid",
           severity: "warning",
-          description: "MGU-K deployment saturated at max kW limit of 120kW for 5.2 seconds on back straightway.",
+          description:
+            "MGU-K deployment saturated at max kW limit of 120kW for 5.2 seconds on back straightway.",
           associatedChannels: ["MgukDeploykW", "EnergyStorePct"],
           cornerNumber: 11,
         });
@@ -254,7 +266,8 @@ function WorkbenchPage() {
           label: "EXIT THROTTLE UNSTABILITY",
           category: "inputs",
           severity: "info",
-          description: "Throttle micro-pumping exit anomaly. Steer smoothness dropped to 72% rating at Turn 3 exit.",
+          description:
+            "Throttle micro-pumping exit anomaly. Steer smoothness dropped to 72% rating at Turn 3 exit.",
           associatedChannels: ["Throttle", "SteeringWheelAngle"],
           cornerNumber: 3,
         });
@@ -263,7 +276,8 @@ function WorkbenchPage() {
           label: "CHASSIS ROTATIONAL COMPRESSION",
           category: "dynamics",
           severity: "warning",
-          description: "Rotational chassis pitch exceeds limits under massive heave load at Turn 5 compression apex.",
+          description:
+            "Rotational chassis pitch exceeds limits under massive heave load at Turn 5 compression apex.",
           associatedChannels: ["pitch", "LatAccel", "LongAccel"],
           cornerNumber: 5,
         });
@@ -272,7 +286,8 @@ function WorkbenchPage() {
   }, [parsed]);
 
   const getReplayTelemetry = (parsedData: IbtParsed, tick: number): any => {
-    const getVal = (name: string, fallback = 0) => parsedData.channels[name]?.data[tick] ?? fallback;
+    const getVal = (name: string, fallback = 0) =>
+      parsedData.channels[name]?.data[tick] ?? fallback;
     const throttle = getVal("Throttle");
     const brake = getVal("Brake");
     const clutch = getVal("Clutch");
@@ -280,7 +295,7 @@ function WorkbenchPage() {
     const gear = getVal("Gear", 1);
     const rpm = getVal("RPM", getVal("rpm"));
     const steeringDeg = getVal("SteeringWheelAngle", getVal("steering")) * 57.2958;
-    
+
     return {
       connected: false,
       source: "replay",
@@ -344,20 +359,21 @@ function WorkbenchPage() {
         ersBatteryTemp: getVal("EnergyStoreTemp", 42.5),
         mgukDeployKw: getVal("MgukDeploykW", throttle * 120),
         mgukRegenKw: getVal("MgukRegenkW", brake * 200),
-      }
+      },
     };
   };
 
   const config = WORKSPACES[activeWorkspace ?? "lite"];
   const isTabUnlocked = (tabKey: string) => {
     if (import.meta.env.DEV) return true; // Dev Mode Workspace Override
-    
+
     // Check if the tab corresponds to Pro-tier (real-time workbook)
     const isProTab = ["replay3d", "piano", "spider"].includes(tabKey);
-    
+
     // Retrieve license from local storage cached from the bridge
     try {
-      const cachedLicStr = typeof localStorage !== "undefined" ? localStorage.getItem("pitwall_bridge_license") : null;
+      const cachedLicStr =
+        typeof localStorage !== "undefined" ? localStorage.getItem("pitwall_bridge_license") : null;
       if (cachedLicStr) {
         const cachedLic = JSON.parse(cachedLicStr);
         if (cachedLic && cachedLic.valid) {
@@ -368,7 +384,7 @@ function WorkbenchPage() {
     } catch (e) {
       // fallback
     }
-    
+
     return config.activeTabs.includes(tabKey);
   };
 
@@ -376,7 +392,7 @@ function WorkbenchPage() {
     if (isTabUnlocked(tabKey)) {
       return children;
     }
-    
+
     let unlockingWorkspace = "iRacing Plus Workbook";
     let unlockingTier = "Plus";
     if (["replay3d", "piano", "spider"].includes(tabKey)) {
@@ -395,11 +411,18 @@ function WorkbenchPage() {
             Locked Analysis Sheet
           </h3>
           <p className="mt-2 font-mono text-[9px] text-muted-foreground leading-relaxed uppercase tracking-wider">
-            This sheet is active in the premium <span className="text-foreground font-semibold">{unlockingWorkspace}</span>.
+            This sheet is active in the premium{" "}
+            <span className="text-foreground font-semibold">{unlockingWorkspace}</span>.
           </p>
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() => setActiveWorkspace(tabKey === "replay3d" || tabKey === "piano" || tabKey === "spider" ? "realtime" : "plus")}
+              onClick={() =>
+                setActiveWorkspace(
+                  tabKey === "replay3d" || tabKey === "piano" || tabKey === "spider"
+                    ? "realtime"
+                    : "plus",
+                )
+              }
               className="rounded-sm bg-amber-500 hover:bg-amber-400 px-3 py-1 font-mono text-[9px] uppercase font-semibold text-zinc-950 transition-all shadow-[0_0_10px_rgba(245,158,11,0.2)] hover:scale-105 cursor-pointer"
             >
               Unlock {unlockingTier} Workspace
@@ -471,7 +494,11 @@ function WorkbenchPage() {
           }
 
           if (!localDoc) {
-            setProgress({ phase: "download", pct: 20, msg: "Downloading from Pit Wall Cloud Storage" });
+            setProgress({
+              phase: "download",
+              pct: 20,
+              msg: "Downloading from Pit Wall Cloud Storage",
+            });
             const { data: blob, error: e2 } = await supabase.storage
               .from("telemetry")
               .download(row.storage_path);
@@ -558,7 +585,9 @@ function WorkbenchPage() {
   }
 
   return (
-    <div className={`flex h-full w-full flex-col overflow-hidden bg-background text-foreground workspace-focus-${focusMode}`}>
+    <div
+      className={`flex h-full w-full flex-col overflow-hidden bg-background text-foreground workspace-focus-${focusMode}`}
+    >
       <AppHeader>
         <span className="font-mono uppercase tracking-wider">{sess?.track ?? "…"}</span>
         <span className="text-muted-foreground">·</span>
@@ -622,14 +651,20 @@ function WorkbenchPage() {
               );
             })()}
             <div className="flex items-center gap-1.5 bg-panel border border-border rounded-sm px-2 py-0.5 ml-1 select-none">
-              <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Profile</span>
+              <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">
+                Profile
+              </span>
               <select
                 value={activeWorkspace}
                 onChange={(e) => setActiveWorkspace(e.target.value as any)}
                 className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
               >
                 {Object.values(WORKSPACES).map((w) => (
-                  <option key={w.key} value={w.key} className="bg-background text-foreground font-mono uppercase text-[10px]">
+                  <option
+                    key={w.key}
+                    value={w.key}
+                    className="bg-background text-foreground font-mono uppercase text-[10px]"
+                  >
                     {w.name}
                   </option>
                 ))}
@@ -661,11 +696,13 @@ function WorkbenchPage() {
           <span>{live.track}</span>
           <span className="text-muted-foreground">·</span>
           <span>{live.car}</span>
-          {sess?.track && live.track && live.track.toLowerCase().includes(sess.track.toLowerCase()) && (
-            <span className="ml-2 rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300 uppercase tracking-wider">
-              ⚡ Same track as this session
-            </span>
-          )}
+          {sess?.track &&
+            live.track &&
+            live.track.toLowerCase().includes(sess.track.toLowerCase()) && (
+              <span className="ml-2 rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300 uppercase tracking-wider">
+                ⚡ Same track as this session
+              </span>
+            )}
           <span className="ml-auto text-muted-foreground">
             {live.speedKph} kph · G{live.gear} · {live.fuelRemainingL.toFixed(1)}L fuel
           </span>
@@ -712,7 +749,7 @@ function WorkbenchPage() {
                   </div>
                 </div>
               </ResizablePanel>
-              
+
               <ResizableHandle />
 
               {/* Center Panel: Primary Stacked Traces Waveforms (Takes ~55% space) */}
@@ -722,7 +759,7 @@ function WorkbenchPage() {
                     <span>rolling traces · synchronized telemetry</span>
                     <span className="text-[8px] text-[#3B82F6] font-bold">MoTeC PRO WORKSPACE</span>
                   </div>
-                  
+
                   {/* Primary Waveforms */}
                   <div className="flex-1 min-h-0 overflow-hidden p-1 bg-[#05070A]">
                     <StackedTraces parsed={parsed} />
@@ -757,7 +794,6 @@ function WorkbenchPage() {
               {/* Right Panel: Geometry splits and Timing sheets (Takes ~30% space) */}
               <ResizablePanel defaultSize={30} minSize={20}>
                 <ResizablePanelGroup direction="vertical">
-                  
                   {/* Right Top: Track map overlay */}
                   <ResizablePanel defaultSize={35} minSize={25}>
                     <div className="h-full flex flex-col overflow-hidden bg-[#05070A]">
@@ -775,7 +811,6 @@ function WorkbenchPage() {
                   {/* Right Bottom: Analysis Tab Sheets and AI Coach */}
                   <ResizablePanel defaultSize={65} minSize={40}>
                     <div className="h-full flex flex-col overflow-hidden bg-[#0B0F14]">
-                      
                       <div className="flex items-center gap-px bg-[#1C2430] font-mono text-[9px] uppercase tracking-wider shrink-0 overflow-x-auto select-none">
                         {(
                           [
@@ -856,48 +891,70 @@ function WorkbenchPage() {
 
                       {/* Sheet Contents Area */}
                       <div className="flex-1 min-h-0 bg-[#05070A] overflow-y-auto">
-                        {bottomTab === "cinema" && renderPanelOrLock("cinema", (
-                          <Suspense
-                            fallback={
-                              <div className="p-3 text-[10px] font-mono text-[#7A828C]">Loading cinema...</div>
-                            }
-                          >
-                            <LazyCinemaPlayback parsed={parsed} />
-                          </Suspense>
-                        ))}
-                        {bottomTab === "readout" && renderPanelOrLock("readout", <LiveReadout parsed={parsed} />)}
-                        {bottomTab === "laps" && renderPanelOrLock("laps", <LapList parsed={parsed} />)}
-                        {bottomTab === "gg" && renderPanelOrLock("gg", <GGDiagram parsed={parsed} />)}
-                        {bottomTab === "histogram" && renderPanelOrLock("histogram", <HistogramPanel />)}
-                        {bottomTab === "scatter" && renderPanelOrLock("scatter", <XYScatterPanel />)}
-                        {bottomTab === "optimal" && renderPanelOrLock("optimal", <OptimalLap parsed={parsed} />)}
-                        {bottomTab === "whatif" && renderPanelOrLock("whatif", <Counterfactuals parsed={parsed} />)}
-                        {bottomTab === "apex" && renderPanelOrLock("apex", <MinCornerSpeed parsed={parsed} />)}
-                        {bottomTab === "waterfall" && renderPanelOrLock("waterfall", <TimeLossWaterfall parsed={parsed} />)}
-                        {bottomTab === "brake" && renderPanelOrLock("brake", <BrakeBias parsed={parsed} />)}
-                        {bottomTab === "slip" && renderPanelOrLock("slip", <SlipAngle parsed={parsed} />)}
-                        {bottomTab === "replay3d" && renderPanelOrLock("replay3d", (
-                          <Suspense
-                            fallback={
-                              <div className="p-3 text-[10px] font-mono text-[#7A828C]">
-                                Loading 3D replay...
-                              </div>
-                            }
-                          >
-                            <LazyReplayThree parsed={parsed} />
-                          </Suspense>
-                        ))}
-                        {bottomTab === "piano" && renderPanelOrLock("piano", <PianoRoll parsed={parsed} />)}
-                        {bottomTab === "spider" && renderPanelOrLock("spider", <SectorSpider parsed={parsed} />)}
-                        {bottomTab === "setup" && renderPanelOrLock("setup", <SetupSheet parsed={parsed} />)}
-                        {bottomTab === "setupdiff" && renderPanelOrLock("setupdiff", (
-                          <SetupDiff
-                            parsed={parsed}
-                            track={sess?.track}
-                            car={sess?.car}
-                            sessionId={id}
-                          />
-                        ))}
+                        {bottomTab === "cinema" &&
+                          renderPanelOrLock(
+                            "cinema",
+                            <Suspense
+                              fallback={
+                                <div className="p-3 text-[10px] font-mono text-[#7A828C]">
+                                  Loading cinema...
+                                </div>
+                              }
+                            >
+                              <LazyCinemaPlayback parsed={parsed} />
+                            </Suspense>,
+                          )}
+                        {bottomTab === "readout" &&
+                          renderPanelOrLock("readout", <LiveReadout parsed={parsed} />)}
+                        {bottomTab === "laps" &&
+                          renderPanelOrLock("laps", <LapList parsed={parsed} />)}
+                        {bottomTab === "gg" &&
+                          renderPanelOrLock("gg", <GGDiagram parsed={parsed} />)}
+                        {bottomTab === "histogram" &&
+                          renderPanelOrLock("histogram", <HistogramPanel />)}
+                        {bottomTab === "scatter" &&
+                          renderPanelOrLock("scatter", <XYScatterPanel />)}
+                        {bottomTab === "optimal" &&
+                          renderPanelOrLock("optimal", <OptimalLap parsed={parsed} />)}
+                        {bottomTab === "whatif" &&
+                          renderPanelOrLock("whatif", <Counterfactuals parsed={parsed} />)}
+                        {bottomTab === "apex" &&
+                          renderPanelOrLock("apex", <MinCornerSpeed parsed={parsed} />)}
+                        {bottomTab === "waterfall" &&
+                          renderPanelOrLock("waterfall", <TimeLossWaterfall parsed={parsed} />)}
+                        {bottomTab === "brake" &&
+                          renderPanelOrLock("brake", <BrakeBias parsed={parsed} />)}
+                        {bottomTab === "slip" &&
+                          renderPanelOrLock("slip", <SlipAngle parsed={parsed} />)}
+                        {bottomTab === "replay3d" &&
+                          renderPanelOrLock(
+                            "replay3d",
+                            <Suspense
+                              fallback={
+                                <div className="p-3 text-[10px] font-mono text-[#7A828C]">
+                                  Loading 3D replay...
+                                </div>
+                              }
+                            >
+                              <LazyReplayThree parsed={parsed} />
+                            </Suspense>,
+                          )}
+                        {bottomTab === "piano" &&
+                          renderPanelOrLock("piano", <PianoRoll parsed={parsed} />)}
+                        {bottomTab === "spider" &&
+                          renderPanelOrLock("spider", <SectorSpider parsed={parsed} />)}
+                        {bottomTab === "setup" &&
+                          renderPanelOrLock("setup", <SetupSheet parsed={parsed} />)}
+                        {bottomTab === "setupdiff" &&
+                          renderPanelOrLock(
+                            "setupdiff",
+                            <SetupDiff
+                              parsed={parsed}
+                              track={sess?.track}
+                              car={sess?.car}
+                              sessionId={id}
+                            />,
+                          )}
                         {bottomTab === "setupcopilot" && live.connected && (
                           <div className="h-full overflow-y-auto p-2">
                             <SetupCopilot t={live} />
@@ -912,7 +969,11 @@ function WorkbenchPage() {
                                   WORKSPACE:
                                 </span>
                                 <div className="flex bg-[#05070A] border border-[#1C2430] rounded-sm overflow-hidden">
-                                  {(Object.keys(WORKSPACE_PRESETS) as Array<keyof typeof WORKSPACE_PRESETS>).map((key) => {
+                                  {(
+                                    Object.keys(WORKSPACE_PRESETS) as Array<
+                                      keyof typeof WORKSPACE_PRESETS
+                                    >
+                                  ).map((key) => {
                                     const isActive = activePreset === key;
                                     return (
                                       <button
@@ -936,14 +997,16 @@ function WorkbenchPage() {
                                     FOCUS MODE:
                                   </span>
                                   <div className="flex bg-[#05070A] border border-[#1C2430] rounded-sm overflow-hidden">
-                                    {([
-                                      { key: "none", label: "OFF" },
-                                      { key: "brakes", label: "BRAKES" },
-                                      { key: "ers", label: "ERS" },
-                                      { key: "chassis", label: "CHASSIS" },
-                                      { key: "tires", label: "TIRES" },
-                                      { key: "inputs", label: "INPUTS" },
-                                    ] as const).map(({ key, label }) => {
+                                    {(
+                                      [
+                                        { key: "none", label: "OFF" },
+                                        { key: "brakes", label: "BRAKES" },
+                                        { key: "ers", label: "ERS" },
+                                        { key: "chassis", label: "CHASSIS" },
+                                        { key: "tires", label: "TIRES" },
+                                        { key: "inputs", label: "INPUTS" },
+                                      ] as const
+                                    ).map(({ key, label }) => {
                                       const isActive = focusMode === key;
                                       return (
                                         <button
@@ -970,14 +1033,23 @@ function WorkbenchPage() {
                             {/* Active Specialized telemetry instruments (Replay mode) */}
                             <div className="flex-1 p-1.5 overflow-y-auto bg-[#05070A]">
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                                {WORKSPACE_PRESETS[activePreset].instruments.map((instrumentKey) => {
-                                  const InstrumentComponent = TELEMETRY_INSTRUMENTS[instrumentKey];
-                                  return (
-                                    <div key={instrumentKey} className="min-h-[260px] border border-[#1C2430] bg-[#0B0F14] rounded-sm">
-                                      <InstrumentComponent telemetry={getReplayTelemetry(parsed, cursorTick)} mode="replay" />
-                                    </div>
-                                  );
-                                })}
+                                {WORKSPACE_PRESETS[activePreset].instruments.map(
+                                  (instrumentKey) => {
+                                    const InstrumentComponent =
+                                      TELEMETRY_INSTRUMENTS[instrumentKey];
+                                    return (
+                                      <div
+                                        key={instrumentKey}
+                                        className="min-h-[260px] border border-[#1C2430] bg-[#0B0F14] rounded-sm"
+                                      >
+                                        <InstrumentComponent
+                                          telemetry={getReplayTelemetry(parsed, cursorTick)}
+                                          mode="replay"
+                                        />
+                                      </div>
+                                    );
+                                  },
+                                )}
                               </div>
                             </div>
                           </div>
@@ -998,10 +1070,14 @@ function WorkbenchPage() {
                             </div>
                           }
                         >
-                          <LazyAICoach parsed={parsed} track={sess?.track} car={sess?.car} sessionId={id} />
+                          <LazyAICoach
+                            parsed={parsed}
+                            track={sess?.track}
+                            car={sess?.car}
+                            sessionId={id}
+                          />
                         </Suspense>
                       </div>
-
                     </div>
                   </ResizablePanel>
                 </ResizablePanelGroup>

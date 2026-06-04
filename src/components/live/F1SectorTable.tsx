@@ -31,7 +31,9 @@ export function F1SectorTable({ t }: { t: Telemetry }) {
               <span className="font-mono tabular-nums text-foreground text-right">
                 {time ?? "—.———"}
               </span>
-              <span className={`font-mono tabular-nums text-right text-[10px] ${time ? deltaColor : "text-muted-foreground"}`}>
+              <span
+                className={`font-mono tabular-nums text-right text-[10px] ${time ? deltaColor : "text-muted-foreground"}`}
+              >
                 {deltaStr || "—"}
               </span>
             </div>

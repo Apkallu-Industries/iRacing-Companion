@@ -29,7 +29,7 @@ class TelemetryService {
       frontLeftDeflection: rawTick.ShockDeflectionFL || 0,
       rearRightSpeedMps: rawTick.RRspeed || 0,
       rearLeftSpeedMps: rawTick.LRspeed || 0,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.latestFrame = frame;

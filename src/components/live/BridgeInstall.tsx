@@ -33,11 +33,7 @@ function StepRow({
   return (
     <div
       className={`flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors ${
-        active
-          ? "bg-accent/80 ring-1 ring-racing-orange/30"
-          : done
-            ? "bg-muted/40"
-            : "bg-muted/20"
+        active ? "bg-accent/80 ring-1 ring-racing-orange/30" : done ? "bg-muted/40" : "bg-muted/20"
       }`}
     >
       {done ? (

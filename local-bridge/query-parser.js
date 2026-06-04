@@ -9,7 +9,7 @@ function parseTelemetryQuery(qStr) {
   const filter = {};
   const projection = {};
   const orFilters = [];
-  
+
   let currentBlock = "find"; // "find" | "select" | "or"
   const severityOrder = ["info", "warning", "critical"];
 
@@ -39,7 +39,12 @@ function parseTelemetryQuery(qStr) {
     }
 
     const setOperatorValue = (target, k, opKey, v) => {
-      if (typeof target[k] === "object" && target[k] !== null && !(target[k] instanceof Date) && !Array.isArray(target[k])) {
+      if (
+        typeof target[k] === "object" &&
+        target[k] !== null &&
+        !(target[k] instanceof Date) &&
+        !Array.isArray(target[k])
+      ) {
         target[k][opKey] = v;
       } else {
         target[k] = { [opKey]: v };
@@ -47,27 +52,57 @@ function parseTelemetryQuery(qStr) {
     };
 
     if (op === "=") {
-      targetFilter[queryKey] = isNaN(queryVal) || queryVal === "" || queryVal instanceof Date ? queryVal : Number(queryVal);
+      targetFilter[queryKey] =
+        isNaN(queryVal) || queryVal === "" || queryVal instanceof Date
+          ? queryVal
+          : Number(queryVal);
     } else if (op === "!=") {
-      setOperatorValue(targetFilter, queryKey, "$ne", isNaN(queryVal) || queryVal === "" || queryVal instanceof Date ? queryVal : Number(queryVal));
+      setOperatorValue(
+        targetFilter,
+        queryKey,
+        "$ne",
+        isNaN(queryVal) || queryVal === "" || queryVal instanceof Date
+          ? queryVal
+          : Number(queryVal),
+      );
     } else if (op === ">=") {
       if (queryKey === "severity") {
         const idx = severityOrder.indexOf(queryVal.toLowerCase());
         if (idx !== -1) targetFilter[queryKey] = { $in: severityOrder.slice(idx) };
       } else {
-        setOperatorValue(targetFilter, queryKey, "$gte", queryKey === "timestamp" ? queryVal : Number(queryVal));
+        setOperatorValue(
+          targetFilter,
+          queryKey,
+          "$gte",
+          queryKey === "timestamp" ? queryVal : Number(queryVal),
+        );
       }
     } else if (op === "<=") {
       if (queryKey === "severity") {
         const idx = severityOrder.indexOf(queryVal.toLowerCase());
         if (idx !== -1) targetFilter[queryKey] = { $in: severityOrder.slice(0, idx + 1) };
       } else {
-        setOperatorValue(targetFilter, queryKey, "$lte", queryKey === "timestamp" ? queryVal : Number(queryVal));
+        setOperatorValue(
+          targetFilter,
+          queryKey,
+          "$lte",
+          queryKey === "timestamp" ? queryVal : Number(queryVal),
+        );
       }
     } else if (op === ">") {
-      setOperatorValue(targetFilter, queryKey, "$gt", queryKey === "timestamp" ? queryVal : Number(queryVal));
+      setOperatorValue(
+        targetFilter,
+        queryKey,
+        "$gt",
+        queryKey === "timestamp" ? queryVal : Number(queryVal),
+      );
     } else if (op === "<") {
-      setOperatorValue(targetFilter, queryKey, "$lt", queryKey === "timestamp" ? queryVal : Number(queryVal));
+      setOperatorValue(
+        targetFilter,
+        queryKey,
+        "$lt",
+        queryKey === "timestamp" ? queryVal : Number(queryVal),
+      );
     }
   };
 

@@ -13,17 +13,12 @@
  * @param {number} rubberLevelBase baseline track rubbering (0 to 100)
  * @returns {object} { globalFrictionGripCoeff, trackTempC, rubberPercent }
  */
-function calculateTrackEvolution(
-  ambientC,
-  currentLaps,
-  rainIntensity,
-  rubberLevelBase = 50
-) {
+function calculateTrackEvolution(ambientC, currentLaps, rainIntensity, rubberLevelBase = 50) {
   // 1. Rubber accumulation (accumulates +0.4% per lap up to maximum limit of 100%)
   // If rain starts, rubber is washed off rapidly (-1.5% per 1% rain intensity)
   const accumulation = currentLaps * 0.4;
   const washOff = rainIntensity * 1.5;
-  
+
   let rubberPercent = rubberLevelBase + accumulation - washOff;
   rubberPercent = Math.max(5.0, Math.min(100.0, rubberPercent));
 
@@ -32,7 +27,7 @@ function calculateTrackEvolution(
   // Rain causes severe evaporative thermal cooling (-0.22°C per 1% rain intensity)
   const solarAbsorption = 6.5;
   const rainCooling = rainIntensity * 0.25;
-  
+
   let trackTempC = ambientC + solarAbsorption - rainCooling;
   trackTempC = Math.max(ambientC - 2.0, Math.min(65.0, Number(trackTempC.toFixed(1))));
 
@@ -41,16 +36,16 @@ function calculateTrackEvolution(
   // Moisture/rain drops grip severely (up to -35% friction)
   const rubberFrictionFactor = (rubberPercent / 100.0) * 0.04;
   const rainFrictionFactor = (rainIntensity / 100.0) * 0.35;
-  
+
   const globalFrictionGripCoeff = 1.0 + rubberFrictionFactor - rainFrictionFactor;
 
   return {
     globalFrictionGripCoeff: Number(globalFrictionGripCoeff.toFixed(3)),
     trackTempC,
-    rubberPercent: Math.round(rubberPercent)
+    rubberPercent: Math.round(rubberPercent),
   };
 }
 
 module.exports = {
-  calculateTrackEvolution
+  calculateTrackEvolution,
 };

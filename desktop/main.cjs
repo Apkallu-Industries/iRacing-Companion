@@ -11,7 +11,18 @@
  *   Dev (--dev) → loads http://127.0.0.1:8080 (local Vite dev server)
  */
 
-const { app, BrowserWindow, shell, Menu, Tray, dialog, ipcMain, nativeTheme, screen, globalShortcut } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  shell,
+  Menu,
+  Tray,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  screen,
+  globalShortcut,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -27,7 +38,12 @@ process.on("uncaughtException", (error) => {
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("\n[desktop:CRITICAL] Unhandled Rejection in main process at:\n", promise, "\nReason:\n", reason);
+  console.error(
+    "\n[desktop:CRITICAL] Unhandled Rejection in main process at:\n",
+    promise,
+    "\nReason:\n",
+    reason,
+  );
   if (typeof writeBridgeLog === "function") {
     writeBridgeLog(`[main:unhandledRejection] reason=${reason}`);
   }
@@ -56,7 +72,7 @@ const VITE_URL = `${VITE_HOST}:${VITE_DEFAULT_PORT}`;
 const BRIDGE_UI = "http://localhost:3001";
 
 // Start with a sensible default; resolveUrl() will update it before the window opens.
-let BASE_URL    = isDev ? VITE_URL : BRIDGE_UI;
+let BASE_URL = isDev ? VITE_URL : BRIDGE_UI;
 // Electron opens the /runtime boot sequence first; the RuntimeStatusMatrix
 // component navigates to /live once services are confirmed ready.
 let DASHBOARD_URL = `${BASE_URL}/runtime`;
@@ -72,10 +88,12 @@ async function isReachable(url, timeoutMs = 1500) {
       const req = net.request({ method: "HEAD", url });
       const timer = setTimeout(() => {
         console.log(`[desktop] Probe timed out for ${url}`);
-        try { req.abort(); } catch {}
+        try {
+          req.abort();
+        } catch {}
         resolve(false);
       }, timeoutMs);
-      
+
       req.on("response", (res) => {
         if (res.statusCode >= 200 && res.statusCode < 400) {
           console.log(`[desktop] Probe success for ${url}: status ${res.statusCode}`);
@@ -87,13 +105,13 @@ async function isReachable(url, timeoutMs = 1500) {
           resolve(false);
         }
       });
-      
+
       req.on("error", (err) => {
         console.log(`[desktop] Probe error for ${url}: ${err.message}`);
         clearTimeout(timer);
         resolve(false);
       });
-      
+
       req.end();
     } catch (e) {
       console.log(`[desktop] Probe exception for ${url}: ${e.message}`);
@@ -117,10 +135,10 @@ async function resolveUrl() {
     // Try each host:port combination in parallel with a short timeout. Retry briefly if nothing responds immediately.
     for (let attempt = 0; attempt < 6; attempt++) {
       console.log(`[desktop] Scanning Vite ports in parallel, attempt ${attempt + 1}/6...`);
-      
+
       const probePromises = [];
       const urlMap = [];
-      
+
       for (const p of portsToTry) {
         for (const h of hosts) {
           const url = `http://${h}:${p}`;
@@ -129,18 +147,20 @@ async function resolveUrl() {
           probePromises.push(isReachable(`${url}/runtime`, 700));
         }
       }
-      
+
       const results = await Promise.all(probePromises);
       const activeIndex = results.indexOf(true);
-      
+
       if (activeIndex !== -1) {
         const activeUrl = urlMap[activeIndex];
         BASE_URL = activeUrl;
         DASHBOARD_URL = `${activeUrl}/runtime`;
-        console.log(`[desktop] dev mode → ${DASHBOARD_URL} (detected on ${activeUrl}, attempt ${attempt + 1})`);
+        console.log(
+          `[desktop] dev mode → ${DASHBOARD_URL} (detected on ${activeUrl}, attempt ${attempt + 1})`,
+        );
         return;
       }
-      
+
       // Small back-off between attempts to allow Vite to finish startup
       console.log(`[desktop] No ports active on attempt ${attempt + 1}, waiting 300ms...`);
       await new Promise((r) => setTimeout(r, 300));
@@ -156,7 +176,7 @@ async function resolveUrl() {
     }
 
     // Fallback: If neither Vite nor Bridge is active, load our local animated fallback splash screen
-    BASE_URL      = BRIDGE_UI;
+    BASE_URL = BRIDGE_UI;
     DASHBOARD_URL = `file://${path.join(__dirname, "assets", "fallback.html")}`;
     console.log(`[desktop] dev mode (fallback to animated splash screen) → ${DASHBOARD_URL}`);
     return;
@@ -164,25 +184,25 @@ async function resolveUrl() {
 
   console.log("[desktop] Production mode - waiting 1200ms for bridge startup...");
   // Give the bridge a moment if it just started
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise((r) => setTimeout(r, 1200));
 
   console.log("[desktop] Probing VITE_URL:", VITE_URL);
   if (await isReachable(`${VITE_URL}/runtime`)) {
-    BASE_URL      = VITE_URL;
+    BASE_URL = VITE_URL;
     DASHBOARD_URL = `${VITE_URL}/runtime`;
     console.log(`[desktop] local Vite dev server detected → ${DASHBOARD_URL}`);
     return;
   }
 
   if (await isReachable(`${BRIDGE_UI}/health`)) {
-    BASE_URL      = BRIDGE_UI;
+    BASE_URL = BRIDGE_UI;
     DASHBOARD_URL = `${BRIDGE_UI}/runtime`;
     console.log(`[desktop] local bridge UI detected → ${DASHBOARD_URL}`);
     return;
   }
 
   // Fallback: If neither local server is reachable, load our local animated fallback splash screen
-  BASE_URL      = BRIDGE_UI;
+  BASE_URL = BRIDGE_UI;
   DASHBOARD_URL = `file://${path.join(__dirname, "assets", "fallback.html")}`;
   console.log(`[desktop] loading local fallback splash screen → ${DASHBOARD_URL}`);
 }
@@ -241,7 +261,9 @@ function updateWindowTitle() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const hostname = require("os").hostname();
   const statusEmoji = bridgeStatus === "running" ? "●" : bridgeStatus === "crashed" ? "✕" : "◎";
-  mainWindow.setTitle(`Pit Wall Workstation ${statusEmoji} ${bridgeStatus.toUpperCase()} · ${hostname}`);
+  mainWindow.setTitle(
+    `Pit Wall Workstation ${statusEmoji} ${bridgeStatus.toUpperCase()} · ${hostname}`,
+  );
 }
 
 let windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximized: false };
@@ -252,10 +274,10 @@ let windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximi
  */
 function isPositionValid(x, y, width, height) {
   if (x === undefined || y === undefined) return true;
-  
+
   const displays = screen.getAllDisplays();
   if (displays.length === 0) return true;
-  
+
   // Check if window overlaps with any display
   for (const display of displays) {
     const bounds = display.bounds;
@@ -281,7 +303,9 @@ try {
       windowState = { ...windowState, ...data };
       // Validate position against current display configuration
       if (!isPositionValid(windowState.x, windowState.y, windowState.width, windowState.height)) {
-        console.log("[desktop] Saved window position invalid for current display setup, resetting to default");
+        console.log(
+          "[desktop] Saved window position invalid for current display setup, resetting to default",
+        );
         windowState.x = undefined;
         windowState.y = undefined;
       }
@@ -321,9 +345,13 @@ function killProcessOnPort(port) {
         }
       }
       if (pids.size === 0) return resolve();
-      
-      const pidList = Array.from(pids).map(pid => `/PID ${pid}`).join(" ");
-      console.log(`[desktop] Port ${port} occupied by PIDs: ${Array.from(pids).join(", ")}. Killing...`);
+
+      const pidList = Array.from(pids)
+        .map((pid) => `/PID ${pid}`)
+        .join(" ");
+      console.log(
+        `[desktop] Port ${port} occupied by PIDs: ${Array.from(pids).join(", ")}. Killing...`,
+      );
       exec(`taskkill /F ${pidList}`, () => resolve());
     });
   });
@@ -353,17 +381,17 @@ function startBridge() {
   // Inherit parent env so MONGODB_URI, LOVABLE_API_KEY etc. flow through
   // Inject runtime environment so the bridge can connect to MongoDB and
   // knows which local AI endpoint to use for narrative generation.
-  const mongoUri    = supervisor.getMongoUri();
-  const aiEndpoint  = supervisor.getAiEndpoint();
-  const aiMode      = supervisor.getAiMode();
+  const mongoUri = supervisor.getMongoUri();
+  const aiEndpoint = supervisor.getAiEndpoint();
+  const aiMode = supervisor.getAiMode();
 
   const runner = NODE_BIN || process.execPath;
   const env = {
     ...process.env,
     NODE_ENV: isDev ? "development" : "production",
     // Telemetry persistence — injected by supervisor after MongoDB probe
-    MONGO_URI:         mongoUri    ?? "",
-    PITWALL_AI_MODE:   aiMode      ?? "cloud",
+    MONGO_URI: mongoUri ?? "",
+    PITWALL_AI_MODE: aiMode ?? "cloud",
     PITWALL_AI_ENDPOINT: aiEndpoint ?? "",
   };
 
@@ -432,7 +460,9 @@ function startBridge() {
 function stopBridge() {
   if (!bridgeProc) return;
   writeBridgeLog("[desktop] Stopping bridge by request");
-  try { bridgeProc.kill("SIGTERM"); } catch {}
+  try {
+    bridgeProc.kill("SIGTERM");
+  } catch {}
   bridgeProc = null;
   bridgeStatus = "starting";
   updateTray();
@@ -440,7 +470,9 @@ function stopBridge() {
   // Clean up any orphaned Assetto Corsa memory readers
   killAllOrphanedReaders();
   // Ensure port 3001 is freed on Windows (best-effort)
-  try { killProcessOnPort(3001); } catch (e) { }
+  try {
+    killProcessOnPort(3001);
+  } catch (e) {}
 }
 
 // ─── Window state ─────────────────────────────────────────────────────────────
@@ -505,7 +537,9 @@ function createWindow() {
   });
 
   mainWindow.webContents.on("render-process-gone", (event, details) => {
-    console.error(`[desktop:CRITICAL] Renderer process gone! Reason: ${details.reason}, Exit Code: ${details.exitCode}`);
+    console.error(
+      `[desktop:CRITICAL] Renderer process gone! Reason: ${details.reason}, Exit Code: ${details.exitCode}`,
+    );
   });
 
   mainWindow.webContents.on("unresponsive", () => {
@@ -599,7 +633,9 @@ function setCurrentSession(sessionId) {
 
 function startCurrentSession(sessionId, meta) {
   try {
-    const result = supervisor.startSession ? supervisor.startSession(sessionId, meta) : { ok: false, error: "supervisor unavailable" };
+    const result = supervisor.startSession
+      ? supervisor.startSession(sessionId, meta)
+      : { ok: false, error: "supervisor unavailable" };
     if (result?.ok) {
       setCurrentSession(result.sessionId);
     }
@@ -611,12 +647,17 @@ function startCurrentSession(sessionId, meta) {
 }
 
 function stopCurrentSession(sessionId) {
-  const id = sessionId || currentSessionId || (supervisor.getActiveSession ? supervisor.getActiveSession()?.id : null);
+  const id =
+    sessionId ||
+    currentSessionId ||
+    (supervisor.getActiveSession ? supervisor.getActiveSession()?.id : null);
   if (!id) {
     return { ok: false, error: "no active session" };
   }
   try {
-    const result = supervisor.stopSession ? supervisor.stopSession(id) : { ok: false, error: "supervisor unavailable" };
+    const result = supervisor.stopSession
+      ? supervisor.stopSession(id)
+      : { ok: false, error: "supervisor unavailable" };
     if (result?.ok) {
       setCurrentSession(null);
     }
@@ -655,7 +696,9 @@ function updateTray() {
       : bridgeStatus === "crashed"
         ? "❌ Bridge: Crashed"
         : "⏳ Bridge: Starting…";
-  const sessionLabel = currentSessionId ? `🟢 Active session: ${currentSessionId}` : "⚪ No active session";
+  const sessionLabel = currentSessionId
+    ? `🟢 Active session: ${currentSessionId}`
+    : "⚪ No active session";
 
   const menu = Menu.buildFromTemplate([
     {
@@ -704,7 +747,7 @@ function updateTray() {
   ]);
   tray.setContextMenu(menu);
   tray.setToolTip(
-    `Pit Wall Desktop v${APP_VERSION}\nBridge: ${bridgeStatus}\nSession: ${currentSessionId ?? "none"}\nUI: ${BASE_URL}`
+    `Pit Wall Desktop v${APP_VERSION}\nBridge: ${bridgeStatus}\nSession: ${currentSessionId ?? "none"}\nUI: ${BASE_URL}`,
   );
 }
 
@@ -775,18 +818,20 @@ function buildMenu() {
         {
           label: "Bridge Status…",
           click: () => {
-            dialog.showMessageBox(mainWindow, {
-              type: bridgeStatus === "running" ? "info" : "warning",
-              title: "Pit Wall Bridge",
-              message: `Bridge: ${bridgeStatus.toUpperCase()}`,
-              detail:
-                bridgeStatus === "running"
-                  ? `ws://localhost:3001 is live (60Hz).\nDashboard URL: ${DASHBOARD_URL}\nBridge dir: ${BRIDGE_DIR}`
-                  : `The local bridge isn't running.\n\nTry 'Restart Bridge' from this menu.\nBridge dir: ${BRIDGE_DIR}`,
-              buttons: ["OK", "Open Log"],
-            }).then(({ response }) => {
-              if (response === 1) shell.openPath(LOG_FILE_PATH);
-            });
+            dialog
+              .showMessageBox(mainWindow, {
+                type: bridgeStatus === "running" ? "info" : "warning",
+                title: "Pit Wall Bridge",
+                message: `Bridge: ${bridgeStatus.toUpperCase()}`,
+                detail:
+                  bridgeStatus === "running"
+                    ? `ws://localhost:3001 is live (60Hz).\nDashboard URL: ${DASHBOARD_URL}\nBridge dir: ${BRIDGE_DIR}`
+                    : `The local bridge isn't running.\n\nTry 'Restart Bridge' from this menu.\nBridge dir: ${BRIDGE_DIR}`,
+                buttons: ["OK", "Open Log"],
+              })
+              .then(({ response }) => {
+                if (response === 1) shell.openPath(LOG_FILE_PATH);
+              });
           },
         },
         {
@@ -801,7 +846,13 @@ function buildMenu() {
               if (fs.existsSync(STATE_FILE_PATH)) {
                 fs.unlinkSync(STATE_FILE_PATH);
               }
-              windowState = { width: 1600, height: 980, x: undefined, y: undefined, maximized: false };
+              windowState = {
+                width: 1600,
+                height: 980,
+                x: undefined,
+                y: undefined,
+                maximized: false,
+              };
               if (mainWindow && !mainWindow.isDestroyed()) {
                 const primary = screen.getPrimaryDisplay();
                 const centerX = primary.bounds.x + (primary.bounds.width - windowState.width) / 2;
@@ -847,11 +898,13 @@ function buildMenu() {
         { type: "separator" },
         {
           label: "Documentation",
-          click: () => shell.openExternal("https://github.com/Apkallu-Industries/iRacing-Companion"),
+          click: () =>
+            shell.openExternal("https://github.com/Apkallu-Industries/iRacing-Companion"),
         },
         {
           label: "Report Issue",
-          click: () => shell.openExternal("https://github.com/Apkallu-Industries/iRacing-Companion/issues"),
+          click: () =>
+            shell.openExternal("https://github.com/Apkallu-Industries/iRacing-Companion/issues"),
         },
       ],
     },
@@ -894,53 +947,63 @@ function getGpuDetails() {
   const { exec } = require("child_process");
   return new Promise((resolve) => {
     // 1. Try nvidia-smi first for accurate Nvidia GPU + VRAM
-    exec("nvidia-smi --query-gpu=name,memory.total --format=csv,noheader", { timeout: 3000 }, (err, stdout) => {
-      if (!err && stdout) {
-        const parts = stdout.trim().split(",");
-        if (parts.length >= 2) {
-          const name = parts[0].trim();
-          const memStr = parts[1].trim(); // e.g. "16303 MiB"
-          const mib = parseInt(memStr, 10);
-          if (!isNaN(mib)) {
-            const gb = parseFloat((mib / 1024).toFixed(1));
-            return resolve({ name, vramGb: gb, source: "nvidia-smi" });
+    exec(
+      "nvidia-smi --query-gpu=name,memory.total --format=csv,noheader",
+      { timeout: 3000 },
+      (err, stdout) => {
+        if (!err && stdout) {
+          const parts = stdout.trim().split(",");
+          if (parts.length >= 2) {
+            const name = parts[0].trim();
+            const memStr = parts[1].trim(); // e.g. "16303 MiB"
+            const mib = parseInt(memStr, 10);
+            if (!isNaN(mib)) {
+              const gb = parseFloat((mib / 1024).toFixed(1));
+              return resolve({ name, vramGb: gb, source: "nvidia-smi" });
+            }
           }
         }
-      }
 
-      // 2. Fallback to PowerShell WMI for AMD, Intel or other GPUs
-      exec('powershell -Command "Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json"', { timeout: 4000 }, (wmiErr, wmiStdout) => {
-        if (!wmiErr && wmiStdout) {
-          try {
-            let data = JSON.parse(wmiStdout.trim());
-            if (!Array.isArray(data)) {
-              data = [data];
-            }
-            // Filter out basic or virtual displays
-            const realGpus = data.filter(g => g.Name && !g.Name.includes("Basic Render") && !g.Name.includes("Virtual"));
-            const target = realGpus.length > 0 ? realGpus : data;
+        // 2. Fallback to PowerShell WMI for AMD, Intel or other GPUs
+        exec(
+          'powershell -Command "Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Json"',
+          { timeout: 4000 },
+          (wmiErr, wmiStdout) => {
+            if (!wmiErr && wmiStdout) {
+              try {
+                let data = JSON.parse(wmiStdout.trim());
+                if (!Array.isArray(data)) {
+                  data = [data];
+                }
+                // Filter out basic or virtual displays
+                const realGpus = data.filter(
+                  (g) => g.Name && !g.Name.includes("Basic Render") && !g.Name.includes("Virtual"),
+                );
+                const target = realGpus.length > 0 ? realGpus : data;
 
-            let bestGpu = null;
-            for (const gpu of target) {
-              if (!bestGpu || (gpu.AdapterRAM > bestGpu.AdapterRAM)) {
-                bestGpu = gpu;
-              }
-            }
+                let bestGpu = null;
+                for (const gpu of target) {
+                  if (!bestGpu || gpu.AdapterRAM > bestGpu.AdapterRAM) {
+                    bestGpu = gpu;
+                  }
+                }
 
-            if (bestGpu) {
-              const name = bestGpu.Name;
-              let vramGb = parseFloat((bestGpu.AdapterRAM / 1e9).toFixed(1));
-              // Handle WMI 4GB limitation overflow (reports exactly 4293918720)
-              if (bestGpu.AdapterRAM === 4293918720) {
-                vramGb = 4.0;
-              }
-              return resolve({ name, vramGb, source: "wmi" });
+                if (bestGpu) {
+                  const name = bestGpu.Name;
+                  let vramGb = parseFloat((bestGpu.AdapterRAM / 1e9).toFixed(1));
+                  // Handle WMI 4GB limitation overflow (reports exactly 4293918720)
+                  if (bestGpu.AdapterRAM === 4293918720) {
+                    vramGb = 4.0;
+                  }
+                  return resolve({ name, vramGb, source: "wmi" });
+                }
+              } catch (e) {}
             }
-          } catch (e) {}
-        }
-        resolve({ name: "Intel/AMD HD Graphics", vramGb: 2.0, source: "fallback" });
-      });
-    });
+            resolve({ name: "Intel/AMD HD Graphics", vramGb: 2.0, source: "fallback" });
+          },
+        );
+      },
+    );
   });
 }
 
@@ -972,10 +1035,10 @@ ipcMain.handle("get-runtime-manifest", async () => {
     monitorCount: displays.length,
     workstationMode: true,
     // Runtime Supervisor services
-    mongoStatus:  svStatus.mongoStatus,
-    mongoUri:     svStatus.mongoUri,
-    aiMode:       svStatus.aiMode,
-    aiEndpoint:   svStatus.aiEndpoint,
+    mongoStatus: svStatus.mongoStatus,
+    mongoUri: svStatus.mongoUri,
+    aiMode: svStatus.aiMode,
+    aiEndpoint: svStatus.aiEndpoint,
     // Detected Graphics & VRAM
     gpuModel: gpuInfo.name,
     vramGb: gpuInfo.vramGb,
@@ -1019,10 +1082,18 @@ ipcMain.handle("get-monitor-layout", () => {
 // Supervisor helpers exposed to renderer via preload
 ipcMain.handle("supervisor:get-status", () => supervisor.getStatus());
 ipcMain.handle("supervisor:get-sessions", () => {
-  try { return supervisor.getSessions ? supervisor.getSessions() : []; } catch { return []; }
+  try {
+    return supervisor.getSessions ? supervisor.getSessions() : [];
+  } catch {
+    return [];
+  }
 });
 ipcMain.handle("supervisor:get-active-session", () => {
-  try { return supervisor.getActiveSession ? supervisor.getActiveSession() : null; } catch { return null; }
+  try {
+    return supervisor.getActiveSession ? supervisor.getActiveSession() : null;
+  } catch {
+    return null;
+  }
 });
 ipcMain.handle("supervisor:start-session", (_e, { sessionId, meta } = {}) => {
   return startCurrentSession(sessionId, meta);
@@ -1074,11 +1145,11 @@ ipcMain.handle("supervisor:get-telemetry-schema", () => {
  * Sizes are calibrated per instrument type for optimal data density.
  */
 const INSTRUMENT_SIZES = {
-  timing:      { width: 900,  height: 640 },
-  tires:       { width: 800,  height: 600 },
-  hybrid:      { width: 800,  height: 560 },
-  strategy:    { width: 900,  height: 600 },
-  telemetry:   { width: 1200, height: 720 },
+  timing: { width: 900, height: 640 },
+  tires: { width: 800, height: 600 },
+  hybrid: { width: 800, height: 560 },
+  strategy: { width: 900, height: 600 },
+  telemetry: { width: 1200, height: 720 },
   engineering: { width: 1440, height: 900 },
 };
 
@@ -1177,12 +1248,16 @@ app.on("before-quit", () => {
   saveWindowState();
   stopBridge();
   // Ensure any process listening on bridge port is killed to avoid orphans
-  try { killProcessOnPort(3001); } catch (e) {}
+  try {
+    killProcessOnPort(3001);
+  } catch (e) {}
   supervisor.shutdown();
 });
 
 app.on("will-quit", () => {
-  try { globalShortcut.unregisterAll(); } catch {}
+  try {
+    globalShortcut.unregisterAll();
+  } catch {}
 });
 
 app.on("window-all-closed", () => {

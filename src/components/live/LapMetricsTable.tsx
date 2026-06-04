@@ -127,7 +127,9 @@ export function LapMetricsTable({ samples }: LapMetricsTableProps) {
     <div className="flex flex-col h-full bg-background border border-border-strong rounded overflow-hidden">
       {/* Header */}
       <div className="px-3 py-2 border-b border-border-strong bg-panel-2 flex-shrink-0">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Lap Metrics</div>
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">
+          Lap Metrics
+        </div>
         <div className="flex gap-2 text-[10px]">
           <label className="text-muted-foreground">Status:</label>
           <select

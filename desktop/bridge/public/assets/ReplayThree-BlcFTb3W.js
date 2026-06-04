@@ -1,1 +1,203 @@
-import{d as p,j as n}from"./react-core-hSJfnumv.js";import{C as T,O as C,u as A}from"./three-addons-DfNCnqJ2.js";import{a0 as L}from"./index-BF1LFLDu.js";import{e as D}from"./SectorSpider-CrjqgUgQ.js";import{H as G,I as P,F as R}from"./icons-UNkcvPbk.js";import{b as S,a as X,f as Y,e as E}from"./three-core-CtFbowaE.js";import"./vendor-CUluG-o1.js";import"./zustand-BHt0iSzh.js";import"./charts-DDN7mcLY.js";import"./supabase-DZ6I_NU8.js";import"./radix-ui-BcE8c2tf.js";function F(e){const t=e.trackXY;if(!t)return null;const s=(e.channels.Alt??e.channels.Altitude??e.channels.LapDistAlt)?.data,o=(t.minX+t.maxX)/2,i=(t.minY+t.maxY)/2,c=100/(Math.max(t.maxX-t.minX,t.maxY-t.minY)||1),r=t.x.length,x=Math.max(1,Math.floor(r/4e3)),b=[];let u=1/0,d=-1/0;if(s)for(let l=0;l<r;l+=x){const f=s[l];isFinite(f)&&(f<u&&(u=f),f>d&&(d=f))}isFinite(u)||(u=0,d=1);const g=12/Math.max(.5,d-u);for(let l=0;l<r;l+=x){const f=(t.x[l]-o)*c,y=-(t.y[l]-i)*c,M=s?(s[l]-u)*g:0;b.push(f,M,y)}return{positions:new Float32Array(b),step:x,scale:c,cx:o,cy:i,altMin:u,altScale:g,hasAlt:!!s}}function k(e,t,a){if(!t||!e.trackXY)return[0,0,0];const s=e.trackXY,i=(e.channels.Alt??e.channels.Altitude??e.channels.LapDistAlt)?.data,m=Math.max(0,Math.min(s.x.length-1,a)),c=(s.x[m]-t.cx)*t.scale,r=-(s.y[m]-t.cy)*t.scale,x=i?(i[m]-t.altMin)*t.altScale:0;return[c,x,r]}function v({position:e,color:t}){const a=p.useRef(null);return A(()=>{a.current&&a.current.position.set(e[0],e[1]+.6,e[2])}),n.jsxs("mesh",{ref:a,children:[n.jsx("coneGeometry",{args:[.7,1.6,16]}),n.jsx("meshStandardMaterial",{color:t,emissive:t,emissiveIntensity:.4})]})}function I({positions:e,color:t}){const a=p.useMemo(()=>{const i=new S;return i.setAttribute("position",new X(e,3)),i},[e]),s=p.useMemo(()=>new Y({color:t}),[t]),o=p.useMemo(()=>new E(a,s),[a,s]);return n.jsx("primitive",{object:o})}function w(e,t,a){if(t==null)return a;const s=e.laps.find(r=>r.lap===t);if(!s)return a;const o=e.channels.LapDistPct?.data;if(!o)return Math.min(s.endTick,s.startTick+(a-e.laps[0].startTick));const i=o[Math.min(o.length-1,Math.max(0,a))];let m=s.startTick,c=1/0;for(let r=s.startTick;r<=s.endTick;r+=4){const x=Math.abs(o[r]-i);x<c&&(c=x,m=r)}return m}function U({parsed:e}){const{cursorTick:t,refLap:a,cmpLap:s,setCursorTick:o}=L(),[i,m]=p.useState(!0),c=p.useRef(null),r=p.useMemo(()=>F(e),[e]);if(!r)return n.jsx("div",{className:"flex h-full items-center justify-center text-xs text-muted-foreground",children:"No position data available"});const x=w(e,a,t),b=i&&s!=null?w(e,s,t):null,u=k(e,r,x),d=b!=null?k(e,r,b):null,j=a!=null?e.laps.find(h=>h.lap===a):null,g=j?j.startTick:0,l=e.channelNames[0],f=l?e.channels[l].data.length:0,y=j?j.endTick:Math.max(0,f-1),M=Math.max(g,Math.min(y,t)),N=()=>{const h=c.current?.querySelector("canvas");h&&D(h,"replay-3d.png")};return n.jsxs("div",{className:"flex h-full flex-col",children:[n.jsxs("div",{className:"hairline-b flex items-center justify-between gap-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground",children:[n.jsxs("span",{children:["3D Replay ",r.hasAlt?"· elevation":"· flat (no alt channel)"]}),n.jsxs("div",{className:"flex items-center gap-2",children:[s!=null&&n.jsxs("button",{onClick:()=>m(h=>!h),className:`flex h-5 items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase ${i?"bg-primary text-primary-foreground":"bg-rail text-muted-foreground hover:text-foreground"}`,title:"Toggle ghost (compare lap)",children:[i?n.jsx(G,{className:"h-3 w-3"}):n.jsx(P,{className:"h-3 w-3"})," Ghost"]}),n.jsxs("button",{onClick:N,className:"flex h-5 items-center gap-1 rounded-sm border border-border bg-rail px-1.5 text-[10px] uppercase text-muted-foreground hover:text-foreground",title:"Export PNG",children:[n.jsx(R,{className:"h-3 w-3"})," PNG"]})]})]}),n.jsx("div",{ref:c,className:"min-h-0 flex-1",children:n.jsx(T,{camera:{position:[70,50,70],fov:45},dpr:[1,1.5],gl:{preserveDrawingBuffer:!0},children:n.jsxs(p.Suspense,{fallback:null,children:[n.jsx("color",{attach:"background",args:["#16191d"]}),n.jsx("fog",{attach:"fog",args:["#16191d",120,260]}),n.jsx("ambientLight",{intensity:.6}),n.jsx("directionalLight",{position:[40,80,30],intensity:.8}),n.jsx("gridHelper",{args:[200,40,"#2a2f36","#22262b"],position:[0,-.01,0]}),n.jsx(I,{positions:r.positions,color:"#7dd3fc"}),n.jsx(v,{position:u,color:"#22d3ee"}),d&&n.jsx(v,{position:d,color:"#f59e0b"}),n.jsx(C,{enableDamping:!0,makeDefault:!0})]})})}),n.jsxs("div",{className:"hairline-t flex items-center gap-2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground",children:[n.jsx("span",{className:"w-12",children:"Scrub"}),n.jsx("input",{type:"range",min:g,max:y,value:M,onChange:h=>o(parseInt(h.target.value,10)),className:"flex-1 accent-primary"}),n.jsx("span",{className:"w-24 text-right tabular-nums",children:j?`${((M-g)/Math.max(1,y-g)*100).toFixed(0)}%`:`t=${M}`})]})]})}export{U as ReplayThree};
+import { d as p, j as n } from "./react-core-hSJfnumv.js";
+import { C as T, O as C, u as A } from "./three-addons-DfNCnqJ2.js";
+import { a0 as L } from "./index-BF1LFLDu.js";
+import { e as D } from "./SectorSpider-CrjqgUgQ.js";
+import { H as G, I as P, F as R } from "./icons-UNkcvPbk.js";
+import { b as S, a as X, f as Y, e as E } from "./three-core-CtFbowaE.js";
+import "./vendor-CUluG-o1.js";
+import "./zustand-BHt0iSzh.js";
+import "./charts-DDN7mcLY.js";
+import "./supabase-DZ6I_NU8.js";
+import "./radix-ui-BcE8c2tf.js";
+function F(e) {
+  const t = e.trackXY;
+  if (!t) return null;
+  const s = (e.channels.Alt ?? e.channels.Altitude ?? e.channels.LapDistAlt)?.data,
+    o = (t.minX + t.maxX) / 2,
+    i = (t.minY + t.maxY) / 2,
+    c = 100 / (Math.max(t.maxX - t.minX, t.maxY - t.minY) || 1),
+    r = t.x.length,
+    x = Math.max(1, Math.floor(r / 4e3)),
+    b = [];
+  let u = 1 / 0,
+    d = -1 / 0;
+  if (s)
+    for (let l = 0; l < r; l += x) {
+      const f = s[l];
+      isFinite(f) && (f < u && (u = f), f > d && (d = f));
+    }
+  isFinite(u) || ((u = 0), (d = 1));
+  const g = 12 / Math.max(0.5, d - u);
+  for (let l = 0; l < r; l += x) {
+    const f = (t.x[l] - o) * c,
+      y = -(t.y[l] - i) * c,
+      M = s ? (s[l] - u) * g : 0;
+    b.push(f, M, y);
+  }
+  return {
+    positions: new Float32Array(b),
+    step: x,
+    scale: c,
+    cx: o,
+    cy: i,
+    altMin: u,
+    altScale: g,
+    hasAlt: !!s,
+  };
+}
+function k(e, t, a) {
+  if (!t || !e.trackXY) return [0, 0, 0];
+  const s = e.trackXY,
+    i = (e.channels.Alt ?? e.channels.Altitude ?? e.channels.LapDistAlt)?.data,
+    m = Math.max(0, Math.min(s.x.length - 1, a)),
+    c = (s.x[m] - t.cx) * t.scale,
+    r = -(s.y[m] - t.cy) * t.scale,
+    x = i ? (i[m] - t.altMin) * t.altScale : 0;
+  return [c, x, r];
+}
+function v({ position: e, color: t }) {
+  const a = p.useRef(null);
+  return (
+    A(() => {
+      a.current && a.current.position.set(e[0], e[1] + 0.6, e[2]);
+    }),
+    n.jsxs("mesh", {
+      ref: a,
+      children: [
+        n.jsx("coneGeometry", { args: [0.7, 1.6, 16] }),
+        n.jsx("meshStandardMaterial", { color: t, emissive: t, emissiveIntensity: 0.4 }),
+      ],
+    })
+  );
+}
+function I({ positions: e, color: t }) {
+  const a = p.useMemo(() => {
+      const i = new S();
+      return (i.setAttribute("position", new X(e, 3)), i);
+    }, [e]),
+    s = p.useMemo(() => new Y({ color: t }), [t]),
+    o = p.useMemo(() => new E(a, s), [a, s]);
+  return n.jsx("primitive", { object: o });
+}
+function w(e, t, a) {
+  if (t == null) return a;
+  const s = e.laps.find((r) => r.lap === t);
+  if (!s) return a;
+  const o = e.channels.LapDistPct?.data;
+  if (!o) return Math.min(s.endTick, s.startTick + (a - e.laps[0].startTick));
+  const i = o[Math.min(o.length - 1, Math.max(0, a))];
+  let m = s.startTick,
+    c = 1 / 0;
+  for (let r = s.startTick; r <= s.endTick; r += 4) {
+    const x = Math.abs(o[r] - i);
+    x < c && ((c = x), (m = r));
+  }
+  return m;
+}
+function U({ parsed: e }) {
+  const { cursorTick: t, refLap: a, cmpLap: s, setCursorTick: o } = L(),
+    [i, m] = p.useState(!0),
+    c = p.useRef(null),
+    r = p.useMemo(() => F(e), [e]);
+  if (!r)
+    return n.jsx("div", {
+      className: "flex h-full items-center justify-center text-xs text-muted-foreground",
+      children: "No position data available",
+    });
+  const x = w(e, a, t),
+    b = i && s != null ? w(e, s, t) : null,
+    u = k(e, r, x),
+    d = b != null ? k(e, r, b) : null,
+    j = a != null ? e.laps.find((h) => h.lap === a) : null,
+    g = j ? j.startTick : 0,
+    l = e.channelNames[0],
+    f = l ? e.channels[l].data.length : 0,
+    y = j ? j.endTick : Math.max(0, f - 1),
+    M = Math.max(g, Math.min(y, t)),
+    N = () => {
+      const h = c.current?.querySelector("canvas");
+      h && D(h, "replay-3d.png");
+    };
+  return n.jsxs("div", {
+    className: "flex h-full flex-col",
+    children: [
+      n.jsxs("div", {
+        className:
+          "hairline-b flex items-center justify-between gap-2 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground",
+        children: [
+          n.jsxs("span", {
+            children: ["3D Replay ", r.hasAlt ? "· elevation" : "· flat (no alt channel)"],
+          }),
+          n.jsxs("div", {
+            className: "flex items-center gap-2",
+            children: [
+              s != null &&
+                n.jsxs("button", {
+                  onClick: () => m((h) => !h),
+                  className: `flex h-5 items-center gap-1 rounded-sm border border-border px-1.5 text-[10px] uppercase ${i ? "bg-primary text-primary-foreground" : "bg-rail text-muted-foreground hover:text-foreground"}`,
+                  title: "Toggle ghost (compare lap)",
+                  children: [
+                    i ? n.jsx(G, { className: "h-3 w-3" }) : n.jsx(P, { className: "h-3 w-3" }),
+                    " Ghost",
+                  ],
+                }),
+              n.jsxs("button", {
+                onClick: N,
+                className:
+                  "flex h-5 items-center gap-1 rounded-sm border border-border bg-rail px-1.5 text-[10px] uppercase text-muted-foreground hover:text-foreground",
+                title: "Export PNG",
+                children: [n.jsx(R, { className: "h-3 w-3" }), " PNG"],
+              }),
+            ],
+          }),
+        ],
+      }),
+      n.jsx("div", {
+        ref: c,
+        className: "min-h-0 flex-1",
+        children: n.jsx(T, {
+          camera: { position: [70, 50, 70], fov: 45 },
+          dpr: [1, 1.5],
+          gl: { preserveDrawingBuffer: !0 },
+          children: n.jsxs(p.Suspense, {
+            fallback: null,
+            children: [
+              n.jsx("color", { attach: "background", args: ["#16191d"] }),
+              n.jsx("fog", { attach: "fog", args: ["#16191d", 120, 260] }),
+              n.jsx("ambientLight", { intensity: 0.6 }),
+              n.jsx("directionalLight", { position: [40, 80, 30], intensity: 0.8 }),
+              n.jsx("gridHelper", {
+                args: [200, 40, "#2a2f36", "#22262b"],
+                position: [0, -0.01, 0],
+              }),
+              n.jsx(I, { positions: r.positions, color: "#7dd3fc" }),
+              n.jsx(v, { position: u, color: "#22d3ee" }),
+              d && n.jsx(v, { position: d, color: "#f59e0b" }),
+              n.jsx(C, { enableDamping: !0, makeDefault: !0 }),
+            ],
+          }),
+        }),
+      }),
+      n.jsxs("div", {
+        className:
+          "hairline-t flex items-center gap-2 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground",
+        children: [
+          n.jsx("span", { className: "w-12", children: "Scrub" }),
+          n.jsx("input", {
+            type: "range",
+            min: g,
+            max: y,
+            value: M,
+            onChange: (h) => o(parseInt(h.target.value, 10)),
+            className: "flex-1 accent-primary",
+          }),
+          n.jsx("span", {
+            className: "w-24 text-right tabular-nums",
+            children: j ? `${(((M - g) / Math.max(1, y - g)) * 100).toFixed(0)}%` : `t=${M}`,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+export { U as ReplayThree };

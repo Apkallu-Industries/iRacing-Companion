@@ -23,8 +23,8 @@ function measuredVal(value, simSource, origin = "iRacing", tickSource = 0, laten
       simSource: simSource || null,
       origin: origin || "iRacing",
       tickSource: typeof tickSource === "number" ? tickSource : 0,
-      latency: freshness
-    }
+      latency: freshness,
+    },
   };
 }
 
@@ -52,8 +52,8 @@ function normalizeSteering(raw, origin, tickSource, latency) {
         simSource: "steeringDeg",
         origin: origin || "iRacing",
         tickSource,
-        latency
-      }
+        latency,
+      },
     };
   }
   if (typeof raw.SteeringWheelAngleDeg === "number") {
@@ -68,8 +68,8 @@ function normalizeSteering(raw, origin, tickSource, latency) {
         simSource: "SteeringWheelAngleDeg",
         origin: origin || "iRacing",
         tickSource,
-        latency
-      }
+        latency,
+      },
     };
   }
   return measuredVal(0, null, origin, tickSource, latency);
@@ -97,8 +97,8 @@ function normalizeSpeed(raw, origin, tickSource, latency) {
         simSource: "speedKph",
         origin: origin || "iRacing",
         tickSource,
-        latency
-      }
+        latency,
+      },
     };
   }
   if (typeof raw.SpeedKph === "number") {
@@ -112,8 +112,8 @@ function normalizeSpeed(raw, origin, tickSource, latency) {
         simSource: "SpeedKph",
         origin: origin || "iRacing",
         tickSource,
-        latency
-      }
+        latency,
+      },
     };
   }
   if (typeof raw.speedMph === "number") {
@@ -127,8 +127,8 @@ function normalizeSpeed(raw, origin, tickSource, latency) {
         simSource: "speedMph",
         origin: origin || "iRacing",
         tickSource,
-        latency
-      }
+        latency,
+      },
     };
   }
   return measuredVal(0, null, origin, tickSource, latency);
@@ -176,8 +176,12 @@ function normalizeCoreTelemetry(raw) {
   // 4. Lap & timing
   const currentLap = Number(raw.currentLap ?? raw.Lap ?? raw.lap ?? 1);
   const lapDistPct = Number(raw.lapDistPct ?? raw.LapDistPct ?? 0);
-  const lapTimeCurrent = Number(raw.lapTimeCurrent ?? raw.LapCurrentLapTime ?? raw.lapCurrentLapTime ?? 0);
-  const lapTimeLast = Number(raw.lapTimeLast ?? raw.LapLastLapTime ?? raw.lapLastLapTimeSec ?? raw.lapLastLapTime ?? 0);
+  const lapTimeCurrent = Number(
+    raw.lapTimeCurrent ?? raw.LapCurrentLapTime ?? raw.lapCurrentLapTime ?? 0,
+  );
+  const lapTimeLast = Number(
+    raw.lapTimeLast ?? raw.LapLastLapTime ?? raw.lapLastLapTimeSec ?? raw.lapLastLapTime ?? 0,
+  );
 
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -191,18 +195,48 @@ function normalizeCoreTelemetry(raw) {
       rpm: measuredVal(rpm, raw.RPM ? "RPM" : "rpm", origin, tickSource, latency),
       gear: measuredVal(gear, raw.Gear ? "Gear" : "gear", origin, tickSource, latency),
       inputs: {
-        throttle: measuredVal(throttle, raw.Throttle ? "Throttle" : "throttle", origin, tickSource, latency),
+        throttle: measuredVal(
+          throttle,
+          raw.Throttle ? "Throttle" : "throttle",
+          origin,
+          tickSource,
+          latency,
+        ),
         brake: measuredVal(brake, raw.Brake ? "Brake" : "brake", origin, tickSource, latency),
         clutch: measuredVal(clutch, raw.Clutch ? "Clutch" : "clutch", origin, tickSource, latency),
-        steering: steeringVal
-      }
+        steering: steeringVal,
+      },
     },
     lap: {
-      currentLap: measuredVal(currentLap, raw.Lap ? "Lap" : "currentLap", origin, tickSource, latency),
-      lapDistPct: measuredVal(lapDistPct, raw.LapDistPct ? "LapDistPct" : "lapDistPct", origin, tickSource, latency),
-      lapTimeCurrent: measuredVal(lapTimeCurrent, raw.LapCurrentLapTime ? "LapCurrentLapTime" : "lapTimeCurrent", origin, tickSource, latency),
-      lapTimeLast: measuredVal(lapTimeLast, raw.LapLastLapTime ? "LapLastLapTime" : "lapTimeLast", origin, tickSource, latency)
-    }
+      currentLap: measuredVal(
+        currentLap,
+        raw.Lap ? "Lap" : "currentLap",
+        origin,
+        tickSource,
+        latency,
+      ),
+      lapDistPct: measuredVal(
+        lapDistPct,
+        raw.LapDistPct ? "LapDistPct" : "lapDistPct",
+        origin,
+        tickSource,
+        latency,
+      ),
+      lapTimeCurrent: measuredVal(
+        lapTimeCurrent,
+        raw.LapCurrentLapTime ? "LapCurrentLapTime" : "lapTimeCurrent",
+        origin,
+        tickSource,
+        latency,
+      ),
+      lapTimeLast: measuredVal(
+        lapTimeLast,
+        raw.LapLastLapTime ? "LapLastLapTime" : "lapTimeLast",
+        origin,
+        tickSource,
+        latency,
+      ),
+    },
   };
 }
 
@@ -226,14 +260,14 @@ function createDefaultFrame() {
         throttle: measuredVal(0, null, "iRacing", 0, 0),
         brake: measuredVal(0, null, "iRacing", 0, 0),
         clutch: measuredVal(0, null, "iRacing", 0, 0),
-        steering: measuredVal(0, null, "iRacing", 0, 0)
-      }
+        steering: measuredVal(0, null, "iRacing", 0, 0),
+      },
     },
     lap: {
       currentLap: measuredVal(1, null, "iRacing", 0, 0),
       lapDistPct: measuredVal(0, null, "iRacing", 0, 0),
       lapTimeCurrent: measuredVal(0, null, "iRacing", 0, 0),
-      lapTimeLast: measuredVal(0, null, "iRacing", 0, 0)
+      lapTimeLast: measuredVal(0, null, "iRacing", 0, 0),
     },
     estimation: {
       rollingConfidence: {},
@@ -242,20 +276,20 @@ function createDefaultFrame() {
         aeroPlatform: measuredVal(1.0, null, "iRacing", 0, 0),
         rearStability: measuredVal(1.0, null, "iRacing", 0, 0),
         brakeMigration: measuredVal(1.0, null, "iRacing", 0, 0),
-        hybridDeployment: measuredVal(1.0, null, "iRacing", 0, 0)
+        hybridDeployment: measuredVal(1.0, null, "iRacing", 0, 0),
       },
       hypotheses: {
         floorDamage: measuredVal(0.05, null, "iRacing", 0, 0),
         diffuserChoking: measuredVal(0.01, null, "iRacing", 0, 0),
         tireDegradation: measuredVal(0.05, null, "iRacing", 0, 0),
-        brakeOverheating: measuredVal(0.01, null, "iRacing", 0, 0)
-      }
-    }
+        brakeOverheating: measuredVal(0.01, null, "iRacing", 0, 0),
+      },
+    },
   };
 }
 
 module.exports = {
   normalizeCoreTelemetry,
   createDefaultFrame,
-  measuredVal
+  measuredVal,
 };

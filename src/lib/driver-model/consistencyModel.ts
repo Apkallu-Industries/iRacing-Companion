@@ -8,9 +8,9 @@
 export interface DriverConsistencyMetrics {
   lapTimeStandardDeviationSec: number;
   apexSpeedStdDevMps: number;
-  brakeMarkersVarianceMeters: number;  // Variance in initial braking points (meters)
-  throttleApplyVariancePct: number;    // Variance in exit throttle application point
-  overallConsistencyScore: number;     // Consolidated score (0 - 100%)
+  brakeMarkersVarianceMeters: number; // Variance in initial braking points (meters)
+  throttleApplyVariancePct: number; // Variance in exit throttle application point
+  overallConsistencyScore: number; // Consolidated score (0 - 100%)
 }
 
 /**
@@ -30,10 +30,16 @@ export function analyzeDriverConsistency(
   lapTimes: number[],
   apexSpeeds: number[][], // apex speeds for each corner across multiple laps
   brakingPointsDist: number[][], // braking distances from entry for each corner across laps
-  throttleLapsPoint: number[][] // throttle application percentages (or location deltas)
+  throttleLapsPoint: number[][], // throttle application percentages (or location deltas)
 ): DriverConsistencyMetrics {
   if (lapTimes.length <= 1) {
-    return { lapTimeStandardDeviationSec: 0, apexSpeedStdDevMps: 0, brakeMarkersVarianceMeters: 0, throttleApplyVariancePct: 0, overallConsistencyScore: 100 };
+    return {
+      lapTimeStandardDeviationSec: 0,
+      apexSpeedStdDevMps: 0,
+      brakeMarkersVarianceMeters: 0,
+      throttleApplyVariancePct: 0,
+      overallConsistencyScore: 100,
+    };
   }
 
   // Lap time std dev
@@ -48,7 +54,7 @@ export function analyzeDriverConsistency(
       speedCornerCount++;
     }
   }
-  const avgApexSpeedStdDev = speedCornerCount > 0 ? (totalSpeedStdDev / speedCornerCount) : 0;
+  const avgApexSpeedStdDev = speedCornerCount > 0 ? totalSpeedStdDev / speedCornerCount : 0;
 
   // Braking point variance (in meters estimation)
   let totalBrakeStdDev = 0;
@@ -59,7 +65,7 @@ export function analyzeDriverConsistency(
       brakeCornerCount++;
     }
   }
-  const avgBrakeStdDev = brakeCornerCount > 0 ? (totalBrakeStdDev / brakeCornerCount) : 0;
+  const avgBrakeStdDev = brakeCornerCount > 0 ? totalBrakeStdDev / brakeCornerCount : 0;
 
   // Throttle application point variance (standard deviation in percentages or positions)
   let totalThrottleStdDev = 0;
@@ -70,7 +76,7 @@ export function analyzeDriverConsistency(
       throttleCornerCount++;
     }
   }
-  const avgThrottleStdDev = throttleCornerCount > 0 ? (totalThrottleStdDev / throttleCornerCount) : 0;
+  const avgThrottleStdDev = throttleCornerCount > 0 ? totalThrottleStdDev / throttleCornerCount : 0;
 
   // Consolidate into overall Consistency Score (0 - 100%)
   // Pro motorsport target: standard deviation in lap time < 0.15s, apex speeds < 0.8 m/s, braking points < 1.5m.
@@ -79,7 +85,8 @@ export function analyzeDriverConsistency(
   const brakeWeight = Math.max(0, 100 - (avgBrakeStdDev / 1.5) * 10);
   const throttleWeight = Math.max(0, 100 - (avgThrottleStdDev / 5) * 5);
 
-  const combinedScore = (lapWeight * 0.4) + (speedWeight * 0.2) + (brakeWeight * 0.2) + (throttleWeight * 0.2);
+  const combinedScore =
+    lapWeight * 0.4 + speedWeight * 0.2 + brakeWeight * 0.2 + throttleWeight * 0.2;
 
   return {
     lapTimeStandardDeviationSec: parseFloat(lapTimeStdDev.toFixed(3)),

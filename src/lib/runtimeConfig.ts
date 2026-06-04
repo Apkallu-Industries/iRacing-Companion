@@ -25,11 +25,15 @@ export function allowSimulator(): boolean {
 }
 
 export function enableForceLiveMode() {
-  try { window.localStorage.setItem("pitwall:force_live", "1"); } catch {}
+  try {
+    window.localStorage.setItem("pitwall:force_live", "1");
+  } catch {}
 }
 
 export function disableForceLiveMode() {
-  try { window.localStorage.removeItem("pitwall:force_live"); } catch {}
+  try {
+    window.localStorage.removeItem("pitwall:force_live");
+  } catch {}
 }
 
 export default { isForceLiveMode, allowSimulator, enableForceLiveMode, disableForceLiveMode };

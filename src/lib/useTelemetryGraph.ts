@@ -41,15 +41,22 @@ export interface TelemetryGraph {
  */
 export function useTelemetryGraph(): TelemetryGraph {
   const local = useTelemetry();
-  
+
   // Retrieve the active team code from localStorage if configured
-  const teamCode = typeof window !== "undefined" ? (localStorage.getItem("team_code") || null) : null;
-  const { drivers: remoteCars, connected: relayConnected, onlineCount } = useTeamTelemetry(teamCode);
+  const teamCode = typeof window !== "undefined" ? localStorage.getItem("team_code") || null : null;
+  const {
+    drivers: remoteCars,
+    connected: relayConnected,
+    onlineCount,
+  } = useTeamTelemetry(teamCode);
 
   const localCar = local.connected ? local : null;
 
   // Resolve the active driver name from local telemetry or fallback to username
-  const activeDriver = localCar?.all?.DriverInfo?.Drivers?.[localCar.all.DriverInfo.DriverCarIdx]?.UserName || localCar?.car || "Unknown Driver";
+  const activeDriver =
+    localCar?.all?.DriverInfo?.Drivers?.[localCar.all.DriverInfo.DriverCarIdx]?.UserName ||
+    localCar?.car ||
+    "Unknown Driver";
 
   // Filter remote cars to compile a list of active teammates (excluding our local car if connected)
   const teammates = useMemo(() => {
@@ -98,7 +105,9 @@ export function useTelemetryGraph(): TelemetryGraph {
     }
     if (activeRemoteCar?.carOperationalState?.adaptationWindow) {
       return {
-        event: activeRemoteCar.carOperationalState.adaptationWindow.active ? "DRIVER_ADAPTATION_ACTIVE" : "DRIVER_ADAPTATION_INACTIVE",
+        event: activeRemoteCar.carOperationalState.adaptationWindow.active
+          ? "DRIVER_ADAPTATION_ACTIVE"
+          : "DRIVER_ADAPTATION_INACTIVE",
         currentLapInWindow: activeRemoteCar.carOperationalState.adaptationWindow.currentLapInWindow,
         brakeBiteMismatchPct: 0,
         steeringJitterMismatchPct: 0,

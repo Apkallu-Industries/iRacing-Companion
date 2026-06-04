@@ -20,7 +20,7 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
   const flPress = t.tires?.fl?.pressureBar ?? 1.84;
   const frPress = t.tires?.fr?.pressureBar ?? 1.92;
   const rlPress = t.tires?.rl?.pressureBar ?? 1.88;
-  const rrPress = t.tires?.rr?.pressureBar ?? 1.90;
+  const rrPress = t.tires?.rr?.pressureBar ?? 1.9;
 
   const flWear = t.tires?.fl?.wearPct ?? 98;
   const frWear = t.tires?.fr?.wearPct ?? 94;
@@ -35,8 +35,8 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
   // Helper: map a carcass temp to a background color color block
   const getThermalBg = (temp: number) => {
     if (temp < 70) return "bg-blue-950/40 border-blue-500 text-[#3B82F6]"; // cold
-    if (temp > 95) return "bg-red-950/40 border-red-500 text-[#FF4D4D]";  // hot
-    return "bg-emerald-950/20 border-emerald-500 text-[#00D17F]";       // ok
+    if (temp > 95) return "bg-red-950/40 border-red-500 text-[#FF4D4D]"; // hot
+    return "bg-emerald-950/20 border-emerald-500 text-[#00D17F]"; // ok
   };
 
   const getThermalLabel = (temp: number) => {
@@ -63,7 +63,7 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
     // Background circle lines
     ctx.strokeStyle = "#1C2430";
     ctx.lineWidth = 0.5;
-    
+
     // 1G, 2G, 3G rings
     for (let r = 1; r <= 3; r++) {
       ctx.beginPath();
@@ -104,13 +104,16 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
       title="Tire Instrument"
       mode={mode}
       activeStatus={frTemp > 95 ? "THERMAL OVERHEAT" : "THERMAL OPTIMAL"}
-      activeStatusColor={frTemp > 95 ? "text-[#FF4D4D] border-[#FF4D4D]/40 bg-[#FF4D4D]/10" : "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10"}
+      activeStatusColor={
+        frTemp > 95
+          ? "text-[#FF4D4D] border-[#FF4D4D]/40 bg-[#FF4D4D]/10"
+          : "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10"
+      }
       onAiAnalyze={() => {}}
       aiAdvice={aiAdvice}
     >
       <div className="p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white">
         <div className="grid grid-cols-12 gap-3 flex-1">
-          
           {/* Left panel (7 cols): Tire carcass thermal grid */}
           <div className="col-span-8 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3">
             <div className="text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider">
@@ -119,14 +122,17 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
 
             {/* Tire Grid FL/FR/RL/RR */}
             <div className="grid grid-cols-2 gap-2 flex-1 my-2">
-              
               {/* FL */}
-              <div className={`p-1.5 border rounded-sm ${getThermalBg(flTemp)} flex flex-col justify-between`}>
+              <div
+                className={`p-1.5 border rounded-sm ${getThermalBg(flTemp)} flex flex-col justify-between`}
+              >
                 <div className="flex justify-between text-[7px] font-black">
                   <span>FL TIRE</span>
                   <span>{getThermalLabel(flTemp)}</span>
                 </div>
-                <div className="text-sm font-black tracking-tight text-white tabular-nums">{flTemp.toFixed(0)}°C</div>
+                <div className="text-sm font-black tracking-tight text-white tabular-nums">
+                  {flTemp.toFixed(0)}°C
+                </div>
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span className="text-white font-bold">{flPress.toFixed(2)} Bar</span>
                   <span>{flWear}% LIFE</span>
@@ -134,12 +140,16 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
               </div>
 
               {/* FR */}
-              <div className={`p-1.5 border rounded-sm ${getThermalBg(frTemp)} flex flex-col justify-between`}>
+              <div
+                className={`p-1.5 border rounded-sm ${getThermalBg(frTemp)} flex flex-col justify-between`}
+              >
                 <div className="flex justify-between text-[7px] font-black">
                   <span>FR TIRE</span>
                   <span>{getThermalLabel(frTemp)}</span>
                 </div>
-                <div className="text-sm font-black tracking-tight text-white tabular-nums">{frTemp.toFixed(0)}°C</div>
+                <div className="text-sm font-black tracking-tight text-white tabular-nums">
+                  {frTemp.toFixed(0)}°C
+                </div>
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span className="text-white font-bold">{frPress.toFixed(2)} Bar</span>
                   <span>{frWear}% LIFE</span>
@@ -147,12 +157,16 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
               </div>
 
               {/* RL */}
-              <div className={`p-1.5 border rounded-sm ${getThermalBg(rlTemp)} flex flex-col justify-between`}>
+              <div
+                className={`p-1.5 border rounded-sm ${getThermalBg(rlTemp)} flex flex-col justify-between`}
+              >
                 <div className="flex justify-between text-[7px] font-black">
                   <span>RL TIRE</span>
                   <span>{getThermalLabel(rlTemp)}</span>
                 </div>
-                <div className="text-sm font-black tracking-tight text-white tabular-nums">{rlTemp.toFixed(0)}°C</div>
+                <div className="text-sm font-black tracking-tight text-white tabular-nums">
+                  {rlTemp.toFixed(0)}°C
+                </div>
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span className="text-white font-bold">{rlPress.toFixed(2)} Bar</span>
                   <span>{rlWear}% LIFE</span>
@@ -160,18 +174,21 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
               </div>
 
               {/* RR */}
-              <div className={`p-1.5 border rounded-sm ${getThermalBg(rrTemp)} flex flex-col justify-between`}>
+              <div
+                className={`p-1.5 border rounded-sm ${getThermalBg(rrTemp)} flex flex-col justify-between`}
+              >
                 <div className="flex justify-between text-[7px] font-black">
                   <span>RR TIRE</span>
                   <span>{getThermalLabel(rrTemp)}</span>
                 </div>
-                <div className="text-sm font-black tracking-tight text-white tabular-nums">{rrTemp.toFixed(0)}°C</div>
+                <div className="text-sm font-black tracking-tight text-white tabular-nums">
+                  {rrTemp.toFixed(0)}°C
+                </div>
                 <div className="flex justify-between text-[8px] text-[#7A828C]">
                   <span className="text-white font-bold">{rrPress.toFixed(2)} Bar</span>
                   <span>{rrWear}% LIFE</span>
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -183,15 +200,21 @@ export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: Tire
 
             {/* G-G Diagram Canvas wrapper */}
             <div className="flex-1 flex items-center justify-center my-2">
-              <canvas ref={ggCanvasRef} width={80} height={80} className="bg-[#0B0F14] border border-[#1C2430] rounded-full" />
+              <canvas
+                ref={ggCanvasRef}
+                width={80}
+                height={80}
+                className="bg-[#0B0F14] border border-[#1C2430] rounded-full"
+              />
             </div>
 
             {/* Slip stats */}
             <div className="text-center bg-[#0B0F14] border border-[#1C2430] py-1 rounded-sm text-[8px] text-[#7A828C]">
               <span>PEAK G: </span>
-              <span className="text-white font-black tabular-nums">{Math.sqrt(gLat*gLat + gLon*gLon).toFixed(2)}G</span>
+              <span className="text-white font-black tabular-nums">
+                {Math.sqrt(gLat * gLat + gLon * gLon).toFixed(2)}G
+              </span>
             </div>
-
           </div>
         </div>
       </div>

@@ -84,14 +84,20 @@ function Dashboard() {
       const channel = ((e as CustomEvent).detail?.channel || "").toLowerCase();
       if (["brake", "bias", "press", "tempc"].some((k) => channel.includes(k))) {
         setActivePreset("gt3");
-      } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some(k => channel.includes(k))) {
-      } else if (["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) => channel.includes(k))) {
+      } else if (
+        ["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) => channel.includes(k))
+      ) {
+      } else if (
+        ["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) => channel.includes(k))
+      ) {
         setActivePreset("gtp");
-      } else if (["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some((k) =>
-        channel.includes(k),
-      )) {
+      } else if (
+        ["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some((k) =>
+          channel.includes(k),
+        )
+      ) {
         setActivePreset("aero");
-      } else if (["throttle", "steer", "clutch", "input"].some(k => channel.includes(k))) {
+      } else if (["throttle", "steer", "clutch", "input"].some((k) => channel.includes(k))) {
         setActivePreset("coach");
       }
     };
@@ -115,7 +121,7 @@ function Dashboard() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hasDebug = Array.from(params.entries()).some(
-      ([key, val]) => key.trim() === "debug" && val.trim() === "1"
+      ([key, val]) => key.trim() === "debug" && val.trim() === "1",
     );
     if (hasDebug) {
       setDebugMode(true);
@@ -128,7 +134,6 @@ function Dashboard() {
       <BridgeConnectionBanner t={t} />
       <RpmBar />
 
-
       {isRaceCommand ? (
         <RaceCommandLayout t={t} samples={samples} />
       ) : isF1Layout ? (
@@ -140,10 +145,22 @@ function Dashboard() {
             <section className="col-span-3 flex flex-col overflow-hidden border-r border-border">
               {/* Live Telemetry header */}
               <div className="flex items-center gap-2 border-b border-border px-3 py-1.5 text-[10px] flex-shrink-0">
-                <span className="uppercase tracking-wider text-muted-foreground">Live Telemetry</span>
-                <span className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`} />
-                <span className="text-muted-foreground">{t.connected ? "Connected" : (typeof window !== 'undefined' && allowSimulator() ? "Simulated" : "Offline")}</span>
-                {t.connected && <span className="text-muted-foreground ml-auto">{t.latencyMs}ms</span>}
+                <span className="uppercase tracking-wider text-muted-foreground">
+                  Live Telemetry
+                </span>
+                <span
+                  className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`}
+                />
+                <span className="text-muted-foreground">
+                  {t.connected
+                    ? "Connected"
+                    : typeof window !== "undefined" && allowSimulator()
+                      ? "Simulated"
+                      : "Offline"}
+                </span>
+                {t.connected && (
+                  <span className="text-muted-foreground ml-auto">{t.latencyMs}ms</span>
+                )}
               </div>
 
               {/* Lap hero */}
@@ -156,8 +173,12 @@ function Dashboard() {
               <div className="flex-1 flex flex-col items-center justify-center border-b border-border px-3 py-2">
                 <F1SpeedGauge />
                 <div className="mt-1 text-center">
-                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Gear</div>
-                  <div className="font-mono text-[32px] font-bold leading-none text-foreground">{t.gear}</div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                    Gear
+                  </div>
+                  <div className="font-mono text-[32px] font-bold leading-none text-foreground">
+                    {t.gear}
+                  </div>
                 </div>
               </div>
 
@@ -197,7 +218,9 @@ function Dashboard() {
             <section className="col-span-3 flex flex-col overflow-hidden">
               {/* Track Map placeholder */}
               <div className="border-b border-border px-2 py-1.5 flex-shrink-0">
-                <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Track Map</div>
+                <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                  Track Map
+                </div>
                 <div className="h-28 flex items-center justify-center text-muted-foreground text-[10px] opacity-50">
                   {t.track || "No track data"}
                 </div>
@@ -216,7 +239,10 @@ function Dashboard() {
           </div>
 
           {/* Bottom section: Sector comparison + AI Coach */}
-          <div className="border-t border-border grid grid-cols-12 gap-0 flex-shrink-0" style={{ height: "180px" }}>
+          <div
+            className="border-t border-border grid grid-cols-12 gap-0 flex-shrink-0"
+            style={{ height: "180px" }}
+          >
             {/* Sector comparison (spans 8 cols) */}
             <div className="col-span-8 border-r border-border overflow-hidden">
               <F1SectorComparison t={t} />
@@ -231,7 +257,11 @@ function Dashboard() {
           {/* Bottom controls */}
           <div className="border-t border-border bg-background p-2 grid grid-cols-12 gap-2 text-xs flex-shrink-0">
             <div className="col-span-12 lg:col-span-2 flex flex-col justify-between">
-              {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
+              {t.connected ? (
+                <RecordingControls t={t} />
+              ) : (
+                <BridgeInstall iracingLive={t.connected} />
+              )}
             </div>
             <div className="col-span-12 md:col-span-6 lg:col-span-3 flex flex-col justify-between">
               <GearAdvisor t={t} samples={samples} />
@@ -252,7 +282,6 @@ function Dashboard() {
         <>
           {/* Main workspace pane splits */}
           <div className="flex-1 min-h-0 grid grid-cols-12 gap-0 bg-[#05070A]">
-            
             {/* 1. LEFT RAIL: ENGINEERING NAVIGATION RAIL (Col span 3) */}
             <section className="col-span-3 flex flex-col overflow-hidden border-r border-[#1C2430] bg-[#0B0F14] select-none">
               {/* Profile / Workspace Header */}
@@ -286,13 +315,14 @@ function Dashboard() {
 
             {/* 2. CENTER PANEL: GRAPH/TRACE CLUSTER (Col span 6 - 60-70% space) */}
             <section className="col-span-6 flex flex-col overflow-hidden border-r border-[#1C2430] bg-[#05070A]">
-              
               {/* Stacked trace controls */}
               <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#1C2430] shrink-0 bg-[#0B0F14]">
                 <PanelHeader
                   title="rolling stacked channel traces"
                   right={
-                    cursor ? `cursor delta t=${(cursor.sample.t / 1000).toFixed(3)}s` : "last 30s @ 60hz stream"
+                    cursor
+                      ? `cursor delta t=${(cursor.sample.t / 1000).toFixed(3)}s`
+                      : "last 30s @ 60hz stream"
                   }
                 />
                 <FilterControls
@@ -320,22 +350,24 @@ function Dashboard() {
                     ACTIVE WORKSPACE ENVIRONMENT:
                   </span>
                   <div className="flex bg-[#05070A] border border-[#1C2430] rounded-sm overflow-hidden">
-                    {(Object.keys(WORKSPACE_PRESETS) as Array<keyof typeof WORKSPACE_PRESETS>).map((key) => {
-                      const isActive = activePreset === key;
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => setActivePreset(key)}
-                          className={`px-2 py-0.5 text-[8px] uppercase tracking-wider font-bold cursor-pointer ${
-                            isActive
-                              ? "bg-[#8B5CF6] text-white"
-                              : "text-[#7A828C] hover:text-[#E2E4E8]"
-                          }`}
-                        >
-                          {WORKSPACE_PRESETS[key].name}
-                        </button>
-                      );
-                    })}
+                    {(Object.keys(WORKSPACE_PRESETS) as Array<keyof typeof WORKSPACE_PRESETS>).map(
+                      (key) => {
+                        const isActive = activePreset === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setActivePreset(key)}
+                            className={`px-2 py-0.5 text-[8px] uppercase tracking-wider font-bold cursor-pointer ${
+                              isActive
+                                ? "bg-[#8B5CF6] text-white"
+                                : "text-[#7A828C] hover:text-[#E2E4E8]"
+                            }`}
+                          >
+                            {WORKSPACE_PRESETS[key].name}
+                          </button>
+                        );
+                      },
+                    )}
                   </div>
                 </div>
                 <span className="text-[7.5px] text-[#7A828C] font-bold uppercase truncate max-w-[200px] hidden md:inline">
@@ -356,7 +388,6 @@ function Dashboard() {
                   })}
                 </div>
               </div>
-
             </section>
 
             {/* 3. RIGHT RAIL: AI COACH & STRATEGY CENTER (Col span 3) */}
@@ -390,7 +421,11 @@ function Dashboard() {
           <div className="border-t border-[#1C2430] bg-[#0B0F14] p-2 grid grid-cols-12 gap-2 text-[10px] uppercase font-mono tracking-wider shrink-0 select-none">
             {/* Column 1: Connection & Recording controls */}
             <div className="col-span-12 lg:col-span-3 flex flex-col justify-between pr-2">
-              {t.connected ? <RecordingControls t={t} /> : <BridgeInstall iracingLive={t.connected} />}
+              {t.connected ? (
+                <RecordingControls t={t} />
+              ) : (
+                <BridgeInstall iracingLive={t.connected} />
+              )}
             </div>
 
             {/* Column 2: Gear Ratio Advisor (Top) and Reference Pace (Bottom) */}
@@ -433,7 +468,9 @@ function TopBar({ t }: { t: Telemetry }) {
       <BackButton />
       <span className="rounded-sm bg-muted px-2 py-1 text-muted-foreground">Pit Wall i2</span>
       <div className="flex items-center gap-1.5 bg-muted border border-border-strong rounded-sm px-2 py-0.5 ml-1 select-none text-[10px] text-muted-foreground">
-        <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Profile</span>
+        <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">
+          Profile
+        </span>
         <select
           value={activeWorkspace}
           aria-label="Profile"
@@ -442,7 +479,11 @@ function TopBar({ t }: { t: Telemetry }) {
           className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
         >
           {Object.values(WORKSPACES).map((w) => (
-            <option key={w.key} value={w.key} className="bg-background text-foreground font-mono uppercase text-[10px]">
+            <option
+              key={w.key}
+              value={w.key}
+              className="bg-background text-foreground font-mono uppercase text-[10px]"
+            >
               {w.name}
             </option>
           ))}
@@ -451,7 +492,9 @@ function TopBar({ t }: { t: Telemetry }) {
       {/* Layout style switcher */}
       <div className="flex items-center gap-1.5 bg-muted border border-border-strong rounded-sm px-2 py-0.5 select-none text-[10px] text-muted-foreground">
         <Palette className="h-3 w-3 text-primary" />
-        <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">Style</span>
+        <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-wider">
+          Style
+        </span>
         <select
           value={layout}
           aria-label="Style"
@@ -460,7 +503,11 @@ function TopBar({ t }: { t: Telemetry }) {
           className="bg-transparent text-foreground border-none font-mono text-[10px] uppercase tracking-wider focus:outline-none cursor-pointer pr-1"
         >
           {LAYOUT_PROFILES.map((p) => (
-            <option key={p.id} value={p.id} className="bg-background text-foreground font-mono uppercase text-[10px]">
+            <option
+              key={p.id}
+              value={p.id}
+              className="bg-background text-foreground font-mono uppercase text-[10px]"
+            >
               {p.label}
             </option>
           ))}
@@ -485,7 +532,11 @@ function TopBar({ t }: { t: Telemetry }) {
             className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500" : "bg-amber-500"}`}
           />
           <span className="text-[10px]">
-            {t.connected ? `${t.sdkVersion} · ${t.latencyMs}ms` : (typeof window !== 'undefined' && allowSimulator() ? "Simulated" : "Offline")}
+            {t.connected
+              ? `${t.sdkVersion} · ${t.latencyMs}ms`
+              : typeof window !== "undefined" && allowSimulator()
+                ? "Simulated"
+                : "Offline"}
           </span>
         </div>
         <Link
@@ -730,7 +781,9 @@ function TirePanel({ t }: { t: Telemetry }) {
               </div>
               <div className="mt-0.5 flex items-baseline justify-between tabular-nums">
                 <span className="text-sm text-foreground">{Math.round(c.tempC)}°</span>
-                <span className="text-[10px] text-muted-foreground">{c.pressureBar.toFixed(2)} bar</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {c.pressureBar.toFixed(2)} bar
+                </span>
               </div>
               <div className="mt-1 h-0.5 w-full overflow-hidden rounded-sm bg-muted">
                 <div

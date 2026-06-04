@@ -197,12 +197,12 @@ export const DARK_THEME: Required<ThemeMap> = {
   rail: "#05070A",
   border: "#1C2430",
   "border-strong": "#263241",
-  primary: "#3B82F6", /* Telemetry Blue */
+  primary: "#3B82F6" /* Telemetry Blue */,
   "primary-foreground": "#ffffff",
   muted: "#11161D",
   "muted-foreground": "#7a828c",
   accent: "#161C24",
-  destructive: "#FF4D4D", /* Warning Red */
+  destructive: "#FF4D4D" /* Warning Red */,
   "ch-speed": "#3B82F6",
   "ch-throttle": "#00D17F",
   "ch-brake": "#FF4D4D",
@@ -335,7 +335,6 @@ export const CARBON_THEME: Required<ThemeMap> = {
   "grid-minor": "#1a1a20",
 };
 
-
 /* =============================================
    Style F - Modern F1
    F1 Red on carbon black. DIN-style bold headings.
@@ -429,13 +428,13 @@ export const HIGH_CONTRAST_THEME = STUDIO_BLACK_THEME;
 export const SOLAR_THEME = CARBON_THEME;
 
 export const PRESETS: { id: string; label: string; theme: Required<ThemeMap> }[] = [
-  { id: "motec",    label: "A - MoTeC Dark",      theme: DARK_THEME },
-  { id: "modern",   label: "B - Modern Flat",      theme: MODERN_FLAT_THEME },
-  { id: "studio",   label: "C - Studio Black",     theme: STUDIO_BLACK_THEME },
-  { id: "engineer", label: "D - Light Engineer",   theme: LIGHT_THEME },
-  { id: "carbon",   label: "E - Carbon UI",        theme: CARBON_THEME },
-  { id: "f1",       label: "F - Modern F1",        theme: F1_THEME },
-  { id: "indycar",  label: "G - IndyCar/NASCAR",   theme: INDYCAR_THEME },
+  { id: "motec", label: "A - MoTeC Dark", theme: DARK_THEME },
+  { id: "modern", label: "B - Modern Flat", theme: MODERN_FLAT_THEME },
+  { id: "studio", label: "C - Studio Black", theme: STUDIO_BLACK_THEME },
+  { id: "engineer", label: "D - Light Engineer", theme: LIGHT_THEME },
+  { id: "carbon", label: "E - Carbon UI", theme: CARBON_THEME },
+  { id: "f1", label: "F - Modern F1", theme: F1_THEME },
+  { id: "indycar", label: "G - IndyCar/NASCAR", theme: INDYCAR_THEME },
   { id: "racecommand", label: "H - Proper Race Command", theme: RACECOMMAND_THEME },
 ];
 

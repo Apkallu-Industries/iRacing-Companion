@@ -49,11 +49,12 @@ class ObservabilityEngine {
 
   getMetrics() {
     const mem = process.memoryUsage();
-    
+
     // Average query planner execution latency
     let avgQueryMs = 0;
     if (this.queryLatencySamples.length > 0) {
-      avgQueryMs = this.queryLatencySamples.reduce((a, b) => a + b, 0) / this.queryLatencySamples.length;
+      avgQueryMs =
+        this.queryLatencySamples.reduce((a, b) => a + b, 0) / this.queryLatencySamples.length;
     }
 
     return {
@@ -64,7 +65,7 @@ class ObservabilityEngine {
       heapUsedMb: Number((mem.heapUsed / 1024 / 1024).toFixed(1)),
       heapTotalMb: Number((mem.heapTotal / 1024 / 1024).toFixed(1)),
       externalMemoryMb: Number((mem.external / 1024 / 1024).toFixed(1)),
-      observabilityState: "ACTIVE"
+      observabilityState: "ACTIVE",
     };
   }
 

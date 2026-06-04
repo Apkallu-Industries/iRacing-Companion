@@ -6,18 +6,18 @@
 export interface ForecastPrognosis {
   projectedBlowoutLap: number; // Lap where thermal growth exceeds max operating boundary
   isThreatActive: boolean;
-  exhaustionLapERS: number;     // Lap where straightaway deploys exhaust SoC bounds
+  exhaustionLapERS: number; // Lap where straightaway deploys exhaust SoC bounds
   confidenceScore: number;
 }
 
 /**
- * Projects dynamic tire thermal core carcass temperature growth rates 
+ * Projects dynamic tire thermal core carcass temperature growth rates
  * to forecast when thermals will exceed the maximum optimal envelope bounds (96C limit).
  */
 export function forecastThermalBlowout(
   lfTemp: number[] | Float32Array,
   lapCount: number,
-  maxSafeTemp: number = 96
+  maxSafeTemp: number = 96,
 ): { projectedLap: number; activeThreat: boolean } {
   const len = lfTemp.length;
   if (len < 300) return { projectedLap: 22, activeThreat: false };
@@ -50,7 +50,7 @@ export function forecastThermalBlowout(
 
   return {
     projectedLap: Math.min(60, projectedLap),
-    activeThreat: remainingLapsToBlowout <= 8
+    activeThreat: remainingLapsToBlowout <= 8,
   };
 }
 
@@ -59,7 +59,7 @@ export function forecastThermalBlowout(
  */
 export function forecastERSExhaustion(
   socDecaySlice: number[] | Float32Array,
-  lapCount: number
+  lapCount: number,
 ): number {
   const len = socDecaySlice.length;
   if (len < 200) return 18;
@@ -76,10 +76,10 @@ export function forecastERSExhaustion(
 
   const decayRatePerLap = decay / Math.max(1, lapCount / 2);
   const remainingSoC = avgEnd - 10; // 10% bottom threshold capacity
-  
+
   if (remainingSoC <= 0) return lapCount;
-  
-  return Math.min(50, Math.round(lapCount + (remainingSoC / decayRatePerLap)));
+
+  return Math.min(50, Math.round(lapCount + remainingSoC / decayRatePerLap));
 }
 
 /**
@@ -89,7 +89,7 @@ export function compileStintPrognosis(
   lfTemp: number[] | Float32Array,
   socDecay: number[] | Float32Array,
   lapCount: number,
-  maxSafeTemp: number = 96
+  maxSafeTemp: number = 96,
 ): ForecastPrognosis {
   const thermal = forecastThermalBlowout(lfTemp, lapCount, maxSafeTemp);
   const ersLap = forecastERSExhaustion(socDecay, lapCount);
@@ -98,6 +98,6 @@ export function compileStintPrognosis(
     projectedBlowoutLap: thermal.projectedLap,
     isThreatActive: thermal.activeThreat,
     exhaustionLapERS: ersLap,
-    confidenceScore: 0.88 // Default model tracking fit score
+    confidenceScore: 0.88, // Default model tracking fit score
   };
 }

@@ -39,9 +39,7 @@ export function BridgeConnectionBanner({ t }: { t: Telemetry }) {
         {portBlocked ? (
           <p className="text-muted-foreground leading-relaxed">
             Port{" "}
-            <code className="rounded bg-muted px-1 font-mono text-[11px] text-primary">
-              3001
-            </code>{" "}
+            <code className="rounded bg-muted px-1 font-mono text-[11px] text-primary">3001</code>{" "}
             is not reachable. Start the bridge below, then allow Node.js through Windows Firewall if
             prompted.
           </p>

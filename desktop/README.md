@@ -6,11 +6,11 @@ This directory contains the **Electron desktop wrapper** for Pit Wall. It bundle
 
 ## Prerequisites
 
-| Requirement | Version | Notes |
-|---|---|---|
-| Node.js | `24.x` | Must match the `engines` field in `package.json` |
-| npm | `10.x+` | Comes with Node |
-| Pit Wall web app built | `dist/` present | Run `npm run build` from the repo root first |
+| Requirement            | Version         | Notes                                            |
+| ---------------------- | --------------- | ------------------------------------------------ |
+| Node.js                | `24.x`          | Must match the `engines` field in `package.json` |
+| npm                    | `10.x+`         | Comes with Node                                  |
+| Pit Wall web app built | `dist/` present | Run `npm run build` from the repo root first     |
 
 Install desktop dependencies once (if not already done):
 
@@ -32,6 +32,7 @@ npm run build
 ```
 
 This compiles the React/Vite front-end and SSR server into:
+
 - `dist/client/` — browser-side assets
 - `dist/server/` — server-side render assets
 
@@ -65,11 +66,11 @@ desktop/dist-installer/win-unpacked/                  ← Unpacked app (for quic
 
 ## Build Variants
 
-| Command | Output | Use Case |
-|---|---|---|
-| `npm run dist` | `dist-installer/Pit Wall Setup X.X.X.exe` (NSIS) | Full installer for end-user distribution |
-| `npm run dist:dir` | `dist-installer/win-unpacked/` | No installer — raw folder, fastest to test |
-| `npm run dist:portable` | `dist-installer/*.exe` (portable) | Run-anywhere EXE, no install required |
+| Command                 | Output                                           | Use Case                                   |
+| ----------------------- | ------------------------------------------------ | ------------------------------------------ |
+| `npm run dist`          | `dist-installer/Pit Wall Setup X.X.X.exe` (NSIS) | Full installer for end-user distribution   |
+| `npm run dist:dir`      | `dist-installer/win-unpacked/`                   | No installer — raw folder, fastest to test |
+| `npm run dist:portable` | `dist-installer/*.exe` (portable)                | Run-anywhere EXE, no install required      |
 
 ---
 
@@ -163,6 +164,7 @@ The installer version is controlled by the `version` field in [`desktop/package.
 ```
 
 The installer filename will reflect the new version automatically:
+
 ```
 Pit Wall Setup 1.3.0.exe
 ```
@@ -175,9 +177,9 @@ When Pit Wall Desktop launches it opens the `/runtime` initialization page, whic
 
 From the landing page the user selects their workspace:
 
-| Workspace | Route | Description |
-|---|---|---|
-| Live Telemetry Command | `/live` | 60Hz real-time telemetry dashboard |
-| Team Strategy Command | `/team` | Endurance race strategy operations center |
-| Analysis Workbench | `/sessions` | `.ibt` lap file analysis workbench |
-| AI Engineer Terminal | `/ai-engineer` | AI-powered race engineering assistant |
+| Workspace              | Route          | Description                               |
+| ---------------------- | -------------- | ----------------------------------------- |
+| Live Telemetry Command | `/live`        | 60Hz real-time telemetry dashboard        |
+| Team Strategy Command  | `/team`        | Endurance race strategy operations center |
+| Analysis Workbench     | `/sessions`    | `.ibt` lap file analysis workbench        |
+| AI Engineer Terminal   | `/ai-engineer` | AI-powered race engineering assistant     |

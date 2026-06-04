@@ -38,7 +38,11 @@ export function evaluateTeamStrategyBoard(plans: CarStintPlan[]): StrategyBoardS
   const recommendations: string[] = [];
 
   if (!plans || plans.length === 0) {
-    return { cars: [], warnings: [], recommendations: ["No active teammate telemetry sessions detected in the team namespace."] };
+    return {
+      cars: [],
+      warnings: [],
+      recommendations: ["No active teammate telemetry sessions detected in the team namespace."],
+    };
   }
 
   // 1. Scan for Double-Stack garage box conflicts (projected pit windows overlap)
@@ -46,19 +50,20 @@ export function evaluateTeamStrategyBoard(plans: CarStintPlan[]): StrategyBoardS
     for (let j = i + 1; j < plans.length; j++) {
       const carA = plans[i];
       const carB = plans[j];
-      
+
       const lapDifference = Math.abs(carA.projectedPitLap - carB.projectedPitLap);
-      if (lapDifference <= 1) { // Pitting on the same lap or adjacent laps
+      if (lapDifference <= 1) {
+        // Pitting on the same lap or adjacent laps
         warnings.push({
           warningId: `warn_ds_${carA.carNumber}_${carB.carNumber}`,
           severity: lapDifference === 0 ? "critical" : "warning",
           message: `DOUBLE-STACK ALERT: Car #${carA.carNumber} and Car #${carB.carNumber} projected pitstop windows overlap on Lap ${carA.projectedPitLap}.`,
           involvedCars: [carA.carNumber, carB.carNumber],
-          conflictLap: carA.projectedPitLap
+          conflictLap: carA.projectedPitLap,
         });
 
         recommendations.push(
-          `STRATEGY: Adjust Car #${carB.carNumber} objective to FUEL_SAVE to extend its stint by +2 laps and clear the box.`
+          `STRATEGY: Adjust Car #${carB.carNumber} objective to FUEL_SAVE to extend its stint by +2 laps and clear the box.`,
         );
       }
     }
@@ -72,21 +77,23 @@ export function evaluateTeamStrategyBoard(plans: CarStintPlan[]): StrategyBoardS
         severity: "warning",
         message: `TYRE GRIP DEPLETED: Car #${car.carNumber} tire carcass grip is degraded to ${car.tireGripRemainingPct.toFixed(1)}%.`,
         involvedCars: [car.carNumber],
-        conflictLap: car.projectedPitLap
+        conflictLap: car.projectedPitLap,
       });
       recommendations.push(
-        `PERFORMANCE: Instruct Driver ${car.driverName} (Car #${car.carNumber}) to shift brake bias forward +0.5% to preserve rear tyres.`
+        `PERFORMANCE: Instruct Driver ${car.driverName} (Car #${car.carNumber}) to shift brake bias forward +0.5% to preserve rear tyres.`,
       );
     }
   });
 
   if (recommendations.length === 0) {
-    recommendations.push("Garage operations fully synchronized. Baseline stints and fuel schedules optimal.");
+    recommendations.push(
+      "Garage operations fully synchronized. Baseline stints and fuel schedules optimal.",
+    );
   }
 
   return {
     cars: plans,
     warnings,
-    recommendations
+    recommendations,
   };
 }

@@ -1,1 +1,206 @@
-const f="PWLAP\0\0\0";const d={ENCRYPTED:1,SIGNED:2,COMPRESSED:4,INCLUDE_PII:8};function _(t){const n=new Uint8Array(256),r=new DataView(n.buffer,n.byteOffset);let e=0;const s=new TextEncoder().encode(f);n.set(s,e),e+=8,r.setUint32(e,1,!0),e+=4,r.setUint16(e,t.flags,!0),e+=2,t.iv_nonce&&n.set(t.iv_nonce.slice(0,16),e),e+=16,t.signature&&n.set(t.signature.slice(0,64),e),e+=64,r.setUint8(e,t.granularity),e+=1;const o=BigInt(t.created_at_ms);return r.setBigInt64(e,o,!0),e+=8,n}function b(t){if(t.byteLength<256)throw new Error(`Header too small: ${t.byteLength} < 256`);const n=new DataView(t,0,256),r=new Uint8Array(t,0,256);let e=0;const s=r.slice(e,e+8),o=new TextDecoder().decode(s);if(o!==f)throw new Error(`Invalid magic: ${JSON.stringify(o)}`);e+=8;const i=n.getUint32(e,!0);if(i!==1)throw new Error(`Unsupported version: ${i} (expected 1)`);e+=4;const u=n.getUint16(e,!0);e+=2;const c=r.slice(e,e+16);e+=16;const l=r.slice(e,e+64);e+=64;const a=n.getUint8(e);e+=1;const p=n.getBigInt64(e,!0),P=Number(p);e+=8;const A=c.every(g=>g===0),m=l.every(g=>g===0);return{magic:o,version:i,flags:u,iv_nonce:A?void 0:c,signature:m?void 0:l,granularity:a,created_at_ms:P,reserved:r.slice(e)}}function w(t,n){return(t&n)!==0}function y(t,n){return t|n}function h(){const t=new Uint8Array(16);return crypto.getRandomValues(t),t}function S(t){switch(t){case"metadata":return 0;case"setup":return 1;case"full":return 2;default:return 0}}async function v(t,n){const e=new TextEncoder().encode(t),s=await crypto.subtle.importKey("raw",e,"PBKDF2",!1,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt:n,iterations:1e5,hash:"SHA-256"},s,{name:"AES-GCM",length:256},!1,["encrypt","decrypt"])}async function I(t,n,r){const e=await crypto.subtle.encrypt({name:"AES-GCM",iv:r},n,t);return new Uint8Array(e)}function D(){const t=new Uint8Array(16);return crypto.getRandomValues(t),t}async function L(t,n){if(crypto.subtle&&"sign"in crypto.subtle)try{const r=await crypto.subtle.importKey("raw",n,"Ed25519",!1,["sign"]),e=await crypto.subtle.sign("Ed25519",r,t);return new Uint8Array(e)}catch{}throw new Error("Ed25519 signing not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser.")}async function N(t,n){let r=new TextEncoder().encode(JSON.stringify(t));r=await U(r);let e=0,s,o;if(e=y(e,d.INCLUDE_PII),e=y(e,d.COMPRESSED),n.sign&&n.privateKey&&(e=y(e,d.SIGNED),o=await L(r,n.privateKey)),n.encrypt&&n.password){e=y(e,d.ENCRYPTED),s=h();const c=D(),l=await v(n.password,c);r=await I(r,l,s),r=E(c,r)}const i={flags:e,iv_nonce:s,signature:o,granularity:S(n.granularity),created_at_ms:Date.now()},u=_(i);return E(u,r).buffer}async function T(t,n,r){if(t.byteLength<256)throw new Error("File too small for header");const e=t.slice(0,256);let s=new Uint8Array(t.slice(256)),o;try{o=b(e)}catch(a){throw new Error(`Failed to parse header: ${a instanceof Error?a.message:String(a)}`)}let i=w(o.flags,d.ENCRYPTED),u=w(o.flags,d.SIGNED),c=w(o.flags,d.COMPRESSED);if(i)throw new Error("File is encrypted but no password provided");c&&(s=await R(s)),u&&o.signature&&console.warn("File is signed but no public key provided; skipping verification");let l;try{const a=new TextDecoder().decode(s);l=JSON.parse(a)}catch(a){throw new Error(`Failed to parse content: ${a instanceof Error?a.message:String(a)}`)}return{header:o,content:l,encrypted:i,signed:u,compressed:c,valid:!0}}function E(...t){const n=t.reduce((s,o)=>s+o.length,0),r=new Uint8Array(n);let e=0;for(const s of t)r.set(s,e),e+=s.length;return r}async function U(t){if(globalThis.zstd)try{const n=globalThis.zstd.compress(t);return new Uint8Array(n)}catch{console.warn("Zstd compression failed, falling back")}if(globalThis.pako)try{const n=globalThis.pako.deflate(t);return new Uint8Array(n)}catch{console.warn("Pako compression failed, skipping")}return console.warn("No compression library available; storing uncompressed"),t}async function R(t){if(globalThis.zstd)try{const n=globalThis.zstd.decompress(t);return new Uint8Array(n)}catch{console.warn("Zstd decompression failed, trying pako")}if(globalThis.pako)try{const n=globalThis.pako.inflate(t);return new Uint8Array(n)}catch{console.warn("Pako decompression failed")}throw new Error("Unable to decompress content; no decompression library available")}export{T as d,N as s};
+const f = "PWLAP\0\0\0";
+const d = { ENCRYPTED: 1, SIGNED: 2, COMPRESSED: 4, INCLUDE_PII: 8 };
+function _(t) {
+  const n = new Uint8Array(256),
+    r = new DataView(n.buffer, n.byteOffset);
+  let e = 0;
+  const s = new TextEncoder().encode(f);
+  (n.set(s, e),
+    (e += 8),
+    r.setUint32(e, 1, !0),
+    (e += 4),
+    r.setUint16(e, t.flags, !0),
+    (e += 2),
+    t.iv_nonce && n.set(t.iv_nonce.slice(0, 16), e),
+    (e += 16),
+    t.signature && n.set(t.signature.slice(0, 64), e),
+    (e += 64),
+    r.setUint8(e, t.granularity),
+    (e += 1));
+  const o = BigInt(t.created_at_ms);
+  return (r.setBigInt64(e, o, !0), (e += 8), n);
+}
+function b(t) {
+  if (t.byteLength < 256) throw new Error(`Header too small: ${t.byteLength} < 256`);
+  const n = new DataView(t, 0, 256),
+    r = new Uint8Array(t, 0, 256);
+  let e = 0;
+  const s = r.slice(e, e + 8),
+    o = new TextDecoder().decode(s);
+  if (o !== f) throw new Error(`Invalid magic: ${JSON.stringify(o)}`);
+  e += 8;
+  const i = n.getUint32(e, !0);
+  if (i !== 1) throw new Error(`Unsupported version: ${i} (expected 1)`);
+  e += 4;
+  const u = n.getUint16(e, !0);
+  e += 2;
+  const c = r.slice(e, e + 16);
+  e += 16;
+  const l = r.slice(e, e + 64);
+  e += 64;
+  const a = n.getUint8(e);
+  e += 1;
+  const p = n.getBigInt64(e, !0),
+    P = Number(p);
+  e += 8;
+  const A = c.every((g) => g === 0),
+    m = l.every((g) => g === 0);
+  return {
+    magic: o,
+    version: i,
+    flags: u,
+    iv_nonce: A ? void 0 : c,
+    signature: m ? void 0 : l,
+    granularity: a,
+    created_at_ms: P,
+    reserved: r.slice(e),
+  };
+}
+function w(t, n) {
+  return (t & n) !== 0;
+}
+function y(t, n) {
+  return t | n;
+}
+function h() {
+  const t = new Uint8Array(16);
+  return (crypto.getRandomValues(t), t);
+}
+function S(t) {
+  switch (t) {
+    case "metadata":
+      return 0;
+    case "setup":
+      return 1;
+    case "full":
+      return 2;
+    default:
+      return 0;
+  }
+}
+async function v(t, n) {
+  const e = new TextEncoder().encode(t),
+    s = await crypto.subtle.importKey("raw", e, "PBKDF2", !1, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: n, iterations: 1e5, hash: "SHA-256" },
+    s,
+    { name: "AES-GCM", length: 256 },
+    !1,
+    ["encrypt", "decrypt"],
+  );
+}
+async function I(t, n, r) {
+  const e = await crypto.subtle.encrypt({ name: "AES-GCM", iv: r }, n, t);
+  return new Uint8Array(e);
+}
+function D() {
+  const t = new Uint8Array(16);
+  return (crypto.getRandomValues(t), t);
+}
+async function L(t, n) {
+  if (crypto.subtle && "sign" in crypto.subtle)
+    try {
+      const r = await crypto.subtle.importKey("raw", n, "Ed25519", !1, ["sign"]),
+        e = await crypto.subtle.sign("Ed25519", r, t);
+      return new Uint8Array(e);
+    } catch {}
+  throw new Error(
+    "Ed25519 signing not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser.",
+  );
+}
+async function N(t, n) {
+  let r = new TextEncoder().encode(JSON.stringify(t));
+  r = await U(r);
+  let e = 0,
+    s,
+    o;
+  if (
+    ((e = y(e, d.INCLUDE_PII)),
+    (e = y(e, d.COMPRESSED)),
+    n.sign && n.privateKey && ((e = y(e, d.SIGNED)), (o = await L(r, n.privateKey))),
+    n.encrypt && n.password)
+  ) {
+    ((e = y(e, d.ENCRYPTED)), (s = h()));
+    const c = D(),
+      l = await v(n.password, c);
+    ((r = await I(r, l, s)), (r = E(c, r)));
+  }
+  const i = {
+      flags: e,
+      iv_nonce: s,
+      signature: o,
+      granularity: S(n.granularity),
+      created_at_ms: Date.now(),
+    },
+    u = _(i);
+  return E(u, r).buffer;
+}
+async function T(t, n, r) {
+  if (t.byteLength < 256) throw new Error("File too small for header");
+  const e = t.slice(0, 256);
+  let s = new Uint8Array(t.slice(256)),
+    o;
+  try {
+    o = b(e);
+  } catch (a) {
+    throw new Error(`Failed to parse header: ${a instanceof Error ? a.message : String(a)}`);
+  }
+  let i = w(o.flags, d.ENCRYPTED),
+    u = w(o.flags, d.SIGNED),
+    c = w(o.flags, d.COMPRESSED);
+  if (i) throw new Error("File is encrypted but no password provided");
+  (c && (s = await R(s)),
+    u &&
+      o.signature &&
+      console.warn("File is signed but no public key provided; skipping verification"));
+  let l;
+  try {
+    const a = new TextDecoder().decode(s);
+    l = JSON.parse(a);
+  } catch (a) {
+    throw new Error(`Failed to parse content: ${a instanceof Error ? a.message : String(a)}`);
+  }
+  return { header: o, content: l, encrypted: i, signed: u, compressed: c, valid: !0 };
+}
+function E(...t) {
+  const n = t.reduce((s, o) => s + o.length, 0),
+    r = new Uint8Array(n);
+  let e = 0;
+  for (const s of t) (r.set(s, e), (e += s.length));
+  return r;
+}
+async function U(t) {
+  if (globalThis.zstd)
+    try {
+      const n = globalThis.zstd.compress(t);
+      return new Uint8Array(n);
+    } catch {
+      console.warn("Zstd compression failed, falling back");
+    }
+  if (globalThis.pako)
+    try {
+      const n = globalThis.pako.deflate(t);
+      return new Uint8Array(n);
+    } catch {
+      console.warn("Pako compression failed, skipping");
+    }
+  return (console.warn("No compression library available; storing uncompressed"), t);
+}
+async function R(t) {
+  if (globalThis.zstd)
+    try {
+      const n = globalThis.zstd.decompress(t);
+      return new Uint8Array(n);
+    } catch {
+      console.warn("Zstd decompression failed, trying pako");
+    }
+  if (globalThis.pako)
+    try {
+      const n = globalThis.pako.inflate(t);
+      return new Uint8Array(n);
+    } catch {
+      console.warn("Pako decompression failed");
+    }
+  throw new Error("Unable to decompress content; no decompression library available");
+}
+export { T as d, N as s };

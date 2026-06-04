@@ -11,7 +11,14 @@ export interface EnduranceRaceEvent {
   lapNumber: number;
   carNumber: string;
   driverName: string;
-  eventType: "DRIVER_SWAP" | "FUEL_STOP" | "TYRE_CHANGE" | "DAMAGE_REPORT" | "CAUTION_PACE" | "TRACK_CROSSOVER" | "SETUP_ADJUSTMENT";
+  eventType:
+    | "DRIVER_SWAP"
+    | "FUEL_STOP"
+    | "TYRE_CHANGE"
+    | "DAMAGE_REPORT"
+    | "CAUTION_PACE"
+    | "TRACK_CROSSOVER"
+    | "SETUP_ADJUSTMENT";
   description: string;
   metadata: Record<string, any>;
 }
@@ -28,7 +35,7 @@ class RaceTimelineStore {
     driverName: string,
     eventType: EnduranceRaceEvent["eventType"],
     description: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, any> = {},
   ): EnduranceRaceEvent {
     const event: EnduranceRaceEvent = {
       eventId: `ev_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -38,7 +45,7 @@ class RaceTimelineStore {
       driverName,
       eventType,
       description,
-      metadata
+      metadata,
     };
 
     this.timeline.push(event);

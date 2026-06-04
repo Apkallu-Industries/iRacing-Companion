@@ -7,12 +7,12 @@
  */
 
 export interface StintStateMetrics {
-  tireGripPct: number;             // Grip level remaining (100% down to cliff threshold)
-  fuelBurnPerLapL: number;         // Average fuel consumed per lap (liters)
-  fuelLapsRemaining: number;       // Forecasted laps remaining on fuel reserves
-  thermalSaturationIndex: number;  // Ratio of tire carcass core temp to optimal (0.0 - 1.0)
-  brakeFatigueIndex: number;       // Friction torque reduction index (0.0 - 1.0, lower is worse)
-  ersDepletionRatePct: number;     // Average hybrid battery decay per straightaway sweep
+  tireGripPct: number; // Grip level remaining (100% down to cliff threshold)
+  fuelBurnPerLapL: number; // Average fuel consumed per lap (liters)
+  fuelLapsRemaining: number; // Forecasted laps remaining on fuel reserves
+  thermalSaturationIndex: number; // Ratio of tire carcass core temp to optimal (0.0 - 1.0)
+  brakeFatigueIndex: number; // Friction torque reduction index (0.0 - 1.0, lower is worse)
+  ersDepletionRatePct: number; // Average hybrid battery decay per straightaway sweep
 }
 
 /**
@@ -30,21 +30,19 @@ export function calculateStintState(
   fuelLevelL: number,
   tireTempsCL: number[],
   brakeTempsC: number[],
-  batterySoCPct: number[]
+  batterySoCPct: number[],
 ): StintStateMetrics {
-  
   // 1. Tire grip exponential decay modeling
   // grip(t) = startGrip - (gripLossCoefficient * lapsCompleted^1.3)
   const initialGrip = 100;
   const gripLossCoeff = 0.42;
-  const tireGrip = Math.max(20, initialGrip - (gripLossCoeff * Math.pow(lapsCompleted, 1.25)));
+  const tireGrip = Math.max(20, initialGrip - gripLossCoeff * Math.pow(lapsCompleted, 1.25));
 
   // 2. Fuel consumption calculations
   // GT3 vehicles burn roughly 3.2L to 4.4L per lap under green flag.
   const baselineBurn = 3.65;
-  const speedCorrection = speedMps.length > 0 
-    ? (speedMps.reduce((a, b) => a + b, 0) / speedMps.length) / 38.0 
-    : 1.0;
+  const speedCorrection =
+    speedMps.length > 0 ? speedMps.reduce((a, b) => a + b, 0) / speedMps.length / 38.0 : 1.0;
   const avgFuelBurn = baselineBurn * Math.max(0.6, Math.min(1.4, speedCorrection));
   const fuelLapsRemaining = avgFuelBurn > 0 ? Math.max(0, fuelLevelL / avgFuelBurn) : 0;
 
@@ -62,9 +60,7 @@ export function calculateStintState(
   if (brakeTempsC.length > 0) {
     avgBrakeTemp = brakeTempsC.reduce((a, b) => a + b, 0) / brakeTempsC.length;
   }
-  const brakeFade = avgBrakeTemp > 850 
-    ? Math.max(0.4, 1.0 - (avgBrakeTemp - 850) * 0.0018) 
-    : 1.0;
+  const brakeFade = avgBrakeTemp > 850 ? Math.max(0.4, 1.0 - (avgBrakeTemp - 850) * 0.0018) : 1.0;
 
   // 5. ERS depletion rates
   // Measures average hybrid battery decay per straightaway Straight (typically 3-6%)
@@ -79,7 +75,7 @@ export function calculateStintState(
         counts++;
       }
     }
-    socDecay = counts > 0 ? (drops / counts) : 4.2;
+    socDecay = counts > 0 ? drops / counts : 4.2;
   }
 
   return {

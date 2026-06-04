@@ -1,9 +1,9 @@
 /**
  * iRacing Companion License Key Generator
- * 
+ *
  * Usage:
  *   node local-bridge/keygen.js --hwid=B3F2A79C4E0B615F --tier=pro --expires=2029-12-31
- * 
+ *
  * Options:
  *   --hwid     The 16-character Hardware ID of the target PC (Required)
  *   --tier     The license tier: "plus" or "pro" (Default: "pro")
@@ -14,7 +14,7 @@ const licensing = require("./licensing");
 
 // Simple argument parser
 const args = {};
-process.argv.slice(2).forEach(arg => {
+process.argv.slice(2).forEach((arg) => {
   if (arg.startsWith("--")) {
     const [key, val] = arg.split("=");
     args[key.slice(2)] = val;
@@ -28,9 +28,13 @@ const expires = args.expires || "never";
 if (!hwid) {
   console.error("\x1b[31mError: --hwid is required.\x1b[0m");
   console.log("\nUsage:");
-  console.log("  node local-bridge/keygen.js --hwid=<16-CHAR-HEX-HWID> [--tier=pro|plus] [--expires=YYYY-MM-DD|never]\n");
+  console.log(
+    "  node local-bridge/keygen.js --hwid=<16-CHAR-HEX-HWID> [--tier=pro|plus] [--expires=YYYY-MM-DD|never]\n",
+  );
   console.log("Example:");
-  console.log("  node local-bridge/keygen.js --hwid=B3F2A79C4E0B615F --tier=pro --expires=2030-01-01\n");
+  console.log(
+    "  node local-bridge/keygen.js --hwid=B3F2A79C4E0B615F --tier=pro --expires=2030-01-01\n",
+  );
   process.exit(1);
 }
 
@@ -41,7 +45,7 @@ if (!["plus", "pro"].includes(tier)) {
 
 try {
   const key = licensing.generateLicenseKey(hwid.toUpperCase().trim(), tier, expires);
-  
+
   console.log("\x1b[32m\n=== LICENSE KEY GENERATED SUCCESSFULLY ===\x1b[0m");
   console.log(`\x1b[36mTarget HWID:\x1b[0m   ${hwid.toUpperCase()}`);
   console.log(`\x1b[36mLicense Tier:\x1b[0m  ${tier.toUpperCase()}`);

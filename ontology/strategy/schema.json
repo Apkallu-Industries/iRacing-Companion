@@ -65,7 +65,10 @@
       "type": "object",
       "properties": {
         "cornerEntryRotationPreference": { "type": "string", "enum": ["high", "medium", "low"] },
-        "rearAxleStabilityTolerance": { "type": "string", "enum": ["aggressive", "neutral", "cautious"] }
+        "rearAxleStabilityTolerance": {
+          "type": "string",
+          "enum": ["aggressive", "neutral", "cautious"]
+        }
       }
     },
     "physicsTruthBoundary": {

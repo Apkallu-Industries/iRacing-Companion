@@ -21,7 +21,7 @@ function calculateEnergyDeployment(
   currentSoCPct,
   ersMode = 2, // 0 = OFF, 1 = CONSERVE, 2 = BALANCED, 3 = ATTACK, 4 = QUAL
   speedMps,
-  dt = 1 / 60
+  dt = 1 / 60,
 ) {
   if (currentSoCPct <= 0.5) {
     return { nextSoCPct: 0, mguKDeploykW: 0, mguKHarvestkW: 0 };
@@ -30,7 +30,7 @@ function calculateEnergyDeployment(
   // 1. Resolve active ERS map parameters
   let deployCapkW = 0;
   let deployThresholdThrottle = 0.8;
-  
+
   switch (ersMode) {
     case 1: // Conserve
       deployCapkW = 30.0;
@@ -61,7 +61,7 @@ function calculateEnergyDeployment(
 
   // 2. MGU-K Harvesting (converts deceleration brake drag to electrical battery energy)
   let mguKHarvestkW = 0;
-  if (brake > 0.10 && speedMps > 10.0) {
+  if (brake > 0.1 && speedMps > 10.0) {
     // Harvest cap is typical WEC limit (e.g. 150kW or 200kW)
     mguKHarvestkW = Math.min(220.0, brake * 180.0);
   }
@@ -78,10 +78,10 @@ function calculateEnergyDeployment(
   return {
     nextSoCPct,
     mguKDeploykW: Number(mguKDeploykW.toFixed(1)),
-    mguKHarvestkW: Number(mguKHarvestkW.toFixed(1))
+    mguKHarvestkW: Number(mguKHarvestkW.toFixed(1)),
   };
 }
 
 module.exports = {
-  calculateEnergyDeployment
+  calculateEnergyDeployment,
 };

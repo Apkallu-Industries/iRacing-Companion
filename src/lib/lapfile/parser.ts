@@ -48,15 +48,7 @@
  * window so we can finalize the mapping by eye.
  */
 
-export type LapfileMagic =
-  | "OLAP"
-  | "BLAP"
-  | "OLTA"
-  | "BLTA"
-  | "PLAP"
-  | "BPLAP"
-  | "PLTA"
-  | "BPLTA";
+export type LapfileMagic = "OLAP" | "BLAP" | "OLTA" | "BLTA" | "PLAP" | "BPLAP" | "PLTA" | "BPLTA";
 
 export interface LapfileHeader {
   magic: LapfileMagic;

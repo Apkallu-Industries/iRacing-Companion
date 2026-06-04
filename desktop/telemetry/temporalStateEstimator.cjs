@@ -28,14 +28,14 @@ class TemporalStateEstimator {
       ENTRY_OVER_ROTATION: 0.0,
       EXIT_UNDERSTEER: 0.0,
       BRAKE_MIGRATION_ROTATION: 0.0,
-      HYBRID_DEPLOYMENT_SURGE: 0.0
+      HYBRID_DEPLOYMENT_SURGE: 0.0,
     };
 
     // Layer 2: Fusion signals
     this.fusionSignals = {
       coupledAeroInstability: 0.0,
       coupledEntryInstability: 0.0,
-      coupledTractionInstability: 0.0
+      coupledTractionInstability: 0.0,
     };
 
     // Layer 3: Subsystem Health Models (1.0 = pristine health, decays under anomalies)
@@ -43,15 +43,15 @@ class TemporalStateEstimator {
       aeroPlatform: 1.0,
       rearStability: 1.0,
       brakeMigration: 1.0,
-      hybridDeployment: 1.0
+      hybridDeployment: 1.0,
     };
 
     // Layer 4: Bayesian Latent Fault Hypotheses (probabilities 0.0 to 1.0)
     this.hypotheses = {
-      floorDamage: 0.05,       // Prior probability of structural wear/damage
-      diffuserChoking: 0.01,   // Prior probability of severe dynamic pressure choking
-      tireDegradation: 0.05,   // Prior probability of grip decay
-      brakeOverheating: 0.01   // Prior probability of friction loss / glazed pads
+      floorDamage: 0.05, // Prior probability of structural wear/damage
+      diffuserChoking: 0.01, // Prior probability of severe dynamic pressure choking
+      tireDegradation: 0.05, // Prior probability of grip decay
+      brakeOverheating: 0.01, // Prior probability of friction loss / glazed pads
     };
   }
 
@@ -93,8 +93,8 @@ class TemporalStateEstimator {
           simSource: null,
           origin,
           tickSource,
-          latency
-        }
+          latency,
+        },
       };
     }
 
@@ -105,7 +105,7 @@ class TemporalStateEstimator {
     // 1. Aero Bottoming Evidence
     let E_bottom_out = 0.0;
     const bottomOutThreshold = profile.bottomOutVelThreshold || 0.15;
-    const isAeroSpeedGate = (speed * 3.6) > ((profile.minAeroSpeedKph || 120.0) * 0.6);
+    const isAeroSpeedGate = speed * 3.6 > (profile.minAeroSpeedKph || 120.0) * 0.6;
     if (isAeroSpeedGate) {
       const lfShockVel = Math.abs(rawOriginal.LFshockVel ?? rawOriginal.lfShockVel ?? 0);
       const rfShockVel = Math.abs(rawOriginal.RFshockVel ?? rawOriginal.rfShockVel ?? 0);
@@ -126,14 +126,20 @@ class TemporalStateEstimator {
       const rfShockVel = Math.abs(rfRaw);
       const isOutofPhase = lfRaw * rfRaw < 0;
       if (isOutofPhase && lfShockVel > 0.15 && rfShockVel > 0.15) {
-        E_oscillation = Math.min(1.0, Math.max(lfShockVel, rfShockVel) / 0.30);
+        E_oscillation = Math.min(1.0, Math.max(lfShockVel, rfShockVel) / 0.3);
       }
     }
 
     // 3. Diffuser Underbody Stall Evidence
     let E_stall = 0.0;
-    const rearHeight = rawOriginal.RrideHeight ?? (rawOriginal.rearRideHeight ? rawOriginal.rearRideHeight / 1000 : undefined);
-    if (speed * 3.6 > 160.0 && rearHeight !== undefined && current.car.inputs.throttle.value > 0.50) {
+    const rearHeight =
+      rawOriginal.RrideHeight ??
+      (rawOriginal.rearRideHeight ? rawOriginal.rearRideHeight / 1000 : undefined);
+    if (
+      speed * 3.6 > 160.0 &&
+      rearHeight !== undefined &&
+      current.car.inputs.throttle.value > 0.5
+    ) {
       // Rear ride height collapsing below 25mm down to 12mm
       if (rearHeight < 0.025) {
         E_stall = Math.min(1.0, Math.max(0.0, (0.025 - rearHeight) / (0.025 - 0.012)));
@@ -143,23 +149,23 @@ class TemporalStateEstimator {
     // 4 & 5. Brake Lock Evidence (LF & RF Axel Slip)
     let E_lock_lf = 0.0;
     let E_lock_rf = 0.0;
-    const isBrakeGate = speed > 1.38 && current.car.inputs.brake.value > 0.10;
+    const isBrakeGate = speed > 1.38 && current.car.inputs.brake.value > 0.1;
     if (isBrakeGate) {
       const lfSpeed = rawOriginal.LFwheelSpeed ?? rawOriginal.lfSpeed;
       const rfSpeed = rawOriginal.RFwheelSpeed ?? rawOriginal.rfSpeed;
       const lockThreshold = speed * (profile.lockupThreshold || 0.85);
 
       if (lfSpeed !== undefined && lfSpeed < lockThreshold) {
-        E_lock_lf = Math.min(1.0, 1.0 - (lfSpeed / lockThreshold));
+        E_lock_lf = Math.min(1.0, 1.0 - lfSpeed / lockThreshold);
       }
       if (rfSpeed !== undefined && rfSpeed < lockThreshold) {
-        E_lock_rf = Math.min(1.0, 1.0 - (rfSpeed / lockThreshold));
+        E_lock_rf = Math.min(1.0, 1.0 - rfSpeed / lockThreshold);
       }
     }
 
     // 6. Rear Traction Collapse Evidence (Wheelspin axle slip)
     let E_traction = 0.0;
-    const isThrottleGate = speed > 1.38 && current.car.inputs.throttle.value > 0.10;
+    const isThrottleGate = speed > 1.38 && current.car.inputs.throttle.value > 0.1;
     if (isThrottleGate) {
       const lrSpeed = rawOriginal.LRwheelSpeed ?? rawOriginal.lrSpeed;
       const rrSpeed = rawOriginal.RRwheelSpeed ?? rawOriginal.rrSpeed;
@@ -176,10 +182,13 @@ class TemporalStateEstimator {
 
     // 7. Decel Turn-In Over-Rotation Evidence
     let E_over_rotation = 0.0;
-    const isDecelSnapGate = speed > 10.0 && Math.abs(current.car.inputs.steering.value) > 0.02 && current.car.inputs.brake.value > 0.05;
+    const isDecelSnapGate =
+      speed > 10.0 &&
+      Math.abs(current.car.inputs.steering.value) > 0.02 &&
+      current.car.inputs.brake.value > 0.05;
     if (isDecelSnapGate && derived.oversteerIndex) {
       const oIndex = derived.oversteerIndex.value;
-      const oversteerLimit = profile.className === "NASCAR" ? 0.18 : 0.10;
+      const oversteerLimit = profile.className === "NASCAR" ? 0.18 : 0.1;
       if (oIndex > oversteerLimit) {
         E_over_rotation = Math.min(1.0, (oIndex - oversteerLimit) / oversteerLimit);
       }
@@ -187,7 +196,10 @@ class TemporalStateEstimator {
 
     // 8. Exit Understeer Evidence
     let E_understeer = 0.0;
-    const isExitPushGate = speed > 10.0 && Math.abs(current.car.inputs.steering.value) > 0.02 && current.car.inputs.throttle.value > 0.30;
+    const isExitPushGate =
+      speed > 10.0 &&
+      Math.abs(current.car.inputs.steering.value) > 0.02 &&
+      current.car.inputs.throttle.value > 0.3;
     if (isExitPushGate && derived.understeerIndex) {
       const uIndex = derived.understeerIndex.value;
       const understeerLimit = profile.className === "NASCAR" ? 0.16 : 0.12;
@@ -198,7 +210,7 @@ class TemporalStateEstimator {
 
     // 9. Brake Migration Corner Entry over-rotation
     let E_brake_migration = 0.0;
-    const isBrakeMigrationGate = speed > 15.0 && current.car.inputs.brake.value > 0.60;
+    const isBrakeMigrationGate = speed > 15.0 && current.car.inputs.brake.value > 0.6;
     if (isBrakeMigrationGate && derived.oversteerIndex) {
       const oIndex = derived.oversteerIndex.value;
       if (oIndex > 0.06) {
@@ -208,7 +220,7 @@ class TemporalStateEstimator {
 
     // 10. Hybrid Axis Asymmetry
     let E_hybrid = 0.0;
-    if (speed > 15.0 && current.car.inputs.throttle.value > 0.60) {
+    if (speed > 15.0 && current.car.inputs.throttle.value > 0.6) {
       const lrSpeed = rawOriginal.LRwheelSpeed ?? rawOriginal.lrSpeed;
       const rrSpeed = rawOriginal.RRwheelSpeed ?? rawOriginal.rrSpeed;
       if (lrSpeed !== undefined && rrSpeed !== undefined) {
@@ -226,13 +238,13 @@ class TemporalStateEstimator {
       AERO_BOTTOM_OUT: 0.85,
       AERO_PLATFORM_OSCILLATION: 0.85,
       DIFFUSER_STALL: 0.85,
-      BRAKE_LOCK_FRONT_LEFT: 0.70,
-      BRAKE_LOCK_FRONT_RIGHT: 0.70,
-      REAR_TRACTION_COLLAPSE: 0.70,
-      ENTRY_OVER_ROTATION: 0.80,
-      EXIT_UNDERSTEER: 0.80,
-      BRAKE_MIGRATION_ROTATION: 0.80,
-      HYBRID_DEPLOYMENT_SURGE: 0.75
+      BRAKE_LOCK_FRONT_LEFT: 0.7,
+      BRAKE_LOCK_FRONT_RIGHT: 0.7,
+      REAR_TRACTION_COLLAPSE: 0.7,
+      ENTRY_OVER_ROTATION: 0.8,
+      EXIT_UNDERSTEER: 0.8,
+      BRAKE_MIGRATION_ROTATION: 0.8,
+      HYBRID_DEPLOYMENT_SURGE: 0.75,
     };
 
     const evidenceMap = {
@@ -245,14 +257,14 @@ class TemporalStateEstimator {
       ENTRY_OVER_ROTATION: E_over_rotation,
       EXIT_UNDERSTEER: E_understeer,
       BRAKE_MIGRATION_ROTATION: E_brake_migration,
-      HYBRID_DEPLOYMENT_SURGE: E_hybrid
+      HYBRID_DEPLOYMENT_SURGE: E_hybrid,
     };
 
     // Calculate EWMA per detector
     for (const key in this.persistedConfidence) {
-      const alpha = alphaMap[key] || 0.80;
+      const alpha = alphaMap[key] || 0.8;
       const ev = evidenceMap[key] || 0.0;
-      this.persistedConfidence[key] = (alpha * this.persistedConfidence[key]) + ((1 - alpha) * ev);
+      this.persistedConfidence[key] = alpha * this.persistedConfidence[key] + (1 - alpha) * ev;
       this.persistedConfidence[key] = Math.max(0.0, Math.min(1.0, this.persistedConfidence[key]));
     }
 
@@ -271,15 +283,17 @@ class TemporalStateEstimator {
     const C_hybrid_surge = this.persistedConfidence.HYBRID_DEPLOYMENT_SURGE;
 
     // 1. Coupled Aero Platform Instability
-    const I_aero = (0.4 * C_heave) + (0.4 * C_stall) + (0.2 * (C_heave * C_stall));
+    const I_aero = 0.4 * C_heave + 0.4 * C_stall + 0.2 * (C_heave * C_stall);
     this.fusionSignals.coupledAeroInstability = Math.min(1.0, I_aero);
 
     // 2. Coupled Corner Entry Instability
-    const I_entry = (0.5 * C_brake_migration) + (0.5 * C_over_steer) + (0.3 * (C_brake_migration * C_over_steer));
+    const I_entry =
+      0.5 * C_brake_migration + 0.5 * C_over_steer + 0.3 * (C_brake_migration * C_over_steer);
     this.fusionSignals.coupledEntryInstability = Math.min(1.0, I_entry);
 
     // 3. Coupled Driven Axle Instability (wheelspin + power deployment asymmetry)
-    const I_traction = (0.5 * C_traction) + (0.5 * C_hybrid_surge) + (0.3 * (C_traction * C_hybrid_surge));
+    const I_traction =
+      0.5 * C_traction + 0.5 * C_hybrid_surge + 0.3 * (C_traction * C_hybrid_surge);
     this.fusionSignals.coupledTractionInstability = Math.min(1.0, I_traction);
 
     // ==========================================
@@ -288,22 +302,38 @@ class TemporalStateEstimator {
 
     // 1. Aero Platform Health (slow wear recovery, β = 0.95)
     const aeroDecline = Math.max(C_bottom_out, this.fusionSignals.coupledAeroInstability);
-    this.subsystemHealth.aeroPlatform = (0.95 * this.subsystemHealth.aeroPlatform) + (0.05 * (1.0 - aeroDecline));
-    this.subsystemHealth.aeroPlatform = Math.max(0.0, Math.min(1.0, this.subsystemHealth.aeroPlatform));
+    this.subsystemHealth.aeroPlatform =
+      0.95 * this.subsystemHealth.aeroPlatform + 0.05 * (1.0 - aeroDecline);
+    this.subsystemHealth.aeroPlatform = Math.max(
+      0.0,
+      Math.min(1.0, this.subsystemHealth.aeroPlatform),
+    );
 
     // 2. Rear Stability Health (faster slip recovery, β = 0.90)
     const rearDecline = Math.max(C_traction, this.fusionSignals.coupledTractionInstability);
-    this.subsystemHealth.rearStability = (0.90 * this.subsystemHealth.rearStability) + (0.10 * (1.0 - rearDecline));
-    this.subsystemHealth.rearStability = Math.max(0.0, Math.min(1.0, this.subsystemHealth.rearStability));
+    this.subsystemHealth.rearStability =
+      0.9 * this.subsystemHealth.rearStability + 0.1 * (1.0 - rearDecline);
+    this.subsystemHealth.rearStability = Math.max(
+      0.0,
+      Math.min(1.0, this.subsystemHealth.rearStability),
+    );
 
     // 3. Brake Migration Stability (β = 0.92)
     const brakeDecline = Math.max(C_lock_lf, C_lock_rf, this.fusionSignals.coupledEntryInstability);
-    this.subsystemHealth.brakeMigration = (0.92 * this.subsystemHealth.brakeMigration) + (0.08 * (1.0 - brakeDecline));
-    this.subsystemHealth.brakeMigration = Math.max(0.0, Math.min(1.0, this.subsystemHealth.brakeMigration));
+    this.subsystemHealth.brakeMigration =
+      0.92 * this.subsystemHealth.brakeMigration + 0.08 * (1.0 - brakeDecline);
+    this.subsystemHealth.brakeMigration = Math.max(
+      0.0,
+      Math.min(1.0, this.subsystemHealth.brakeMigration),
+    );
 
     // 4. Hybrid Deployment Integrity (β = 0.95)
-    this.subsystemHealth.hybridDeployment = (0.95 * this.subsystemHealth.hybridDeployment) + (0.05 * (1.0 - C_hybrid_surge));
-    this.subsystemHealth.hybridDeployment = Math.max(0.0, Math.min(1.0, this.subsystemHealth.hybridDeployment));
+    this.subsystemHealth.hybridDeployment =
+      0.95 * this.subsystemHealth.hybridDeployment + 0.05 * (1.0 - C_hybrid_surge);
+    this.subsystemHealth.hybridDeployment = Math.max(
+      0.0,
+      Math.min(1.0, this.subsystemHealth.hybridDeployment),
+    );
 
     // ==========================================
     // LAYER 4: BAYESIAN LATENT FAULT HYPOTHESIS ENGINE
@@ -313,37 +343,57 @@ class TemporalStateEstimator {
     const z_floor = Math.max(C_bottom_out, this.fusionSignals.coupledAeroInstability);
     if (z_floor > 0.15) {
       // High evidence under bottoming/instability (Likelihood: P(z|Damage) = 0.85, P(z|noDamage) = 0.15)
-      this.hypotheses.floorDamage = this._bayesianUpdate(this.hypotheses.floorDamage, z_floor, 0.85, 0.15);
+      this.hypotheses.floorDamage = this._bayesianUpdate(
+        this.hypotheses.floorDamage,
+        z_floor,
+        0.85,
+        0.15,
+      );
     } else {
       // Slow structural leak decay
-      this.hypotheses.floorDamage = (0.9995 * this.hypotheses.floorDamage) + (0.0005 * 0.05);
+      this.hypotheses.floorDamage = 0.9995 * this.hypotheses.floorDamage + 0.0005 * 0.05;
     }
 
     // 2. Diffuser Choking Probability: Dynamic pressure sealing decay (recovers immediately if load decreases)
     const z_stall = C_stall;
-    if (z_stall > 0.20) {
-      this.hypotheses.diffuserChoking = this._bayesianUpdate(this.hypotheses.diffuserChoking, z_stall, 0.90, 0.10);
+    if (z_stall > 0.2) {
+      this.hypotheses.diffuserChoking = this._bayesianUpdate(
+        this.hypotheses.diffuserChoking,
+        z_stall,
+        0.9,
+        0.1,
+      );
     } else {
       // Fast dynamic decay
-      this.hypotheses.diffuserChoking = 0.80 * this.hypotheses.diffuserChoking;
+      this.hypotheses.diffuserChoking = 0.8 * this.hypotheses.diffuserChoking;
     }
 
     // 3. Tire Degradation Likelihood: Permanent mechanical wear (no active decay back to baseline)
-    const z_tire = (0.4 * C_traction) + (0.3 * C_under_steer) + (0.3 * C_over_steer);
-    if (z_tire > 0.10) {
-      this.hypotheses.tireDegradation = this._bayesianUpdate(this.hypotheses.tireDegradation, z_tire, 0.75, 0.25);
+    const z_tire = 0.4 * C_traction + 0.3 * C_under_steer + 0.3 * C_over_steer;
+    if (z_tire > 0.1) {
+      this.hypotheses.tireDegradation = this._bayesianUpdate(
+        this.hypotheses.tireDegradation,
+        z_tire,
+        0.75,
+        0.25,
+      );
     } else {
       // Tire grip doesn't magically recover during a stint
-      this.hypotheses.tireDegradation = (0.9998 * this.hypotheses.tireDegradation) + (0.0002 * 0.05);
+      this.hypotheses.tireDegradation = 0.9998 * this.hypotheses.tireDegradation + 0.0002 * 0.05;
     }
 
     // 4. Brake Overheating Likelihood: Dynamic friction fading (cools down slowly over straights)
     const z_brake = Math.max(C_lock_lf, C_lock_rf, C_brake_migration);
     if (z_brake > 0.25) {
-      this.hypotheses.brakeOverheating = this._bayesianUpdate(this.hypotheses.brakeOverheating, z_brake, 0.80, 0.20);
+      this.hypotheses.brakeOverheating = this._bayesianUpdate(
+        this.hypotheses.brakeOverheating,
+        z_brake,
+        0.8,
+        0.2,
+      );
     } else {
       // Decay back to cold prior
-      this.hypotheses.brakeOverheating = (0.98 * this.hypotheses.brakeOverheating) + (0.02 * 0.01);
+      this.hypotheses.brakeOverheating = 0.98 * this.hypotheses.brakeOverheating + 0.02 * 0.01;
     }
 
     // ==========================================
@@ -351,34 +401,109 @@ class TemporalStateEstimator {
     // ==========================================
     return {
       rollingConfidence: {
-        AERO_BOTTOM_OUT: estVal(this.persistedConfidence.AERO_BOTTOM_OUT, 1.0, ["LFshockVel", "RFshockVel"]),
-        AERO_PLATFORM_OSCILLATION: estVal(this.persistedConfidence.AERO_PLATFORM_OSCILLATION, 1.0, ["LFshockVel", "RFshockVel"]),
-        DIFFUSER_STALL: estVal(this.persistedConfidence.DIFFUSER_STALL, 1.0, ["RrideHeight", "throttle"]),
-        BRAKE_LOCK_FRONT_LEFT: estVal(this.persistedConfidence.BRAKE_LOCK_FRONT_LEFT, 1.0, ["LFwheelSpeed", "speed", "brake"]),
-        BRAKE_LOCK_FRONT_RIGHT: estVal(this.persistedConfidence.BRAKE_LOCK_FRONT_RIGHT, 1.0, ["RFwheelSpeed", "speed", "brake"]),
-        REAR_TRACTION_COLLAPSE: estVal(this.persistedConfidence.REAR_TRACTION_COLLAPSE, 1.0, ["LRwheelSpeed", "RRwheelSpeed", "speed", "throttle"]),
-        ENTRY_OVER_ROTATION: estVal(this.persistedConfidence.ENTRY_OVER_ROTATION, 1.0, ["derived.oversteerIndex", "speed", "steering", "brake"]),
-        EXIT_UNDERSTEER: estVal(this.persistedConfidence.EXIT_UNDERSTEER, 1.0, ["derived.understeerIndex", "speed", "steering", "throttle"]),
-        BRAKE_MIGRATION_ROTATION: estVal(this.persistedConfidence.BRAKE_MIGRATION_ROTATION, 1.0, ["derived.oversteerIndex", "speed", "brake"]),
-        HYBRID_DEPLOYMENT_SURGE: estVal(this.persistedConfidence.HYBRID_DEPLOYMENT_SURGE, 1.0, ["LRwheelSpeed", "RRwheelSpeed", "speed", "throttle"])
+        AERO_BOTTOM_OUT: estVal(this.persistedConfidence.AERO_BOTTOM_OUT, 1.0, [
+          "LFshockVel",
+          "RFshockVel",
+        ]),
+        AERO_PLATFORM_OSCILLATION: estVal(this.persistedConfidence.AERO_PLATFORM_OSCILLATION, 1.0, [
+          "LFshockVel",
+          "RFshockVel",
+        ]),
+        DIFFUSER_STALL: estVal(this.persistedConfidence.DIFFUSER_STALL, 1.0, [
+          "RrideHeight",
+          "throttle",
+        ]),
+        BRAKE_LOCK_FRONT_LEFT: estVal(this.persistedConfidence.BRAKE_LOCK_FRONT_LEFT, 1.0, [
+          "LFwheelSpeed",
+          "speed",
+          "brake",
+        ]),
+        BRAKE_LOCK_FRONT_RIGHT: estVal(this.persistedConfidence.BRAKE_LOCK_FRONT_RIGHT, 1.0, [
+          "RFwheelSpeed",
+          "speed",
+          "brake",
+        ]),
+        REAR_TRACTION_COLLAPSE: estVal(this.persistedConfidence.REAR_TRACTION_COLLAPSE, 1.0, [
+          "LRwheelSpeed",
+          "RRwheelSpeed",
+          "speed",
+          "throttle",
+        ]),
+        ENTRY_OVER_ROTATION: estVal(this.persistedConfidence.ENTRY_OVER_ROTATION, 1.0, [
+          "derived.oversteerIndex",
+          "speed",
+          "steering",
+          "brake",
+        ]),
+        EXIT_UNDERSTEER: estVal(this.persistedConfidence.EXIT_UNDERSTEER, 1.0, [
+          "derived.understeerIndex",
+          "speed",
+          "steering",
+          "throttle",
+        ]),
+        BRAKE_MIGRATION_ROTATION: estVal(this.persistedConfidence.BRAKE_MIGRATION_ROTATION, 1.0, [
+          "derived.oversteerIndex",
+          "speed",
+          "brake",
+        ]),
+        HYBRID_DEPLOYMENT_SURGE: estVal(this.persistedConfidence.HYBRID_DEPLOYMENT_SURGE, 1.0, [
+          "LRwheelSpeed",
+          "RRwheelSpeed",
+          "speed",
+          "throttle",
+        ]),
       },
       fusionSignals: {
-        coupledAeroInstability: estVal(this.fusionSignals.coupledAeroInstability, 0.90, ["rollingConfidence.AERO_PLATFORM_OSCILLATION", "rollingConfidence.DIFFUSER_STALL"]),
-        coupledEntryInstability: estVal(this.fusionSignals.coupledEntryInstability, 0.90, ["rollingConfidence.BRAKE_MIGRATION_ROTATION", "rollingConfidence.ENTRY_OVER_ROTATION"]),
-        coupledTractionInstability: estVal(this.fusionSignals.coupledTractionInstability, 0.90, ["rollingConfidence.REAR_TRACTION_COLLAPSE", "rollingConfidence.HYBRID_DEPLOYMENT_SURGE"])
+        coupledAeroInstability: estVal(this.fusionSignals.coupledAeroInstability, 0.9, [
+          "rollingConfidence.AERO_PLATFORM_OSCILLATION",
+          "rollingConfidence.DIFFUSER_STALL",
+        ]),
+        coupledEntryInstability: estVal(this.fusionSignals.coupledEntryInstability, 0.9, [
+          "rollingConfidence.BRAKE_MIGRATION_ROTATION",
+          "rollingConfidence.ENTRY_OVER_ROTATION",
+        ]),
+        coupledTractionInstability: estVal(this.fusionSignals.coupledTractionInstability, 0.9, [
+          "rollingConfidence.REAR_TRACTION_COLLAPSE",
+          "rollingConfidence.HYBRID_DEPLOYMENT_SURGE",
+        ]),
       },
       subsystemHealth: {
-        aeroPlatform: estVal(this.subsystemHealth.aeroPlatform, 0.95, ["rollingConfidence.AERO_BOTTOM_OUT", "fusionSignals.coupledAeroInstability"]),
-        rearStability: estVal(this.subsystemHealth.rearStability, 0.90, ["rollingConfidence.REAR_TRACTION_COLLAPSE", "fusionSignals.coupledTractionInstability"]),
-        brakeMigration: estVal(this.subsystemHealth.brakeMigration, 0.92, ["rollingConfidence.BRAKE_LOCK_FRONT_LEFT", "rollingConfidence.BRAKE_LOCK_FRONT_RIGHT", "fusionSignals.coupledEntryInstability"]),
-        hybridDeployment: estVal(this.subsystemHealth.hybridDeployment, 0.95, ["rollingConfidence.HYBRID_DEPLOYMENT_SURGE"])
+        aeroPlatform: estVal(this.subsystemHealth.aeroPlatform, 0.95, [
+          "rollingConfidence.AERO_BOTTOM_OUT",
+          "fusionSignals.coupledAeroInstability",
+        ]),
+        rearStability: estVal(this.subsystemHealth.rearStability, 0.9, [
+          "rollingConfidence.REAR_TRACTION_COLLAPSE",
+          "fusionSignals.coupledTractionInstability",
+        ]),
+        brakeMigration: estVal(this.subsystemHealth.brakeMigration, 0.92, [
+          "rollingConfidence.BRAKE_LOCK_FRONT_LEFT",
+          "rollingConfidence.BRAKE_LOCK_FRONT_RIGHT",
+          "fusionSignals.coupledEntryInstability",
+        ]),
+        hybridDeployment: estVal(this.subsystemHealth.hybridDeployment, 0.95, [
+          "rollingConfidence.HYBRID_DEPLOYMENT_SURGE",
+        ]),
       },
       hypotheses: {
-        floorDamage: estVal(this.hypotheses.floorDamage, 0.85, ["rollingConfidence.AERO_BOTTOM_OUT", "fusionSignals.coupledAeroInstability"]),
-        diffuserChoking: estVal(this.hypotheses.diffuserChoking, 0.80, ["rollingConfidence.DIFFUSER_STALL"]),
-        tireDegradation: estVal(this.hypotheses.tireDegradation, 0.70, ["rollingConfidence.REAR_TRACTION_COLLAPSE", "rollingConfidence.EXIT_UNDERSTEER", "rollingConfidence.ENTRY_OVER_ROTATION"]),
-        brakeOverheating: estVal(this.hypotheses.brakeOverheating, 0.80, ["rollingConfidence.BRAKE_LOCK_FRONT_LEFT", "rollingConfidence.BRAKE_LOCK_FRONT_RIGHT", "rollingConfidence.BRAKE_MIGRATION_ROTATION"])
-      }
+        floorDamage: estVal(this.hypotheses.floorDamage, 0.85, [
+          "rollingConfidence.AERO_BOTTOM_OUT",
+          "fusionSignals.coupledAeroInstability",
+        ]),
+        diffuserChoking: estVal(this.hypotheses.diffuserChoking, 0.8, [
+          "rollingConfidence.DIFFUSER_STALL",
+        ]),
+        tireDegradation: estVal(this.hypotheses.tireDegradation, 0.7, [
+          "rollingConfidence.REAR_TRACTION_COLLAPSE",
+          "rollingConfidence.EXIT_UNDERSTEER",
+          "rollingConfidence.ENTRY_OVER_ROTATION",
+        ]),
+        brakeOverheating: estVal(this.hypotheses.brakeOverheating, 0.8, [
+          "rollingConfidence.BRAKE_LOCK_FRONT_LEFT",
+          "rollingConfidence.BRAKE_LOCK_FRONT_RIGHT",
+          "rollingConfidence.BRAKE_MIGRATION_ROTATION",
+        ]),
+      },
     };
   }
 }

@@ -102,7 +102,7 @@ class TimebaseAuthority {
       isPlaying: this.isPlaying,
       currentTick: this.currentTick,
       maxTicks: this.maxTicks,
-      playbackSpeed: this.playbackSpeed
+      playbackSpeed: this.playbackSpeed,
     };
   }
 

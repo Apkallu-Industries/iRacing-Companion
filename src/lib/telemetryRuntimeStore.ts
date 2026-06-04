@@ -20,18 +20,18 @@ interface TelemetryRuntimeState {
   activeLap: number | null;
   playbackSpeed: number;
   isPlaying: boolean;
-  
+
   // Workspace Composition
   activePreset: "gt3" | "gtp" | "coach" | "aero";
   selectedInstrument: "brakes" | "ers" | "chassis" | "tires" | "inputs" | null;
-  
+
   // Event Timeline
   events: TelemetryEvent[];
   activeEvent: TelemetryEvent | null;
-  
+
   // Calibrated Visual Filters
   focusMode: FocusMode;
-  
+
   // Actions
   setCursorTick: (tick: number) => void;
   setActiveLap: (lap: number | null) => void;
@@ -39,16 +39,16 @@ interface TelemetryRuntimeState {
   setPlaying: (playing: boolean) => void;
   setActivePreset: (preset: "gt3" | "gtp" | "coach" | "aero") => void;
   selectInstrument: (instrument: "brakes" | "ers" | "chassis" | "tires" | "inputs" | null) => void;
-  
+
   // Event Timeline Actions
   addEvent: (event: Omit<TelemetryEvent, "id">) => void;
   triggerEvent: (event: TelemetryEvent) => void;
   deleteEvent: (id: string) => void;
   clearEvents: () => void;
-  
+
   // Focus Mode Actions
   setFocusMode: (mode: FocusMode) => void;
-  
+
   // Detached Replay Frame State (for child windows)
   detachedTelemetryFrame: any | null;
   setDetachedTelemetryFrame: (frame: any | null) => void;
@@ -72,21 +72,23 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
   setPlaying: (playing) => set({ isPlaying: playing }),
   setActivePreset: (preset) => set({ activePreset: preset }),
   selectInstrument: (instrument) => set({ selectedInstrument: instrument }),
-  
-  addEvent: (event) => set((state) => ({
-    events: [...state.events, { ...event, id: crypto.randomUUID() }]
-  })),
-  
+
+  addEvent: (event) =>
+    set((state) => ({
+      events: [...state.events, { ...event, id: crypto.randomUUID() }],
+    })),
+
   // Delete a single event by id
-  deleteEvent: (id) => set((state) => ({
-    events: state.events.filter((e) => e.id !== id),
-    activeEvent: state.activeEvent?.id === id ? null : state.activeEvent,
-  })),
-  
+  deleteEvent: (id) =>
+    set((state) => ({
+      events: state.events.filter((e) => e.id !== id),
+      activeEvent: state.activeEvent?.id === id ? null : state.activeEvent,
+    })),
+
   triggerEvent: (event) => {
     // Central Orchestration Trigger (Contextual Linking)
     set({ activeEvent: event, cursorTick: Math.round(event.timestampSec * 60) });
-    
+
     // Automatically switch active workspace preset and focus mode matching event category
     if (event.category === "inputs") {
       set({ activePreset: "coach", selectedInstrument: "inputs", focusMode: "inputs" });
@@ -98,7 +100,7 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
       set({ activePreset: "aero", selectedInstrument: "chassis", focusMode: "chassis" });
     }
   },
-  
+
   clearEvents: () => set({ events: [], activeEvent: null }),
   setFocusMode: (mode) => set({ focusMode: mode }),
   setDetachedTelemetryFrame: (frame) => set({ detachedTelemetryFrame: frame }),
@@ -165,7 +167,10 @@ if (syncBC) {
       if (payload.activePreset !== undefined && payload.activePreset !== state.activePreset) {
         updates.activePreset = payload.activePreset;
       }
-      if (payload.selectedInstrument !== undefined && payload.selectedInstrument !== state.selectedInstrument) {
+      if (
+        payload.selectedInstrument !== undefined &&
+        payload.selectedInstrument !== state.selectedInstrument
+      ) {
         updates.selectedInstrument = payload.selectedInstrument;
       }
       if (payload.focusMode !== undefined && payload.focusMode !== state.focusMode) {
@@ -187,7 +192,7 @@ if (syncBC) {
   // Subscribe to local store changes to broadcast updates
   useTelemetryRuntimeStore.subscribe((state) => {
     if (isIncomingSync) return;
-    
+
     syncBC.postMessage({
       type: "SYNC_STATE",
       payload: {

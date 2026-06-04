@@ -8,11 +8,11 @@
 export interface SimulationOutcome {
   pitLapSelected: number;
   tireCliffLap: number;
-  totalTimeDeltaSec: number;       // relative to baseline strategy
-  undercutViabilityPct: number;    // probability of undercut success
-  trafficEmergenceGapSec: number;  // gap to traffic pack on pit exit
+  totalTimeDeltaSec: number; // relative to baseline strategy
+  undercutViabilityPct: number; // probability of undercut success
+  trafficEmergenceGapSec: number; // gap to traffic pack on pit exit
   safetyCarProbabilityPct: number; // probability of SC interrupting stints
-  fuelSaveTargetL: number;         // target fuel burn required to make stint
+  fuelSaveTargetL: number; // target fuel burn required to make stint
   cleanAirEmergence: boolean;
   verdictNarrative: string;
 }
@@ -30,9 +30,8 @@ export function simulateRaceOutcome(
   currentLap: number,
   tireGripPct: number,
   fuelLevelL: number,
-  pitstopPenaltySec = 24.5
+  pitstopPenaltySec = 24.5,
 ): SimulationOutcome {
-  
   // 1. Tire wear pace decay curve modeling
   // worn tires lose roughly 0.08s - 0.12s per lap.
   const baselineOptimalPitLap = 24;
@@ -47,27 +46,28 @@ export function simulateRaceOutcome(
 
   if (earlyPitSteps > 0) {
     // Undercut scenario: gain initial pace but lose grip later
-    timeDelta = -(earlyPitSteps * 1.25) + (earlyPitSteps * earlyPitSteps * 0.22);
+    timeDelta = -(earlyPitSteps * 1.25) + earlyPitSteps * earlyPitSteps * 0.22;
   } else {
     // Overcut scenario: extend worn rubber, hoping for clean air
-    timeDelta = (Math.abs(earlyPitSteps) * 1.55) * gripDecayCoefficient;
+    timeDelta = Math.abs(earlyPitSteps) * 1.55 * gripDecayCoefficient;
   }
 
   // 3. Traffic emergence calculations
   // Traffic clusters typically move at GT Pace offsets. Pit exit emerges behind or inside.
   // 1.0s to 1.8s trailing triggers wake downforce wash drops.
-  const trafficGap = Math.abs((pitLapSelected * 4.2) % 18.0 - 9.0);
+  const trafficGap = Math.abs(((pitLapSelected * 4.2) % 18.0) - 9.0);
   const cleanAir = trafficGap > 2.5;
 
   // 4. Fuel Save constraints
   // Extended stint (overcut) requires saving fuel.
   const standardFuelBurn = 3.65;
-  const fuelTarget = pitLapSelected > baselineOptimalPitLap
-    ? Math.max(2.8, standardFuelBurn - (pitLapSelected - baselineOptimalPitLap) * 0.18)
-    : standardFuelBurn;
+  const fuelTarget =
+    pitLapSelected > baselineOptimalPitLap
+      ? Math.max(2.8, standardFuelBurn - (pitLapSelected - baselineOptimalPitLap) * 0.18)
+      : standardFuelBurn;
 
   // 5. Safety Car event probability bounds
-  const scProb = Math.min(65, 8 + (pitLapSelected * 1.25));
+  const scProb = Math.min(65, 8 + pitLapSelected * 1.25);
 
   // 6. Formulate operational verdict
   let verdict = "";

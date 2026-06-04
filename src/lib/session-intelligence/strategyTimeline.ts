@@ -7,7 +7,12 @@
 
 export interface StrategyMilestone {
   lapNumber: number;
-  milestoneType: "TIRE_CLIFF" | "UNDERCUT_OPEN" | "THERMAL_WARNING" | "PIT_CROSSOVER" | "FUEL_LIMIT";
+  milestoneType:
+    | "TIRE_CLIFF"
+    | "UNDERCUT_OPEN"
+    | "THERMAL_WARNING"
+    | "PIT_CROSSOVER"
+    | "FUEL_LIMIT";
   severity: "info" | "warning" | "critical";
   narrative: string;
 }
@@ -32,14 +37,14 @@ export function calculateStrategyTimeline(
   currentTireGripPct: number,
   fuelLapsRemaining: number,
   ambientTempC: number,
-  pitstopPenaltySec = 24.5
+  pitstopPenaltySec = 24.5,
 ): StrategyForecast {
-  
   // 1. Tire cliff projection
   // Fits linear/exponential regression of grip loss over laps completed
   const avgGripLossPerLap = lapsCompleted > 0 ? (100 - currentTireGripPct) / lapsCompleted : 0.65;
   const tireCliffThreshold = 72.0; // grip below 72% causes severe slip slide cycles
-  const lapsToCliff = avgGripLossPerLap > 0 ? (currentTireGripPct - tireCliffThreshold) / avgGripLossPerLap : 28;
+  const lapsToCliff =
+    avgGripLossPerLap > 0 ? (currentTireGripPct - tireCliffThreshold) / avgGripLossPerLap : 28;
   const tireCliffLap = Math.max(lapsCompleted + 1, Math.round(lapsCompleted + lapsToCliff));
 
   // 2. Fuel limit lap

@@ -348,7 +348,9 @@ export function LiveCoach({ t }: { t: Telemetry }) {
                   </span>
                 )}
               </div>
-              <div className={`text-[11px] font-bold leading-snug uppercase tracking-wide ${activeStyle.text}`}>
+              <div
+                className={`text-[11px] font-bold leading-snug uppercase tracking-wide ${activeStyle.text}`}
+              >
                 {activeCall.headline}
               </div>
               <div className="mt-1 text-[10px] text-muted-foreground leading-normal font-sans">
@@ -452,7 +454,10 @@ export function LiveCoach({ t }: { t: Telemetry }) {
               {style.label}
             </span>
             {lastConfidence != null && (
-              <span className="font-mono text-[9px] text-muted-foreground" title="Rules-engine confidence">
+              <span
+                className="font-mono text-[9px] text-muted-foreground"
+                title="Rules-engine confidence"
+              >
                 {lastConfidence}%
               </span>
             )}
@@ -471,7 +476,9 @@ export function LiveCoach({ t }: { t: Telemetry }) {
               className="h-64 w-64 rounded-md object-cover ring-2 ring-border shadow-lg flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-semibold leading-tight ${style.text}`}>{call.headline}</div>
+              <div className={`text-sm font-semibold leading-tight ${style.text}`}>
+                {call.headline}
+              </div>
               <div className="mt-1 text-xs text-foreground leading-relaxed">{call.detail}</div>
               {call.focus && (
                 <div className="mt-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground">

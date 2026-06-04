@@ -8,7 +8,7 @@
 import { type StoredSetupChange } from "./mongoSessionStore";
 
 export interface SetupConfidenceRating {
-  confidenceRating: number;       // Success rate (0 to 100)
+  confidenceRating: number; // Success rate (0 to 100)
   totalHistoricalEvaluations: number;
   observedImpactDescription: string;
   recommendedDeltaLimit: string;
@@ -25,19 +25,21 @@ export function calculateSetupAdviceConfidence(
   previousChanges: StoredSetupChange[],
   currentDriverId: string,
   currentTrack?: string,
-  currentCar?: string
+  currentCar?: string,
 ): SetupConfidenceRating {
   // Filter for matching historical adjustments
   const matches = previousChanges.filter(
-    (c) => c.change_type?.toLowerCase() === changeType.toLowerCase()
+    (c) => c.change_type?.toLowerCase() === changeType.toLowerCase(),
   );
 
   if (matches.length === 0) {
     return {
       confidenceRating: 70, // Default baseline confidence for proven physics formulas
       totalHistoricalEvaluations: 0,
-      observedImpactDescription: "No localized historical changes logged yet. Baseline physics coefficient applied.",
-      recommendedDeltaLimit: "Limit delta adjustment to standard single clicks (+1 / -1) to index response curves.",
+      observedImpactDescription:
+        "No localized historical changes logged yet. Baseline physics coefficient applied.",
+      recommendedDeltaLimit:
+        "Limit delta adjustment to standard single clicks (+1 / -1) to index response curves.",
     };
   }
 
@@ -47,7 +49,15 @@ export function calculateSetupAdviceConfidence(
 
   for (const change of matches) {
     // Check if the change had documented positive consequences
-    const positiveWords = ["improve", "reduce", "stabilize", "gain", "faster", "success", "resolved"];
+    const positiveWords = [
+      "improve",
+      "reduce",
+      "stabilize",
+      "gain",
+      "faster",
+      "success",
+      "resolved",
+    ];
     const negativeWords = ["worse", "understeer", "oversteer", "worsened", "loose", "stall"];
 
     let changeScore = 0;
@@ -106,11 +116,15 @@ export function calculateSetupAdviceConfidence(
     if (currentTrack || currentCar) {
       const notesLower = change.notes?.toLowerCase() || "";
       const consLower = change.consequences?.join(" ")?.toLowerCase() || "";
-      
+
       if (currentTrack) {
         const trackNorm = currentTrack.toLowerCase();
         // If historical note declares a track, verify match
-        if (notesLower.includes("track:") || consLower.includes("track:") || notesLower.includes("audit_lineage:")) {
+        if (
+          notesLower.includes("track:") ||
+          consLower.includes("track:") ||
+          notesLower.includes("audit_lineage:")
+        ) {
           const hasTrackMatch = notesLower.includes(trackNorm) || consLower.includes(trackNorm);
           if (!hasTrackMatch) {
             contextualWeight -= 0.35; // penalty for different track layout environment
@@ -121,7 +135,11 @@ export function calculateSetupAdviceConfidence(
       if (currentCar) {
         const carNorm = currentCar.toLowerCase();
         // If historical note declares a car class, verify match
-        if (notesLower.includes("car:") || consLower.includes("car:") || notesLower.includes("audit_lineage:")) {
+        if (
+          notesLower.includes("car:") ||
+          consLower.includes("car:") ||
+          notesLower.includes("audit_lineage:")
+        ) {
           const hasCarMatch = notesLower.includes(carNorm) || consLower.includes(carNorm);
           if (!hasCarMatch) {
             contextualWeight -= 0.35; // penalty for different vehicle behavior class
@@ -142,10 +160,10 @@ export function calculateSetupAdviceConfidence(
 
   const total = matches.length;
   const successRatio = positiveImpacts / total;
-  
+
   // Scale score between 50 and 98 based on success ratio and data density (number of trials)
-  const confidence = 50 + (successRatio * 40) + Math.min(8, total * 1.5);
-  
+  const confidence = 50 + successRatio * 40 + Math.min(8, total * 1.5);
+
   let observedImpact = "Chassis stable following adjustment. ";
   if (consequencesEvaluated.length > 0) {
     const uniqueCons = Array.from(new Set(consequencesEvaluated)).slice(0, 2);
@@ -158,8 +176,9 @@ export function calculateSetupAdviceConfidence(
     confidenceRating: parseFloat(Math.min(98, Math.max(30, confidence)).toFixed(0)),
     totalHistoricalEvaluations: total,
     observedImpactDescription: observedImpact,
-    recommendedDeltaLimit: total > 4 
-      ? `High confidence. Committing delta adjustments up to +2 clicks or +1.5mm as historically verified.`
-      : `Moderate confidence. Limit adjustments to +1 steps, monitoring yaw response before committing further.`,
+    recommendedDeltaLimit:
+      total > 4
+        ? `High confidence. Committing delta adjustments up to +2 clicks or +1.5mm as historically verified.`
+        : `Moderate confidence. Limit adjustments to +1 steps, monitoring yaw response before committing further.`,
   };
 }

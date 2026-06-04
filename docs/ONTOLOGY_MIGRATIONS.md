@@ -1,7 +1,8 @@
 # Ontology Migrations & Forensic Replay Specification
+
 ### The Blueprint for Deterministic Time-Traveling Motorsport Cognition
 
-This document defines the formal engineering specification for **Stage 10 (Deterministic Ontology Migrations)** and **Stage 11 (Forensic Engineering Replay)**. 
+This document defines the formal engineering specification for **Stage 10 (Deterministic Ontology Migrations)** and **Stage 11 (Forensic Engineering Replay)**.
 
 By implementing versioned migration pipelines and sandboxed execution replays, we guarantee absolute, bit-perfect historical reasoning reproducibility and prevent old telemetry records from becoming unreadable archaeology.
 
@@ -47,6 +48,7 @@ Historical telemetry is useless without historical semantic compatibility. Becau
 Every change to the ontology schema that modifies, renames, or deprecates a field must be accompanied by a deterministic TypeScript migration script under `/ontology/migrations/`.
 
 ### 2.1 Migration Script Contract
+
 All migration scripts must implement the standard `OntologyMigrator` contract:
 
 ```typescript
@@ -57,12 +59,12 @@ export interface OntologyMigrationContext {
 
 export interface OntologyMigrator {
   context: OntologyMigrationContext;
-  
+
   /**
    * Translates an inbound historical payload to the next version in the chain.
    */
   up(historicalPayload: any): any;
-  
+
   /**
    * Optional down-migrator to roll back structural changes.
    */
@@ -71,7 +73,9 @@ export interface OntologyMigrator {
 ```
 
 ### 2.2 Standard Migration Execution
+
 When a historical session is loaded, the ingest compiler:
+
 1. Reads `ontologyVersion` stored in the session record.
 2. If `ontologyVersion` is less than the active kernel version, it fetches the ordered list of required migrators from `/ontology/migrations/`.
 3. Sequentially executes the `up()` method of each migrator in the chain, outputting the canonical schema payload.
@@ -88,14 +92,14 @@ To achieve this, the replay engine is entirely **stateless** and is executed ins
 export interface ForensicReplayRequest {
   sessionId: string;
   recommendationId: string;
-  
+
   // The exact immutable parameters logged at the moment of intervention:
   historicalState: {
     rawTelemetryTickBuffer: any[];
     driverBehaviorTraits: any;
     sessionEvolutionState: any;
     appliedEngineeringPersonality: string;
-    
+
     // The exact version pointers to fetch from the registries:
     ontologyVersion: string;
     heuristicId: string;
@@ -114,6 +118,7 @@ export interface ForensicReplayReport {
 ```
 
 ### 3.1 Replay Execution Flow
+
 1. **Container Initialization**: The forensic replay compiler instantiates a clean, sandboxed reasoning context.
 2. **Heuristics Package Ingestion**: The compiler queries the `HeuristicReputationRegistry` for the exact `heuristicId` and `heuristicVersion` declared in the audit log. It injects the historical confidence ratings and dynamic weights.
 3. **Telemetry Playback**: The compiled parser plays back the raw telemetry tick buffer through the historical `TelemetryEvent` and `EngineeringEpisode` rulesets.

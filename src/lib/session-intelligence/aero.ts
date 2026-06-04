@@ -19,14 +19,15 @@ export function analyzeAero(parsed: IbtParsed): AeroAnalysis {
       bottomingCount: 4,
       groundingFrequencyHz: 0.05,
       aerodynamicImbalancePct: 1.8,
-      summary: "Diffuser vacuum seal compromised in 4 bottoming occurrences.dynamic nose pitching collapsed forward under compression loading.",
+      summary:
+        "Diffuser vacuum seal compromised in 4 bottoming occurrences.dynamic nose pitching collapsed forward under compression loading.",
     };
   }
 
   // Count bottomings (ticks where pitch drops below -0.018)
   let bottomingCount = 0;
   let isUnderGround = false;
-  
+
   for (let t = 0; t < pitch.length; t++) {
     const pVal = pitch[t];
     if (pVal < -0.018) {
@@ -48,14 +49,16 @@ export function analyzeAero(parsed: IbtParsed): AeroAnalysis {
   const rakeStabilityPct = Math.max(70, Math.min(99, Math.round(97 - avgRollVar * 1800)));
 
   const sessionTime = parsed.channels["SessionTime"]?.data ?? [];
-  const totalDuration = sessionTime.length > 0 ? sessionTime[sessionTime.length - 1] - sessionTime[0] : 60;
+  const totalDuration =
+    sessionTime.length > 0 ? sessionTime[sessionTime.length - 1] - sessionTime[0] : 60;
   const groundingFrequencyHz = Number((bottomingCount / Math.max(1, totalDuration)).toFixed(3));
 
   let summary = `Aerodynamic platform rake stability is rated at ${rakeStabilityPct}%. `;
   if (bottomingCount > 2) {
     summary += `Splitter grounding detected ${bottomingCount} times at apexes. Diffuser seal compromised under heavy dynamic compression.`;
   } else {
-    summary += "Aerodynamic load distribution was maintained cleanly with zero high-speed splitter stalls.";
+    summary +=
+      "Aerodynamic load distribution was maintained cleanly with zero high-speed splitter stalls.";
   }
 
   return {

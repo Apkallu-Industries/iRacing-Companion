@@ -140,31 +140,31 @@ function RoleSelect({
 async function signLicensePayload(hwid: string, tier: string, expires: string): Promise<string> {
   const MASTER_SECRET = "iracing_companion_secret_2026";
   const dataStr = JSON.stringify({ hwid, tier, expires });
-  
+
   const encoder = new TextEncoder();
   const secretKeyData = encoder.encode(MASTER_SECRET);
   const data = encoder.encode(dataStr);
-  
+
   const cryptoKey = await window.crypto.subtle.importKey(
     "raw",
     secretKeyData,
     { name: "HMAC", hash: { name: "SHA-256" } },
     false,
-    ["sign"]
+    ["sign"],
   );
-  
-  const signatureBuffer = await window.crypto.subtle.sign(
-    "HMAC",
-    cryptoKey,
-    data
-  );
-  
+
+  const signatureBuffer = await window.crypto.subtle.sign("HMAC", cryptoKey, data);
+
   const hashArray = Array.from(new Uint8Array(signatureBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   return hashHex.substring(0, 16).toUpperCase();
 }
 
-async function generateLicenseKeyBrowser(hwid: string, tier: string, expires: string): Promise<string> {
+async function generateLicenseKeyBrowser(
+  hwid: string,
+  tier: string,
+  expires: string,
+): Promise<string> {
   const payload = { hwid, tier, expires };
   const payloadBase64 = btoa(JSON.stringify(payload));
   const signature = await signLicensePayload(hwid, tier, expires);
@@ -194,9 +194,10 @@ function AdminPage() {
     return false;
   });
 
-  const isGitHubAdmin = user?.email?.toLowerCase().includes("danym") || 
-                        user?.app_metadata?.provider === "github" ||
-                        (user as any)?.identities?.some((id: any) => id.provider === "github");
+  const isGitHubAdmin =
+    user?.email?.toLowerCase().includes("danym") ||
+    user?.app_metadata?.provider === "github" ||
+    (user as any)?.identities?.some((id: any) => id.provider === "github");
 
   const handleAdminCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,7 +262,7 @@ function AdminPage() {
     try {
       const wsUrl = getBridgeUrl();
       const httpUrl = wsUrl.replace(/^ws/, "http");
-      
+
       const res = await fetch(`${httpUrl}/api/license`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -269,7 +270,9 @@ function AdminPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(`Key pushed and activated on your local bridge! Mode: ${data.tier.toUpperCase()}`);
+        toast.success(
+          `Key pushed and activated on your local bridge! Mode: ${data.tier.toUpperCase()}`,
+        );
       } else {
         toast.error(data.error || "Bridge rejected the license key.");
       }
@@ -373,9 +376,14 @@ function AdminPage() {
             </p>
           </div>
 
-          <form onSubmit={handleAdminCredentialsSubmit} className="mt-6 space-y-4 font-mono text-[11px]">
+          <form
+            onSubmit={handleAdminCredentialsSubmit}
+            className="mt-6 space-y-4 font-mono text-[11px]"
+          >
             <div className="space-y-1.5">
-              <label className="text-muted-foreground uppercase tracking-wider block">Username</label>
+              <label className="text-muted-foreground uppercase tracking-wider block">
+                Username
+              </label>
               <input
                 type="text"
                 value={adminUsernameInput}
@@ -385,7 +393,9 @@ function AdminPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-muted-foreground uppercase tracking-wider block">Password</label>
+              <label className="text-muted-foreground uppercase tracking-wider block">
+                Password
+              </label>
               <input
                 type="password"
                 value={adminPasswordInput}
@@ -402,7 +412,10 @@ function AdminPage() {
             </button>
           </form>
           <div className="mt-4 text-center">
-            <Link to="/" className="text-[10px] font-mono text-muted-foreground hover:text-muted-foreground uppercase tracking-wider underline">
+            <Link
+              to="/"
+              className="text-[10px] font-mono text-muted-foreground hover:text-muted-foreground uppercase tracking-wider underline"
+            >
               ← Return Home
             </Link>
           </div>
@@ -482,10 +495,11 @@ function AdminPage() {
                 <div className="text-sm">
                   <p className="font-semibold text-foreground">Beta Tester access</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Users promoted to <strong className="text-racing-cyan">Beta Tester</strong> get free
-                    access to all Pro features during the paid rollout period. Once Stripe billing is
-                    live, their role grants them a permanent free subscription — ideal for community
-                    contributors, streamers, and sim coaches helping you shape the product.
+                    Users promoted to <strong className="text-racing-cyan">Beta Tester</strong> get
+                    free access to all Pro features during the paid rollout period. Once Stripe
+                    billing is live, their role grants them a permanent free subscription — ideal
+                    for community contributors, streamers, and sim coaches helping you shape the
+                    product.
                   </p>
                 </div>
               </div>
@@ -636,22 +650,29 @@ function AdminPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase tracking-wider block">Target HWID (16-char Hex)</label>
+                <label className="text-muted-foreground uppercase tracking-wider block">
+                  Target HWID (16-char Hex)
+                </label>
                 <input
                   type="text"
                   maxLength={16}
                   value={targetHwid}
-                  onChange={(e) => setTargetHwid(e.target.value.toUpperCase().replace(/[^0-9A-F]/i, ""))}
+                  onChange={(e) =>
+                    setTargetHwid(e.target.value.toUpperCase().replace(/[^0-9A-F]/i, ""))
+                  }
                   placeholder="B3F2A79C4E0B615F"
                   className="w-full h-8 rounded border border-border bg-background px-3 font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-racing-red text-xs uppercase"
                 />
                 <p className="text-[9px] text-muted-foreground leading-normal uppercase">
-                  Paste the 16-character Hardware ID found in the user's Settings {"->"} License panel.
+                  Paste the 16-character Hardware ID found in the user's Settings {"->"} License
+                  panel.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase tracking-wider block">License Tier</label>
+                <label className="text-muted-foreground uppercase tracking-wider block">
+                  License Tier
+                </label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 cursor-pointer text-foreground">
                     <input
@@ -675,7 +696,9 @@ function AdminPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-muted-foreground uppercase tracking-wider block">Duration / Expiration</label>
+                <label className="text-muted-foreground uppercase tracking-wider block">
+                  Duration / Expiration
+                </label>
                 <select
                   value={expiryPreset}
                   onChange={(e) => setExpiryPreset(e.target.value as any)}
@@ -709,7 +732,9 @@ function AdminPage() {
               {generatedKey ? (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                   <div className="space-y-1.5">
-                    <label className="text-muted-foreground uppercase tracking-wider block">Generated Cryptographic Payload</label>
+                    <label className="text-muted-foreground uppercase tracking-wider block">
+                      Generated Cryptographic Payload
+                    </label>
                     <textarea
                       readOnly
                       rows={5}
@@ -742,18 +767,24 @@ function AdminPage() {
                       disabled={pushingToBridge}
                       className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded bg-primary hover:opacity-90 text-primary-foreground font-semibold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${pushingToBridge ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${pushingToBridge ? "animate-spin" : ""}`}
+                      />
                       One-Click Local Deploy
                     </button>
                   </div>
                   <p className="text-[9px] text-muted-foreground leading-normal uppercase">
-                    Copy the payload above and send it to the client PC. Alternatively, if your local bridge is running locally on this PC on port 3001, click "One-Click Local Deploy" to instantly activate it!
+                    Copy the payload above and send it to the client PC. Alternatively, if your
+                    local bridge is running locally on this PC on port 3001, click "One-Click Local
+                    Deploy" to instantly activate it!
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border border-dashed border-border/60 rounded-md">
                   <Lock className="h-8 w-8 text-zinc-800 mb-2 animate-bounce" />
-                  <span className="text-[10px] uppercase tracking-wider">Awaiting license generation configuration...</span>
+                  <span className="text-[10px] uppercase tracking-wider">
+                    Awaiting license generation configuration...
+                  </span>
                 </div>
               )}
             </div>

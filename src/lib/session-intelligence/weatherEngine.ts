@@ -6,11 +6,11 @@
  */
 
 export interface WeatherImpactMetrics {
-  optimalCarcassTempShiftC: number;  // Shift in tire core optimal temp envelope (Celsius)
-  globalFrictionGripCoeff: number;   // Calculated track grip friction multiplier (0.0 - 1.0)
-  rainThermalCoolingOffset: number;  // Additional surface thermal cooling rate under rain (C/lap)
+  optimalCarcassTempShiftC: number; // Shift in tire core optimal temp envelope (Celsius)
+  globalFrictionGripCoeff: number; // Calculated track grip friction multiplier (0.0 - 1.0)
+  rainThermalCoolingOffset: number; // Additional surface thermal cooling rate under rain (C/lap)
   optimalTireCompound: "SLICK_DRY" | "SLICK_INTERMEDIATE" | "WET_TREAD";
-  crossoverViabilityPct: number;    // Probability that wet tires are faster than dry slicks
+  crossoverViabilityPct: number; // Probability that wet tires are faster than dry slicks
   verdictDescription: string;
 }
 
@@ -25,9 +25,8 @@ export function calculateWeatherGripImpact(
   ambientTempC: number,
   trackTempC: number,
   rainIntensityPct: number,
-  rubberLevelPct: number
+  rubberLevelPct: number,
 ): WeatherImpactMetrics {
-  
   // 1. Optimal carcass core temperature shift
   // Cool ambient track conditions shift optimal tyre core operational thresholds downwards.
   const tempDelta = trackTempC - 25.0; // 25C is standard track baseline
@@ -38,7 +37,7 @@ export function calculateWeatherGripImpact(
   // Rubber layer increases dry grip but worsens wet hydroplaning slides!
   const moistureFactor = rainIntensityPct / 100;
   const rubberWetSlickPenalty = moistureFactor > 0.15 ? (rubberLevelPct / 100) * 0.08 : 0;
-  const globalGrip = Math.max(0.4, 1.0 - (moistureFactor * 0.52) - rubberWetSlickPenalty);
+  const globalGrip = Math.max(0.4, 1.0 - moistureFactor * 0.52 - rubberWetSlickPenalty);
 
   // 3. Rain surface core thermal cooling offset
   // Surface moisture cools rubber carcass cores at up to -8.5C per lap.

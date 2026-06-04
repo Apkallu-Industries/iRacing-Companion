@@ -7,10 +7,10 @@
 
 export interface BrakeSignatureMetrics {
   peakBrakePressure: number;
-  averageBrakeGradient: number;     // Rate of brake application (pedal travel / sec)
-  trailBrakeDurationSec: number;    // Time spent blending brake (5% - 30%) with steering > 0.15 rad
-  releaseRate: number;              // Rate of brake release (pedal travel / sec)
-  lockupTendencyIndex: number;      // Metric of slip mismatch under heavy braking
+  averageBrakeGradient: number; // Rate of brake application (pedal travel / sec)
+  trailBrakeDurationSec: number; // Time spent blending brake (5% - 30%) with steering > 0.15 rad
+  releaseRate: number; // Rate of brake release (pedal travel / sec)
+  lockupTendencyIndex: number; // Metric of slip mismatch under heavy braking
 }
 
 /**
@@ -26,10 +26,16 @@ export function analyzeBrakeSignature(
   speed: number[],
   steer: number[],
   wheelSlip: number[],
-  hz = 60
+  hz = 60,
 ): BrakeSignatureMetrics {
   if (brake.length === 0) {
-    return { peakBrakePressure: 0, averageBrakeGradient: 0, trailBrakeDurationSec: 0, releaseRate: 0, lockupTendencyIndex: 0 };
+    return {
+      peakBrakePressure: 0,
+      averageBrakeGradient: 0,
+      trailBrakeDurationSec: 0,
+      releaseRate: 0,
+      lockupTendencyIndex: 0,
+    };
   }
 
   const dt = 1 / hz;
@@ -68,7 +74,7 @@ export function analyzeBrakeSignature(
     // Trail braking detection
     // Partial brake pressure held simultaneously while turning the steering wheel
     const isTurning = Math.abs(steer[i]) > 0.15; // > ~8.5 degrees
-    const isTrailPressure = curr >= 0.05 && curr <= 0.30;
+    const isTrailPressure = curr >= 0.05 && curr <= 0.3;
     if (isTurning && isTrailPressure) {
       trailBrakeTicks++;
     }
@@ -84,9 +90,11 @@ export function analyzeBrakeSignature(
 
   return {
     peakBrakePressure: parseFloat(peakBrake.toFixed(2)),
-    averageBrakeGradient: gradientSamples > 0 ? parseFloat((totalBrakeGradients / gradientSamples).toFixed(2)) : 0,
+    averageBrakeGradient:
+      gradientSamples > 0 ? parseFloat((totalBrakeGradients / gradientSamples).toFixed(2)) : 0,
     trailBrakeDurationSec: parseFloat((trailBrakeTicks * dt).toFixed(2)),
     releaseRate: releaseSamples > 0 ? parseFloat((totalReleases / releaseSamples).toFixed(2)) : 0,
-    lockupTendencyIndex: heavyBrakingTicks > 0 ? parseFloat((lockupTicks / heavyBrakingTicks).toFixed(2)) : 0,
+    lockupTendencyIndex:
+      heavyBrakingTicks > 0 ? parseFloat((lockupTicks / heavyBrakingTicks).toFixed(2)) : 0,
   };
 }

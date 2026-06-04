@@ -34,7 +34,7 @@ export function calculateScannerCertainty(
   parsed: IbtParsed,
   channelNames: string[],
   startTick: number,
-  endTick: number
+  endTick: number,
 ): number {
   if (endTick <= startTick) return 0.5;
 
@@ -71,7 +71,7 @@ export function calculateScannerCertainty(
         channelCertainty = 0.5 + (snr / 18) * 0.48;
       }
     }
-    
+
     sumCertainty += channelCertainty;
   });
 
@@ -86,11 +86,11 @@ export function calculateCausalConfidence(
   toNode: string,
   bottomingCount: number,
   releaseVariancePct: number,
-  wheelspinWastePct: number
+  wheelspinWastePct: number,
 ): number {
   if (fromNode === "splitter_grounding" && toNode === "diffuser_seal_collapse") {
     // If we bottom out frequently, the splitter grounding will almost certainly stall the diffuser
-    return bottomingCount > 4 ? 0.96 : bottomingCount > 1 ? 0.85 : 0.60;
+    return bottomingCount > 4 ? 0.96 : bottomingCount > 1 ? 0.85 : 0.6;
   }
   if (fromNode === "diffuser_seal_collapse" && toNode === "rear_traction_loss") {
     // Diffuser seal collapse inducing exit traction loss depends on exit wheelspin levels

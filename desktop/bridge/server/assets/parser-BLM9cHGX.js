@@ -14,16 +14,7 @@ function readLiveryRecords(view, start, count, stride = 32) {
   }
   return out.filter((s) => s.length > 0);
 }
-const MAGICS = [
-  "OLAP",
-  "BLAP",
-  "OLTA",
-  "BLTA",
-  "PLAP",
-  "BPLAP",
-  "PLTA",
-  "BPLTA"
-];
+const MAGICS = ["OLAP", "BLAP", "OLTA", "BLTA", "PLAP", "BPLAP", "PLTA", "BPLTA"];
 function isLikelyLapTime(value) {
   return Number.isFinite(value) && value >= 5 && value <= 60 * 30;
 }
@@ -42,7 +33,9 @@ function estimateBestLapSFromChannels(channels, trackLengthM) {
   if (!Number.isFinite(trackLengthM) || trackLengthM <= 0) return null;
   const distance = channels.find((c) => c.label === "distance");
   if (!distance) return null;
-  const bestLapChannel = channels.find((c) => c.label === "best.t.seg6") ?? channels.find((c) => c.label === "opt.t.seg6");
+  const bestLapChannel =
+    channels.find((c) => c.label === "best.t.seg6") ??
+    channels.find((c) => c.label === "opt.t.seg6");
   if (!bestLapChannel) return null;
   let index = lapBoundaryIndex(distance.values, trackLengthM);
   while (index >= 0) {
@@ -69,7 +62,7 @@ function decodeMagic(view) {
     view.getUint8(0),
     view.getUint8(1),
     view.getUint8(2),
-    view.getUint8(3)
+    view.getUint8(3),
   );
   if (!MAGICS.includes(m)) {
     throw new Error(`Not a lapfile: bad magic "${m}"`);
@@ -77,7 +70,10 @@ function decodeMagic(view) {
   return m;
 }
 function statsOf(values) {
-  let mn = Infinity, mx = -Infinity, sum = 0, n = 0;
+  let mn = Infinity,
+    mx = -Infinity,
+    sum = 0,
+    n = 0;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
     if (!Number.isFinite(v)) continue;
@@ -164,7 +160,7 @@ function readChannels(view, bodyOffset, numBins, numChannels, raw) {
     // 11
     "opt.t.seg5",
     // 12
-    "opt.t.seg6"
+    "opt.t.seg6",
     // 13
   ];
   const PAIRED_UNITS = ["m", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s", "s"];
@@ -183,7 +179,8 @@ function readChannels(view, bodyOffset, numBins, numChannels, raw) {
     }
     const s = statsOf(values);
     if (s.min === 0 && s.max === 0) continue;
-    const label = c < PAIRED_LABELS.length ? PAIRED_LABELS[c] : guessChannel(values).label + `#${c + 1}`;
+    const label =
+      c < PAIRED_LABELS.length ? PAIRED_LABELS[c] : guessChannel(values).label + `#${c + 1}`;
     const unit = c < PAIRED_UNITS.length ? PAIRED_UNITS[c] : guessChannel(values).unit;
     channels.push({
       label,
@@ -192,7 +189,7 @@ function readChannels(view, bodyOffset, numBins, numChannels, raw) {
       min: s.min,
       max: s.max,
       mean: s.mean,
-      byteOffset: off
+      byteOffset: off,
     });
   }
   return channels;
@@ -218,13 +215,14 @@ function parseLapfile(buffer) {
   const carShortName = readCString(view, 144, 64);
   const trackName = readCString(view, 1342, 64);
   const liveryCount = view.getUint32(208, true);
-  const liveryRecords = liveryCount > 0 && liveryCount < 16 ? readLiveryRecords(view, 212, liveryCount) : [];
+  const liveryRecords =
+    liveryCount > 0 && liveryCount < 16 ? readLiveryRecords(view, 212, liveryCount) : [];
   const ghostName = readCString(view, 652, 64);
   const ghostDriverName = ghostName && ghostName !== driverName ? ghostName : void 0;
   const buildDates = [
     readCString(view, 1406, 16),
     readCString(view, 1422, 16),
-    readCString(view, 1438, 16)
+    readCString(view, 1438, 16),
   ].filter((s) => /^\d{4}\.\d{2}\.\d{2}/.test(s));
   const tableInfo = decodeChannelTable(view, raw);
   const channels = readChannels(
@@ -232,7 +230,7 @@ function parseLapfile(buffer) {
     tableInfo.bodyOffset,
     tableInfo.numBins,
     tableInfo.numChannels,
-    raw
+    raw,
   );
   const estimatedBestLapS = estimateBestLapSFromChannels(channels, tableInfo.trackLengthM);
   const normalizedBestLapS = chooseBestLapS(tableInfo.bestLapS, estimatedBestLapS);
@@ -250,14 +248,14 @@ function parseLapfile(buffer) {
     trackName,
     liveryRecords,
     ghostDriverName,
-    buildDates
+    buildDates,
   };
   const summary = {
     bestLapS: normalizedBestLapS,
     trackLengthM: tableInfo.trackLengthM,
     sectorTimesS: tableInfo.sectorTimesS,
     numBins: tableInfo.numBins,
-    numChannels: tableInfo.numChannels
+    numChannels: tableInfo.numChannels,
   };
   return { header, summary, channels, bodyByteLength: raw.byteLength - tableInfo.bodyOffset, raw };
 }
@@ -272,8 +270,8 @@ function lapfileToJSON(parsed) {
       max: c.max,
       mean: c.mean,
       byteOffset: c.byteOffset,
-      values: Array.from(c.values).map((v) => Number.isFinite(v) ? Number(v.toFixed(4)) : null)
-    }))
+      values: Array.from(c.values).map((v) => (Number.isFinite(v) ? Number(v.toFixed(4)) : null)),
+    })),
   };
 }
 function formatLapTime(s) {
@@ -289,9 +287,4 @@ function liveryColors(parsed) {
   const suit = (recs[2] ?? "").split(",").slice(1).filter(Boolean);
   return { license, helmet, suit };
 }
-export {
-  liveryColors as a,
-  formatLapTime as f,
-  lapfileToJSON as l,
-  parseLapfile as p
-};
+export { liveryColors as a, formatLapTime as f, lapfileToJSON as l, parseLapfile as p };

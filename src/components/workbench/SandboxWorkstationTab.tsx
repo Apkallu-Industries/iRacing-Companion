@@ -18,8 +18,14 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { propagateConfidenceChain, type ConfidenceChain } from "@/lib/session-intelligence/confidencePropagation";
-import { searchOptimalPitWindow, type SearchEngineResult } from "@/lib/session-intelligence/strategySearch";
+import {
+  propagateConfidenceChain,
+  type ConfidenceChain,
+} from "@/lib/session-intelligence/confidencePropagation";
+import {
+  searchOptimalPitWindow,
+  type SearchEngineResult,
+} from "@/lib/session-intelligence/strategySearch";
 import { toast } from "sonner";
 
 interface SandboxWorkstationTabProps {
@@ -56,8 +62,8 @@ export function SandboxWorkstationTab({
     activeLap,
     84.5, // base tire grip remaining
     14.2, // fuel laps remaining
-    3.8,  // exit traffic gap seconds
-    25    // safety car probability
+    3.8, // exit traffic gap seconds
+    25, // safety car probability
   );
 
   // --- Uncertainty confidence chain ---
@@ -66,7 +72,7 @@ export function SandboxWorkstationTab({
     telemetryJitter,
     frontPackers < -2,
     100 - evolutionGrip,
-    "RACE_STINT"
+    "RACE_STINT",
   );
 
   // Fetch observability metrics
@@ -132,7 +138,7 @@ export function SandboxWorkstationTab({
             DETERMINISTIC STRATEGY SANDBOX & SIMULATION COCKPIT
           </span>
           <span className="text-[#718096] text-[9px] uppercase">
-             motorsport counterfactual outcome trees & validation runtime
+            motorsport counterfactual outcome trees & validation runtime
           </span>
         </div>
         <div className="flex gap-2">
@@ -159,7 +165,9 @@ export function SandboxWorkstationTab({
             <div>
               <label className="flex justify-between text-[#718096] text-[8.5px] uppercase font-bold mb-1">
                 <span>Rear Rebound Clicks</span>
-                <span className="text-[#3B82F6] font-black">{rearRebound > 0 ? `+${rearRebound}` : rearRebound} clicks</span>
+                <span className="text-[#3B82F6] font-black">
+                  {rearRebound > 0 ? `+${rearRebound}` : rearRebound} clicks
+                </span>
               </label>
               <input
                 type="range"
@@ -175,7 +183,9 @@ export function SandboxWorkstationTab({
             <div>
               <label className="flex justify-between text-[#718096] text-[8.5px] uppercase font-bold mb-1">
                 <span>Rear Anti-Roll Bar</span>
-                <span className="text-[#3B82F6] font-black">{rearArb > 0 ? `+${rearArb}` : rearArb} steps</span>
+                <span className="text-[#3B82F6] font-black">
+                  {rearArb > 0 ? `+${rearArb}` : rearArb} steps
+                </span>
               </label>
               <input
                 type="range"
@@ -191,7 +201,9 @@ export function SandboxWorkstationTab({
             <div>
               <label className="flex justify-between text-[#718096] text-[8.5px] uppercase font-bold mb-1">
                 <span>Brake Bias Offset</span>
-                <span className="text-[#3B82F6] font-black">{frontBias > 0 ? `+${frontBias.toFixed(1)}` : frontBias.toFixed(1)}%</span>
+                <span className="text-[#3B82F6] font-black">
+                  {frontBias > 0 ? `+${frontBias.toFixed(1)}` : frontBias.toFixed(1)}%
+                </span>
               </label>
               <input
                 type="range"
@@ -207,7 +219,9 @@ export function SandboxWorkstationTab({
             <div>
               <label className="flex justify-between text-[#718096] text-[8.5px] uppercase font-bold mb-1">
                 <span>Front Packer Clicks</span>
-                <span className="text-[#3B82F6] font-black">{frontPackers > 0 ? `+${frontPackers}` : frontPackers} clicks</span>
+                <span className="text-[#3B82F6] font-black">
+                  {frontPackers > 0 ? `+${frontPackers}` : frontPackers} clicks
+                </span>
               </label>
               <input
                 type="range"
@@ -223,7 +237,10 @@ export function SandboxWorkstationTab({
             <div>
               <label className="flex justify-between text-[#718096] text-[8.5px] uppercase font-bold mb-1">
                 <span>Rear Ride Height Delta</span>
-                <span className="text-[#3B82F6] font-black">{rideHeightRear > 0 ? `+${rideHeightRear.toFixed(1)}` : rideHeightRear.toFixed(1)} mm</span>
+                <span className="text-[#3B82F6] font-black">
+                  {rideHeightRear > 0 ? `+${rideHeightRear.toFixed(1)}` : rideHeightRear.toFixed(1)}{" "}
+                  mm
+                </span>
               </label>
               <input
                 type="range"
@@ -239,7 +256,9 @@ export function SandboxWorkstationTab({
             <div>
               <label className="flex justify-between text-[#718096] text-[8.5px] uppercase font-bold mb-1">
                 <span>Fuel Load Delta</span>
-                <span className="text-[#3B82F6] font-black">{fuelDelta > 0 ? `+${fuelDelta.toFixed(1)}` : fuelDelta.toFixed(1)} kg</span>
+                <span className="text-[#3B82F6] font-black">
+                  {fuelDelta > 0 ? `+${fuelDelta.toFixed(1)}` : fuelDelta.toFixed(1)} kg
+                </span>
               </label>
               <input
                 type="range"
@@ -279,30 +298,45 @@ export function SandboxWorkstationTab({
             <div className="flex flex-col gap-4 flex-1">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Exit Traction</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Exit Traction
+                  </span>
                   <span className="text-white text-base font-black tabular-nums">
                     {simResults.counterfactual[0]?.channels.exitTractionRating}%
                   </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Aero Stability</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Aero Stability
+                  </span>
                   <span className="text-white text-base font-black tabular-nums">
                     {simResults.counterfactual[0]?.channels.aeroStabilityRating}%
                   </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Lateral G-load</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Lateral G-load
+                  </span>
                   <span className="text-white text-base font-black tabular-nums">
                     {simResults.counterfactual[0]?.channels.lateralG}G
                   </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Splitter Grounding</span>
+                  <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                    Splitter Grounding
+                  </span>
                   <span
                     className="text-base font-black uppercase tracking-wider"
-                    style={{ color: simResults.counterfactual[0]?.channels.isBottoming > 0 ? "#FF4D4D" : "#00D17F" }}
+                    style={{
+                      color:
+                        simResults.counterfactual[0]?.channels.isBottoming > 0
+                          ? "#FF4D4D"
+                          : "#00D17F",
+                    }}
                   >
-                    {simResults.counterfactual[0]?.channels.isBottoming > 0 ? "STALLING" : "SECURED"}
+                    {simResults.counterfactual[0]?.channels.isBottoming > 0
+                      ? "STALLING"
+                      : "SECURED"}
                   </span>
                 </div>
               </div>
@@ -313,36 +347,53 @@ export function SandboxWorkstationTab({
                 </span>
                 <div className="grid grid-cols-4 gap-2 text-center font-bold text-white text-[11px] tabular-nums mt-1">
                   <div className="p-1.5 border border-[#1B2232] rounded-sm bg-[#131924]">
-                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">Front-Left</span>
+                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">
+                      Front-Left
+                    </span>
                     {simResults.counterfactual[0]?.channels.tireTempFL}°C
                   </div>
                   <div className="p-1.5 border border-[#1B2232] rounded-sm bg-[#131924]">
-                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">Front-Right</span>
+                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">
+                      Front-Right
+                    </span>
                     {simResults.counterfactual[0]?.channels.tireTempFR}°C
                   </div>
                   <div className="p-1.5 border border-[#1B2232] rounded-sm bg-[#131924]">
-                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">Rear-Left</span>
+                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">
+                      Rear-Left
+                    </span>
                     {simResults.counterfactual[0]?.channels.tireTempRL}°C
                   </div>
                   <div className="p-1.5 border border-[#1B2232] rounded-sm bg-[#131924]">
-                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">Rear-Right</span>
+                    <span className="text-[7.5px] text-[#718096] block uppercase font-bold">
+                      Rear-Right
+                    </span>
                     {simResults.counterfactual[0]?.channels.tireTempRR}°C
                   </div>
                 </div>
               </div>
 
               <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px] mt-auto">
-                <span className="text-[#718096] uppercase font-bold block mb-0.5">COMPARATIVE OUTCOME SUMMARY</span>
+                <span className="text-[#718096] uppercase font-bold block mb-0.5">
+                  COMPARATIVE OUTCOME SUMMARY
+                </span>
                 <span className="text-white leading-relaxed">
-                  Sandbox simulation computed successfully. The applied adjustments yield stable rakes, optimal tire core core temperatures, and minimized splitter stall grounding indicators.
+                  Sandbox simulation computed successfully. The applied adjustments yield stable
+                  rakes, optimal tire core core temperatures, and minimized splitter stall grounding
+                  indicators.
                 </span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center flex-1 border border-dashed border-[#1A202C] rounded-sm py-12 text-[#718096]">
               <Layers className="h-8 w-8 mb-2 text-[#242F41]" />
-              <span className="font-bold uppercase tracking-wider text-[9px] mb-1">Sandbox Simulation Idle</span>
-              <span className="text-[8.5px]">Adjust the sliders on the left and click run to clone stint telemetry and run counterfactuals.</span>
+              <span className="font-bold uppercase tracking-wider text-[9px] mb-1">
+                Sandbox Simulation Idle
+              </span>
+              <span className="text-[8.5px]">
+                Adjust the sliders on the left and click run to clone stint telemetry and run
+                counterfactuals.
+              </span>
             </div>
           )}
         </div>
@@ -363,14 +414,22 @@ export function SandboxWorkstationTab({
 
           <div className="flex flex-col gap-2 flex-1 justify-between">
             <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px]">
-              <span className="text-[#718096] uppercase font-bold block mb-0.5">OPTIMAL WINDOW FOUND</span>
+              <span className="text-[#718096] uppercase font-bold block mb-0.5">
+                OPTIMAL WINDOW FOUND
+              </span>
               <span className="text-white font-bold block">Lap {strategySearch.optimalPitLap}</span>
-              <span className="text-[#718096] text-[8px] block">Confidence: {strategySearch.confidenceScore}%</span>
+              <span className="text-[#718096] text-[8px] block">
+                Confidence: {strategySearch.confidenceScore}%
+              </span>
             </div>
 
             <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px]">
-              <span className="text-[#718096] uppercase font-bold block mb-0.5">TACTICAL VERDICT</span>
-              <span className="text-white leading-relaxed">{strategySearch.verdictDescription}</span>
+              <span className="text-[#718096] uppercase font-bold block mb-0.5">
+                TACTICAL VERDICT
+              </span>
+              <span className="text-white leading-relaxed">
+                {strategySearch.verdictDescription}
+              </span>
             </div>
           </div>
         </div>
@@ -390,23 +449,33 @@ export function SandboxWorkstationTab({
           <div className="flex flex-col gap-2.5 text-[8.5px]">
             <div className="flex justify-between items-center py-1 border-b border-[#1A202C]">
               <span className="text-[#718096] uppercase font-bold">Sensor Reliability</span>
-              <span className="text-white font-bold">{confidenceChain.sensorReliabilityIndex}%</span>
+              <span className="text-white font-bold">
+                {confidenceChain.sensorReliabilityIndex}%
+              </span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-[#1A202C]">
               <span className="text-[#718096] uppercase font-bold">Tire Heat Confidence</span>
-              <span className="text-[#00D17F] font-bold">{confidenceChain.tireThermalConfidence}%</span>
+              <span className="text-[#00D17F] font-bold">
+                {confidenceChain.tireThermalConfidence}%
+              </span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-[#1A202C]">
               <span className="text-[#718096] uppercase font-bold">Aero Platform Certainty</span>
-              <span className="text-[#00D17F] font-bold">{confidenceChain.aeroStabilityConfidence}%</span>
+              <span className="text-[#00D17F] font-bold">
+                {confidenceChain.aeroStabilityConfidence}%
+              </span>
             </div>
             <div className="flex justify-between items-center py-1 border-b border-[#1A202C]">
               <span className="text-[#718096] uppercase font-bold">Stint Strategy Certainty</span>
-              <span className="text-[#FFB800] font-bold">{confidenceChain.stintStrategyConfidence}%</span>
+              <span className="text-[#FFB800] font-bold">
+                {confidenceChain.stintStrategyConfidence}%
+              </span>
             </div>
             <div className="flex justify-between items-center py-1 font-bold">
               <span className="text-[#718096] uppercase font-bold">AI Advisory Authority</span>
-              <span className="text-white text-[11px] font-black">{confidenceChain.overallAdvisoryAuthority}%</span>
+              <span className="text-white text-[11px] font-black">
+                {confidenceChain.overallAdvisoryAuthority}%
+              </span>
             </div>
           </div>
         </div>
@@ -426,19 +495,27 @@ export function SandboxWorkstationTab({
           {systemMetrics ? (
             <div className="grid grid-cols-2 gap-2 text-center text-white tabular-nums">
               <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                <span className="text-[8px] text-[#718096] block uppercase font-bold">Loop Lag</span>
+                <span className="text-[8px] text-[#718096] block uppercase font-bold">
+                  Loop Lag
+                </span>
                 {systemMetrics.eventLoopLagMs}ms
               </div>
               <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                <span className="text-[8px] text-[#718096] block uppercase font-bold">WS Throughput</span>
+                <span className="text-[8px] text-[#718096] block uppercase font-bold">
+                  WS Throughput
+                </span>
                 {(systemMetrics.wsThroughputBytesPerSec / 1024).toFixed(1)} kB/s
               </div>
               <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                <span className="text-[8px] text-[#718096] block uppercase font-bold">Query Latency</span>
+                <span className="text-[8px] text-[#718096] block uppercase font-bold">
+                  Query Latency
+                </span>
                 {systemMetrics.queryPlannerAvgLatencyMs}ms
               </div>
               <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm">
-                <span className="text-[8px] text-[#718096] block uppercase font-bold">Heap Footprint</span>
+                <span className="text-[8px] text-[#718096] block uppercase font-bold">
+                  Heap Footprint
+                </span>
                 {systemMetrics.heapUsedMb} MB
               </div>
             </div>

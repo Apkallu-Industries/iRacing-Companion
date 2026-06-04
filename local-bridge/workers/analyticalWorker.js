@@ -34,7 +34,8 @@ function predictNextTickInstability(current, previous, hz = 60) {
   let throttleOscillationRisk = 0;
 
   // Countersteering Slide catch
-  const isCorrectingSlide = Math.sign(steerVel) !== Math.sign(current.yawRate) && Math.abs(current.yawRate) > 0.25;
+  const isCorrectingSlide =
+    Math.sign(steerVel) !== Math.sign(current.yawRate) && Math.abs(current.yawRate) > 0.25;
   if (isCorrectingSlide && Math.abs(steerVel) > 1.8) {
     steeringRisk = Math.min(1.0, (Math.abs(steerVel) - 1.8) * 0.35 + 0.5);
   }
@@ -61,41 +62,55 @@ function predictNextTickInstability(current, previous, hz = 60) {
   }
 
   // Throttle oscillation under load
-  if (Math.abs(current.yawRate) > 0.15 && current.throttle > 0.30) {
-    const isOscillating = Math.sign(throttleGradient) !== Math.sign(current.throttle - previous.throttle);
+  if (Math.abs(current.yawRate) > 0.15 && current.throttle > 0.3) {
+    const isOscillating =
+      Math.sign(throttleGradient) !== Math.sign(current.throttle - previous.throttle);
     if (isOscillating && Math.abs(throttleGradient) > 4.0) {
       throttleOscillationRisk = 0.55;
     }
   }
 
-  const maxProbability = Math.max(steeringRisk, yawRisk, aeroRisk, ERSOverloadRisk, throttleOscillationRisk);
+  const maxProbability = Math.max(
+    steeringRisk,
+    yawRisk,
+    aeroRisk,
+    ERSOverloadRisk,
+    throttleOscillationRisk,
+  );
 
   let primaryTrigger = "NONE";
-  let recommendedCorrection = "No platform stability warnings active. Maintain current vector line.";
+  let recommendedCorrection =
+    "No platform stability warnings active. Maintain current vector line.";
 
   if (maxProbability > 0) {
     if (maxProbability === steeringRisk) {
       primaryTrigger = "STEERING_CORRECTION";
-      recommendedCorrection = "Chassis sliding lateral vector limit. Smoothly release steering lock toward exit apex.";
+      recommendedCorrection =
+        "Chassis sliding lateral vector limit. Smoothly release steering lock toward exit apex.";
     } else if (maxProbability === yawRisk) {
       primaryTrigger = "YAW_ACCELERATION_SPIKE";
-      recommendedCorrection = "Transient yaw acceleration spike detected. Ease exit throttle sweep by -10% to restore tire carcass contact.";
+      recommendedCorrection =
+        "Transient yaw acceleration spike detected. Ease exit throttle sweep by -10% to restore tire carcass contact.";
     } else if (maxProbability === aeroRisk) {
       primaryTrigger = "AERO_PLATFORM_STALL";
-      recommendedCorrection = "Diffuser splitters grounding limit. Increase mechanical packer heights or slow initial braking load transfers.";
+      recommendedCorrection =
+        "Diffuser splitters grounding limit. Increase mechanical packer heights or slow initial braking load transfers.";
     } else if (maxProbability === ERSOverloadRisk) {
       primaryTrigger = "ERS_TORQUE_OVERLOAD";
-      recommendedCorrection = "MGU-K deployment oversaturating exit traction footprint. Shift ERS maps down or engage higher gear vector.";
+      recommendedCorrection =
+        "MGU-K deployment oversaturating exit traction footprint. Shift ERS maps down or engage higher gear vector.";
     } else if (maxProbability === throttleOscillationRisk) {
       primaryTrigger = "THROTTLE_OSCILLATION";
-      recommendedCorrection = "Throttle exit hunting detected. Stabilize pedal pressure, avoid rapid on-off cycles under lateral load.";
+      recommendedCorrection =
+        "Throttle exit hunting detected. Stabilize pedal pressure, avoid rapid on-off cycles under lateral load.";
     }
   }
 
   return {
-    isRiskHigh: maxProbability >= 0.70,
+    isRiskHigh: maxProbability >= 0.7,
     instabilityProbability: parseFloat(maxProbability.toFixed(2)),
-    predictionHorizonSec: maxProbability >= 0.70 ? parseFloat((0.8 - (maxProbability - 0.7) * 0.4).toFixed(2)) : 0,
+    predictionHorizonSec:
+      maxProbability >= 0.7 ? parseFloat((0.8 - (maxProbability - 0.7) * 0.4).toFixed(2)) : 0,
     primaryTriggerFactor: primaryTrigger,
     recommendedCorrection,
   };
@@ -114,7 +129,8 @@ function evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, cur
       recommendedAction: "BOX_THIS_LAP",
       probabilityWeightPct: 100,
       alternativeBranchName: "Combustion starvation recovery",
-      alternativeBranchNarrative: "Fuel exhaustion renders stint extension non-viable. Pit immediately.",
+      alternativeBranchNarrative:
+        "Fuel exhaustion renders stint extension non-viable. Pit immediately.",
     };
   }
 
@@ -126,7 +142,8 @@ function evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, cur
         recommendedAction: "BOX_THIS_LAP",
         probabilityWeightPct: 88,
         alternativeBranchName: "Extend stint for overcut",
-        alternativeBranchNarrative: "Extending stint runs worn tires into cumulative pace losses, risking sector time decay.",
+        alternativeBranchNarrative:
+          "Extending stint runs worn tires into cumulative pace losses, risking sector time decay.",
       };
     } else {
       return {
@@ -135,7 +152,8 @@ function evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, cur
         recommendedAction: "FUEL_SAVE_LIFT",
         probabilityWeightPct: 76,
         alternativeBranchName: "Immediate pit release",
-        alternativeBranchNarrative: "Pitting now exits directly behind slower GT cars, block-stalling downforce flow.",
+        alternativeBranchNarrative:
+          "Pitting now exits directly behind slower GT cars, block-stalling downforce flow.",
       };
     }
   }
@@ -147,7 +165,8 @@ function evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, cur
       recommendedAction: "SAFETY_CAR_STANDBY",
       probabilityWeightPct: 95,
       alternativeBranchName: "Pre-emptive cheap pitstop",
-      alternativeBranchNarrative: "Box now to acquire fresh compound vectors under low time-loss penalty.",
+      alternativeBranchNarrative:
+        "Box now to acquire fresh compound vectors under low time-loss penalty.",
     };
   }
 
@@ -158,7 +177,8 @@ function evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, cur
       recommendedAction: "FUEL_SAVE_LIFT",
       probabilityWeightPct: 90,
       alternativeBranchName: "Qualifying Pace Attack",
-      alternativeBranchNarrative: "Toggling to attack consumes fuel reserves rapidly, shortening stint limits by -3 laps.",
+      alternativeBranchNarrative:
+        "Toggling to attack consumes fuel reserves rapidly, shortening stint limits by -3 laps.",
     };
   }
 
@@ -168,7 +188,8 @@ function evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, cur
     recommendedAction: "PUSH_LAP_ATTACK",
     probabilityWeightPct: 85,
     alternativeBranchName: "Early strategy window",
-    alternativeBranchNarrative: "Pitting now triggers an early undercut, but pushes subsequent tyre wear limits.",
+    alternativeBranchNarrative:
+      "Pitting now triggers an early undercut, but pushes subsequent tyre wear limits.",
   };
 }
 
@@ -186,7 +207,12 @@ parentPort.on("message", (msg) => {
       });
     } else if (type === "EVALUATE_STRATEGY") {
       const { tireGripPct, fuelLapsRemaining, trafficGapSec, currentObjectiveMode } = payload;
-      const strategy = evaluateStrategyTree(tireGripPct, fuelLapsRemaining, trafficGapSec, currentObjectiveMode);
+      const strategy = evaluateStrategyTree(
+        tireGripPct,
+        fuelLapsRemaining,
+        trafficGapSec,
+        currentObjectiveMode,
+      );
       parentPort.postMessage({
         type: "STRATEGY_RESULT",
         payload: { strategy },

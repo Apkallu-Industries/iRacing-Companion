@@ -70,7 +70,7 @@ function testStatelessNormalizer() {
     lapDistPct: 0.45,
     lapTimeCurrent: 45.2,
     lapTimeLast: 120.4,
-    extraSuspensionField: [12, 14, 15] // simulator-specific extra field to drop
+    extraSuspensionField: [12, 14, 15], // simulator-specific extra field to drop
   });
 
   assert.strictEqual(kphFrame.schemaVersion, 1);
@@ -82,11 +82,11 @@ function testStatelessNormalizer() {
   // Verify custom car profile resolution
   const customCarFrame = normalizeCoreTelemetry({
     car: "Porsche 911 GT3 R (992)",
-    speedKph: 100
+    speedKph: 100,
   });
   assert.strictEqual(customCarFrame.physicsProfile.value, "LMGT3_iRacing");
   assert.strictEqual(customCarFrame.physicsProfileVersion.value, "2.0.2");
-  
+
   // Speed check
   assert.strictEqual(kphFrame.car.speed.value, 50);
   assert.strictEqual(kphFrame.car.speed.confidence, 1.0);
@@ -107,7 +107,9 @@ function testStatelessNormalizer() {
   // Assert strict mapping: the extra field was dropped
   assert.strictEqual(kphFrame.extraSuspensionField, undefined);
   console.log("  - Verified speed, steering conversions, and strict drop behaviors.");
-  console.log("  - Provenance Audit: Verified non-null origin, tickSource, latency, and physics profile/version on normalized variables.");
+  console.log(
+    "  - Provenance Audit: Verified non-null origin, tickSource, latency, and physics profile/version on normalized variables.",
+  );
 }
 
 function testVehicleProfiles() {
@@ -125,7 +127,7 @@ function testVehicleProfiles() {
   const nascar = resolveVehicleProfile("NASCAR Cup Chevrolet Camaro");
   assert.strictEqual(nascar.className, "NASCAR");
   assert.strictEqual(nascar.simulator, "iRacing");
-  assert.strictEqual(nascar.wheelbase, 2.80);
+  assert.strictEqual(nascar.wheelbase, 2.8);
   assert.strictEqual(nascar.hasAbs, false);
   assert.strictEqual(nascar.capabilities.aeroStallDetect, "None");
   assert.strictEqual(nascar.architecture.hybrid, false);
@@ -137,7 +139,9 @@ function testVehicleProfiles() {
 
   const defaultProfile = resolveVehicleProfile("Unknown Tractor");
   assert.strictEqual(defaultProfile.className, "DEFAULT");
-  console.log("  - Successfully resolved dynamic vehicle profiles, capability matrices, and architecture/calibration metadata.");
+  console.log(
+    "  - Successfully resolved dynamic vehicle profiles, capability matrices, and architecture/calibration metadata.",
+  );
 }
 
 function testPhysicsDerivations() {
@@ -149,7 +153,7 @@ function testPhysicsDerivations() {
     speedKph: 108, // 30 m/s
     steeringDeg: 0,
     throttle: 0.5,
-    brake: 0
+    brake: 0,
   });
 
   const currFrame = normalizeCoreTelemetry({
@@ -157,13 +161,13 @@ function testPhysicsDerivations() {
     speedKph: 108, // 30 m/s
     steeringDeg: 10, // turned right by 10 deg ≈ 0.1745 rad
     throttle: 0.8, // throttle gradient: +0.3 in 16ms = +18.75/s
-    brake: 0
+    brake: 0,
   });
 
   // Mock raw original packet containing YawRate
   const rawOriginal = {
     car: "Dallara P217", // LMP2 class (wheelbase resolved as 3.015m)
-    YawRate: 0.12 // actual yaw rate: 0.12 rad/s
+    YawRate: 0.12, // actual yaw rate: 0.12 rad/s
   };
 
   const derived = derivePhysicsChannels(currFrame, prevFrame, rawOriginal);
@@ -183,7 +187,7 @@ function testPhysicsDerivations() {
   assert.strictEqual(derived.actualYawRate.source, "measured");
 
   // Expected Yaw Rate: w_exp = v / wheelbase * tan(steering)
-  assert.ok(derived.expectedYawRate.value > 1.70 && derived.expectedYawRate.value < 1.80);
+  assert.ok(derived.expectedYawRate.value > 1.7 && derived.expectedYawRate.value < 1.8);
   assert.strictEqual(derived.expectedYawRate.source, "derived");
 
   // Understeer index checks
@@ -192,7 +196,9 @@ function testPhysicsDerivations() {
   assert.strictEqual(derived.oversteerIndex.value, 0);
 
   console.log("  - Successfully enquired kinematic bicycle wheelbase resolving.");
-  console.log("  - Verified understeer index, steering derivatives, and input gradients with provenance.");
+  console.log(
+    "  - Verified understeer index, steering derivatives, and input gradients with provenance.",
+  );
 }
 
 function testPlausibilityGates() {
@@ -201,25 +207,37 @@ function testPlausibilityGates() {
 
   const buffer = {
     buffer: [],
-    push(f) { this.buffer.push(f); }
+    push(f) {
+      this.buffer.push(f);
+    },
   };
 
   const derived = {
-    understeerIndex: { value: 0, confidence: 1.0, source: "heuristic", provenance: { derivedFrom: [] } },
-    oversteerIndex: { value: 0, confidence: 1.0, source: "heuristic", provenance: { derivedFrom: [] } }
+    understeerIndex: {
+      value: 0,
+      confidence: 1.0,
+      source: "heuristic",
+      provenance: { derivedFrom: [] },
+    },
+    oversteerIndex: {
+      value: 0,
+      confidence: 1.0,
+      source: "heuristic",
+      provenance: { derivedFrom: [] },
+    },
   };
 
   // Test 1: Splitter bottoming should be REJECTED because speed is 50 km/h (< 160 km/h minAeroSpeedKph limit)
   const frameLowSpeed = normalizeCoreTelemetry({
     speedKph: 50,
-    currentLap: 1
+    currentLap: 1,
   });
   frameLowSpeed.derived = derived;
 
   const rawBottomOut = {
     LFshockVel: 0.28,
     RFshockVel: 0.25,
-    car: "Porsche 963 GTP"
+    car: "Porsche 963 GTP",
   };
 
   const triggeredEventsLowSpeed = evaluateEvents(frameLowSpeed, buffer, rawBottomOut);
@@ -229,7 +247,7 @@ function testPlausibilityGates() {
   // Test 2: Brake lockups under non-ABS (GTP) vs ABS (GT3)
   const rawLockup = {
     LFwheelSpeed: 5, // 5 m/s locked wheel (body is at 30 m/s)
-    RFwheelSpeed: 29
+    RFwheelSpeed: 29,
   };
 
   const gtpProfile = resolveVehicleProfile("Porsche 963 GTP");
@@ -242,10 +260,10 @@ function testPlausibilityGates() {
   // Sustained locking sequence (3 consecutive ticks) to charge observer past 0.40
   for (let i = 2; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 108,
       brake: 0.8,
-      currentLap: 1
+      currentLap: 1,
     });
     frame.derived = derived;
 
@@ -271,10 +289,10 @@ function testPlausibilityGates() {
 
   for (let i = 2; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 108,
       brake: 0.8,
-      currentLap: 1
+      currentLap: 1,
     });
     frame.derived = derived;
 
@@ -302,15 +320,15 @@ function testPlausibilityGates() {
   const rawLockAsphalt = {
     LFwheelSpeed: 0, // severe flat-spot lockup (0 m/s)
     RFwheelSpeed: 29,
-    PlayerTrackSurfaceMaterial: 1 // Asphalt
+    PlayerTrackSurfaceMaterial: 1, // Asphalt
   };
 
   for (let i = 2; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 120), // > 220ms cumulative locking
+      timestamp: now - i * 120, // > 220ms cumulative locking
       speedKph: 108,
       brake: 0.8,
-      currentLap: 1
+      currentLap: 1,
     });
     frame.derived = derived;
 
@@ -321,7 +339,11 @@ function testPlausibilityGates() {
       assert.strictEqual(rxEvents.length, 1);
       assert.strictEqual(rxEvents[0].priority.severity, "INFO");
       assert.strictEqual(rxEvents[0].priority.driverRiskRating, 2);
-      assert.deepStrictEqual(rxEvents[0].rationale, ["wheel_speed_decayed_below_slip_threshold", "minimum_duration_exceeded", "asphalt_surface_transition"]);
+      assert.deepStrictEqual(rxEvents[0].rationale, [
+        "wheel_speed_decayed_below_slip_threshold",
+        "minimum_duration_exceeded",
+        "asphalt_surface_transition",
+      ]);
       assert.strictEqual(rxEvents[0].detector, "LockupDetectorRallycross");
       assert.strictEqual(rxEvents[0].detectorVersion, "1.1.0");
       assert.strictEqual(rxEvents[0].physicsProfile, "Rallycross_iRacing");
@@ -335,15 +357,15 @@ function testPlausibilityGates() {
   const rawLockDirt = {
     LFwheelSpeed: 0, // severe lockup but suppressed by surface material
     RFwheelSpeed: 29,
-    PlayerTrackSurfaceMaterial: 4 // Dirt
+    PlayerTrackSurfaceMaterial: 4, // Dirt
   };
 
   for (let i = 2; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 120),
+      timestamp: now - i * 120,
       speedKph: 108,
       brake: 0.8,
-      currentLap: 1
+      currentLap: 1,
     });
     frame.derived = derived;
 
@@ -354,30 +376,34 @@ function testPlausibilityGates() {
       assert.strictEqual(rxEventsDirt.length, 0); // suppressed!
     }
   }
-  console.log("  - Plausibility Gate: Successfully suppressed Rallycross lockups on loose Dirt surfaces.");
+  console.log(
+    "  - Plausibility Gate: Successfully suppressed Rallycross lockups on loose Dirt surfaces.",
+  );
 
   // Test 5: Temporal Confidence Decay (latency > 100ms)
   clearCooldowns();
   const staleFrame = normalizeCoreTelemetry({
     timestamp: Date.now() - 1000, // 1000ms latency
     speedKph: 108,
-    currentLap: 1
+    currentLap: 1,
   });
-  
+
   const prevStaleFrame = normalizeCoreTelemetry({
     timestamp: Date.now() - 1016,
     speedKph: 108,
-    currentLap: 1
+    currentLap: 1,
   });
-  
+
   const rawStaleOriginal = {
     car: "Ferrari 296 GT3",
-    YawRate: 0.12
+    YawRate: 0.12,
   };
 
   const derivedStale = derivePhysicsChannels(staleFrame, prevStaleFrame, rawStaleOriginal);
   assert.ok(derivedStale.actualYawRate.confidence < 0.85);
-  console.log("  - Epistemic Integrity: Verified real-time Temporal Confidence Decay under high packet latency.");
+  console.log(
+    "  - Epistemic Integrity: Verified real-time Temporal Confidence Decay under high packet latency.",
+  );
 }
 
 function testGTPAdvancedDetectors() {
@@ -386,7 +412,9 @@ function testGTPAdvancedDetectors() {
 
   const buffer = {
     buffer: [],
-    push(f) { this.buffer.push(f); }
+    push(f) {
+      this.buffer.push(f);
+    },
   };
 
   const gtpProfile = resolveVehicleProfile("Porsche 963 GTP");
@@ -394,13 +422,23 @@ function testGTPAdvancedDetectors() {
   assert.strictEqual(gtpProfile.calibration.sampleSessions, 320);
 
   const derived = {
-    understeerIndex: { value: 0, confidence: 1.0, source: "heuristic", provenance: { derivedFrom: [] } },
-    oversteerIndex: { value: 0, confidence: 1.0, source: "heuristic", provenance: { derivedFrom: [] } }
+    understeerIndex: {
+      value: 0,
+      confidence: 1.0,
+      source: "heuristic",
+      provenance: { derivedFrom: [] },
+    },
+    oversteerIndex: {
+      value: 0,
+      confidence: 1.0,
+      source: "heuristic",
+      provenance: { derivedFrom: [] },
+    },
   };
 
   const rawBottomOut = {
     LFshockVel: 0.25,
-    RFshockVel: 0.25
+    RFshockVel: 0.25,
   };
 
   // Test 1: Speed-Dependent Aero Confidence Decay (Mid-speed grounding)
@@ -410,9 +448,9 @@ function testGTPAdvancedDetectors() {
 
   for (let i = 3; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 100, // minAero = 160. speed = 100.
-      currentLap: 2
+      currentLap: 2,
     });
     frame.derived = derived;
 
@@ -431,15 +469,15 @@ function testGTPAdvancedDetectors() {
   clearCooldowns();
   buffer.buffer = [];
   const rawOscillation = {
-    LFshockVel: 0.30,  // severe heave peak deflection
-    RFshockVel: -0.30 // severe out of phase deflection!
+    LFshockVel: 0.3, // severe heave peak deflection
+    RFshockVel: -0.3, // severe out of phase deflection!
   };
 
   for (let i = 3; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 200,
-      currentLap: 2
+      currentLap: 2,
     });
     frame.derived = derived;
 
@@ -448,27 +486,29 @@ function testGTPAdvancedDetectors() {
 
     if (i === 0) {
       assert.strictEqual(oscEvents.length, 2);
-      const types = oscEvents.map(e => e.eventType);
+      const types = oscEvents.map((e) => e.eventType);
       assert.ok(types.includes("AERO_PLATFORM_OSCILLATION"));
       assert.ok(types.includes("AERO_BOTTOM_OUT"));
     }
   }
-  console.log("  - Aero platform: Triggered AERO_PLATFORM_OSCILLATION under out-of-phase heave resonance.");
+  console.log(
+    "  - Aero platform: Triggered AERO_PLATFORM_OSCILLATION under out-of-phase heave resonance.",
+  );
 
   // Test 3: Diffuser Underbody Stall
   clearCooldowns();
   buffer.buffer = [];
   const rawDiffuserStall = {
     RrideHeight: 0.012,
-    throttle: 0.8
+    throttle: 0.8,
   };
 
   for (let i = 3; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 210,
       throttle: 0.8,
-      currentLap: 2
+      currentLap: 2,
     });
     frame.derived = derived;
 
@@ -487,19 +527,29 @@ function testGTPAdvancedDetectors() {
   clearCooldowns();
   buffer.buffer = [];
   const frameBrakeDerived = {
-    understeerIndex: { value: 0, confidence: 1.0, source: "heuristic", provenance: { derivedFrom: [] } },
-    oversteerIndex: { value: 0.12, confidence: 0.90, source: "heuristic", provenance: { derivedFrom: [] } } // 0.12 oversteer index for full evidence
+    understeerIndex: {
+      value: 0,
+      confidence: 1.0,
+      source: "heuristic",
+      provenance: { derivedFrom: [] },
+    },
+    oversteerIndex: {
+      value: 0.12,
+      confidence: 0.9,
+      source: "heuristic",
+      provenance: { derivedFrom: [] },
+    }, // 0.12 oversteer index for full evidence
   };
   const rawBrake = {
-    car: "Porsche 963 GTP"
+    car: "Porsche 963 GTP",
   };
 
   for (let i = 3; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 120,
       brake: 0.7,
-      currentLap: 2
+      currentLap: 2,
     });
     frame.derived = frameBrakeDerived;
 
@@ -511,22 +561,24 @@ function testGTPAdvancedDetectors() {
       assert.strictEqual(brakeEvents[0].eventType, "BRAKE_MIGRATION_ROTATION");
     }
   }
-  console.log("  - Drivetrain & Decel: Triggered BRAKE_MIGRATION_ROTATION under unstable brake bias migration.");
+  console.log(
+    "  - Drivetrain & Decel: Triggered BRAKE_MIGRATION_ROTATION under unstable brake bias migration.",
+  );
 
   // Test 5: Hybrid exit torque surge asymmetry
   clearCooldowns();
   buffer.buffer = [];
   const rawHybrid = {
     LRwheelSpeed: 50.0, // 50 m/s for maximum asymmetric evidence
-    RRwheelSpeed: 38.0
+    RRwheelSpeed: 38.0,
   };
 
   for (let i = 3; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 130,
       throttle: 0.85,
-      currentLap: 2
+      currentLap: 2,
     });
     frame.derived = derived;
 
@@ -535,12 +587,14 @@ function testGTPAdvancedDetectors() {
 
     if (i === 2) {
       assert.strictEqual(hybridEvents.length, 2);
-      const types = hybridEvents.map(e => e.eventType);
+      const types = hybridEvents.map((e) => e.eventType);
       assert.ok(types.includes("HYBRID_DEPLOYMENT_SURGE"));
       assert.ok(types.includes("REAR_TRACTION_COLLAPSE"));
     }
   }
-  console.log("  - Drivetrain & Decel: Triggered HYBRID_DEPLOYMENT_SURGE exit power torque surge asymmetry.");
+  console.log(
+    "  - Drivetrain & Decel: Triggered HYBRID_DEPLOYMENT_SURGE exit power torque surge asymmetry.",
+  );
 
   // Test 6: Layer 1 Transient Spike Rejection (Noise Filter check)
   clearCooldowns();
@@ -548,13 +602,15 @@ function testGTPAdvancedDetectors() {
   const spikeFrame = normalizeCoreTelemetry({
     timestamp: now,
     speedKph: 200,
-    currentLap: 2
+    currentLap: 2,
   });
   spikeFrame.derived = derived;
   // Feeding a single noise spike damper velocity
   const spikeEvents = evaluateEvents(spikeFrame, buffer, rawOscillation, gtpProfile);
   assert.strictEqual(spikeEvents.length, 0); // Rejected! CT < 0.40
-  console.log("  - Temporal Noise Filter: Successfully rejected isolated transient heave platform spike.");
+  console.log(
+    "  - Temporal Noise Filter: Successfully rejected isolated transient heave platform spike.",
+  );
 
   // Test 7: Bayesian Latent Fault Inference (Layer 4 alerts check)
   clearCooldowns();
@@ -564,25 +620,27 @@ function testGTPAdvancedDetectors() {
   // Sustained platform scraping over 15 consecutive ticks to build damage P >= 0.80
   for (let i = 15; i >= 0; i--) {
     const frame = normalizeCoreTelemetry({
-      timestamp: now - (i * 16),
+      timestamp: now - i * 16,
       speedKph: 180,
-      currentLap: 2
+      currentLap: 2,
     });
     frame.derived = derived;
 
     const events = evaluateEvents(frame, buffer, rawBottomOut, gtpProfile);
     buffer.push(frame);
 
-    const floorAlert = events.find(e => e.eventType === "FLOOR_DAMAGE_ALERT");
+    const floorAlert = events.find((e) => e.eventType === "FLOOR_DAMAGE_ALERT");
     if (floorAlert) {
       floorDamageTriggered = true;
       assert.strictEqual(floorAlert.priority.severity, "CRITICAL");
-      assert.ok(floorAlert.priority.confidence >= 0.80);
+      assert.ok(floorAlert.priority.confidence >= 0.8);
       assert.strictEqual(floorAlert.detector, "HypothesisFloorDamageEngine");
     }
   }
   assert.ok(floorDamageTriggered);
-  console.log("  - Bayesian Fault Engine: Successfully accumulated persistent grounding evidence and triggered FLOOR_DAMAGE_ALERT.");
+  console.log(
+    "  - Bayesian Fault Engine: Successfully accumulated persistent grounding evidence and triggered FLOOR_DAMAGE_ALERT.",
+  );
 }
 
 async function testIngestionControllerPipeline() {
@@ -604,7 +662,7 @@ async function testIngestionControllerPipeline() {
     },
     onEvent: ({ event }) => {
       eventsReceived.push(event);
-    }
+    },
   });
 
   controller.openTelemetryStream();
@@ -627,18 +685,18 @@ async function testIngestionControllerPipeline() {
     lapDistPct: 0.78,
     car: "Ferrari 296 GT3",
     LRwheelSpeed: 85, // Severe wheelspin
-    RRwheelSpeed: 86
+    RRwheelSpeed: 86,
   };
 
   // We send 3 consecutive packets sequentially over the network to build persisted wheelspin confidence
   for (let i = 0; i < 3; i++) {
-    const packet = { 
-      ...testPacket, 
-      timestamp: Date.now() + (i * 16),
-      frameNumber: 101 + i 
+    const packet = {
+      ...testPacket,
+      timestamp: Date.now() + i * 16,
+      frameNumber: 101 + i,
     };
     const payload = Buffer.from(JSON.stringify(packet));
-    
+
     await new Promise((resolve, reject) => {
       udpClient.send(payload, 0, payload.length, TEST_UDP_PORT, "127.0.0.1", (err) => {
         if (err) reject(err);
@@ -657,7 +715,7 @@ async function testIngestionControllerPipeline() {
   assert.ok(eventsReceived.length >= 2);
 
   const receivedNorm = normalizedPacketsReceived[normalizedPacketsReceived.length - 1];
-  const eventTypes = eventsReceived.map(e => e.eventType);
+  const eventTypes = eventsReceived.map((e) => e.eventType);
 
   // Enforce structured TelemetryValues enquired in pipeline
   assert.strictEqual(receivedNorm.car.speed.value, 62.5);
@@ -665,14 +723,18 @@ async function testIngestionControllerPipeline() {
   assert.strictEqual(receivedNorm.derived.wheelbase.value, 2.78);
 
   // Expose state estimation values enquired in the canonical pipeline
-  assert.ok(receivedNorm.estimation.rollingConfidence.REAR_TRACTION_COLLAPSE.value >= 0.40);
+  assert.ok(receivedNorm.estimation.rollingConfidence.REAR_TRACTION_COLLAPSE.value >= 0.4);
   assert.ok(receivedNorm.estimation.subsystemHealth.rearStability.value < 1.0);
 
   assert.ok(eventTypes.includes("REAR_TRACTION_COLLAPSE"));
   assert.ok(eventTypes.includes("EXIT_UNDERSTEER"));
 
-  console.log("  - Successfully received and verified dynamic wheelbase profile and TelemetryValue ingestion.");
-  console.log("  - Successfully verified persistent observer state propagation and subsystem health metrics inside the stream.");
+  console.log(
+    "  - Successfully received and verified dynamic wheelbase profile and TelemetryValue ingestion.",
+  );
+  console.log(
+    "  - Successfully verified persistent observer state propagation and subsystem health metrics inside the stream.",
+  );
 
   // Clean up
   controller.closeTelemetryStream();

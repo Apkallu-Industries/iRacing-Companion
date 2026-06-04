@@ -60,13 +60,7 @@
     },
     "priority": {
       "type": "object",
-      "required": [
-        "severity",
-        "confidence",
-        "persistence",
-        "lapTimeImpactS",
-        "driverRiskRating"
-      ],
+      "required": ["severity", "confidence", "persistence", "lapTimeImpactS", "driverRiskRating"],
       "properties": {
         "severity": {
           "type": "string",

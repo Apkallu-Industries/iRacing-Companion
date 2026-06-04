@@ -31,11 +31,12 @@ export const DECLARATIVE_RULES: DSLRule[] = [
     conditions: [
       { channel: "Brake", operator: ">", value: 0.82 },
       { channel: "Speed", operator: ">", value: 13.8 }, // >50 km/h
-      { channel: "SteeringWheelAngle", operator: ">", value: 0.7 } // >40 degrees
+      { channel: "SteeringWheelAngle", operator: ">", value: 0.7 }, // >40 degrees
     ],
     durationSec: 0.15,
     cornerNumber: 8,
-    descriptionTemplate: "Front axle brake pressure exceeded 82% threshold target under heavy deceleration. Wheel speed lockup and front load transfer collapse entry traction footprint."
+    descriptionTemplate:
+      "Front axle brake pressure exceeded 82% threshold target under heavy deceleration. Wheel speed lockup and front load transfer collapse entry traction footprint.",
   },
   {
     name: "DRIVEN AXLE WHEELSPIN",
@@ -44,13 +45,14 @@ export const DECLARATIVE_RULES: DSLRule[] = [
     severity: "warning",
     channels: ["Throttle", "Speed", "LFspeed", "LRspeed"],
     conditions: [
-      { channel: "Throttle", operator: ">", value: 0.70 },
+      { channel: "Throttle", operator: ">", value: 0.7 },
       { channel: "Speed", operator: ">", value: 11.1 }, // >40 km/h
-      { channel: "LFspeed", operator: "mismatch", value: 0.12 }
+      { channel: "LFspeed", operator: "mismatch", value: 0.12 },
     ],
     durationSec: 0.15,
     cornerNumber: 3,
-    descriptionTemplate: "Driven rear wheel speeds mismatched by more than 12% under heavy exit throttle re-application. Rear footprint slip threshold breached."
+    descriptionTemplate:
+      "Driven rear wheel speeds mismatched by more than 12% under heavy exit throttle re-application. Rear footprint slip threshold breached.",
   },
   {
     name: "CHASSIS ROTATIONAL COMPRESSION",
@@ -58,12 +60,11 @@ export const DECLARATIVE_RULES: DSLRule[] = [
     category: "dynamics",
     severity: "warning",
     channels: ["pitch"],
-    conditions: [
-      { channel: "pitch", operator: "<", value: -0.018 }
-    ],
-    durationSec: 0.10,
+    conditions: [{ channel: "pitch", operator: "<", value: -0.018 }],
+    durationSec: 0.1,
     cornerNumber: 5,
-    descriptionTemplate: "Dynamic ride height pitch collapses forward, triggering splitter bottoming under downforce heave. Diffuser seal compromised transiently."
+    descriptionTemplate:
+      "Dynamic ride height pitch collapses forward, triggering splitter bottoming under downforce heave. Diffuser seal compromised transiently.",
   },
   {
     name: "ERS DEPLOYMENT SATURATION",
@@ -71,13 +72,12 @@ export const DECLARATIVE_RULES: DSLRule[] = [
     category: "hybrid",
     severity: "info",
     channels: ["MgukDeploykW"],
-    conditions: [
-      { channel: "MgukDeploykW", operator: ">", value: 115 }
-    ],
+    conditions: [{ channel: "MgukDeploykW", operator: ">", value: 115 }],
     durationSec: 3.5,
     cornerNumber: 11,
-    descriptionTemplate: "MGU-K deploy torque remained saturated at peak output (>115 kW). State-of-charge energy reserves declining on straightaway."
-  }
+    descriptionTemplate:
+      "MGU-K deploy torque remained saturated at peak output (>115 kW). State-of-charge energy reserves declining on straightaway.",
+  },
 ];
 
 function evaluateCondition(parsed: IbtParsed, cond: DSLRuleCondition, tick: number): boolean {
@@ -86,20 +86,28 @@ function evaluateCondition(parsed: IbtParsed, cond: DSLRuleCondition, tick: numb
   const val = ch.data[tick];
 
   switch (cond.operator) {
-    case ">": return val > cond.value;
-    case "<": return val < cond.value;
-    case "==": return val === cond.value;
-    case "!=": return val !== cond.value;
+    case ">":
+      return val > cond.value;
+    case "<":
+      return val < cond.value;
+    case "==":
+      return val === cond.value;
+    case "!=":
+      return val !== cond.value;
     case "mismatch": {
       const lf = parsed.channels["LFspeed"]?.data[tick] ?? 0;
       const lr = parsed.channels["LRspeed"]?.data[tick] ?? 0;
-      return Math.abs(lf - lr) > (lf * cond.value);
+      return Math.abs(lf - lr) > lf * cond.value;
     }
-    default: return false;
+    default:
+      return false;
   }
 }
 
-export function compileAndRunDSL(parsed: IbtParsed, rules: DSLRule[] = DECLARATIVE_RULES): Omit<TelemetryEvent, "id">[] {
+export function compileAndRunDSL(
+  parsed: IbtParsed,
+  rules: DSLRule[] = DECLARATIVE_RULES,
+): Omit<TelemetryEvent, "id">[] {
   const events: Omit<TelemetryEvent, "id">[] = [];
   const sessionTime = parsed.channels["SessionTime"]?.data;
   if (!sessionTime) return events;
@@ -136,7 +144,7 @@ export function compileAndRunDSL(parsed: IbtParsed, rules: DSLRule[] = DECLARATI
     }
 
     // Step 2: Temporal Clustering - Group occurrences closer than 4.5 seconds
-    const clusters: typeof occurrences[] = [];
+    const clusters: (typeof occurrences)[] = [];
     occurrences.forEach((occ) => {
       if (clusters.length === 0) {
         clusters.push([occ]);
@@ -158,11 +166,12 @@ export function compileAndRunDSL(parsed: IbtParsed, rules: DSLRule[] = DECLARATI
       const firstOcc = cluster[0];
       const count = cluster.length;
       const tSec = sessionTime[firstOcc.start];
-      
+
       const label = count > 1 ? `REPEATED ${rule.name}` : rule.name;
-      const textPrefix = count > 1 
-        ? `[${rule.classification} INSIGHT] Repeated events (${count} occurrences) flagged. `
-        : `[${rule.classification} CRITICAL] `;
+      const textPrefix =
+        count > 1
+          ? `[${rule.classification} INSIGHT] Repeated events (${count} occurrences) flagged. `
+          : `[${rule.classification} CRITICAL] `;
 
       const corner = tSec < 20 ? 8 : tSec < 45 ? 11 : tSec < 60 ? 3 : 5;
 
@@ -170,7 +179,7 @@ export function compileAndRunDSL(parsed: IbtParsed, rules: DSLRule[] = DECLARATI
         parsed,
         rule.channels,
         firstOcc.start,
-        cluster[cluster.length - 1].end
+        cluster[cluster.length - 1].end,
       );
 
       events.push({
@@ -181,7 +190,7 @@ export function compileAndRunDSL(parsed: IbtParsed, rules: DSLRule[] = DECLARATI
         description: `${textPrefix}${rule.descriptionTemplate}`,
         associatedChannels: rule.channels,
         cornerNumber: corner,
-        metadata: { confidence: certainty }
+        metadata: { confidence: certainty },
       });
     });
   });

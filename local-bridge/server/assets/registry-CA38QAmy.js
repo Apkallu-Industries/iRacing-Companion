@@ -2,7 +2,18 @@ import { create } from "zustand";
 import { jsxs, jsx } from "react/jsx-runtime";
 import { K as useTelemetry } from "./router-D8VllJ-f.js";
 import { useState, useEffect, useRef } from "react";
-import { Sliders, Sparkles, ExternalLink, Maximize2, Loader2, Volume2, AlertTriangle, Battery, Thermometer, CheckCircle2 } from "lucide-react";
+import {
+  Sliders,
+  Sparkles,
+  ExternalLink,
+  Maximize2,
+  Loader2,
+  Volume2,
+  AlertTriangle,
+  Battery,
+  Thermometer,
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
 const useTelemetryRuntimeStore = create((set, get) => ({
   cursorTick: 0,
@@ -21,9 +32,10 @@ const useTelemetryRuntimeStore = create((set, get) => ({
   setPlaying: (playing) => set({ isPlaying: playing }),
   setActivePreset: (preset) => set({ activePreset: preset }),
   selectInstrument: (instrument) => set({ selectedInstrument: instrument }),
-  addEvent: (event) => set((state) => ({
-    events: [...state.events, { ...event, id: crypto.randomUUID() }]
-  })),
+  addEvent: (event) =>
+    set((state) => ({
+      events: [...state.events, { ...event, id: crypto.randomUUID() }],
+    })),
   triggerEvent: (event) => {
     set({ activeEvent: event, cursorTick: Math.round(event.timestampSec * 60) });
     if (event.category === "inputs") {
@@ -38,7 +50,7 @@ const useTelemetryRuntimeStore = create((set, get) => ({
   },
   clearEvents: () => set({ events: [], activeEvent: null }),
   setFocusMode: (mode) => set({ focusMode: mode }),
-  setDetachedTelemetryFrame: (frame) => set({ detachedTelemetryFrame: frame })
+  setDetachedTelemetryFrame: (frame) => set({ detachedTelemetryFrame: frame }),
 }));
 const syncBC = typeof window !== "undefined" ? new BroadcastChannel("pitwall-runtime-sync") : null;
 let isIncomingSync = false;
@@ -58,7 +70,10 @@ if (syncBC) {
       if (payload.activePreset !== void 0 && payload.activePreset !== state.activePreset) {
         updates.activePreset = payload.activePreset;
       }
-      if (payload.selectedInstrument !== void 0 && payload.selectedInstrument !== state.selectedInstrument) {
+      if (
+        payload.selectedInstrument !== void 0 &&
+        payload.selectedInstrument !== state.selectedInstrument
+      ) {
         updates.selectedInstrument = payload.selectedInstrument;
       }
       if (payload.focusMode !== void 0 && payload.focusMode !== state.focusMode) {
@@ -85,8 +100,8 @@ if (syncBC) {
         activePreset: state.activePreset,
         selectedInstrument: state.selectedInstrument,
         focusMode: state.focusMode,
-        isPlaying: state.isPlaying
-      }
+        isPlaying: state.isPlaying,
+      },
     });
   });
 }
@@ -94,7 +109,7 @@ function broadcastTelemetryFrame(frame) {
   if (syncBC && !isIncomingSync) {
     syncBC.postMessage({
       type: "REPLAY_FRAME",
-      payload: frame
+      payload: frame,
     });
   }
 }
@@ -107,7 +122,7 @@ function TelemetryInstrument({
   aiAdvice = null,
   children,
   activeStatus = "ACTIVE",
-  activeStatusColor = "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10"
+  activeStatusColor = "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10",
 }) {
   const [showAi, setShowAi] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -120,9 +135,13 @@ function TelemetryInstrument({
       if (titleLower.includes("brake")) {
         matched = ["brake", "bias", "press", "tempc"].some((k) => channel.includes(k));
       } else if (titleLower.includes("hybrid") || titleLower.includes("ers")) {
-        matched = ["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) => channel.includes(k));
+        matched = ["ers", "soc", "mgu", "hybrid", "power", "charge"].some((k) =>
+          channel.includes(k),
+        );
       } else if (titleLower.includes("suspension") || titleLower.includes("chassis")) {
-        matched = ["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some((k) => channel.includes(k));
+        matched = ["suspension", "damper", "ride", "pitch", "roll", "yaw", "accel", "heave"].some(
+          (k) => channel.includes(k),
+        );
       } else if (titleLower.includes("tire") || titleLower.includes("grip")) {
         matched = ["temp", "press", "wear", "tire", "grip"].some((k) => channel.includes(k));
       } else if (titleLower.includes("input") || titleLower.includes("control")) {
@@ -162,112 +181,169 @@ function TelemetryInstrument({
           border: "1px solid #1C2430",
           color: "#fff",
           fontFamily: "monospace",
-          fontSize: "10px"
-        }
+          fontSize: "10px",
+        },
       });
     } else {
       toast.error("Multi-monitor detach blocked by browser window blocker.");
     }
   };
-  return /* @__PURE__ */ jsxs(
-    "div",
-    {
-      className: `border bg-[#0B0F14] flex flex-col font-mono text-xs select-none transition-all duration-200 ${highlighted ? "border-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.35)] ring-1 ring-[#FFB800]/40 scale-[1.01]" : "border-[#1C2430]"} ${expanded ? "fixed inset-4 z-50 bg-[#0B0F14]/95 backdrop-blur shadow-2xl" : "h-full min-h-[220px]"}`,
-      children: [
-        /* @__PURE__ */ jsxs("div", { className: "px-3 py-1.5 border-b border-[#1C2430] bg-[#11161D] flex items-center justify-between shrink-0 select-none", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-            /* @__PURE__ */ jsx("span", { className: "p-1 rounded bg-[#05070A] border border-[#1C2430] text-[#3B82F6]", children: /* @__PURE__ */ jsx(Sliders, { className: "h-3 w-3" }) }),
-            /* @__PURE__ */ jsx("span", { className: "font-bold text-white uppercase tracking-wider text-[10px]", children: title }),
-            activeStatus && /* @__PURE__ */ jsx("span", { className: `text-[8px] font-bold tracking-widest px-1.5 py-0.5 border ${activeStatusColor}`, children: activeStatus })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5", children: [
-            onModeChange && /* @__PURE__ */ jsx("div", { className: "flex border border-[#1C2430] bg-[#05070A] rounded-sm mr-1 overflow-hidden", children: ["live", "replay", "compare"].map((m) => /* @__PURE__ */ jsx(
-              "button",
-              {
-                onClick: () => onModeChange(m),
-                className: `px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold cursor-pointer ${mode === m ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
-                children: m
-              },
-              m
-            )) }),
-            onAiAnalyze && /* @__PURE__ */ jsx(
-              "button",
-              {
-                onClick: toggleAi,
-                className: `p-1 rounded border transition-colors cursor-pointer ${showAi ? "border-[#8B5CF6]/50 bg-[#8B5CF6]/15 text-[#8B5CF6]" : "border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white"}`,
-                title: "Toggle AI System Advisor",
-                children: /* @__PURE__ */ jsx(Sparkles, { className: "h-3.5 w-3.5" })
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              "button",
-              {
+  return /* @__PURE__ */ jsxs("div", {
+    className: `border bg-[#0B0F14] flex flex-col font-mono text-xs select-none transition-all duration-200 ${highlighted ? "border-[#FFB800] shadow-[0_0_15px_rgba(255,184,0,0.35)] ring-1 ring-[#FFB800]/40 scale-[1.01]" : "border-[#1C2430]"} ${expanded ? "fixed inset-4 z-50 bg-[#0B0F14]/95 backdrop-blur shadow-2xl" : "h-full min-h-[220px]"}`,
+    children: [
+      /* @__PURE__ */ jsxs("div", {
+        className:
+          "px-3 py-1.5 border-b border-[#1C2430] bg-[#11161D] flex items-center justify-between shrink-0 select-none",
+        children: [
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center gap-2",
+            children: [
+              /* @__PURE__ */ jsx("span", {
+                className: "p-1 rounded bg-[#05070A] border border-[#1C2430] text-[#3B82F6]",
+                children: /* @__PURE__ */ jsx(Sliders, { className: "h-3 w-3" }),
+              }),
+              /* @__PURE__ */ jsx("span", {
+                className: "font-bold text-white uppercase tracking-wider text-[10px]",
+                children: title,
+              }),
+              activeStatus &&
+                /* @__PURE__ */ jsx("span", {
+                  className: `text-[8px] font-bold tracking-widest px-1.5 py-0.5 border ${activeStatusColor}`,
+                  children: activeStatus,
+                }),
+            ],
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "flex items-center gap-1.5",
+            children: [
+              onModeChange &&
+                /* @__PURE__ */ jsx("div", {
+                  className:
+                    "flex border border-[#1C2430] bg-[#05070A] rounded-sm mr-1 overflow-hidden",
+                  children: ["live", "replay", "compare"].map((m) =>
+                    /* @__PURE__ */ jsx(
+                      "button",
+                      {
+                        onClick: () => onModeChange(m),
+                        className: `px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold cursor-pointer ${mode === m ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
+                        children: m,
+                      },
+                      m,
+                    ),
+                  ),
+                }),
+              onAiAnalyze &&
+                /* @__PURE__ */ jsx("button", {
+                  onClick: toggleAi,
+                  className: `p-1 rounded border transition-colors cursor-pointer ${showAi ? "border-[#8B5CF6]/50 bg-[#8B5CF6]/15 text-[#8B5CF6]" : "border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white"}`,
+                  title: "Toggle AI System Advisor",
+                  children: /* @__PURE__ */ jsx(Sparkles, { className: "h-3.5 w-3.5" }),
+                }),
+              /* @__PURE__ */ jsx("button", {
                 onClick: handleDetach,
-                className: "p-1 rounded border border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white transition-colors cursor-pointer",
+                className:
+                  "p-1 rounded border border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white transition-colors cursor-pointer",
                 title: "Detach instrument to external array",
-                children: /* @__PURE__ */ jsx(ExternalLink, { className: "h-3.5 w-3.5" })
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              "button",
-              {
+                children: /* @__PURE__ */ jsx(ExternalLink, { className: "h-3.5 w-3.5" }),
+              }),
+              /* @__PURE__ */ jsx("button", {
                 onClick: () => setExpanded(!expanded),
-                className: "p-1 rounded border border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white transition-colors cursor-pointer",
+                className:
+                  "p-1 rounded border border-[#1C2430] bg-[#05070A] text-[#7A828C] hover:text-white transition-colors cursor-pointer",
                 title: expanded ? "Restore down" : "Maximize view",
-                children: /* @__PURE__ */ jsx(Maximize2, { className: "h-3.5 w-3.5" })
-              }
-            )
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "flex-1 min-h-0 flex flex-col relative bg-[#05070A]", children: [
+                children: /* @__PURE__ */ jsx(Maximize2, { className: "h-3.5 w-3.5" }),
+              }),
+            ],
+          }),
+        ],
+      }),
+      /* @__PURE__ */ jsxs("div", {
+        className: "flex-1 min-h-0 flex flex-col relative bg-[#05070A]",
+        children: [
           /* @__PURE__ */ jsx("div", { className: "flex-1 min-h-0 relative", children }),
-          showAi && /* @__PURE__ */ jsxs("div", { className: "absolute inset-0 bg-[#0B0F14]/95 border-t border-[#1C2430] p-3 flex flex-col overflow-y-auto z-10 font-sans text-xs", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-[#1C2430] pb-1.5 mb-2 font-mono uppercase", children: [
-              /* @__PURE__ */ jsxs("span", { className: "text-[#8B5CF6] font-black tracking-widest flex items-center gap-1", children: [
-                /* @__PURE__ */ jsx(Sparkles, { className: "h-3.5 w-3.5" }),
-                " telemetry system advice"
-              ] }),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  onClick: () => setShowAi(false),
-                  className: "text-[#7A828C] hover:text-white text-[10px]",
-                  children: "[CLOSE]"
-                }
-              )
-            ] }),
-            aiLoading ? /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col items-center justify-center text-[#7A828C] font-mono py-8", children: [
-              /* @__PURE__ */ jsx(Loader2, { className: "h-5 w-5 animate-spin text-[#8B5CF6] mb-2" }),
-              /* @__PURE__ */ jsx("span", { children: "RESOLVING LOCAL COEFFICIENTS..." })
-            ] }) : aiAdvice ? /* @__PURE__ */ jsxs("div", { className: "space-y-2 select-text font-mono text-[10px] leading-relaxed", children: [
-              /* @__PURE__ */ jsx("div", { className: "text-white whitespace-pre-wrap font-bold", children: aiAdvice }),
-              /* @__PURE__ */ jsxs("div", { className: "border-t border-[#1C2430]/60 pt-1.5 mt-2 flex items-center justify-between text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { className: "uppercase text-[8px] font-bold", children: "race engineer briefing" }),
-                /* @__PURE__ */ jsxs(
-                  "button",
-                  {
-                    onClick: async () => {
-                      try {
-                        const { speak } = await import("./tts-client-D74KVeiv.js");
-                        await speak(aiAdvice.replace(/[*#-]/g, ""));
-                      } catch {
-                        toast.error("TTS unavailable");
-                      }
-                    },
-                    className: "flex items-center gap-1 text-[#3B82F6] hover:underline cursor-pointer",
-                    children: [
-                      /* @__PURE__ */ jsx(Volume2, { className: "h-3 w-3" }),
-                      " AUDIO CALL"
-                    ]
-                  }
-                )
-              ] })
-            ] }) : /* @__PURE__ */ jsx("div", { className: "text-[#7A828C] font-mono text-center py-6", children: "No active advisory generated. Click analyze to queue LLM." })
-          ] })
-        ] })
-      ]
-    }
-  );
+          showAi &&
+            /* @__PURE__ */ jsxs("div", {
+              className:
+                "absolute inset-0 bg-[#0B0F14]/95 border-t border-[#1C2430] p-3 flex flex-col overflow-y-auto z-10 font-sans text-xs",
+              children: [
+                /* @__PURE__ */ jsxs("div", {
+                  className:
+                    "flex items-center justify-between border-b border-[#1C2430] pb-1.5 mb-2 font-mono uppercase",
+                  children: [
+                    /* @__PURE__ */ jsxs("span", {
+                      className:
+                        "text-[#8B5CF6] font-black tracking-widest flex items-center gap-1",
+                      children: [
+                        /* @__PURE__ */ jsx(Sparkles, { className: "h-3.5 w-3.5" }),
+                        " telemetry system advice",
+                      ],
+                    }),
+                    /* @__PURE__ */ jsx("button", {
+                      onClick: () => setShowAi(false),
+                      className: "text-[#7A828C] hover:text-white text-[10px]",
+                      children: "[CLOSE]",
+                    }),
+                  ],
+                }),
+                aiLoading
+                  ? /* @__PURE__ */ jsxs("div", {
+                      className:
+                        "flex-1 flex flex-col items-center justify-center text-[#7A828C] font-mono py-8",
+                      children: [
+                        /* @__PURE__ */ jsx(Loader2, {
+                          className: "h-5 w-5 animate-spin text-[#8B5CF6] mb-2",
+                        }),
+                        /* @__PURE__ */ jsx("span", {
+                          children: "RESOLVING LOCAL COEFFICIENTS...",
+                        }),
+                      ],
+                    })
+                  : aiAdvice
+                    ? /* @__PURE__ */ jsxs("div", {
+                        className: "space-y-2 select-text font-mono text-[10px] leading-relaxed",
+                        children: [
+                          /* @__PURE__ */ jsx("div", {
+                            className: "text-white whitespace-pre-wrap font-bold",
+                            children: aiAdvice,
+                          }),
+                          /* @__PURE__ */ jsxs("div", {
+                            className:
+                              "border-t border-[#1C2430]/60 pt-1.5 mt-2 flex items-center justify-between text-[#7A828C]",
+                            children: [
+                              /* @__PURE__ */ jsx("span", {
+                                className: "uppercase text-[8px] font-bold",
+                                children: "race engineer briefing",
+                              }),
+                              /* @__PURE__ */ jsxs("button", {
+                                onClick: async () => {
+                                  try {
+                                    const { speak } = await import("./tts-client-D74KVeiv.js");
+                                    await speak(aiAdvice.replace(/[*#-]/g, ""));
+                                  } catch {
+                                    toast.error("TTS unavailable");
+                                  }
+                                },
+                                className:
+                                  "flex items-center gap-1 text-[#3B82F6] hover:underline cursor-pointer",
+                                children: [
+                                  /* @__PURE__ */ jsx(Volume2, { className: "h-3 w-3" }),
+                                  " AUDIO CALL",
+                                ],
+                              }),
+                            ],
+                          }),
+                        ],
+                      })
+                    : /* @__PURE__ */ jsx("div", {
+                        className: "text-[#7A828C] font-mono text-center py-6",
+                        children: "No active advisory generated. Click analyze to queue LLM.",
+                      }),
+              ],
+            }),
+        ],
+      }),
+    ],
+  });
 }
 function BrakeInstrument({ telemetry: propTelemetry, mode = "live" }) {
   const liveTelemetry = useTelemetry();
@@ -298,136 +374,251 @@ function BrakeInstrument({ telemetry: propTelemetry, mode = "live" }) {
 - Peak Brake Pressure: ${(Math.max(flBrakePress, frBrakePress) * 1.2).toFixed(1)} bar.
 - Thermal Saturation: Front brake temperatures peak at ${Math.max(flBrakeTemp, frBrakeTemp).toFixed(0)}°C on corner entry.
 - Recommendation: Shift brake bias +0.5% forward if experiencing rear instability under trail braking at Turn 8. Maintain threshold pressure below ${thresholdLimit}% to avoid front lockups.`;
-  return /* @__PURE__ */ jsx(
-    TelemetryInstrument,
-    {
-      title: "Brake Instrument",
-      mode,
-      activeStatus: isLockedUp ? "LOCKUP DETECTED" : "SYS ACTIVE",
-      activeStatusColor: isLockedUp ? "text-[#FF4D4D] border-[#FF4D4D]/40 bg-[#FF4D4D]/10" : "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10",
-      onAiAnalyze: () => {
-      },
-      aiAdvice,
-      children: /* @__PURE__ */ jsxs("div", { className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white", children: [
-        isLockedUp && /* @__PURE__ */ jsxs("div", { className: "absolute top-1 right-2 animate-pulse flex items-center gap-1 text-[#FF4D4D] bg-[#FF4D4D]/10 border border-[#FF4D4D]/30 px-1.5 py-0.5 rounded text-[8px] font-black z-20", children: [
-          /* @__PURE__ */ jsx(AlertTriangle, { className: "h-3 w-3" }),
-          " LOCKUP WARNING"
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-4 flex-1", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex flex-col justify-between border-r border-[#1C2430]/60 pr-3", children: [
-            /* @__PURE__ */ jsx("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1 uppercase font-bold tracking-wider", children: "Thermal & Pressure Hub" }),
-            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 my-2", children: [
-              /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getTempColor(flBrakeTemp)} bg-[#0B0F14] flex flex-col`, children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-[#7A828C] font-bold", children: "FL BRAKE" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-sm font-black tracking-tighter tabular-nums", children: [
-                  flBrakeTemp.toFixed(0),
-                  "°C"
-                ] }),
-                /* @__PURE__ */ jsx("div", { className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: `h-full ${getBarColor(flBrakeTemp)}`, style: { width: `${Math.min(100, flBrakeTemp / 600 * 100)}%` } }) }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-white mt-1 tabular-nums", children: [
-                  flBrakePress.toFixed(1),
-                  " Bar"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getTempColor(frBrakeTemp)} bg-[#0B0F14] flex flex-col`, children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-[#7A828C] font-bold", children: "FR BRAKE" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-sm font-black tracking-tighter tabular-nums", children: [
-                  frBrakeTemp.toFixed(0),
-                  "°C"
-                ] }),
-                /* @__PURE__ */ jsx("div", { className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: `h-full ${getBarColor(frBrakeTemp)}`, style: { width: `${Math.min(100, frBrakeTemp / 600 * 100)}%` } }) }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-white mt-1 tabular-nums", children: [
-                  frBrakePress.toFixed(1),
-                  " Bar"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2", children: [
-              /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getTempColor(rlBrakeTemp)} bg-[#0B0F14] flex flex-col`, children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-[#7A828C] font-bold", children: "RL BRAKE" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-sm font-black tracking-tighter tabular-nums", children: [
-                  rlBrakeTemp.toFixed(0),
-                  "°C"
-                ] }),
-                /* @__PURE__ */ jsx("div", { className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: `h-full ${getBarColor(rlBrakeTemp)}`, style: { width: `${Math.min(100, rlBrakeTemp / 600 * 100)}%` } }) }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-white mt-1 tabular-nums", children: [
-                  rlBrakePress.toFixed(1),
-                  " Bar"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getTempColor(rrBrakeTemp)} bg-[#0B0F14] flex flex-col`, children: [
-                /* @__PURE__ */ jsx("span", { className: "text-[8px] text-[#7A828C] font-bold", children: "RR BRAKE" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-sm font-black tracking-tighter tabular-nums", children: [
-                  rrBrakeTemp.toFixed(0),
-                  "°C"
-                ] }),
-                /* @__PURE__ */ jsx("div", { className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: `h-full ${getBarColor(rrBrakeTemp)}`, style: { width: `${Math.min(100, rrBrakeTemp / 600 * 100)}%` } }) }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-white mt-1 tabular-nums", children: [
-                  rrBrakePress.toFixed(1),
-                  " Bar"
-                ] })
-              ] })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex flex-col justify-between pl-1", children: [
-            /* @__PURE__ */ jsxs("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider flex justify-between", children: [
-              /* @__PURE__ */ jsx("span", { children: "Brake Command Balance" }),
-              /* @__PURE__ */ jsxs("span", { className: "text-[#3B82F6] tabular-nums", children: [
-                "BIAS: ",
-                brakeBias.toFixed(1),
-                "%"
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col justify-center gap-1.5 my-2.5", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center text-[9px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "PRESSURE ENVELOPE" }),
-                /* @__PURE__ */ jsxs("span", { className: "tabular-nums font-bold text-white", children: [
-                  (rawBrake * 100).toFixed(0),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "h-10 bg-[#0B0F14] border border-[#1C2430] rounded-sm p-1.5 relative overflow-hidden flex flex-col justify-center", children: [
-                /* @__PURE__ */ jsx("div", { className: `h-4 transition-all duration-75 rounded-sm ${isLockedUp ? "bg-[#FF4D4D]" : "bg-[#3B82F6]"}`, style: { width: `${rawBrake * 100}%` } }),
-                /* @__PURE__ */ jsx("div", { className: "absolute top-0 bottom-0 border-l border-dashed border-[#FFB800] z-10", style: { left: `${thresholdLimit}%` }, title: "Target threshold line", children: /* @__PURE__ */ jsxs("span", { className: "absolute top-0.5 left-1 text-[7px] text-[#FFB800] font-black tracking-widest bg-[#05070A] px-0.5 rounded", children: [
-                  "THR: ",
-                  thresholdLimit,
-                  "%"
-                ] }) })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 text-[9px] text-[#7A828C] bg-[#0B0F14] p-1.5 rounded-sm border border-[#1C2430]/60", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex flex-col", children: [
-                /* @__PURE__ */ jsx("span", { children: "F/R BIAS BAL" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-white font-bold tabular-nums", children: [
-                  brakeBias,
-                  "% / ",
-                  (100 - brakeBias).toFixed(1),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex flex-col", children: [
-                /* @__PURE__ */ jsx("span", { children: "PEAK FORCE" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[#FF4D4D] font-bold tabular-nums", children: [
-                  (rawBrake * 80).toFixed(0),
-                  " kg"
-                ] })
-              ] })
-            ] })
-          ] })
-        ] })
-      ] })
-    }
-  );
+  return /* @__PURE__ */ jsx(TelemetryInstrument, {
+    title: "Brake Instrument",
+    mode,
+    activeStatus: isLockedUp ? "LOCKUP DETECTED" : "SYS ACTIVE",
+    activeStatusColor: isLockedUp
+      ? "text-[#FF4D4D] border-[#FF4D4D]/40 bg-[#FF4D4D]/10"
+      : "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10",
+    onAiAnalyze: () => {},
+    aiAdvice,
+    children: /* @__PURE__ */ jsxs("div", {
+      className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white",
+      children: [
+        isLockedUp &&
+          /* @__PURE__ */ jsxs("div", {
+            className:
+              "absolute top-1 right-2 animate-pulse flex items-center gap-1 text-[#FF4D4D] bg-[#FF4D4D]/10 border border-[#FF4D4D]/30 px-1.5 py-0.5 rounded text-[8px] font-black z-20",
+            children: [
+              /* @__PURE__ */ jsx(AlertTriangle, { className: "h-3 w-3" }),
+              " LOCKUP WARNING",
+            ],
+          }),
+        /* @__PURE__ */ jsxs("div", {
+          className: "grid grid-cols-2 gap-4 flex-1",
+          children: [
+            /* @__PURE__ */ jsxs("div", {
+              className: "flex flex-col justify-between border-r border-[#1C2430]/60 pr-3",
+              children: [
+                /* @__PURE__ */ jsx("div", {
+                  className:
+                    "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1 uppercase font-bold tracking-wider",
+                  children: "Thermal & Pressure Hub",
+                }),
+                /* @__PURE__ */ jsxs("div", {
+                  className: "grid grid-cols-2 gap-2 my-2",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: `p-1.5 border rounded-sm ${getTempColor(flBrakeTemp)} bg-[#0B0F14] flex flex-col`,
+                      children: [
+                        /* @__PURE__ */ jsx("span", {
+                          className: "text-[8px] text-[#7A828C] font-bold",
+                          children: "FL BRAKE",
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-sm font-black tracking-tighter tabular-nums",
+                          children: [flBrakeTemp.toFixed(0), "°C"],
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden",
+                          children: /* @__PURE__ */ jsx("div", {
+                            className: `h-full ${getBarColor(flBrakeTemp)}`,
+                            style: { width: `${Math.min(100, (flBrakeTemp / 600) * 100)}%` },
+                          }),
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-[8px] text-white mt-1 tabular-nums",
+                          children: [flBrakePress.toFixed(1), " Bar"],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: `p-1.5 border rounded-sm ${getTempColor(frBrakeTemp)} bg-[#0B0F14] flex flex-col`,
+                      children: [
+                        /* @__PURE__ */ jsx("span", {
+                          className: "text-[8px] text-[#7A828C] font-bold",
+                          children: "FR BRAKE",
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-sm font-black tracking-tighter tabular-nums",
+                          children: [frBrakeTemp.toFixed(0), "°C"],
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden",
+                          children: /* @__PURE__ */ jsx("div", {
+                            className: `h-full ${getBarColor(frBrakeTemp)}`,
+                            style: { width: `${Math.min(100, (frBrakeTemp / 600) * 100)}%` },
+                          }),
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-[8px] text-white mt-1 tabular-nums",
+                          children: [frBrakePress.toFixed(1), " Bar"],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs("div", {
+                  className: "grid grid-cols-2 gap-2",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: `p-1.5 border rounded-sm ${getTempColor(rlBrakeTemp)} bg-[#0B0F14] flex flex-col`,
+                      children: [
+                        /* @__PURE__ */ jsx("span", {
+                          className: "text-[8px] text-[#7A828C] font-bold",
+                          children: "RL BRAKE",
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-sm font-black tracking-tighter tabular-nums",
+                          children: [rlBrakeTemp.toFixed(0), "°C"],
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden",
+                          children: /* @__PURE__ */ jsx("div", {
+                            className: `h-full ${getBarColor(rlBrakeTemp)}`,
+                            style: { width: `${Math.min(100, (rlBrakeTemp / 600) * 100)}%` },
+                          }),
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-[8px] text-white mt-1 tabular-nums",
+                          children: [rlBrakePress.toFixed(1), " Bar"],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: `p-1.5 border rounded-sm ${getTempColor(rrBrakeTemp)} bg-[#0B0F14] flex flex-col`,
+                      children: [
+                        /* @__PURE__ */ jsx("span", {
+                          className: "text-[8px] text-[#7A828C] font-bold",
+                          children: "RR BRAKE",
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-sm font-black tracking-tighter tabular-nums",
+                          children: [rrBrakeTemp.toFixed(0), "°C"],
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className: "w-full bg-[#1C2430] h-1 rounded-full mt-1.5 overflow-hidden",
+                          children: /* @__PURE__ */ jsx("div", {
+                            className: `h-full ${getBarColor(rrBrakeTemp)}`,
+                            style: { width: `${Math.min(100, (rrBrakeTemp / 600) * 100)}%` },
+                          }),
+                        }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-[8px] text-white mt-1 tabular-nums",
+                          children: [rrBrakePress.toFixed(1), " Bar"],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            /* @__PURE__ */ jsxs("div", {
+              className: "flex flex-col justify-between pl-1",
+              children: [
+                /* @__PURE__ */ jsxs("div", {
+                  className:
+                    "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider flex justify-between",
+                  children: [
+                    /* @__PURE__ */ jsx("span", { children: "Brake Command Balance" }),
+                    /* @__PURE__ */ jsxs("span", {
+                      className: "text-[#3B82F6] tabular-nums",
+                      children: ["BIAS: ", brakeBias.toFixed(1), "%"],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs("div", {
+                  className: "flex-1 flex flex-col justify-center gap-1.5 my-2.5",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "flex justify-between items-center text-[9px] text-[#7A828C]",
+                      children: [
+                        /* @__PURE__ */ jsx("span", { children: "PRESSURE ENVELOPE" }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "tabular-nums font-bold text-white",
+                          children: [(rawBrake * 100).toFixed(0), "%"],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className:
+                        "h-10 bg-[#0B0F14] border border-[#1C2430] rounded-sm p-1.5 relative overflow-hidden flex flex-col justify-center",
+                      children: [
+                        /* @__PURE__ */ jsx("div", {
+                          className: `h-4 transition-all duration-75 rounded-sm ${isLockedUp ? "bg-[#FF4D4D]" : "bg-[#3B82F6]"}`,
+                          style: { width: `${rawBrake * 100}%` },
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className:
+                            "absolute top-0 bottom-0 border-l border-dashed border-[#FFB800] z-10",
+                          style: { left: `${thresholdLimit}%` },
+                          title: "Target threshold line",
+                          children: /* @__PURE__ */ jsxs("span", {
+                            className:
+                              "absolute top-0.5 left-1 text-[7px] text-[#FFB800] font-black tracking-widest bg-[#05070A] px-0.5 rounded",
+                            children: ["THR: ", thresholdLimit, "%"],
+                          }),
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs("div", {
+                  className:
+                    "grid grid-cols-2 gap-2 text-[9px] text-[#7A828C] bg-[#0B0F14] p-1.5 rounded-sm border border-[#1C2430]/60",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "flex flex-col",
+                      children: [
+                        /* @__PURE__ */ jsx("span", { children: "F/R BIAS BAL" }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-white font-bold tabular-nums",
+                          children: [brakeBias, "% / ", (100 - brakeBias).toFixed(1), "%"],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "flex flex-col",
+                      children: [
+                        /* @__PURE__ */ jsx("span", { children: "PEAK FORCE" }),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-[#FF4D4D] font-bold tabular-nums",
+                          children: [(rawBrake * 80).toFixed(0), " kg"],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    }),
+  });
 }
 function ERSInstrument({ telemetry: propTelemetry, mode = "live" }) {
   const liveTelemetry = useTelemetry();
   const t = propTelemetry || liveTelemetry;
   const rawThrottle = t.throttle ?? 0;
   const rawBrake = t.brake ?? 0;
-  const soc = t.extras?.ersSoc ?? Math.max(12.5, Math.min(98.5, 78.4 + 15 * Math.sin(performance.now() / 8e3) - rawThrottle * 3 + rawBrake * 4.5));
+  const soc =
+    t.extras?.ersSoc ??
+    Math.max(
+      12.5,
+      Math.min(
+        98.5,
+        78.4 + 15 * Math.sin(performance.now() / 8e3) - rawThrottle * 3 + rawBrake * 4.5,
+      ),
+    );
   const batteryTemp = t.extras?.ersBatteryTemp ?? 42.5 + soc * 0.1 + rawThrottle * 5.2;
-  const mgukDeploy = t.extras?.mgukDeployKw ?? (rawThrottle > 0.15 ? Math.min(120, rawThrottle * 120 + Math.random() * 2) : 0);
-  const mgukRegen = t.extras?.mgukRegenKw ?? (rawBrake > 0.1 ? Math.min(200, rawBrake * 200 + Math.random() * 3) : 0);
+  const mgukDeploy =
+    t.extras?.mgukDeployKw ??
+    (rawThrottle > 0.15 ? Math.min(120, rawThrottle * 120 + Math.random() * 2) : 0);
+  const mgukRegen =
+    t.extras?.mgukRegenKw ??
+    (rawBrake > 0.1 ? Math.min(200, rawBrake * 200 + Math.random() * 3) : 0);
   const efficiency = Math.max(88, Math.min(99.6, 96.5 + 2 * Math.sin(performance.now() / 4e3)));
   const isDeploying = mgukDeploy > 10;
   const isRecovering = mgukRegen > 10;
@@ -441,106 +632,191 @@ function ERSInstrument({ telemetry: propTelemetry, mode = "live" }) {
     activeStateColor = "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10";
   }
   const totalSegments = 16;
-  const activeSegments = Math.round(soc / 100 * totalSegments);
+  const activeSegments = Math.round((soc / 100) * totalSegments);
   const aiAdvice = `HYBRID / ERS TELEMETRY FEEDBACK:
 - SOC Balance: Current Charge is ${soc.toFixed(1)}%. Thermal margin looks healthy at ${batteryTemp.toFixed(1)}°C.
 - Deployment Strategy: MGU-K peaks at ${mgukDeploy.toFixed(0)} kW. Regeneration phase recaptures up to ${mgukRegen.toFixed(0)} kW under braking.
 - Tuning Advice: Boost ERS Deployment Map to Mode 4 on the back straight to secure overtaking delta, then back off to Mode 2 through the sector 3 technical turns.`;
-  return /* @__PURE__ */ jsx(
-    TelemetryInstrument,
-    {
-      title: "ERS Instrument",
-      mode,
-      activeStatus: activeState,
-      activeStatusColor: activeStateColor,
-      onAiAnalyze: () => {
-      },
-      aiAdvice,
-      children: /* @__PURE__ */ jsx("div", { className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white", children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-12 gap-3 flex-1", children: [
-        /* @__PURE__ */ jsxs("div", { className: "col-span-5 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-[10px] text-[#7A828C] uppercase font-bold tracking-wider mb-2", children: [
-            /* @__PURE__ */ jsx(Battery, { className: "h-3.5 w-3.5 text-[#8B5CF6]" }),
-            /* @__PURE__ */ jsx("span", { children: "State Of Charge" })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col justify-center", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-baseline gap-1.5 mb-1.5", children: [
-              /* @__PURE__ */ jsxs("span", { className: "text-2xl font-black text-white tabular-nums tracking-tighter", children: [
-                soc.toFixed(1),
-                "%"
-              ] }),
-              /* @__PURE__ */ jsx("span", { className: "text-[8px] text-[#8B5CF6] font-bold", children: "SOC" })
-            ] }),
-            /* @__PURE__ */ jsx("div", { className: "grid grid-cols-8 gap-1 p-1 bg-[#0B0F14] border border-[#1C2430] rounded-sm", children: Array.from({ length: totalSegments }).map((_, idx) => {
-              const isActive = idx < activeSegments;
-              return /* @__PURE__ */ jsx(
-                "div",
-                {
-                  className: `h-4.5 rounded-xs transition-colors duration-150 ${isActive ? "bg-gradient-to-t from-[#8B5CF6] to-[#a855f7]" : "bg-[#11161D] border border-[#1C2430]/40"}`
-                },
-                idx
-              );
-            }) })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "mt-2 pt-2 border-t border-[#1C2430]/40 flex justify-between items-center text-[9px] text-[#7A828C]", children: [
-            /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-0.5", children: [
-              /* @__PURE__ */ jsx(Thermometer, { className: "h-3 w-3 text-[#FFB800]" }),
-              " TEMP:"
-            ] }),
-            /* @__PURE__ */ jsxs("span", { className: "text-white font-bold tabular-nums", children: [
-              batteryTemp.toFixed(1),
-              "°C"
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "col-span-7 flex flex-col justify-between pl-1", children: [
-          /* @__PURE__ */ jsxs("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider flex justify-between", children: [
-            /* @__PURE__ */ jsx("span", { children: "MGU-K KINETIC ENGINE" }),
-            /* @__PURE__ */ jsxs("span", { className: "text-[#8B5CF6] font-bold", children: [
-              "EFF: ",
-              efficiency.toFixed(1),
-              "%"
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col justify-center gap-2.5 my-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "DEPLOYMENT PRESSURE" }),
-                /* @__PURE__ */ jsxs("span", { className: "tabular-nums font-bold text-[#FFB800]", children: [
-                  mgukDeploy.toFixed(0),
-                  " kW / 120kW"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-[#FFB800] transition-all duration-75", style: { width: `${mgukDeploy / 120 * 100}%` } }) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex flex-col gap-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "RECOVERY HARVEST" }),
-                /* @__PURE__ */ jsxs("span", { className: "tabular-nums font-bold text-[#00D17F]", children: [
-                  mgukRegen.toFixed(0),
-                  " kW / 200kW"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-[#00D17F] transition-all duration-75", style: { width: `${mgukRegen / 200 * 100}%` } }) })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-3 gap-1 text-[8px] text-[#7A828C] text-center font-bold", children: [
-            /* @__PURE__ */ jsxs("div", { className: "bg-[#0B0F14] border border-[#1C2430] py-1 rounded-xs", children: [
-              /* @__PURE__ */ jsx("div", { children: "MAP" }),
-              /* @__PURE__ */ jsx("div", { className: "text-white text-[10px] font-black", children: "M3" })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "bg-[#0B0F14] border border-[#1C2430] py-1 rounded-xs", children: [
-              /* @__PURE__ */ jsx("div", { children: "REGEN" }),
-              /* @__PURE__ */ jsx("div", { className: "text-[#00D17F] text-[10px] font-black", children: "LVL 4" })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "bg-[#0B0F14] border border-[#1C2430] py-1 rounded-xs", children: [
-              /* @__PURE__ */ jsx("div", { children: "TARGET" }),
-              /* @__PURE__ */ jsx("div", { className: "text-[#8B5CF6] text-[10px] font-black", children: "75%" })
-            ] })
-          ] })
-        ] })
-      ] }) })
-    }
-  );
+  return /* @__PURE__ */ jsx(TelemetryInstrument, {
+    title: "ERS Instrument",
+    mode,
+    activeStatus: activeState,
+    activeStatusColor: activeStateColor,
+    onAiAnalyze: () => {},
+    aiAdvice,
+    children: /* @__PURE__ */ jsx("div", {
+      className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white",
+      children: /* @__PURE__ */ jsxs("div", {
+        className: "grid grid-cols-12 gap-3 flex-1",
+        children: [
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-5 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3",
+            children: [
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "flex items-center gap-1.5 text-[10px] text-[#7A828C] uppercase font-bold tracking-wider mb-2",
+                children: [
+                  /* @__PURE__ */ jsx(Battery, { className: "h-3.5 w-3.5 text-[#8B5CF6]" }),
+                  /* @__PURE__ */ jsx("span", { children: "State Of Charge" }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "flex-1 flex flex-col justify-center",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-baseline gap-1.5 mb-1.5",
+                    children: [
+                      /* @__PURE__ */ jsxs("span", {
+                        className: "text-2xl font-black text-white tabular-nums tracking-tighter",
+                        children: [soc.toFixed(1), "%"],
+                      }),
+                      /* @__PURE__ */ jsx("span", {
+                        className: "text-[8px] text-[#8B5CF6] font-bold",
+                        children: "SOC",
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsx("div", {
+                    className:
+                      "grid grid-cols-8 gap-1 p-1 bg-[#0B0F14] border border-[#1C2430] rounded-sm",
+                    children: Array.from({ length: totalSegments }).map((_, idx) => {
+                      const isActive = idx < activeSegments;
+                      return /* @__PURE__ */ jsx(
+                        "div",
+                        {
+                          className: `h-4.5 rounded-xs transition-colors duration-150 ${isActive ? "bg-gradient-to-t from-[#8B5CF6] to-[#a855f7]" : "bg-[#11161D] border border-[#1C2430]/40"}`,
+                        },
+                        idx,
+                      );
+                    }),
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "mt-2 pt-2 border-t border-[#1C2430]/40 flex justify-between items-center text-[9px] text-[#7A828C]",
+                children: [
+                  /* @__PURE__ */ jsxs("span", {
+                    className: "flex items-center gap-0.5",
+                    children: [
+                      /* @__PURE__ */ jsx(Thermometer, { className: "h-3 w-3 text-[#FFB800]" }),
+                      " TEMP:",
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("span", {
+                    className: "text-white font-bold tabular-nums",
+                    children: [batteryTemp.toFixed(1), "°C"],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-7 flex flex-col justify-between pl-1",
+            children: [
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider flex justify-between",
+                children: [
+                  /* @__PURE__ */ jsx("span", { children: "MGU-K KINETIC ENGINE" }),
+                  /* @__PURE__ */ jsxs("span", {
+                    className: "text-[#8B5CF6] font-bold",
+                    children: ["EFF: ", efficiency.toFixed(1), "%"],
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "flex-1 flex flex-col justify-center gap-2.5 my-2",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex flex-col gap-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between items-center text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "DEPLOYMENT PRESSURE" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "tabular-nums font-bold text-[#FFB800]",
+                            children: [mgukDeploy.toFixed(0), " kW / 120kW"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsx("div", {
+                        className:
+                          "w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                        children: /* @__PURE__ */ jsx("div", {
+                          className: "h-full bg-[#FFB800] transition-all duration-75",
+                          style: { width: `${(mgukDeploy / 120) * 100}%` },
+                        }),
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex flex-col gap-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between items-center text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "RECOVERY HARVEST" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "tabular-nums font-bold text-[#00D17F]",
+                            children: [mgukRegen.toFixed(0), " kW / 200kW"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsx("div", {
+                        className:
+                          "w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                        children: /* @__PURE__ */ jsx("div", {
+                          className: "h-full bg-[#00D17F] transition-all duration-75",
+                          style: { width: `${(mgukRegen / 200) * 100}%` },
+                        }),
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "grid grid-cols-3 gap-1 text-[8px] text-[#7A828C] text-center font-bold",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "bg-[#0B0F14] border border-[#1C2430] py-1 rounded-xs",
+                    children: [
+                      /* @__PURE__ */ jsx("div", { children: "MAP" }),
+                      /* @__PURE__ */ jsx("div", {
+                        className: "text-white text-[10px] font-black",
+                        children: "M3",
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "bg-[#0B0F14] border border-[#1C2430] py-1 rounded-xs",
+                    children: [
+                      /* @__PURE__ */ jsx("div", { children: "REGEN" }),
+                      /* @__PURE__ */ jsx("div", {
+                        className: "text-[#00D17F] text-[10px] font-black",
+                        children: "LVL 4",
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "bg-[#0B0F14] border border-[#1C2430] py-1 rounded-xs",
+                    children: [
+                      /* @__PURE__ */ jsx("div", { children: "TARGET" }),
+                      /* @__PURE__ */ jsx("div", {
+                        className: "text-[#8B5CF6] text-[10px] font-black",
+                        children: "75%",
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    }),
+  });
 }
 const CAR_PROFILES = {
   gt3: {
@@ -561,7 +837,7 @@ const CAR_PROFILES = {
     frontViewWheelX: 45,
     frontViewWheelY: 11.5,
     frontViewTireWidth: 13,
-    frontViewTireHeight: 22
+    frontViewTireHeight: 22,
   },
   gtp: {
     name: "GTP Prototype / LMDh",
@@ -581,7 +857,7 @@ const CAR_PROFILES = {
     frontViewWheelX: 47,
     frontViewWheelY: 11.5,
     frontViewTireWidth: 14,
-    frontViewTireHeight: 23
+    frontViewTireHeight: 23,
   },
   nascar: {
     name: "NASCAR Cup Stock Car",
@@ -601,7 +877,7 @@ const CAR_PROFILES = {
     frontViewWheelX: 44,
     frontViewWheelY: 11.5,
     frontViewTireWidth: 14,
-    frontViewTireHeight: 23
+    frontViewTireHeight: 23,
   },
   nascar_truck: {
     name: "NASCAR Craftsman Truck",
@@ -621,7 +897,7 @@ const CAR_PROFILES = {
     frontViewWheelX: 43,
     frontViewWheelY: 11.5,
     frontViewTireWidth: 14,
-    frontViewTireHeight: 23
+    frontViewTireHeight: 23,
   },
   openwheeler: {
     name: "Open Wheeler Formula",
@@ -641,8 +917,8 @@ const CAR_PROFILES = {
     frontViewWheelX: 52,
     frontViewWheelY: 11.5,
     frontViewTireWidth: 14,
-    frontViewTireHeight: 23
-  }
+    frontViewTireHeight: 23,
+  },
 };
 function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
   const liveTelemetry = useTelemetry();
@@ -712,13 +988,44 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
   const rrDeflect = Math.max(5, Math.min(95, baseRr + Math.cos(performance.now() / 95) * 1.2));
   const carName = (t.car || "").toUpperCase();
   let activeClass = "gt3";
-  if (carName.includes("GTP") || carName.includes("LMDH") || carName.includes("PROTOTYPE") || carName.includes("DALLARA P217") || carName.includes("P217") || carName.includes("HPD") || carName.includes("DP")) {
+  if (
+    carName.includes("GTP") ||
+    carName.includes("LMDH") ||
+    carName.includes("PROTOTYPE") ||
+    carName.includes("DALLARA P217") ||
+    carName.includes("P217") ||
+    carName.includes("HPD") ||
+    carName.includes("DP")
+  ) {
     activeClass = "gtp";
-  } else if (carName.includes("TRUCK") || carName.includes("SILVERADO") || carName.includes("TUNDRA") || carName.includes("F150") || carName.includes("NASCAR TRUCK")) {
+  } else if (
+    carName.includes("TRUCK") ||
+    carName.includes("SILVERADO") ||
+    carName.includes("TUNDRA") ||
+    carName.includes("F150") ||
+    carName.includes("NASCAR TRUCK")
+  ) {
     activeClass = "nascar_truck";
-  } else if (carName.includes("NASCAR") || carName.includes("CUP") || carName.includes("STOCKCAR") || carName.includes("GEN6") || carName.includes("NEXTGEN")) {
+  } else if (
+    carName.includes("NASCAR") ||
+    carName.includes("CUP") ||
+    carName.includes("STOCKCAR") ||
+    carName.includes("GEN6") ||
+    carName.includes("NEXTGEN")
+  ) {
     activeClass = "nascar";
-  } else if (carName.includes("F1") || carName.includes("FORMULA") || carName.includes("INDY") || carName.includes("IR18") || carName.includes("OPEN") || carName.includes("WHEELER") || carName.includes("GP") || carName.includes("DALLARA F3") || carName.includes("DALLARA IR") || carName.includes("SKIP BARBER")) {
+  } else if (
+    carName.includes("F1") ||
+    carName.includes("FORMULA") ||
+    carName.includes("INDY") ||
+    carName.includes("IR18") ||
+    carName.includes("OPEN") ||
+    carName.includes("WHEELER") ||
+    carName.includes("GP") ||
+    carName.includes("DALLARA F3") ||
+    carName.includes("DALLARA IR") ||
+    carName.includes("SKIP BARBER")
+  ) {
     activeClass = "openwheeler";
   } else {
     activeClass = "gt3";
@@ -752,7 +1059,7 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
     const flWOffset = (flDeflect - 45) * 0.2;
     const rrWOffset = (rrDeflect - 42) * 0.2;
     const deflectionAngle = viewMode === "side" ? pitchVal : rollVal;
-    const rotationRad = deflectionAngle * Math.PI / 180;
+    const rotationRad = (deflectionAngle * Math.PI) / 180;
     const carRot = overlayMode === "rotate-car" ? rotationRad : 0;
     const dialRot = overlayMode === "rotate-dial" ? -rotationRad : 0;
     ctx.save();
@@ -775,7 +1082,7 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
     ctx.strokeStyle = "rgba(122, 130, 140, 0.35)";
     ctx.lineWidth = 0.75;
     for (let deg = -15; deg <= 15; deg += 1) {
-      const rad = deg * Math.PI / 180;
+      const rad = (deg * Math.PI) / 180;
       const isMajor = deg % 5 === 0;
       const tickLen = isMajor ? 7 : 3.5;
       ctx.strokeStyle = isMajor ? "rgba(122, 130, 140, 0.5)" : "rgba(122, 130, 140, 0.25)";
@@ -826,13 +1133,21 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
       ctx.font = "bold 7px monospace";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`${deflectionAngle > 0 ? "+" : ""}${deflectionAngle.toFixed(2)}°`, labelX, labelY);
+      ctx.fillText(
+        `${deflectionAngle > 0 ? "+" : ""}${deflectionAngle.toFixed(2)}°`,
+        labelX,
+        labelY,
+      );
       ctx.restore();
     }
     ctx.save();
     ctx.rotate(carRot);
     const activeProfileImages = loadedProfiles[activeClass];
-    const hasImage = activeProfileImages && activeProfileImages.side && activeProfileImages.front && profilesLoaded;
+    const hasImage =
+      activeProfileImages &&
+      activeProfileImages.side &&
+      activeProfileImages.front &&
+      profilesLoaded;
     const img = viewMode === "side" ? activeProfileImages?.side : activeProfileImages?.front;
     if (hasImage && img && img.complete && img.naturalWidth > 0) {
       const aspect = img.naturalWidth / img.naturalHeight;
@@ -870,7 +1185,7 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
         `${frTravelMm >= 0 ? "+" : ""}${frTravelMm.toFixed(1)}mm`,
         frontNomX - 35,
         // Position on the left (front of nose)
-        activeFrontY + 2
+        activeFrontY + 2,
       );
       ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
       ctx.lineWidth = 0.75;
@@ -895,11 +1210,11 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
         `${rrTravelMm >= 0 ? "+" : ""}${rrTravelMm.toFixed(1)}mm`,
         rearNomX + 15,
         // Position on the right (behind rear wing)
-        activeRearY + 2
+        activeRearY + 2,
       );
       ctx.save();
       ctx.translate(frontNomX, activeFrontY);
-      ctx.rotate(steer * Math.PI / 180 * 0.2);
+      ctx.rotate(((steer * Math.PI) / 180) * 0.2);
       ctx.fillStyle = "rgba(9, 13, 20, 0.55)";
       ctx.strokeStyle = "rgba(251, 184, 0, 0.85)";
       ctx.lineWidth = 1;
@@ -976,7 +1291,7 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
       ctx.fillText(
         `${flTravelMm >= 0 ? "+" : ""}${flTravelMm.toFixed(1)}mm`,
         leftNomX - 35,
-        activeLeftY + 2
+        activeLeftY + 2,
       );
       ctx.strokeStyle = "rgba(251, 184, 0, 0.4)";
       ctx.lineWidth = 0.75;
@@ -1000,17 +1315,27 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
       ctx.fillText(
         `${frTravelMm >= 0 ? "+" : ""}${frTravelMm.toFixed(1)}mm`,
         rightNomX + 15,
-        activeRightY + 2
+        activeRightY + 2,
       );
-      const steerSkew = Math.sin(steer * Math.PI / 180 * 0.12) * 0.35;
+      const steerSkew = Math.sin(((steer * Math.PI) / 180) * 0.12) * 0.35;
       ctx.save();
       ctx.translate(leftNomX, activeLeftY);
       ctx.transform(1, 0, steerSkew, 1, 0, 0);
       ctx.fillStyle = "rgba(9, 13, 20, 0.55)";
       ctx.strokeStyle = "rgba(251, 184, 0, 0.85)";
       ctx.lineWidth = 1;
-      ctx.fillRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
-      ctx.strokeRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
+      ctx.fillRect(
+        -profile.frontViewTireWidth / 2,
+        -profile.frontViewTireHeight / 2,
+        profile.frontViewTireWidth,
+        profile.frontViewTireHeight,
+      );
+      ctx.strokeRect(
+        -profile.frontViewTireWidth / 2,
+        -profile.frontViewTireHeight / 2,
+        profile.frontViewTireWidth,
+        profile.frontViewTireHeight,
+      );
       ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
       ctx.beginPath();
       ctx.moveTo(0, -profile.frontViewTireHeight * 0.35);
@@ -1027,8 +1352,18 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
       ctx.fillStyle = "rgba(9, 13, 20, 0.55)";
       ctx.strokeStyle = "rgba(251, 184, 0, 0.85)";
       ctx.lineWidth = 1;
-      ctx.fillRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
-      ctx.strokeRect(-profile.frontViewTireWidth / 2, -profile.frontViewTireHeight / 2, profile.frontViewTireWidth, profile.frontViewTireHeight);
+      ctx.fillRect(
+        -profile.frontViewTireWidth / 2,
+        -profile.frontViewTireHeight / 2,
+        profile.frontViewTireWidth,
+        profile.frontViewTireHeight,
+      );
+      ctx.strokeRect(
+        -profile.frontViewTireWidth / 2,
+        -profile.frontViewTireHeight / 2,
+        profile.frontViewTireWidth,
+        profile.frontViewTireHeight,
+      );
       ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
       ctx.beginPath();
       ctx.moveTo(0, -profile.frontViewTireHeight * 0.35);
@@ -1153,139 +1488,262 @@ function ChassisInstrument({ telemetry: propTelemetry, mode = "live" }) {
     }
     ctx.restore();
     ctx.restore();
-  }, [viewMode, overlayMode, loadedProfiles, profilesLoaded, activeClass, pitchVal, rollVal, steer, frDeflect, flDeflect, rrDeflect, rlDeflect]);
+  }, [
+    viewMode,
+    overlayMode,
+    loadedProfiles,
+    profilesLoaded,
+    activeClass,
+    pitchVal,
+    rollVal,
+    steer,
+    frDeflect,
+    flDeflect,
+    rrDeflect,
+    rlDeflect,
+  ]);
   const aiAdvice = `SUSPENSION & AERO WORKBENCH BRIEFING:
 - Aerodynamic Platform: Rake dynamic angle: ${(pitchVal * 0.2).toFixed(3)} deg. Pitch stability is high under peak braking forces.
 - High-Speed Compression: Rear dampers show peak speed of ${Math.max(rlDeflect, rrDeflect).toFixed(0)} mm/s. Front travel peaks at ${Math.max(flDeflect, frDeflect).toFixed(1)}% of total stroke.
 - Tuning Recommendation: Add +1 click of front bump stiffness to suppress splitter grounding during threshold braking.`;
-  return /* @__PURE__ */ jsx(
-    TelemetryInstrument,
-    {
-      title: "Chassis Instrument",
-      mode,
-      activeStatus: "AERO STABLE",
-      activeStatusColor: "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/10",
-      onAiAnalyze: () => {
-      },
-      aiAdvice,
-      children: /* @__PURE__ */ jsx("div", { className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white", children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-12 gap-3 flex-1", children: [
-        /* @__PURE__ */ jsxs("div", { className: "col-span-7 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3", children: [
-          /* @__PURE__ */ jsxs("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1 uppercase font-bold tracking-wider flex justify-between items-center", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex gap-1 bg-[#0B0F14] border border-[#1C2430] rounded-sm overflow-hidden p-0.5 select-none", children: [
-                /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => setViewMode("side"),
-                    className: `px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${viewMode === "side" ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
-                    children: "Side"
-                  }
-                ),
-                /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => setViewMode("front"),
-                    className: `px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${viewMode === "front" ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
-                    children: "Front"
-                  }
-                )
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex gap-1 bg-[#0B0F14] border border-[#1C2430] rounded-sm overflow-hidden p-0.5 select-none", children: [
-                /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => setOverlayMode("rotate-car"),
-                    className: `px-1.5 py-0.5 text-[7px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${overlayMode === "rotate-car" ? "bg-[#8B5CF6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
-                    title: "Rotate car relative to fixed protractor",
-                    children: "Rot Car"
-                  }
-                ),
-                /* @__PURE__ */ jsx(
-                  "button",
-                  {
-                    type: "button",
-                    onClick: () => setOverlayMode("rotate-dial"),
-                    className: `px-1.5 py-0.5 text-[7px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${overlayMode === "rotate-dial" ? "bg-[#8B5CF6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
-                    title: "Rotate dial relative to static car",
-                    children: "Rot Dial"
-                  }
-                )
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 shrink-0", children: [
-              /* @__PURE__ */ jsx("span", { className: "text-[7.5px] px-1 py-0.5 border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 text-[#8B5CF6] rounded-xs font-bold leading-none select-none uppercase shrink-0", children: profile.badge }),
-              /* @__PURE__ */ jsx("span", { className: "text-[#3B82F6] tabular-nums font-bold", children: viewMode === "side" ? `PITCH: ${pitchVal.toFixed(2)}°` : `ROLL: ${rollVal.toFixed(2)}°` })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx("div", { className: "flex-1 flex items-center justify-center py-2 w-full", children: /* @__PURE__ */ jsx("canvas", { ref: canvasRef, width: 380, height: 175, className: "border border-[#1C2430] bg-[#0B0F14] rounded-sm w-full h-auto max-h-[175px]" }) }),
-          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 text-[9px] text-[#7A828C]", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center bg-[#0B0F14] border border-[#1C2430]/60 px-1.5 py-0.5 rounded-sm", children: [
-              /* @__PURE__ */ jsx("span", { children: "ROLL" }),
-              /* @__PURE__ */ jsxs("span", { className: "text-white font-bold tabular-nums", children: [
-                rollVal.toFixed(2),
-                "°"
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between items-center bg-[#0B0F14] border border-[#1C2430]/60 px-1.5 py-0.5 rounded-sm", children: [
-              /* @__PURE__ */ jsx("span", { children: "HEAVE" }),
-              /* @__PURE__ */ jsxs("span", { className: "text-[#00D17F] font-bold tabular-nums", children: [
-                (Math.max(0, -gLon) * 1.5).toFixed(1),
-                "mm"
-              ] })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "col-span-5 flex flex-col justify-between pl-1", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider", children: "Damper Stroke Deflection" }),
-          /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col justify-center gap-2.5 my-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "FRONT INST TRAVEL (FL/FR)" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-white tabular-nums font-bold", children: [
-                  flDeflect.toFixed(0),
-                  "% / ",
-                  frDeflect.toFixed(0),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
-                /* @__PURE__ */ jsx("div", { className: "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-[#3B82F6]", style: { width: `${flDeflect}%` } }) }),
-                /* @__PURE__ */ jsx("div", { className: "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-[#3B82F6]", style: { width: `${frDeflect}%` } }) })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "REAR INST TRAVEL (RL/RR)" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-white tabular-nums font-bold", children: [
-                  rlDeflect.toFixed(0),
-                  "% / ",
-                  rrDeflect.toFixed(0),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
-                /* @__PURE__ */ jsx("div", { className: "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-[#8B5CF6]", style: { width: `${rlDeflect}%` } }) }),
-                /* @__PURE__ */ jsx("div", { className: "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-[#8B5CF6]", style: { width: `${rrDeflect}%` } }) })
-              ] })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-1.5 text-[8px] text-[#7A828C]", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between bg-[#0B0F14] border border-[#1C2430] px-1.5 py-0.5 rounded-sm", children: [
-              /* @__PURE__ */ jsx("span", { children: "F BUMP CLICKS" }),
-              /* @__PURE__ */ jsx("span", { className: "text-[#FFB800] font-black", children: "+14 C" })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex justify-between bg-[#0B0F14] border border-[#1C2430] px-1.5 py-0.5 rounded-sm", children: [
-              /* @__PURE__ */ jsx("span", { children: "R REBOUND CLICKS" }),
-              /* @__PURE__ */ jsx("span", { className: "text-[#8B5CF6] font-black", children: "+18 C" })
-            ] })
-          ] })
-        ] })
-      ] }) })
-    }
-  );
+  return /* @__PURE__ */ jsx(TelemetryInstrument, {
+    title: "Chassis Instrument",
+    mode,
+    activeStatus: "AERO STABLE",
+    activeStatusColor: "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/10",
+    onAiAnalyze: () => {},
+    aiAdvice,
+    children: /* @__PURE__ */ jsx("div", {
+      className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white",
+      children: /* @__PURE__ */ jsxs("div", {
+        className: "grid grid-cols-12 gap-3 flex-1",
+        children: [
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-7 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3",
+            children: [
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1 uppercase font-bold tracking-wider flex justify-between items-center",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-center gap-1.5",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className:
+                          "flex gap-1 bg-[#0B0F14] border border-[#1C2430] rounded-sm overflow-hidden p-0.5 select-none",
+                        children: [
+                          /* @__PURE__ */ jsx("button", {
+                            type: "button",
+                            onClick: () => setViewMode("side"),
+                            className: `px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${viewMode === "side" ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
+                            children: "Side",
+                          }),
+                          /* @__PURE__ */ jsx("button", {
+                            type: "button",
+                            onClick: () => setViewMode("front"),
+                            className: `px-1.5 py-0.5 text-[8px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${viewMode === "front" ? "bg-[#3B82F6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
+                            children: "Front",
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className:
+                          "flex gap-1 bg-[#0B0F14] border border-[#1C2430] rounded-sm overflow-hidden p-0.5 select-none",
+                        children: [
+                          /* @__PURE__ */ jsx("button", {
+                            type: "button",
+                            onClick: () => setOverlayMode("rotate-car"),
+                            className: `px-1.5 py-0.5 text-[7px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${overlayMode === "rotate-car" ? "bg-[#8B5CF6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
+                            title: "Rotate car relative to fixed protractor",
+                            children: "Rot Car",
+                          }),
+                          /* @__PURE__ */ jsx("button", {
+                            type: "button",
+                            onClick: () => setOverlayMode("rotate-dial"),
+                            className: `px-1.5 py-0.5 text-[7px] uppercase tracking-wider font-bold rounded-xs cursor-pointer ${overlayMode === "rotate-dial" ? "bg-[#8B5CF6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"}`,
+                            title: "Rotate dial relative to static car",
+                            children: "Rot Dial",
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-center gap-1.5 shrink-0",
+                    children: [
+                      /* @__PURE__ */ jsx("span", {
+                        className:
+                          "text-[7.5px] px-1 py-0.5 border border-[#8B5CF6]/30 bg-[#8B5CF6]/10 text-[#8B5CF6] rounded-xs font-bold leading-none select-none uppercase shrink-0",
+                        children: profile.badge,
+                      }),
+                      /* @__PURE__ */ jsx("span", {
+                        className: "text-[#3B82F6] tabular-nums font-bold",
+                        children:
+                          viewMode === "side"
+                            ? `PITCH: ${pitchVal.toFixed(2)}°`
+                            : `ROLL: ${rollVal.toFixed(2)}°`,
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsx("div", {
+                className: "flex-1 flex items-center justify-center py-2 w-full",
+                children: /* @__PURE__ */ jsx("canvas", {
+                  ref: canvasRef,
+                  width: 380,
+                  height: 175,
+                  className:
+                    "border border-[#1C2430] bg-[#0B0F14] rounded-sm w-full h-auto max-h-[175px]",
+                }),
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "grid grid-cols-2 gap-2 text-[9px] text-[#7A828C]",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className:
+                      "flex justify-between items-center bg-[#0B0F14] border border-[#1C2430]/60 px-1.5 py-0.5 rounded-sm",
+                    children: [
+                      /* @__PURE__ */ jsx("span", { children: "ROLL" }),
+                      /* @__PURE__ */ jsxs("span", {
+                        className: "text-white font-bold tabular-nums",
+                        children: [rollVal.toFixed(2), "°"],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className:
+                      "flex justify-between items-center bg-[#0B0F14] border border-[#1C2430]/60 px-1.5 py-0.5 rounded-sm",
+                    children: [
+                      /* @__PURE__ */ jsx("span", { children: "HEAVE" }),
+                      /* @__PURE__ */ jsxs("span", {
+                        className: "text-[#00D17F] font-bold tabular-nums",
+                        children: [(Math.max(0, -gLon) * 1.5).toFixed(1), "mm"],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-5 flex flex-col justify-between pl-1",
+            children: [
+              /* @__PURE__ */ jsx("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider",
+                children: "Damper Stroke Deflection",
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "flex-1 flex flex-col justify-center gap-2.5 my-2",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "space-y-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "FRONT INST TRAVEL (FL/FR)" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-white tabular-nums font-bold",
+                            children: [flDeflect.toFixed(0), "% / ", frDeflect.toFixed(0), "%"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex gap-2",
+                        children: [
+                          /* @__PURE__ */ jsx("div", {
+                            className:
+                              "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                            children: /* @__PURE__ */ jsx("div", {
+                              className: "h-full bg-[#3B82F6]",
+                              style: { width: `${flDeflect}%` },
+                            }),
+                          }),
+                          /* @__PURE__ */ jsx("div", {
+                            className:
+                              "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                            children: /* @__PURE__ */ jsx("div", {
+                              className: "h-full bg-[#3B82F6]",
+                              style: { width: `${frDeflect}%` },
+                            }),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "space-y-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "REAR INST TRAVEL (RL/RR)" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-white tabular-nums font-bold",
+                            children: [rlDeflect.toFixed(0), "% / ", rrDeflect.toFixed(0), "%"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex gap-2",
+                        children: [
+                          /* @__PURE__ */ jsx("div", {
+                            className:
+                              "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                            children: /* @__PURE__ */ jsx("div", {
+                              className: "h-full bg-[#8B5CF6]",
+                              style: { width: `${rlDeflect}%` },
+                            }),
+                          }),
+                          /* @__PURE__ */ jsx("div", {
+                            className:
+                              "flex-1 bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                            children: /* @__PURE__ */ jsx("div", {
+                              className: "h-full bg-[#8B5CF6]",
+                              style: { width: `${rrDeflect}%` },
+                            }),
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "grid grid-cols-2 gap-1.5 text-[8px] text-[#7A828C]",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className:
+                      "flex justify-between bg-[#0B0F14] border border-[#1C2430] px-1.5 py-0.5 rounded-sm",
+                    children: [
+                      /* @__PURE__ */ jsx("span", { children: "F BUMP CLICKS" }),
+                      /* @__PURE__ */ jsx("span", {
+                        className: "text-[#FFB800] font-black",
+                        children: "+14 C",
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className:
+                      "flex justify-between bg-[#0B0F14] border border-[#1C2430] px-1.5 py-0.5 rounded-sm",
+                    children: [
+                      /* @__PURE__ */ jsx("span", { children: "R REBOUND CLICKS" }),
+                      /* @__PURE__ */ jsx("span", {
+                        className: "text-[#8B5CF6] font-black",
+                        children: "+18 C",
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    }),
+  });
 }
 function TireInstrument({ telemetry: propTelemetry, mode = "live" }) {
   const liveTelemetry = useTelemetry();
@@ -1353,116 +1811,174 @@ function TireInstrument({ telemetry: propTelemetry, mode = "live" }) {
 - Tyre Deflection Delta: FR tire experiencing heavy load saturation at Turn 10, thermal growth reaches ${frTemp.toFixed(1)}°C.
 - Pressure Growth: LF: ${(flPress - 1.6).toFixed(2)} bar growth, RR: ${(rrPress - 1.6).toFixed(2)} bar growth. Cold targets look properly optimized.
 - Recommendations: Adjust front-right camber -0.2° to distribute load more evenly and flatten outer-edge temperature growth peaks.`;
-  return /* @__PURE__ */ jsx(
-    TelemetryInstrument,
-    {
-      title: "Tire Instrument",
-      mode,
-      activeStatus: frTemp > 95 ? "THERMAL OVERHEAT" : "THERMAL OPTIMAL",
-      activeStatusColor: frTemp > 95 ? "text-[#FF4D4D] border-[#FF4D4D]/40 bg-[#FF4D4D]/10" : "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10",
-      onAiAnalyze: () => {
-      },
-      aiAdvice,
-      children: /* @__PURE__ */ jsx("div", { className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white", children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-12 gap-3 flex-1", children: [
-        /* @__PURE__ */ jsxs("div", { className: "col-span-8 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider", children: "Carcass Thermals & Pressures" }),
-          /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-2 gap-2 flex-1 my-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getThermalBg(flTemp)} flex flex-col justify-between`, children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[7px] font-black", children: [
-                /* @__PURE__ */ jsx("span", { children: "FL TIRE" }),
-                /* @__PURE__ */ jsx("span", { children: getThermalLabel(flTemp) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "text-sm font-black tracking-tight text-white tabular-nums", children: [
-                flTemp.toFixed(0),
-                "°C"
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsxs("span", { className: "text-white font-bold", children: [
-                  flPress.toFixed(2),
-                  " Bar"
-                ] }),
-                /* @__PURE__ */ jsxs("span", { children: [
-                  flWear,
-                  "% LIFE"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getThermalBg(frTemp)} flex flex-col justify-between`, children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[7px] font-black", children: [
-                /* @__PURE__ */ jsx("span", { children: "FR TIRE" }),
-                /* @__PURE__ */ jsx("span", { children: getThermalLabel(frTemp) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "text-sm font-black tracking-tight text-white tabular-nums", children: [
-                frTemp.toFixed(0),
-                "°C"
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsxs("span", { className: "text-white font-bold", children: [
-                  frPress.toFixed(2),
-                  " Bar"
-                ] }),
-                /* @__PURE__ */ jsxs("span", { children: [
-                  frWear,
-                  "% LIFE"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getThermalBg(rlTemp)} flex flex-col justify-between`, children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[7px] font-black", children: [
-                /* @__PURE__ */ jsx("span", { children: "RL TIRE" }),
-                /* @__PURE__ */ jsx("span", { children: getThermalLabel(rlTemp) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "text-sm font-black tracking-tight text-white tabular-nums", children: [
-                rlTemp.toFixed(0),
-                "°C"
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsxs("span", { className: "text-white font-bold", children: [
-                  rlPress.toFixed(2),
-                  " Bar"
-                ] }),
-                /* @__PURE__ */ jsxs("span", { children: [
-                  rlWear,
-                  "% LIFE"
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: `p-1.5 border rounded-sm ${getThermalBg(rrTemp)} flex flex-col justify-between`, children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[7px] font-black", children: [
-                /* @__PURE__ */ jsx("span", { children: "RR TIRE" }),
-                /* @__PURE__ */ jsx("span", { children: getThermalLabel(rrTemp) })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "text-sm font-black tracking-tight text-white tabular-nums", children: [
-                rrTemp.toFixed(0),
-                "°C"
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsxs("span", { className: "text-white font-bold", children: [
-                  rrPress.toFixed(2),
-                  " Bar"
-                ] }),
-                /* @__PURE__ */ jsxs("span", { children: [
-                  rrWear,
-                  "% LIFE"
-                ] })
-              ] })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "col-span-4 flex flex-col justify-between pl-1", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider text-center", children: "G-G Grip Circle" }),
-          /* @__PURE__ */ jsx("div", { className: "flex-1 flex items-center justify-center my-2", children: /* @__PURE__ */ jsx("canvas", { ref: ggCanvasRef, width: 80, height: 80, className: "bg-[#0B0F14] border border-[#1C2430] rounded-full" }) }),
-          /* @__PURE__ */ jsxs("div", { className: "text-center bg-[#0B0F14] border border-[#1C2430] py-1 rounded-sm text-[8px] text-[#7A828C]", children: [
-            /* @__PURE__ */ jsx("span", { children: "PEAK G: " }),
-            /* @__PURE__ */ jsxs("span", { className: "text-white font-black tabular-nums", children: [
-              Math.sqrt(gLat * gLat + gLon * gLon).toFixed(2),
-              "G"
-            ] })
-          ] })
-        ] })
-      ] }) })
-    }
-  );
+  return /* @__PURE__ */ jsx(TelemetryInstrument, {
+    title: "Tire Instrument",
+    mode,
+    activeStatus: frTemp > 95 ? "THERMAL OVERHEAT" : "THERMAL OPTIMAL",
+    activeStatusColor:
+      frTemp > 95
+        ? "text-[#FF4D4D] border-[#FF4D4D]/40 bg-[#FF4D4D]/10"
+        : "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10",
+    onAiAnalyze: () => {},
+    aiAdvice,
+    children: /* @__PURE__ */ jsx("div", {
+      className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white",
+      children: /* @__PURE__ */ jsxs("div", {
+        className: "grid grid-cols-12 gap-3 flex-1",
+        children: [
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-8 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3",
+            children: [
+              /* @__PURE__ */ jsx("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider",
+                children: "Carcass Thermals & Pressures",
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "grid grid-cols-2 gap-2 flex-1 my-2",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: `p-1.5 border rounded-sm ${getThermalBg(flTemp)} flex flex-col justify-between`,
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[7px] font-black",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "FL TIRE" }),
+                          /* @__PURE__ */ jsx("span", { children: getThermalLabel(flTemp) }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "text-sm font-black tracking-tight text-white tabular-nums",
+                        children: [flTemp.toFixed(0), "°C"],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-white font-bold",
+                            children: [flPress.toFixed(2), " Bar"],
+                          }),
+                          /* @__PURE__ */ jsxs("span", { children: [flWear, "% LIFE"] }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: `p-1.5 border rounded-sm ${getThermalBg(frTemp)} flex flex-col justify-between`,
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[7px] font-black",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "FR TIRE" }),
+                          /* @__PURE__ */ jsx("span", { children: getThermalLabel(frTemp) }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "text-sm font-black tracking-tight text-white tabular-nums",
+                        children: [frTemp.toFixed(0), "°C"],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-white font-bold",
+                            children: [frPress.toFixed(2), " Bar"],
+                          }),
+                          /* @__PURE__ */ jsxs("span", { children: [frWear, "% LIFE"] }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: `p-1.5 border rounded-sm ${getThermalBg(rlTemp)} flex flex-col justify-between`,
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[7px] font-black",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "RL TIRE" }),
+                          /* @__PURE__ */ jsx("span", { children: getThermalLabel(rlTemp) }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "text-sm font-black tracking-tight text-white tabular-nums",
+                        children: [rlTemp.toFixed(0), "°C"],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-white font-bold",
+                            children: [rlPress.toFixed(2), " Bar"],
+                          }),
+                          /* @__PURE__ */ jsxs("span", { children: [rlWear, "% LIFE"] }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: `p-1.5 border rounded-sm ${getThermalBg(rrTemp)} flex flex-col justify-between`,
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[7px] font-black",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "RR TIRE" }),
+                          /* @__PURE__ */ jsx("span", { children: getThermalLabel(rrTemp) }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "text-sm font-black tracking-tight text-white tabular-nums",
+                        children: [rrTemp.toFixed(0), "°C"],
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-white font-bold",
+                            children: [rrPress.toFixed(2), " Bar"],
+                          }),
+                          /* @__PURE__ */ jsxs("span", { children: [rrWear, "% LIFE"] }),
+                        ],
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-4 flex flex-col justify-between pl-1",
+            children: [
+              /* @__PURE__ */ jsx("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider text-center",
+                children: "G-G Grip Circle",
+              }),
+              /* @__PURE__ */ jsx("div", {
+                className: "flex-1 flex items-center justify-center my-2",
+                children: /* @__PURE__ */ jsx("canvas", {
+                  ref: ggCanvasRef,
+                  width: 80,
+                  height: 80,
+                  className: "bg-[#0B0F14] border border-[#1C2430] rounded-full",
+                }),
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "text-center bg-[#0B0F14] border border-[#1C2430] py-1 rounded-sm text-[8px] text-[#7A828C]",
+                children: [
+                  /* @__PURE__ */ jsx("span", { children: "PEAK G: " }),
+                  /* @__PURE__ */ jsxs("span", {
+                    className: "text-white font-black tabular-nums",
+                    children: [Math.sqrt(gLat * gLat + gLon * gLon).toFixed(2), "G"],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    }),
+  });
 }
 function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live" }) {
   const liveTelemetry = useTelemetry();
@@ -1486,106 +2002,192 @@ function DriverInputsInstrument({ telemetry: propTelemetry, mode = "live" }) {
 - Throttle Application: Initial throttle pickup is smooth, but full load application is 15% too rapid on exit of Turn 4, triggering brief traction control engagement.
 - Brake Release Profile: Brake trail release curve is excellent. Steering micro-corrections are kept low, yielding a high Smoothness rating of ${smoothnessScore.toFixed(0)}%.
 - Strategic Coaching: Try to slow down hands under initial corner rotation to carry more mid-corner entry momentum.`;
-  return /* @__PURE__ */ jsx(
-    TelemetryInstrument,
-    {
-      title: "Driver Inputs Instrument",
-      mode,
-      activeStatus: smoothnessScore > 85 ? "INPUTSMOOTH" : "AGRESSIVEINPUT",
-      activeStatusColor: smoothnessScore > 85 ? "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10" : "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10",
-      onAiAnalyze: () => {
-      },
-      aiAdvice,
-      children: /* @__PURE__ */ jsx("div", { className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white", children: /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-12 gap-4 flex-1", children: [
-        /* @__PURE__ */ jsxs("div", { className: "col-span-7 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider mb-2", children: "Linear Pedal Command Stack" }),
-          /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col justify-center gap-2", children: [
-            /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "THROTTLE INPUT" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[#00D17F] font-bold tabular-nums", children: [
-                  (throttle * 100).toFixed(0),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "w-full bg-[#0B0F14] h-2.5 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-75", style: { width: `${throttle * 100}%` } }) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "BRAKE INPUT" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[#FF4D4D] font-bold tabular-nums", children: [
-                  (brake * 100).toFixed(0),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "w-full bg-[#0B0F14] h-2.5 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-75", style: { width: `${brake * 100}%` } }) })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "space-y-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex justify-between text-[8px] text-[#7A828C]", children: [
-                /* @__PURE__ */ jsx("span", { children: "CLUTCH INPUT" }),
-                /* @__PURE__ */ jsxs("span", { className: "text-[#3B82F6] font-bold tabular-nums", children: [
-                  (clutch * 100).toFixed(0),
-                  "%"
-                ] })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden", children: /* @__PURE__ */ jsx("div", { className: "h-full bg-blue-500 transition-all duration-75", style: { width: `${clutch * 100}%` } }) })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "col-span-5 flex flex-col justify-between pl-1", children: [
-          /* @__PURE__ */ jsx("div", { className: "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider", children: "Steering & Smoothness" }),
-          /* @__PURE__ */ jsx("div", { className: "flex-1 flex flex-col items-center justify-center my-1.5", children: /* @__PURE__ */ jsxs("div", { className: "relative h-12 w-12 border-2 border-dashed border-[#1C2430] rounded-full flex items-center justify-center", children: [
-            /* @__PURE__ */ jsx("div", { className: "absolute h-10 w-1 border-t-4 border-b-4 border-[#FFB800] rounded transition-transform duration-75", style: { transform: `rotate(${steer}deg)` } }),
-            /* @__PURE__ */ jsxs("span", { className: "absolute -bottom-4 text-[7px] text-[#FFB800] bg-[#05070A] border border-[#1C2430]/80 px-1 rounded tabular-nums font-bold", children: [
-              steer.toFixed(0),
-              "°"
-            ] })
-          ] }) }),
-          /* @__PURE__ */ jsxs("div", { className: "mt-1 pt-1.5 border-t border-[#1C2430]/40 flex justify-between items-center text-[9px] text-[#7A828C]", children: [
-            /* @__PURE__ */ jsx("span", { children: "SMOOTHNESS" }),
-            /* @__PURE__ */ jsxs("span", { className: "text-[#00D17F] font-bold tabular-nums flex items-center gap-0.5", children: [
-              /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3 w-3" }),
-              smoothnessScore.toFixed(0),
-              "%"
-            ] })
-          ] })
-        ] })
-      ] }) })
-    }
-  );
+  return /* @__PURE__ */ jsx(TelemetryInstrument, {
+    title: "Driver Inputs Instrument",
+    mode,
+    activeStatus: smoothnessScore > 85 ? "INPUTSMOOTH" : "AGRESSIVEINPUT",
+    activeStatusColor:
+      smoothnessScore > 85
+        ? "text-[#00D17F] border-[#00D17F]/30 bg-[#00D17F]/10"
+        : "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10",
+    onAiAnalyze: () => {},
+    aiAdvice,
+    children: /* @__PURE__ */ jsx("div", {
+      className: "p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white",
+      children: /* @__PURE__ */ jsxs("div", {
+        className: "grid grid-cols-12 gap-4 flex-1",
+        children: [
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-7 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3",
+            children: [
+              /* @__PURE__ */ jsx("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider mb-2",
+                children: "Linear Pedal Command Stack",
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className: "flex-1 flex flex-col justify-center gap-2",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "space-y-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "THROTTLE INPUT" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-[#00D17F] font-bold tabular-nums",
+                            children: [(throttle * 100).toFixed(0), "%"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsx("div", {
+                        className:
+                          "w-full bg-[#0B0F14] h-2.5 rounded-xs border border-[#1C2430] overflow-hidden",
+                        children: /* @__PURE__ */ jsx("div", {
+                          className:
+                            "h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-75",
+                          style: { width: `${throttle * 100}%` },
+                        }),
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "space-y-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "BRAKE INPUT" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-[#FF4D4D] font-bold tabular-nums",
+                            children: [(brake * 100).toFixed(0), "%"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsx("div", {
+                        className:
+                          "w-full bg-[#0B0F14] h-2.5 rounded-xs border border-[#1C2430] overflow-hidden",
+                        children: /* @__PURE__ */ jsx("div", {
+                          className:
+                            "h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-75",
+                          style: { width: `${brake * 100}%` },
+                        }),
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "space-y-1",
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex justify-between text-[8px] text-[#7A828C]",
+                        children: [
+                          /* @__PURE__ */ jsx("span", { children: "CLUTCH INPUT" }),
+                          /* @__PURE__ */ jsxs("span", {
+                            className: "text-[#3B82F6] font-bold tabular-nums",
+                            children: [(clutch * 100).toFixed(0), "%"],
+                          }),
+                        ],
+                      }),
+                      /* @__PURE__ */ jsx("div", {
+                        className:
+                          "w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden",
+                        children: /* @__PURE__ */ jsx("div", {
+                          className: "h-full bg-blue-500 transition-all duration-75",
+                          style: { width: `${clutch * 100}%` },
+                        }),
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          /* @__PURE__ */ jsxs("div", {
+            className: "col-span-5 flex flex-col justify-between pl-1",
+            children: [
+              /* @__PURE__ */ jsx("div", {
+                className:
+                  "text-[10px] text-[#7A828C] border-b border-[#1C2430]/40 pb-1.5 uppercase font-bold tracking-wider",
+                children: "Steering & Smoothness",
+              }),
+              /* @__PURE__ */ jsx("div", {
+                className: "flex-1 flex flex-col items-center justify-center my-1.5",
+                children: /* @__PURE__ */ jsxs("div", {
+                  className:
+                    "relative h-12 w-12 border-2 border-dashed border-[#1C2430] rounded-full flex items-center justify-center",
+                  children: [
+                    /* @__PURE__ */ jsx("div", {
+                      className:
+                        "absolute h-10 w-1 border-t-4 border-b-4 border-[#FFB800] rounded transition-transform duration-75",
+                      style: { transform: `rotate(${steer}deg)` },
+                    }),
+                    /* @__PURE__ */ jsxs("span", {
+                      className:
+                        "absolute -bottom-4 text-[7px] text-[#FFB800] bg-[#05070A] border border-[#1C2430]/80 px-1 rounded tabular-nums font-bold",
+                      children: [steer.toFixed(0), "°"],
+                    }),
+                  ],
+                }),
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "mt-1 pt-1.5 border-t border-[#1C2430]/40 flex justify-between items-center text-[9px] text-[#7A828C]",
+                children: [
+                  /* @__PURE__ */ jsx("span", { children: "SMOOTHNESS" }),
+                  /* @__PURE__ */ jsxs("span", {
+                    className: "text-[#00D17F] font-bold tabular-nums flex items-center gap-0.5",
+                    children: [
+                      /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3 w-3" }),
+                      smoothnessScore.toFixed(0),
+                      "%",
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    }),
+  });
 }
 const TELEMETRY_INSTRUMENTS = {
   brakes: BrakeInstrument,
   ers: ERSInstrument,
   chassis: ChassisInstrument,
   tires: TireInstrument,
-  inputs: DriverInputsInstrument
+  inputs: DriverInputsInstrument,
 };
 const WORKSPACE_PRESETS = {
   gt3: {
     name: "GT3 Race Engineer",
-    description: "Focuses on brake balance targets, tire thermal wear growth, and critical strategic command modules.",
-    instruments: ["brakes", "tires", "inputs"]
+    description:
+      "Focuses on brake balance targets, tire thermal wear growth, and critical strategic command modules.",
+    instruments: ["brakes", "tires", "inputs"],
   },
   gtp: {
     name: "GTP Hybrid Command",
-    description: "Focuses on ERS Purple battery cells, kinetic deployment mapping, and mechanical suspension stability.",
-    instruments: ["ers", "brakes", "chassis"]
+    description:
+      "Focuses on ERS Purple battery cells, kinetic deployment mapping, and mechanical suspension stability.",
+    instruments: ["ers", "brakes", "chassis"],
   },
   coach: {
     name: "Driver Coach Workstation",
-    description: "Prioritizes pedal linear traces, micro-steer dial tracking, and lateral G-G circle slip limits.",
-    instruments: ["inputs", "tires", "chassis"]
+    description:
+      "Prioritizes pedal linear traces, micro-steer dial tracking, and lateral G-G circle slip limits.",
+    instruments: ["inputs", "tires", "chassis"],
   },
   aero: {
     name: "Aero Platform Engineer",
-    description: "Aero compression histograms, dynamic chassis pitching, and recovery harvest curves.",
-    instruments: ["chassis", "tires", "ers"]
-  }
+    description:
+      "Aero compression histograms, dynamic chassis pitching, and recovery harvest curves.",
+    instruments: ["chassis", "tires", "ers"],
+  },
 };
 export {
   TELEMETRY_INSTRUMENTS as T,
   WORKSPACE_PRESETS as W,
   broadcastTelemetryFrame as b,
-  useTelemetryRuntimeStore as u
+  useTelemetryRuntimeStore as u,
 };

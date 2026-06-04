@@ -11,10 +11,10 @@ class CarStateEngine {
   }
 
   resetState() {
-    this.chassisFatigue = 0.0;    // 0.0 to 100.0% (percentage fatigue)
-    this.brakeWear = 100.0;       // 100.0% down to 0.0% pad life remaining
-    this.gearboxStress = 0.0;     // 0.0 to 100.0% stress loading
-    this.ersHealth = 100.0;       // battery cell capacity retention %
+    this.chassisFatigue = 0.0; // 0.0 to 100.0% (percentage fatigue)
+    this.brakeWear = 100.0; // 100.0% down to 0.0% pad life remaining
+    this.gearboxStress = 0.0; // 0.0 to 100.0% stress loading
+    this.ersHealth = 100.0; // battery cell capacity retention %
     this.cumulativeInstability = 0;
     this.lastTick = 0;
   }
@@ -42,7 +42,7 @@ class CarStateEngine {
     // 2. Brake Wear
     // Brakes degrade under high pedal pressure factored by pad carcass temperature
     const brakeInput = t.brake || 0;
-    const estBrakeTemp = t.liveTrackTempC * 2.5 + (brakeInput * 450); // estimated pad heat
+    const estBrakeTemp = t.liveTrackTempC * 2.5 + brakeInput * 450; // estimated pad heat
     if (brakeInput > 0.15 && estBrakeTemp > 500) {
       this.brakeWear -= brakeInput * (estBrakeTemp / 500.0) * 0.0018 * dt;
     }
@@ -75,7 +75,7 @@ class CarStateEngine {
       gearboxStress: this.gearboxStress,
       ersHealth: this.ersHealth,
       cumulativeInstability: this.cumulativeInstability,
-      lastTick: this.lastTick
+      lastTick: this.lastTick,
     };
   }
 
@@ -99,10 +99,10 @@ class CarStateEngine {
             brake_wear: this.brakeWear,
             gearbox_stress: this.gearboxStress,
             ers_health: this.ersHealth,
-            last_tick: this.lastTick
-          }
+            last_tick: this.lastTick,
+          },
         },
-        { upsert: true }
+        { upsert: true },
       );
     } catch (e) {
       console.warn(`[car-state] Persist state failure: ${e.message}`);

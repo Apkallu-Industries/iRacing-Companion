@@ -50,17 +50,54 @@ function tempColor(temp: number): string {
 /** Simple top-down F1 car silhouette SVG */
 function CarSilhouette() {
   return (
-    <svg viewBox="0 0 40 80" className="w-10 h-20 opacity-30" fill="none" stroke="currentColor" strokeWidth="1">
+    <svg
+      viewBox="0 0 40 80"
+      className="w-10 h-20 opacity-30"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1"
+    >
       {/* Body */}
       <path d="M12 8 L12 4 Q12 2 14 2 L26 2 Q28 2 28 4 L28 8" className="stroke-muted-foreground" />
       <rect x="10" y="8" width="20" height="50" rx="4" className="stroke-muted-foreground" />
-      <path d="M12 58 L12 72 Q12 76 16 76 L24 76 Q28 76 28 72 L28 58" className="stroke-muted-foreground" />
+      <path
+        d="M12 58 L12 72 Q12 76 16 76 L24 76 Q28 76 28 72 L28 58"
+        className="stroke-muted-foreground"
+      />
       {/* Front wing */}
-      <rect x="4" y="2" width="6" height="10" rx="1" className="stroke-muted-foreground fill-muted-foreground/20" />
-      <rect x="30" y="2" width="6" height="10" rx="1" className="stroke-muted-foreground fill-muted-foreground/20" />
+      <rect
+        x="4"
+        y="2"
+        width="6"
+        height="10"
+        rx="1"
+        className="stroke-muted-foreground fill-muted-foreground/20"
+      />
+      <rect
+        x="30"
+        y="2"
+        width="6"
+        height="10"
+        rx="1"
+        className="stroke-muted-foreground fill-muted-foreground/20"
+      />
       {/* Rear wing */}
-      <rect x="4" y="66" width="6" height="10" rx="1" className="stroke-muted-foreground fill-muted-foreground/20" />
-      <rect x="30" y="66" width="6" height="10" rx="1" className="stroke-muted-foreground fill-muted-foreground/20" />
+      <rect
+        x="4"
+        y="66"
+        width="6"
+        height="10"
+        rx="1"
+        className="stroke-muted-foreground fill-muted-foreground/20"
+      />
+      <rect
+        x="30"
+        y="66"
+        width="6"
+        height="10"
+        rx="1"
+        className="stroke-muted-foreground fill-muted-foreground/20"
+      />
       {/* Cockpit */}
       <ellipse cx="20" cy="28" rx="5" ry="8" className="stroke-muted-foreground" />
     </svg>

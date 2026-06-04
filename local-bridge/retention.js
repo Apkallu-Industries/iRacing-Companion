@@ -10,7 +10,8 @@ async function executeRetentionPolicy(db) {
     console.log("[retention] Executing tiered retention sweeps...");
 
     // Find sessions older than 7 days
-    const oldSessions = await db.collection("telemetry_sessions")
+    const oldSessions = await db
+      .collection("telemetry_sessions")
       .find({ start_time: { $lt: sevenDaysAgo } })
       .toArray();
 
@@ -18,7 +19,8 @@ async function executeRetentionPolicy(db) {
 
     for (let session of oldSessions) {
       // Downsample telemetry_samples by keeping every 3rd entry
-      const samples = await db.collection("telemetry_samples")
+      const samples = await db
+        .collection("telemetry_samples")
         .find({ session_id: session._id })
         .sort({ timestamp: 1 })
         .toArray();
@@ -39,7 +41,9 @@ async function executeRetentionPolicy(db) {
     }
 
     if (downsampledCount > 0) {
-      console.log(`[retention] Successfully downsampled ${downsampledCount} legacy samples to 20Hz footprint.`);
+      console.log(
+        `[retention] Successfully downsampled ${downsampledCount} legacy samples to 20Hz footprint.`,
+      );
     } else {
       console.log("[retention] No sessions older than 7 days require compaction.");
     }

@@ -35,13 +35,19 @@ export function AppHeader({ children }: { children?: React.ReactNode }) {
         {/* Bridge status chip — visible on every page */}
         <Link
           to="/live"
-          title={t.connected ? `Bridge live · ${t.track} · ${t.car}` : "Bridge offline — click to go to Live dashboard"}
+          title={
+            t.connected
+              ? `Bridge live · ${t.track} · ${t.car}`
+              : "Bridge offline — click to go to Live dashboard"
+          }
           className="flex items-center gap-1.5 rounded-sm px-2 py-1 hover:bg-accent transition-all"
         >
           <span
             className={`size-1.5 rounded-full ${t.connected ? "bg-emerald-500 shadow-[0_0_6px_#22c55e] animate-pulse" : "bg-amber-500"}`}
           />
-          <span className={`font-mono text-[10px] uppercase tracking-wider ${t.connected ? "text-emerald-400" : "text-amber-500"}`}>
+          <span
+            className={`font-mono text-[10px] uppercase tracking-wider ${t.connected ? "text-emerald-400" : "text-amber-500"}`}
+          >
             {t.connected ? `LIVE` : "SIM"}
           </span>
           {t.connected && (

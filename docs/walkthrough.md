@@ -16,12 +16,14 @@
 ### 1. Bridge Event Type — [bridgeDataClient.ts](file:///c:/Dev/iRacing-Companion/src/lib/bridgeDataClient.ts#L27)
 
 Added `"event"` to the `BridgeEvent.type` union. The bridge emits `type: "event"` for runtime events (`PREDICTION_WARNING`, `STINT_UPDATED`) but the type union only listed lifecycle types. This fixed:
+
 - `TS2322` in the emitter (line 89)
 - `TS2367` in the consumer [useBridgeEvents.ts](file:///c:/Dev/iRacing-Companion/src/lib/useBridgeEvents.ts#L15)
 
 ### 2. Recharts v3 Chart Component — [chart.tsx](file:///c:/Dev/iRacing-Companion/src/components/ui/chart.tsx)
 
-Recharts v3 moved `payload`, `label`, `active` to context-only on `TooltipProps` and `payload`/`verticalAlign` on `LegendProps`. The shadcn component wraps these as content renderers where recharts *does* still pass them, so we:
+Recharts v3 moved `payload`, `label`, `active` to context-only on `TooltipProps` and `payload`/`verticalAlign` on `LegendProps`. The shadcn component wraps these as content renderers where recharts _does_ still pass them, so we:
+
 - Declared explicit `ChartTooltipContentProps` and `ChartLegendContentProps` types
 - Imported `Payload` and `LegendPayload` types directly from recharts internals
 - Added explicit type annotations on `.filter()`/`.map()` callbacks
@@ -41,13 +43,13 @@ Zustand v5 removed the `subscribe(selector, listener)` overload from the base st
 
 ## Packaging Verification
 
-| Check | Result |
-|---|---|
-| `npx tsc --noEmit` | ✅ 0 errors |
-| `npm run build` | ✅ clean (1.89s client + 1.34s server) |
-| `npm run lint` | ✅ clean (exit 0) |
-| `npm audit` (root) | ✅ 0 vulnerabilities |
-| `npm audit` (desktop) | ✅ 0 vulnerabilities (927 deps) |
+| Check                   | Result                                       |
+| ----------------------- | -------------------------------------------- |
+| `npx tsc --noEmit`      | ✅ 0 errors                                  |
+| `npm run build`         | ✅ clean (1.89s client + 1.34s server)       |
+| `npm run lint`          | ✅ clean (exit 0)                            |
+| `npm audit` (root)      | ✅ 0 vulnerabilities                         |
+| `npm audit` (desktop)   | ✅ 0 vulnerabilities (927 deps)              |
 | `npm ls` (local-bridge) | ✅ all 11 deps resolve via workspace symlink |
 
 > [!NOTE]

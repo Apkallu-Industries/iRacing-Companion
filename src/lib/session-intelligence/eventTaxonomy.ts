@@ -27,8 +27,8 @@ export enum EventSeverity {
 
 export enum EngineeringPersonality {
   CONSERVATIVE_ENDURANCE = "CONSERVATIVE_ENDURANCE", // Prioritizes tire longevity, platform stability, and predictability
-  AGGRESSIVE_QUALIFYING = "AGGRESSIVE_QUALIFYING",   // Prioritizes peak rotation, front-axle bite, and risk-tolerant track attack
-  BALANCED_STRATEGIST = "BALANCED_STRATEGIST",       // Coordinated balance between pit windows, fuel margin, and dynamic track evolution
+  AGGRESSIVE_QUALIFYING = "AGGRESSIVE_QUALIFYING", // Prioritizes peak rotation, front-axle bite, and risk-tolerant track attack
+  BALANCED_STRATEGIST = "BALANCED_STRATEGIST", // Coordinated balance between pit windows, fuel margin, and dynamic track evolution
 }
 
 /**
@@ -51,9 +51,9 @@ export interface PhysicsTruthBoundary {
  */
 export interface RaceEventPriority {
   severity: EventSeverity;
-  confidence: number;       // Heuristic certainty rating (0.0 to 1.0)
-  persistence: number;      // Number of consecutive laps this event has occurred
-  lapTimeImpactS: number;   // Projected delta cost in seconds
+  confidence: number; // Heuristic certainty rating (0.0 to 1.0)
+  persistence: number; // Number of consecutive laps this event has occurred
+  lapTimeImpactS: number; // Projected delta cost in seconds
   driverRiskRating: number; // 0 (low) to 10 (spin/crash risk)
 }
 
@@ -100,7 +100,7 @@ export interface TelemetryEvent {
  */
 export interface EngineeringEpisode {
   episodeId: string; // Must follow regex "^eps_[a-f0-9]+$"
-  title: string;                 // e.g. "Rear Tire Thermal Saturation Cascade"
+  title: string; // e.g. "Rear Tire Thermal Saturation Cascade"
   startTime: string;
   endTime?: string;
   isActive: boolean;
@@ -121,11 +121,11 @@ export interface EngineeringEpisode {
  */
 export interface CausalityNode {
   nodeId: string; // Must follow snake_case regex
-  label: string;                  // e.g. "High Rear Rebound"
+  label: string; // e.g. "High Rear Rebound"
   type: "condition" | "chassis_behavior" | "driver_input" | "aero_state" | "thermal_state";
   affectsNodes: {
     targetNodeId: string;
-    relationship: string;         // e.g. "STALLS_DIFFUSER_FLOW" or "OVERLOADS_FRONT_AXLE"
+    relationship: string; // e.g. "STALLS_DIFFUSER_FLOW" or "OVERLOADS_FRONT_AXLE"
     strength: "low" | "medium" | "high";
   }[];
   physicsTruthBoundary: PhysicsTruthBoundary;
@@ -152,23 +152,23 @@ export interface SessionNarrative {
 export interface RecommendationLineage {
   recommendationId: string; // Must follow regex "^rec_[a-f0-9]+$"
   timestamp: string;
-  proposedAction: string;       // e.g. "Soften rear rebound dampers by -1 click"
-  citationSource: string;       // e.g. "Tim McArthur Flowchart: Road Oversteer #1 (ARB)"
-  confidenceRating: number;     // 0 to 100
-  
+  proposedAction: string; // e.g. "Soften rear rebound dampers by -1 click"
+  citationSource: string; // e.g. "Tim McArthur Flowchart: Road Oversteer #1 (ARB)"
+  confidenceRating: number; // 0 to 100
+
   /** Supporting sensor inputs (The "Facts") */
   sensorEvidence: {
     channel: string;
     value: string | number;
     threshold: string | number;
   }[];
-  
+
   /** Active heuristic correlations (The "Interpretation") */
   activeCorrelations: string[];
-  
+
   /** Active stateful engineering episodes influencing this recommendation */
   relatedEpisodes: string[]; // Referencing the IDs of EngineeringEpisode
-  
+
   /** Driver trait influence (The "Personalization") */
   driverTraitsInfluence: Partial<DriverBehaviorTraits>;
   physicsTruthBoundary: PhysicsTruthBoundary;
@@ -194,7 +194,7 @@ export interface AICommunicationPayload {
   provenRecommendations: RecommendationLineage[];
   sessionNarrative: SessionNarrative;
   driverTraits: DriverBehaviorTraits;
-  
+
   // Deterministic State Hashing metadata
   stateHash?: string;
   ontologyVersion?: string;
@@ -209,7 +209,7 @@ export function synthesizeDriverTraits(
   trailBrakeDurationSec: number,
   steeringSmoothnessIndex: number,
   throttleExitGradient: number,
-  averageYawRateRads: number
+  averageYawRateRads: number,
 ): DriverBehaviorTraits {
   // 1. Corner Entry Rotation Preference
   let rotation: DriverBehaviorTraits["cornerEntryRotationPreference"] = "medium";
@@ -218,7 +218,7 @@ export function synthesizeDriverTraits(
 
   // 2. Rear Axle Tolerance
   let stability: DriverBehaviorTraits["rearAxleStabilityTolerance"] = "neutral";
-  if (steeringSmoothnessIndex < 70 && averageYawRateRads > 0.30) stability = "aggressive";
+  if (steeringSmoothnessIndex < 70 && averageYawRateRads > 0.3) stability = "aggressive";
   else if (steeringSmoothnessIndex > 85) stability = "cautious";
 
   // 3. Brake Release Style
@@ -237,8 +237,8 @@ export function synthesizeDriverTraits(
     brakeReleaseStyle: brakeStyle,
     throttleCommitmentConfidence: throttleStyle,
     physicsTruthBoundary: {
-      sourceTypes: ["behavioral_model"]
-    }
+      sourceTypes: ["behavioral_model"],
+    },
   };
 }
 
@@ -253,7 +253,7 @@ export function traceDecisionLineage(
   correlations: string[],
   relatedEpisodes: string[],
   traits: DriverBehaviorTraits,
-  physicsTruthBoundary: PhysicsTruthBoundary
+  physicsTruthBoundary: PhysicsTruthBoundary,
 ): RecommendationLineage {
   return {
     recommendationId: `rec_${Math.random().toString(36).substr(2, 9)}`,
@@ -306,7 +306,7 @@ export function canonicalizeProjection(obj: any): any {
       const tsSecA = a?.timestampSec ?? 0;
       const tsSecB = b?.timestampSec ?? 0;
       if (tsSecA !== tsSecB) return tsSecA - tsSecB;
-      
+
       const tsA = a?.timestamp ?? "";
       const tsB = b?.timestamp ?? "";
       if (tsA !== tsB) return String(tsA).localeCompare(String(tsB));
@@ -359,4 +359,3 @@ export async function computeProjectionHash(projection: AICommunicationPayload):
   const canonical = canonicalizeProjection(projection);
   return await sha256(JSON.stringify(canonical));
 }
-

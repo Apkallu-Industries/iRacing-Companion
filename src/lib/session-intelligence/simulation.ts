@@ -2,15 +2,15 @@ import type { StintAnalysisReport } from "./index";
 
 export interface SetupAdjustment {
   rearReboundClicks: number; // e.g. +1, -2
-  rearAntiRollBar: number;  // e.g. +1, -1
-  frontBrakeBias: number;   // e.g. +0.5, -0.2
+  rearAntiRollBar: number; // e.g. +1, -1
+  frontBrakeBias: number; // e.g. +0.5, -0.2
   frontPackerClicks: number; // e.g. +1, -1
 }
 
 export interface SimulationResult {
   theoreticalDeltaDelta: number; // e.g. -0.145s (negative is improvement)
   predictedRakeStability: number; // percentage (0-100)
-  predictedRearTraction: number;  // percentage (0-100)
+  predictedRearTraction: number; // percentage (0-100)
   predictedThermalSaturation: number; // percentage (0-100)
   feedbackLog: string[];
 }
@@ -21,14 +21,17 @@ export interface SimulationResult {
  */
 export function simulateSetupAdjustment(
   adj: SetupAdjustment,
-  base: StintAnalysisReport
+  base: StintAnalysisReport,
 ): SimulationResult {
   const feedbackLog: string[] = [];
-  
+
   // Calculate baseline metrics (0 to 100 rating scale)
   let baseRakeStability = Math.max(20, Math.min(98, 100 - base.aero.bottomingCount * 12));
   let baseRearTraction = Math.max(30, Math.min(98, 100 - base.hybrid.deploymentWastePct * 8));
-  let baseThermalSaturation = Math.max(25, Math.min(98, 100 - (base.tires.thermalGrowthFR - 10) * 6));
+  let baseThermalSaturation = Math.max(
+    25,
+    Math.min(98, 100 - (base.tires.thermalGrowthFR - 10) * 6),
+  );
 
   // Initialize delta updates
   let deltaTime = 0;
@@ -45,14 +48,14 @@ export function simulateSetupAdjustment(
       rearTractionChange += clicks * 1.5;
       deltaTime -= clicks * 0.045; // gains time due to stable trail release
       feedbackLog.push(
-        `STIFFEN REAR REBOUND (+${clicks} clicks): Slows rear axle vertical load transfer rate on trail brake entry, raising rake stability by +${(clicks * 3.5).toFixed(1)}% and optimizing transient diffuser flow.`
+        `STIFFEN REAR REBOUND (+${clicks} clicks): Slows rear axle vertical load transfer rate on trail brake entry, raising rake stability by +${(clicks * 3.5).toFixed(1)}% and optimizing transient diffuser flow.`,
       );
     } else {
       // Softening rear rebound causes nose pitch oscillations
       rakeStabilityChange += clicks * 5.0;
       deltaTime -= clicks * 0.02; // minor time penalty
       feedbackLog.push(
-        `SOFTEN REAR REBOUND (${clicks} clicks): Speeds rear extension, causing transient rake pitch oscillations under deceleration (-${Math.abs(clicks * 5).toFixed(1)}% stability).`
+        `SOFTEN REAR REBOUND (${clicks} clicks): Speeds rear extension, causing transient rake pitch oscillations under deceleration (-${Math.abs(clicks * 5).toFixed(1)}% stability).`,
       );
     }
   }
@@ -66,7 +69,7 @@ export function simulateSetupAdjustment(
       thermalSaturationChange += Math.abs(bar) * 2.0;
       deltaTime -= Math.abs(bar) * 0.065; // gains exit speed
       feedbackLog.push(
-        `SOFTEN REAR ANTI-ROLL BAR (${bar} steps): Expands exit tyre footprint contact patch, reducing exit longitudinal driven wheel slip (+${(Math.abs(bar) * 6.5).toFixed(1)}% exit traction).`
+        `SOFTEN REAR ANTI-ROLL BAR (${bar} steps): Expands exit tyre footprint contact patch, reducing exit longitudinal driven wheel slip (+${(Math.abs(bar) * 6.5).toFixed(1)}% exit traction).`,
       );
     } else {
       // Stiffening roll bar causes rapid driven slip overloading
@@ -74,7 +77,7 @@ export function simulateSetupAdjustment(
       thermalSaturationChange -= bar * 3.0;
       deltaTime += bar * 0.05;
       feedbackLog.push(
-        `STIFFEN REAR ANTI-ROLL BAR (+${bar} steps): Saturation bounds of driven tyre lateral stiffness breached. Increases exit longitudinal wheelspin frequency.`
+        `STIFFEN REAR ANTI-ROLL BAR (+${bar} steps): Saturation bounds of driven tyre lateral stiffness breached. Increases exit longitudinal wheelspin frequency.`,
       );
     }
   }
@@ -87,14 +90,14 @@ export function simulateSetupAdjustment(
       thermalSaturationChange += bias * 8.0;
       deltaTime -= bias * 0.055;
       feedbackLog.push(
-        `SHIFT BRAKE BIAS FORWARD (+${bias.toFixed(1)}%): Decreases front axle local tyre sliding friction probability. Reduces peak carcass thermal growth rate on corner deceleration.`
+        `SHIFT BRAKE BIAS FORWARD (+${bias.toFixed(1)}%): Decreases front axle local tyre sliding friction probability. Reduces peak carcass thermal growth rate on corner deceleration.`,
       );
     } else {
       // Shifting bias backward triggers rear locked sliding rotation
       rakeStabilityChange -= Math.abs(bias) * 6.0;
       deltaTime += Math.abs(bias) * 0.07;
       feedbackLog.push(
-        `SHIFT BRAKE BIAS BACKWARD (${bias.toFixed(1)}%): Exposes rear axle lockup threat during entry lateral loading. Destabilizes transient yaw rates.`
+        `SHIFT BRAKE BIAS BACKWARD (${bias.toFixed(1)}%): Exposes rear axle lockup threat during entry lateral loading. Destabilizes transient yaw rates.`,
       );
     }
   }
@@ -107,27 +110,38 @@ export function simulateSetupAdjustment(
       rakeStabilityChange += packers * 8.5;
       deltaTime -= packers * 0.075;
       feedbackLog.push(
-        `RAISE FRONT PACKERS (+${packers} clicks): Restricts dynamic suspension displacement bounds. Prevents splitter grounding bottoming under downforce heave, securing diffuser seal integrity (+${(packers * 8.5).toFixed(1)}% aero stability).`
+        `RAISE FRONT PACKERS (+${packers} clicks): Restricts dynamic suspension displacement bounds. Prevents splitter grounding bottoming under downforce heave, securing diffuser seal integrity (+${(packers * 8.5).toFixed(1)}% aero stability).`,
       );
     } else {
       rakeStabilityChange += packers * 9.0;
       deltaTime -= packers * 0.03;
       feedbackLog.push(
-        `LOWER FRONT PACKERS (${packers} clicks): Allows nose pitch bounds expansion, increasing diffuser seal stall grounding events.`
+        `LOWER FRONT PACKERS (${packers} clicks): Allows nose pitch bounds expansion, increasing diffuser seal stall grounding events.`,
       );
     }
   }
 
   // Add default log if no adjustments are made
   if (feedbackLog.length === 0) {
-    feedbackLog.push("No setup adjustments applied. Simulated vehicle dynamics feedback conforms to stint baseline parameters.");
+    feedbackLog.push(
+      "No setup adjustments applied. Simulated vehicle dynamics feedback conforms to stint baseline parameters.",
+    );
   }
 
   return {
     theoreticalDeltaDelta: Number(deltaTime.toFixed(3)),
-    predictedRakeStability: Math.max(10, Math.min(99, Math.round(baseRakeStability + rakeStabilityChange))),
-    predictedRearTraction: Math.max(10, Math.min(99, Math.round(baseRearTraction + rearTractionChange))),
-    predictedThermalSaturation: Math.max(10, Math.min(99, Math.round(baseThermalSaturation + thermalSaturationChange))),
-    feedbackLog
+    predictedRakeStability: Math.max(
+      10,
+      Math.min(99, Math.round(baseRakeStability + rakeStabilityChange)),
+    ),
+    predictedRearTraction: Math.max(
+      10,
+      Math.min(99, Math.round(baseRearTraction + rearTractionChange)),
+    ),
+    predictedThermalSaturation: Math.max(
+      10,
+      Math.min(99, Math.round(baseThermalSaturation + thermalSaturationChange)),
+    ),
+    feedbackLog,
   };
 }

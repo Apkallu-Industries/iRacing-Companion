@@ -33,22 +33,26 @@ export const TEAM_PROFILES: Record<"gt3" | "gtp" | "lemans", TeamKnowledgeProfil
     maxOptimalTempC: 95,
     criticalPitchLimitRad: -0.015,
     wheelspinMismatchLimitPct: 0.12, // 12% speed diff limit
-    primaryFocus: "Tyre core carcass thermal growth, trail-brake release profiles, and mechanical bias migration.",
+    primaryFocus:
+      "Tyre core carcass thermal growth, trail-brake release profiles, and mechanical bias migration.",
     scannerSensitivities: {
       brakeThreshold: 0.82,
-      durationSec: 0.15
+      durationSec: 0.15,
     },
     heuristics: {
-      oversteerAdvice: "Soften rear anti-roll bar or raise front packer high-speed compression damping.",
-      understeerAdvice: "Shift initial brake bias forward, soften front spring rates, or lower front ride height.",
-      aeroAdvice: "Raise packers high-speed compression compression damping to slow deceleration pitch rake."
+      oversteerAdvice:
+        "Soften rear anti-roll bar or raise front packer high-speed compression damping.",
+      understeerAdvice:
+        "Shift initial brake bias forward, soften front spring rates, or lower front ride height.",
+      aeroAdvice:
+        "Raise packers high-speed compression compression damping to slow deceleration pitch rake.",
     },
     physicsModels: {
       tireThermalGrowthRatio: 1.15,
       aeroVacuumSensitivity: 0.45,
       brakeMigrationRatio: 0.62,
-      ersWeightingFactor: 0.00
-    }
+      ersWeightingFactor: 0.0,
+    },
   },
   gtp: {
     id: "gtp",
@@ -58,22 +62,26 @@ export const TEAM_PROFILES: Record<"gt3" | "gtp" | "lemans", TeamKnowledgeProfil
     maxOptimalTempC: 110,
     criticalPitchLimitRad: -0.009, // Prototypes are extremely low and pitch-sensitive!
     wheelspinMismatchLimitPct: 0.08, // 8% limit due to advanced MGU-K deploy
-    primaryFocus: "Hybrid battery SoC decay curves, underbody diffuser vacuum flow seal compression, and straightaway kW deploy sweeps.",
+    primaryFocus:
+      "Hybrid battery SoC decay curves, underbody diffuser vacuum flow seal compression, and straightaway kW deploy sweeps.",
     scannerSensitivities: {
       brakeThreshold: 0.78,
-      durationSec: 0.10
+      durationSec: 0.1,
     },
     heuristics: {
-      oversteerAdvice: "Soften rear rebound dampers to anchor the diffuser downforce seal under driven exit torque.",
-      understeerAdvice: "Recalibrate MGU-K exit harvest parameters to mitigate tire braking load transfer.",
-      aeroAdvice: "Increase packer mechanical packer stops by +1.5mm to restrict high-speed splitter Grounding."
+      oversteerAdvice:
+        "Soften rear rebound dampers to anchor the diffuser downforce seal under driven exit torque.",
+      understeerAdvice:
+        "Recalibrate MGU-K exit harvest parameters to mitigate tire braking load transfer.",
+      aeroAdvice:
+        "Increase packer mechanical packer stops by +1.5mm to restrict high-speed splitter Grounding.",
     },
     physicsModels: {
       tireThermalGrowthRatio: 1.35,
       aeroVacuumSensitivity: 0.92,
       brakeMigrationRatio: 0.78,
-      ersWeightingFactor: 0.88
-    }
+      ersWeightingFactor: 0.88,
+    },
   },
   lemans: {
     id: "lemans",
@@ -83,23 +91,25 @@ export const TEAM_PROFILES: Record<"gt3" | "gtp" | "lemans", TeamKnowledgeProfil
     maxOptimalTempC: 90,
     criticalPitchLimitRad: -0.018,
     wheelspinMismatchLimitPct: 0.14,
-    primaryFocus: "Aerodynamic lift-and-coast fuel burn efficiency, straightaway top-speed decay, and drag coefficient profiles.",
+    primaryFocus:
+      "Aerodynamic lift-and-coast fuel burn efficiency, straightaway top-speed decay, and drag coefficient profiles.",
     scannerSensitivities: {
       brakeThreshold: 0.85,
-      durationSec: 0.20
+      durationSec: 0.2,
     },
     heuristics: {
       oversteerAdvice: "Slide wing angle to maximize rear horizontal flow drag profile recovery.",
       understeerAdvice: "Raise mechanical rake by raising rear ride heights +1.0mm.",
-      aeroAdvice: "Optimize splitter endplates and adjust wing trim levels to preserve top-speed vector coefficients."
+      aeroAdvice:
+        "Optimize splitter endplates and adjust wing trim levels to preserve top-speed vector coefficients.",
     },
     physicsModels: {
       tireThermalGrowthRatio: 1.05,
       aeroVacuumSensitivity: 0.35,
       brakeMigrationRatio: 0.55,
-      ersWeightingFactor: 0.12
-    }
-  }
+      ersWeightingFactor: 0.12,
+    },
+  },
 };
 
 import { useState, useEffect } from "react";

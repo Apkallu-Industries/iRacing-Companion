@@ -130,14 +130,24 @@ function create(opts = {}) {
 
     // 1. Generic onPacket callback (emits CoreTelemetryV1 + derived physics)
     try {
-      onPacket({ packet: normalized, source, sessionId: activeSessionId, sessionMeta: activeSessionMeta });
+      onPacket({
+        packet: normalized,
+        source,
+        sessionId: activeSessionId,
+        sessionMeta: activeSessionMeta,
+      });
     } catch (err) {
       console.warn("[ingestionController] onPacket callback error", err?.message || err);
     }
 
     // 2. Raw packet callback hook
     try {
-      onRawPacketCallback({ packet: rawPacket, source, sessionId: activeSessionId, sessionMeta: activeSessionMeta });
+      onRawPacketCallback({
+        packet: rawPacket,
+        source,
+        sessionId: activeSessionId,
+        sessionMeta: activeSessionMeta,
+      });
     } catch (err) {
       console.warn("[ingestionController] onRawPacket callback error", err?.message || err);
     }
@@ -187,7 +197,9 @@ function create(opts = {}) {
 
     // Backpressure Guard: drop packets if queue size exceeds MAX_QUEUE_LENGTH threshold
     if (queue.length >= MAX_QUEUE_LENGTH) {
-      console.warn(`[ingestionController] Backpressure active. Dropping telemetry packet from source: ${source}. Queue length: ${queue.length}`);
+      console.warn(
+        `[ingestionController] Backpressure active. Dropping telemetry packet from source: ${source}. Queue length: ${queue.length}`,
+      );
       return false;
     }
 
@@ -236,16 +248,22 @@ function create(opts = {}) {
 
     udpSocket = dgram.createSocket("udp4");
     udpSocket.on("message", handleUdpMessage);
-    udpSocket.on("error", (err) => console.warn("[ingestionController] UDP error", err?.message || err));
+    udpSocket.on("error", (err) =>
+      console.warn("[ingestionController] UDP error", err?.message || err),
+    );
     udpSocket.bind(udpPort, "127.0.0.1", () => {
       console.log(`[ingestionController] UDP listener bound to 127.0.0.1:${udpPort}`);
     });
 
     tcpServer = net.createServer((socket) => {
       socket.on("data", (chunk) => handleTcpData(socket, chunk));
-      socket.on("error", (err) => console.warn("[ingestionController] TCP client error", err?.message || err));
+      socket.on("error", (err) =>
+        console.warn("[ingestionController] TCP client error", err?.message || err),
+      );
     });
-    tcpServer.on("error", (err) => console.warn("[ingestionController] TCP server error", err?.message || err));
+    tcpServer.on("error", (err) =>
+      console.warn("[ingestionController] TCP server error", err?.message || err),
+    );
     tcpServer.listen(tcpPort, "127.0.0.1", () => {
       console.log(`[ingestionController] TCP listener bound to 127.0.0.1:${tcpPort}`);
     });
@@ -254,11 +272,15 @@ function create(opts = {}) {
   function closeTelemetryStream() {
     running = false;
     if (udpSocket) {
-      try { udpSocket.close(); } catch {}
+      try {
+        udpSocket.close();
+      } catch {}
       udpSocket = null;
     }
     if (tcpServer) {
-      try { tcpServer.close(); } catch {}
+      try {
+        tcpServer.close();
+      } catch {}
       tcpServer = null;
     }
     queue.length = 0;
@@ -285,7 +307,13 @@ function create(opts = {}) {
     if (!sessionId) return null;
     let session = sessions.get(sessionId);
     if (!session) {
-      session = { id: sessionId, meta: meta || {}, startedAt: Date.now(), endedAt: null, packetCount: 0 };
+      session = {
+        id: sessionId,
+        meta: meta || {},
+        startedAt: Date.now(),
+        endedAt: null,
+        packetCount: 0,
+      };
       sessions.set(sessionId, session);
     }
     activeSessionId = sessionId;

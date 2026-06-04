@@ -36,6 +36,7 @@ We will implement deep systems-level mouse interaction refinements across both t
 ### 1. TrackMap Component (`src/components/workbench/TrackMap.tsx`)
 
 #### [MODIFY] [TrackMap.tsx](file:///c:/Dev/iRacing-Companion/src/components/workbench/TrackMap.tsx)
+
 - Define `targetZoomRef`, `targetPanRef`, and `animRef` refs.
 - Build a unified, frame-interpolated `animateTo(nz, np, instant)` update loop.
 - Insert the `clampPan(p, zoom)` domain clamping function.
@@ -51,6 +52,7 @@ We will implement deep systems-level mouse interaction refinements across both t
 ### 2. Team Page (`src/routes/team.tsx`)
 
 #### [MODIFY] [team.tsx](file:///c:/Dev/iRacing-Companion/src/routes/team.tsx)
+
 - Enforce hard bounds checking on the timeline horizontal drag pan and wheel zoom.
 - Append a timing-desk style `<div className="absolute top-10 right-2 ...">` overlay showing the temporal span, bounds start/end minutes, and zoom factor whenever `timelineZoom > 1.0`.
 - Update container cursors dynamically depending on drag or LMB hold states:

@@ -4,7 +4,10 @@ export type MathContext = Record<string, number>;
 type Token =
   | { type: "number"; value: number }
   | { type: "ident"; value: string }
-  | { type: "op"; value: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "&&" | "||" }
+  | {
+      type: "op";
+      value: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "&&" | "||";
+    }
   | { type: "lparen" }
   | { type: "rparen" }
   | { type: "comma" };
@@ -13,7 +16,12 @@ type Node =
   | { kind: "number"; value: number }
   | { kind: "ident"; name: string }
   | { kind: "unary"; op: "-"; expr: Node }
-  | { kind: "binary"; op: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "&&" | "||"; left: Node; right: Node }
+  | {
+      kind: "binary";
+      op: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "&&" | "||";
+      left: Node;
+      right: Node;
+    }
   | {
       kind: "call";
       name:
@@ -494,7 +502,7 @@ export function evaluateMathExpressionForIbt(
     "const.deg_to_rad": 0.0174532925,
   };
 
-  const channelIdentifiers = compiled.identifiers.filter(id => !id.startsWith("const."));
+  const channelIdentifiers = compiled.identifiers.filter((id) => !id.startsWith("const."));
 
   for (const id of channelIdentifiers) {
     if (!(id in parsed.channels)) {

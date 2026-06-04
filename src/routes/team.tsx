@@ -28,14 +28,7 @@ import { useWorkbench } from "@/lib/store";
 import { resolveLLMUrl } from "@/lib/llm";
 import { useTelemetry } from "@/lib/useTelemetry";
 import { useTeamTelemetry, DriverTelemetrySnapshot } from "@/lib/useTeamTelemetry";
-import {
-  format,
-  addHours,
-  startOfHour,
-  addMinutes,
-  differenceInMinutes,
-  parseISO,
-} from "date-fns";
+import { format, addHours, startOfHour, addMinutes, differenceInMinutes, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/team")({
   head: () => ({
@@ -51,7 +44,13 @@ export const Route = createFileRoute("/team")({
   component: TeamPage,
 });
 
-type Driver = { id: string; name: string; shortName: string; color: string; status?: "Available" | "In Garage" | "Driving" | "Standby" };
+type Driver = {
+  id: string;
+  name: string;
+  shortName: string;
+  color: string;
+  status?: "Available" | "In Garage" | "Driving" | "Standby";
+};
 type Car = { id: string; name: string; number: string; carClass: "GTP" | "LMP2" | "GT3" };
 type Stint = {
   id: string;
@@ -134,7 +133,8 @@ function TeamPage() {
 
   // Le Mans / Endurance config
   const [raceDurationHours, setRaceDurationHours] = useState<number>(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("team_race_duration_h") : null;
+    const saved =
+      typeof window !== "undefined" ? localStorage.getItem("team_race_duration_h") : null;
     return saved ? Number(saved) : 6;
   });
   useEffect(() => {
@@ -158,18 +158,21 @@ function TeamPage() {
 
   // Helper to parse SVG path and map X values
   const mapPath = (dStr: string) => {
-    return dStr.replace(/([MQLC])\s*([-\d.]+),([-\d.]+)(?:\s+([-\d.]+),([-\d.]+))?(?:\s+([-\d.]+),([-\d.]+))?/g, (match, cmd, x1, y1, x2, y2, x3, y3) => {
-      const rx1 = mapX(parseFloat(x1));
-      if (x2 !== undefined && y2 !== undefined) {
-        const rx2 = mapX(parseFloat(x2));
-        if (x3 !== undefined && y3 !== undefined) {
-          const rx3 = mapX(parseFloat(x3));
-          return `${cmd} ${rx1},${y1} ${rx2},${y2} ${rx3},${y3}`;
+    return dStr.replace(
+      /([MQLC])\s*([-\d.]+),([-\d.]+)(?:\s+([-\d.]+),([-\d.]+))?(?:\s+([-\d.]+),([-\d.]+))?/g,
+      (match, cmd, x1, y1, x2, y2, x3, y3) => {
+        const rx1 = mapX(parseFloat(x1));
+        if (x2 !== undefined && y2 !== undefined) {
+          const rx2 = mapX(parseFloat(x2));
+          if (x3 !== undefined && y3 !== undefined) {
+            const rx3 = mapX(parseFloat(x3));
+            return `${cmd} ${rx1},${y1} ${rx2},${y2} ${rx3},${y3}`;
+          }
+          return `${cmd} ${rx1},${y1} ${rx2},${y2}`;
         }
-        return `${cmd} ${rx1},${y1} ${rx2},${y2}`;
-      }
-      return `${cmd} ${rx1},${y1}`;
-    });
+        return `${cmd} ${rx1},${y1}`;
+      },
+    );
   };
 
   // Helper to dynamically size stint slots across zoomed viewport
@@ -280,7 +283,7 @@ function TeamPage() {
     setHoveredStintIndex(stintIdx);
     // Auto-reset highlight after 2.5 seconds
     setTimeout(() => {
-      setHoveredStintIndex((current) => current === stintIdx ? null : current);
+      setHoveredStintIndex((current) => (current === stintIdx ? null : current));
     }, 2500);
 
     if (type === "temp") {
@@ -296,7 +299,7 @@ function TeamPage() {
 
   // Team Code — shared between all drivers for multi-car Realtime relay
   const [teamCode, setTeamCode] = useState<string>(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("team_code") ?? "") : ""
+    typeof window !== "undefined" ? (localStorage.getItem("team_code") ?? "") : "",
   );
   const [teamCodeInput, setTeamCodeInput] = useState("");
   const [showTeamCodePanel, setShowTeamCodePanel] = useState(false);
@@ -306,11 +309,11 @@ function TeamPage() {
   }, [teamCode]);
 
   // Subscribe to multi-driver team channel
-  const { drivers: teamDrivers, connected: teamConnected, onlineCount } = useTeamTelemetry(
-    teamCode || null
-  );
-
-
+  const {
+    drivers: teamDrivers,
+    connected: teamConnected,
+    onlineCount,
+  } = useTeamTelemetry(teamCode || null);
 
   /** Generate a unique team code from race name + random suffix */
   const generateTeamCode = () => {
@@ -355,10 +358,38 @@ function TeamPage() {
     }
     // Initialise stints map to pre-populate Porsche stints matching Image 2
     return [
-      { id: "stint_c1_0", carId: "c1", driverId: "d3", startTime: "2026-05-28T15:00:00.000Z", endTime: "2026-05-28T16:12:45.000Z", note: "LAPS 1-45" },
-      { id: "stint_c1_1", carId: "c1", driverId: "d1", startTime: "2026-05-28T16:15:20.000Z", endTime: "2026-05-28T17:18:00.000Z", note: "LAPS 46-90" },
-      { id: "stint_c1_2", carId: "c1", driverId: "d2", startTime: "2026-05-28T17:23:00.000Z", endTime: "2026-05-28T18:26:00.000Z", note: "LAPS 92-135" },
-      { id: "stint_c1_3", carId: "c1", driverId: "d3", startTime: "2026-05-28T18:28:00.000Z", endTime: "2026-05-28T21:00:00.000Z", note: "LAPS 137-215" },
+      {
+        id: "stint_c1_0",
+        carId: "c1",
+        driverId: "d3",
+        startTime: "2026-05-28T15:00:00.000Z",
+        endTime: "2026-05-28T16:12:45.000Z",
+        note: "LAPS 1-45",
+      },
+      {
+        id: "stint_c1_1",
+        carId: "c1",
+        driverId: "d1",
+        startTime: "2026-05-28T16:15:20.000Z",
+        endTime: "2026-05-28T17:18:00.000Z",
+        note: "LAPS 46-90",
+      },
+      {
+        id: "stint_c1_2",
+        carId: "c1",
+        driverId: "d2",
+        startTime: "2026-05-28T17:23:00.000Z",
+        endTime: "2026-05-28T18:26:00.000Z",
+        note: "LAPS 92-135",
+      },
+      {
+        id: "stint_c1_3",
+        carId: "c1",
+        driverId: "d3",
+        startTime: "2026-05-28T18:28:00.000Z",
+        endTime: "2026-05-28T21:00:00.000Z",
+        note: "LAPS 137-215",
+      },
     ];
   });
 
@@ -405,7 +436,7 @@ function TeamPage() {
   useEffect(() => {
     localStorage.setItem("team_cars", JSON.stringify(cars));
     if (cars.length > 0) {
-      if (!selectedCarId || !cars.some(c => c.id === selectedCarId)) {
+      if (!selectedCarId || !cars.some((c) => c.id === selectedCarId)) {
         setSelectedCarId(cars[0].id);
       }
     } else {
@@ -444,14 +475,18 @@ function TeamPage() {
   const [isAddStintOpen, setIsAddStintOpen] = useState(false);
   const [isAddIncidentOpen, setIsAddIncidentOpen] = useState(false);
 
-
   // New item states
   const [newCar, setNewCar] = useState({
     name: "",
     number: "",
     carClass: "GT3" as "GT3" | "GTP" | "LMP2",
   });
-  const [newDriver, setNewDriver] = useState({ name: "", shortName: "", color: "#3B82F6", status: "Available" as Driver["status"] });
+  const [newDriver, setNewDriver] = useState({
+    name: "",
+    shortName: "",
+    color: "#3B82F6",
+    status: "Available" as Driver["status"],
+  });
   const [newWeather, setNewWeather] = useState({
     type: "Sunny" as WeatherType,
     startOffset: 0,
@@ -534,8 +569,11 @@ function TeamPage() {
           id: `c_discovered_${carNum}`,
           name: snap.carName,
           number: carNum,
-          carClass: snap.carName.toUpperCase().includes("GT3") ? "GT3" : 
-                    snap.carName.toUpperCase().includes("LMP2") ? "LMP2" : "GTP",
+          carClass: snap.carName.toUpperCase().includes("GT3")
+            ? "GT3"
+            : snap.carName.toUpperCase().includes("LMP2")
+              ? "LMP2"
+              : "GTP",
         });
         carsUpdated = true;
       }
@@ -543,7 +581,7 @@ function TeamPage() {
       // 2. Discover and register driver if not exists
       if (snap.driverName && snap.driverName !== "Unknown Driver") {
         const existingDriver = nextDrivers.find(
-          (d) => d.name.toLowerCase() === snap.driverName.toLowerCase()
+          (d) => d.name.toLowerCase() === snap.driverName.toLowerCase(),
         );
         if (!existingDriver) {
           const lastName = snap.driverName.split(" ").slice(-1)[0] || "DRV";
@@ -552,7 +590,11 @@ function TeamPage() {
             id: `d_discovered_${snap.carNumber}_${Date.now()}`,
             name: snap.driverName,
             shortName: shortSig,
-            color: "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0"),
+            color:
+              "#" +
+              Math.floor(Math.random() * 16777215)
+                .toString(16)
+                .padStart(6, "0"),
             status: snap.isOnline ? "Driving" : "Available",
           });
           driversUpdated = true;
@@ -608,10 +650,37 @@ function TeamPage() {
     const startHour = parseISO(raceStartTime).getHours();
     const elapsedH = Math.max(0, raceElapsedMs) / 3_600_000;
     const currentHour = (startHour + elapsedH) % 24;
-    if (currentHour >= 6 && currentHour < 9) return { label: "DAWN", color: "text-orange-300", bg: "bg-orange-500/10", border: "border-orange-500/20", icon: "🌅" };
-    if (currentHour >= 9 && currentHour < 18) return { label: "DAY", color: "text-yellow-300", bg: "bg-yellow-500/10", border: "border-yellow-500/20", icon: "☀️" };
-    if (currentHour >= 18 && currentHour < 21) return { label: "DUSK", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", icon: "🌇" };
-    return { label: "NIGHT", color: "text-blue-300", bg: "bg-blue-900/20", border: "border-blue-500/20", icon: "🌙" };
+    if (currentHour >= 6 && currentHour < 9)
+      return {
+        label: "DAWN",
+        color: "text-orange-300",
+        bg: "bg-orange-500/10",
+        border: "border-orange-500/20",
+        icon: "🌅",
+      };
+    if (currentHour >= 9 && currentHour < 18)
+      return {
+        label: "DAY",
+        color: "text-yellow-300",
+        bg: "bg-yellow-500/10",
+        border: "border-yellow-500/20",
+        icon: "☀️",
+      };
+    if (currentHour >= 18 && currentHour < 21)
+      return {
+        label: "DUSK",
+        color: "text-amber-400",
+        bg: "bg-amber-500/10",
+        border: "border-amber-500/20",
+        icon: "🌇",
+      };
+    return {
+      label: "NIGHT",
+      color: "text-blue-300",
+      bg: "bg-blue-900/20",
+      border: "border-blue-500/20",
+      icon: "🌙",
+    };
   }, [raceStartTime, raceElapsedMs]);
 
   // Driver fatigue tracker — sum up stint durations per driver
@@ -658,10 +727,38 @@ function TeamPage() {
     ];
 
     const demoStints: Stint[] = [
-      { id: "stint_c1_0", carId: "c1", driverId: "d3", startTime: baseTime.toISOString(), endTime: addMinutes(baseTime, 72.75).toISOString(), note: "LAPS 1-45" },
-      { id: "stint_c1_1", carId: "c1", driverId: "d1", startTime: addMinutes(baseTime, 75.3).toISOString(), endTime: addMinutes(baseTime, 138).toISOString(), note: "LAPS 46-90" },
-      { id: "stint_c1_2", carId: "c1", driverId: "d2", startTime: addMinutes(baseTime, 143).toISOString(), endTime: addMinutes(baseTime, 206).toISOString(), note: "LAPS 92-135" },
-      { id: "stint_c1_3", carId: "c1", driverId: "d3", startTime: addMinutes(baseTime, 208).toISOString(), endTime: addMinutes(baseTime, 360).toISOString(), note: "LAPS 137-215" },
+      {
+        id: "stint_c1_0",
+        carId: "c1",
+        driverId: "d3",
+        startTime: baseTime.toISOString(),
+        endTime: addMinutes(baseTime, 72.75).toISOString(),
+        note: "LAPS 1-45",
+      },
+      {
+        id: "stint_c1_1",
+        carId: "c1",
+        driverId: "d1",
+        startTime: addMinutes(baseTime, 75.3).toISOString(),
+        endTime: addMinutes(baseTime, 138).toISOString(),
+        note: "LAPS 46-90",
+      },
+      {
+        id: "stint_c1_2",
+        carId: "c1",
+        driverId: "d2",
+        startTime: addMinutes(baseTime, 143).toISOString(),
+        endTime: addMinutes(baseTime, 206).toISOString(),
+        note: "LAPS 92-135",
+      },
+      {
+        id: "stint_c1_3",
+        carId: "c1",
+        driverId: "d3",
+        startTime: addMinutes(baseTime, 208).toISOString(),
+        endTime: addMinutes(baseTime, 360).toISOString(),
+        note: "LAPS 137-215",
+      },
     ];
 
     setDrivers(demoDrivers);
@@ -697,21 +794,27 @@ function TeamPage() {
     setAiLoading(true);
     setAiResponse("");
     try {
-      const serializedDrivers = drivers.map(d => `${d.name} (${d.shortName})`).join(", ");
-      const serializedCars = cars.map(c => `Car #${c.number} (${c.name}, Class: ${c.carClass})`).join(", ");
-      
-      const serializedStints = stints.map(s => {
-        const dr = drivers.find(d => d.id === s.driverId);
-        const cr = cars.find(c => c.id === s.carId);
-        return `- Driver: ${dr ? dr.name : "Unknown"} on Car #${cr ? cr.number : "Unknown"}. Scheduled from ${format(parseISO(s.startTime), "HH:mm")} to ${format(parseISO(s.endTime), "HH:mm")}.${s.note ? ` Note: ${s.note}` : ""}`;
-      }).join("\n");
+      const serializedDrivers = drivers.map((d) => `${d.name} (${d.shortName})`).join(", ");
+      const serializedCars = cars
+        .map((c) => `Car #${c.number} (${c.name}, Class: ${c.carClass})`)
+        .join(", ");
+
+      const serializedStints = stints
+        .map((s) => {
+          const dr = drivers.find((d) => d.id === s.driverId);
+          const cr = cars.find((c) => c.id === s.carId);
+          return `- Driver: ${dr ? dr.name : "Unknown"} on Car #${cr ? cr.number : "Unknown"}. Scheduled from ${format(parseISO(s.startTime), "HH:mm")} to ${format(parseISO(s.endTime), "HH:mm")}.${s.note ? ` Note: ${s.note}` : ""}`;
+        })
+        .join("\n");
 
       const allowedTyresStr = [
         tyreSoftAllowed && "SOFT",
         tyreMediumAllowed && "MEDIUM",
         tyreHardAllowed && "HARD",
-        tyreWetAllowed && "WET"
-      ].filter(Boolean).join(", ");
+        tyreWetAllowed && "WET",
+      ]
+        .filter(Boolean)
+        .join(", ");
 
       const prompt = `You are a legendary race strategist and principal race engineer in competitive endurance motorsport. 
 Analyze the current team race schedule and timeline:
@@ -735,7 +838,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
       const { llmBaseUrl, llmModelId, llmApiKey } = useWorkbench.getState();
       const url = resolveLLMUrl(llmBaseUrl);
-      
+
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (llmApiKey) {
         headers["Authorization"] = `Bearer ${llmApiKey}`;
@@ -785,7 +888,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
     } catch (err: any) {
       const { llmBaseUrl } = useWorkbench.getState();
       setAiResponse(
-        `Error invoking Local LLM: ${err.message}\n\nVerify that your Local LLM Server is running at "${llmBaseUrl}" and CORS is enabled! If using Ollama, launch with OLLAMA_ORIGINS="*" environment variable.`
+        `Error invoking Local LLM: ${err.message}\n\nVerify that your Local LLM Server is running at "${llmBaseUrl}" and CORS is enabled! If using Ollama, launch with OLLAMA_ORIGINS="*" environment variable.`,
       );
     } finally {
       setAiLoading(false);
@@ -897,11 +1000,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
   // Drag & Drop driver assignment handler
   const handleStintDriverDrop = (stintSlotIndex: number, driverId: string) => {
     if (!selectedCarId) return;
-    
+
     // Stint template mapping matching the 4 slots shown in Image 2
     const targetStintId = `stint_${selectedCarId}_${stintSlotIndex}`;
-    const existingIndex = stints.findIndex(s => s.carId === selectedCarId && s.id === targetStintId);
-    
+    const existingIndex = stints.findIndex(
+      (s) => s.carId === selectedCarId && s.id === targetStintId,
+    );
+
     const updatedStints = [...stints];
     if (existingIndex !== -1) {
       updatedStints[existingIndex] = {
@@ -924,18 +1029,26 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
     setStints(updatedStints);
 
     // Update driver status in active roster as "Driving"
-    setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, status: "Driving" } : d.id !== driverId && d.status === "Driving" ? { ...d, status: "Available" } : d));
+    setDrivers((prev) =>
+      prev.map((d) =>
+        d.id === driverId
+          ? { ...d, status: "Driving" }
+          : d.id !== driverId && d.status === "Driving"
+            ? { ...d, status: "Available" }
+            : d,
+      ),
+    );
   };
 
   // Helper to fetch scheduled stints for the selected active car
   const activeStints = useMemo(() => {
     if (!selectedCarId) return [];
-    
+
     // We guarantee 4 Stint blocks always map to the timeline track for strategy planning (aligning with Image 2)
     const result = [];
     for (let idx = 0; idx < 4; idx++) {
       const stintId = `stint_${selectedCarId}_${idx}`;
-      const existing = stints.find(s => s.carId === selectedCarId && s.id === stintId);
+      const existing = stints.find((s) => s.carId === selectedCarId && s.id === stintId);
       if (existing) {
         result.push(existing);
       } else {
@@ -965,14 +1078,29 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSparkData(prev => {
+      setSparkData((prev) => {
         const appendVal = (arr: number[], val: number) => [...arr.slice(1), val];
         const snap = activeSnapshotRef.current;
-        const nextSpeed = snap && snap.speedKph > 0 ? snap.speedKph : (t.connected ? t.speedKph : Math.round(180 + Math.random() * 80));
+        const nextSpeed =
+          snap && snap.speedKph > 0
+            ? snap.speedKph
+            : t.connected
+              ? t.speedKph
+              : Math.round(180 + Math.random() * 80);
         const nextThrottle = t.connected ? t.throttle : Math.round(40 + Math.random() * 60);
         const nextBrake = t.connected ? t.brake : Math.round(Math.random() * 10);
-        const nextRpm = snap && snap.rpm > 0 ? snap.rpm : (t.connected ? t.rpm : Math.round(5500 + Math.random() * 2000));
-        const nextFuel = snap && snap.fuelRemainingL > 0 ? snap.fuelRemainingL : (t.connected ? t.fuelRemainingL : Math.round(52.8 + Math.random() * 1.5));
+        const nextRpm =
+          snap && snap.rpm > 0
+            ? snap.rpm
+            : t.connected
+              ? t.rpm
+              : Math.round(5500 + Math.random() * 2000);
+        const nextFuel =
+          snap && snap.fuelRemainingL > 0
+            ? snap.fuelRemainingL
+            : t.connected
+              ? t.fuelRemainingL
+              : Math.round(52.8 + Math.random() * 1.5);
 
         return {
           speed: appendVal(prev.speed, nextSpeed),
@@ -988,14 +1116,20 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
   // Helper to toggle driver active status in registry
   const cycleDriverStatus = (driverId: string) => {
-    setDrivers(prev => prev.map(d => {
-      if (d.id !== driverId) return d;
-      const nextStatus: Driver["status"] = 
-        d.status === "Available" ? "In Garage" :
-        d.status === "In Garage" ? "Driving" :
-        d.status === "Driving" ? "Standby" : "Available";
-      return { ...d, status: nextStatus };
-    }));
+    setDrivers((prev) =>
+      prev.map((d) => {
+        if (d.id !== driverId) return d;
+        const nextStatus: Driver["status"] =
+          d.status === "Available"
+            ? "In Garage"
+            : d.status === "In Garage"
+              ? "Driving"
+              : d.status === "Driving"
+                ? "Standby"
+                : "Available";
+        return { ...d, status: nextStatus };
+      }),
+    );
   };
 
   return (
@@ -1006,18 +1140,22 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
       {/* Top Main branding & Live Status Timing Header */}
       <header className="h-10 border-b border-[#1c2430] bg-[#0b0f14] px-3 flex items-center justify-between relative z-10 shrink-0 select-none">
         <div className="flex items-center gap-2.5">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-[8.5px] font-black text-[#7a828c] hover:text-white uppercase tracking-widest border border-[#1c2430] bg-[#11161d] px-2 py-0.5 rounded-none flex items-center gap-1 transition-all cursor-pointer hover:bg-zinc-800"
           >
             ← MENU
           </Link>
           <span className="h-3.5 w-px bg-[#1c2430]" />
-          <span className="text-white font-black italic tracking-widest text-[11px] bg-gradient-to-r from-red-600 to-red-800 px-1.5 py-0.5 border border-red-500/20 rounded-none font-orbitron">PITWALL</span>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-[#7a828c] font-bold font-rajdhani hidden sm:inline">TEAM COMMAND CENTRE</span>
+          <span className="text-white font-black italic tracking-widest text-[11px] bg-gradient-to-r from-red-600 to-red-800 px-1.5 py-0.5 border border-red-500/20 rounded-none font-orbitron">
+            PITWALL
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[#7a828c] font-bold font-rajdhani hidden sm:inline">
+            TEAM COMMAND CENTRE
+          </span>
           <span className="h-3.5 w-px bg-[#1c2430] hidden sm:inline" />
-          <Link 
-            to="/team-guide" 
+          <Link
+            to="/team-guide"
             className="text-[8px] font-black text-[#3B82F6] hover:underline uppercase tracking-widest hidden sm:inline"
           >
             📖 SETUP GUIDE
@@ -1028,8 +1166,12 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
         <div className="flex items-center gap-6 text-[8.5px] font-rajdhani">
           <div className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-[#00D17F] shadow-[0_0_6px_#00D17F] animate-pulse" />
-            <span className="font-bold text-[#00D17F] uppercase tracking-widest text-[9.5px]">LIVE</span>
-            <span className="text-[#7a828c] uppercase font-bold hidden md:inline tracking-widest text-[9px]">CIRCUIT DE SPA-FRANCORCHAMPS</span>
+            <span className="font-bold text-[#00D17F] uppercase tracking-widest text-[9.5px]">
+              LIVE
+            </span>
+            <span className="text-[#7a828c] uppercase font-bold hidden md:inline tracking-widest text-[9px]">
+              CIRCUIT DE SPA-FRANCORCHAMPS
+            </span>
           </div>
 
           <div className="h-3 w-px bg-[#1c2430]" />
@@ -1043,11 +1185,11 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
         {/* Active operator dial */}
         <div className="flex items-center gap-3 text-[9px] font-rajdhani">
           {teamCode && (
-            <span 
+            <span
               onClick={() => setShowTeamCodePanel(true)}
               className={`text-[8px] font-black uppercase tracking-widest border px-1.5 py-0.5 rounded-none cursor-pointer transition-all ${
-                teamConnected 
-                  ? "text-[#00D17F] border-[#00D17F]/25 bg-[#00D17F]/5 hover:bg-[#00D17F]/10" 
+                teamConnected
+                  ? "text-[#00D17F] border-[#00D17F]/25 bg-[#00D17F]/5 hover:bg-[#00D17F]/10"
                   : "text-[#FF4D4D] border-red-500/25 bg-red-500/5 hover:bg-red-500/10 animate-pulse"
               }`}
             >
@@ -1058,28 +1200,29 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             type="button"
             onClick={() => setShowManagerSettings(!showManagerSettings)}
             className={`text-[8px] font-black uppercase tracking-widest border px-1.5 py-0.5 rounded-none cursor-pointer transition-all ${
-              showManagerSettings 
-                ? "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10 animate-pulse" 
+              showManagerSettings
+                ? "text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10 animate-pulse"
                 : "text-[#7a828c] hover:text-white border-[#1c2430] bg-[#0b0f14]"
             }`}
           >
             🔧 SETTINGS
           </button>
-          <Link to="/settings" className="p-0.5 hover:bg-[#11161d] border border-transparent hover:border-[#1c2430] text-[#7a828c] hover:text-white rounded-none transition-all">
+          <Link
+            to="/settings"
+            className="p-0.5 hover:bg-[#11161d] border border-transparent hover:border-[#1c2430] text-[#7a828c] hover:text-white rounded-none transition-all"
+          >
             <Settings className="w-3.5 h-3.5" />
           </Link>
         </div>
       </header>
 
       {/* Main Grid Deck splits into Column 1 (Left), Column 2 (Center), and Column 3 (Right) - Contiguous Zero Margins */}
-      <div 
+      <div
         className="flex-1 grid gap-0 relative z-10 min-h-0 bg-[#05070a] border-b border-[#1c2430] rounded-none"
         style={{ gridTemplateColumns: "18% 64% 18%" }}
       >
-        
         {/* COLUMN 1: SELECT CAR & DRIVER ROSTER DOSSIER - Shared Borders */}
         <section className="border-r border-[#1c2430] bg-[#0b0f14] flex flex-col justify-start select-none overflow-hidden h-full rounded-none">
-          
           {/* SECTION 1: SELECT ACTIVE VEHICLE */}
           <div className="border-b border-[#1c2430] flex flex-col justify-between shrink-0 rounded-none">
             <div className="px-2.5 py-1.5 bg-[#11161d] border-b border-[#1c2430] flex items-center justify-between select-none">
@@ -1097,12 +1240,18 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             <div className="p-1.5 space-y-1.5 max-h-44 overflow-y-auto scrollbar-hide">
               {cars.map((c) => {
                 const isSelected = c.id === selectedCarId;
-                const carStints = stints.filter(s => s.carId === c.id);
+                const carStints = stints.filter((s) => s.carId === c.id);
                 // Extract driver labels assigned to this car
-                const assignedDrivers = Array.from(new Set(carStints.map(s => {
-                  const d = drivers.find(drv => drv.id === s.driverId);
-                  return d ? d.name.split(" ").slice(-1)[0] : null;
-                }).filter(Boolean)));
+                const assignedDrivers = Array.from(
+                  new Set(
+                    carStints
+                      .map((s) => {
+                        const d = drivers.find((drv) => drv.id === s.driverId);
+                        return d ? d.name.split(" ").slice(-1)[0] : null;
+                      })
+                      .filter(Boolean),
+                  ),
+                );
 
                 return (
                   <div
@@ -1115,7 +1264,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     }`}
                   >
                     {/* Car Silhouette Icon */}
-                    <div className={`p-1.5 rounded-none bg-[#05070a] border border-[#1c2430] flex items-center justify-center shrink-0 ${isSelected ? "text-[#3B82F6]" : "text-[#7a828c]"}`}>
+                    <div
+                      className={`p-1.5 rounded-none bg-[#05070a] border border-[#1c2430] flex items-center justify-center shrink-0 ${isSelected ? "text-[#3B82F6]" : "text-[#7a828c]"}`}
+                    >
                       <CarIcon className="w-4 h-4" />
                     </div>
 
@@ -1135,12 +1286,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       {/* Display assigned drivers */}
                       <div className="flex flex-wrap items-center gap-1 mt-1">
                         {assignedDrivers.map((dName, i) => (
-                          <span key={i} className="text-[6.5px] bg-[#11161d] border border-[#1c2430] text-[#7a828c] px-1 rounded-none font-bold uppercase tracking-wider">
+                          <span
+                            key={i}
+                            className="text-[6.5px] bg-[#11161d] border border-[#1c2430] text-[#7a828c] px-1 rounded-none font-bold uppercase tracking-wider"
+                          >
                             {dName}
                           </span>
                         ))}
                         {assignedDrivers.length === 0 && (
-                          <span className="text-[6.5px] text-[#7a828c] italic uppercase">No stint assigned</span>
+                          <span className="text-[6.5px] text-[#7a828c] italic uppercase">
+                            No stint assigned
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1179,23 +1335,29 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             <div className="p-1.5 space-y-1.5 flex-1 overflow-y-auto scrollbar-hide">
               {drivers.map((d) => {
                 // Count scheduled stints on selected car
-                const scheduledStintCount = stints.filter(s => s.carId === selectedCarId && s.driverId === d.id).length;
+                const scheduledStintCount = stints.filter(
+                  (s) => s.carId === selectedCarId && s.driverId === d.id,
+                ).length;
                 const isFiltered = selectedRosterDriverId === d.id;
 
                 // Match with team real-time channel driver online status
                 const teamSnap = Array.from(teamDrivers.values()).find(
-                  (snap) => snap.driverName.toLowerCase().includes(d.name.toLowerCase()) || 
-                            d.name.toLowerCase().includes(snap.driverName.toLowerCase())
+                  (snap) =>
+                    snap.driverName.toLowerCase().includes(d.name.toLowerCase()) ||
+                    d.name.toLowerCase().includes(snap.driverName.toLowerCase()),
                 );
                 const isTeamOnline = teamSnap?.isOnline ?? false;
-                const statusStr = isTeamOnline ? "Driving" : (d.status || "Available");
+                const statusStr = isTeamOnline ? "Driving" : d.status || "Available";
 
                 // Set color indicators matching active statuses
-                const activeColor = 
-                  statusStr === "Driving" ? "text-red-400 bg-red-500/10 border-red-500/25 shadow-[0_0_6px_rgba(239,68,68,0.1)]" :
-                  statusStr === "Available" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_6px_rgba(16,185,129,0.1)]" :
-                  statusStr === "In Garage" ? "text-blue-400 bg-blue-500/10 border-blue-500/25 shadow-[0_0_6px_rgba(59,130,246,0.1)]" :
-                  "text-amber-400 bg-amber-500/10 border-amber-500/25 shadow-[0_0_6px_rgba(245,158,11,0.1)]";
+                const activeColor =
+                  statusStr === "Driving"
+                    ? "text-red-400 bg-red-500/10 border-red-500/25 shadow-[0_0_6px_rgba(239,68,68,0.1)]"
+                    : statusStr === "Available"
+                      ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_6px_rgba(16,185,129,0.1)]"
+                      : statusStr === "In Garage"
+                        ? "text-blue-400 bg-blue-500/10 border-blue-500/25 shadow-[0_0_6px_rgba(59,130,246,0.1)]"
+                        : "text-amber-400 bg-amber-500/10 border-amber-500/25 shadow-[0_0_6px_rgba(245,158,11,0.1)]";
 
                 return (
                   <div
@@ -1246,8 +1408,12 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     <div className="flex items-center gap-3">
                       {/* Interactive stint count index */}
                       <div className="text-right font-rajdhani">
-                        <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block font-bold leading-none">STINTS</span>
-                        <span className="text-[9px] font-black text-white font-mono leading-none tracking-widest block mt-0.5">{scheduledStintCount} / 5</span>
+                        <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block font-bold leading-none">
+                          STINTS
+                        </span>
+                        <span className="text-[9px] font-black text-white font-mono leading-none tracking-widest block mt-0.5">
+                          {scheduledStintCount} / 5
+                        </span>
                       </div>
 
                       {/* Status indicator button */}
@@ -1309,7 +1475,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
             <div className="grid grid-cols-3 gap-2">
               <div className="flex flex-col gap-1">
-                <span className="text-[#7a828c] text-[6.5px] uppercase font-bold">BURN (L/LAP)</span>
+                <span className="text-[#7a828c] text-[6.5px] uppercase font-bold">
+                  BURN (L/LAP)
+                </span>
                 <input
                   type="number"
                   step="0.01"
@@ -1341,22 +1509,30 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             <div className="grid grid-cols-2 gap-2 bg-[#05070a] border border-[#1c2430] p-1.5 rounded-none text-[7.5px] leading-tight">
               <div>
                 <span className="text-[#7a828c] block text-[6.5px]">FUEL PER STINT</span>
-                <span className="text-white font-bold font-mono text-[9px]">{calculatedFuelRequired} L</span>
+                <span className="text-white font-bold font-mono text-[9px]">
+                  {calculatedFuelRequired} L
+                </span>
               </div>
               <div>
                 <span className="text-[#7a828c] block text-[6.5px]">STINT DURATION</span>
-                <span className="text-white font-bold font-mono text-[9px]">{formatDuration(calculatedStintDurationMin)}</span>
+                <span className="text-white font-bold font-mono text-[9px]">
+                  {formatDuration(calculatedStintDurationMin)}
+                </span>
               </div>
               {enduranceFuelPlan && (
                 <>
                   <div className="border-t border-[#1c2430]/50 pt-1 mt-1 col-span-2 grid grid-cols-2 gap-2">
                     <div>
                       <span className="text-[#7a828c] block text-[6.5px]">EST. TOTAL FUEL</span>
-                      <span className="text-[#00D17F] font-bold font-mono text-[9px]">{enduranceFuelPlan.totalFuel.toFixed(1)} L</span>
+                      <span className="text-[#00D17F] font-bold font-mono text-[9px]">
+                        {enduranceFuelPlan.totalFuel.toFixed(1)} L
+                      </span>
                     </div>
                     <div>
                       <span className="text-[#7a828c] block text-[6.5px]">EST. PIT STOPS</span>
-                      <span className="text-[#3B82F6] font-bold font-mono text-[9px]">{enduranceFuelPlan.pitStops} STOPS</span>
+                      <span className="text-[#3B82F6] font-bold font-mono text-[9px]">
+                        {enduranceFuelPlan.pitStops} STOPS
+                      </span>
                     </div>
                   </div>
                 </>
@@ -1396,25 +1572,37 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
         {/* COLUMN 2: RACE TIMELINE & TACTICAL STRATEGY GRAPHS - Shared Borders */}
         <section className="border-r border-[#1c2430] flex flex-col bg-[#05070a] overflow-hidden h-full rounded-none">
-          
           {/* SECTION 4: RACE TIMELINE & STRATEGY PLANNER */}
           <div className="border-b border-[#1c2430] bg-[#0b0f14] p-2.5 flex flex-col justify-between flex-1 min-h-0 relative z-10 rounded-none overflow-y-auto scrollbar-hide">
-            
             {/* Header statistics panel */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5 pb-2 border-b border-[#1c2430]/70 select-none font-rajdhani">
               <div className="flex items-center gap-4 flex-wrap">
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#E2E4E8]">
                   4 RACE TIMELINE & STRATEGY PLANNER
                 </span>
-                
+
                 {/* Active Focus Mode Toggles */}
                 <div className="flex bg-[#05070a] border border-[#1c2430] rounded-none p-0.5 text-[7px] font-black tracking-widest uppercase">
-                  <span className="px-1.5 py-0.5 text-[#7a828c] select-none border-r border-[#1c2430]/60">FOCUS:</span>
+                  <span className="px-1.5 py-0.5 text-[#7a828c] select-none border-r border-[#1c2430]/60">
+                    FOCUS:
+                  </span>
                   {[
-                    { id: "green", label: "GREEN_FLAG", color: "text-[#00D17F] hover:bg-[#00D17F]/10" },
-                    { id: "fcy", label: "FCY_CAUTION", color: "text-[#FFB800] hover:bg-[#FFB800]/10 animate-pulse" },
-                    { id: "wet", label: "RAIN_ONSET", color: "text-[#3B82F6] hover:bg-[#3B82F6]/10" }
-                  ].map(mode => {
+                    {
+                      id: "green",
+                      label: "GREEN_FLAG",
+                      color: "text-[#00D17F] hover:bg-[#00D17F]/10",
+                    },
+                    {
+                      id: "fcy",
+                      label: "FCY_CAUTION",
+                      color: "text-[#FFB800] hover:bg-[#FFB800]/10 animate-pulse",
+                    },
+                    {
+                      id: "wet",
+                      label: "RAIN_ONSET",
+                      color: "text-[#3B82F6] hover:bg-[#3B82F6]/10",
+                    },
+                  ].map((mode) => {
                     const active = focusMode === mode.id;
                     return (
                       <button
@@ -1427,9 +1615,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                           if (mode.id === "wet") setGraphTab("temp");
                         }}
                         className={`px-2 py-0.5 cursor-pointer rounded-none border-0 transition-all font-mono font-bold ${
-                          active 
-                            ? "bg-[#1c2430] text-white" 
-                            : `${mode.color}`
+                          active ? "bg-[#1c2430] text-white" : `${mode.color}`
                         }`}
                       >
                         {mode.label}
@@ -1440,8 +1626,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
                 {/* Variable Temporal Zooming */}
                 <div className="flex bg-[#05070a] border border-[#1c2430] rounded-none p-0.5 text-[7px] font-black tracking-widest uppercase font-rajdhani">
-                  <span className="px-1.5 py-0.5 text-[#7a828c] select-none border-r border-[#1c2430]/60">ZOOM:</span>
-                  {["24h", "6h", "1h", "15m"].map(level => {
+                  <span className="px-1.5 py-0.5 text-[#7a828c] select-none border-r border-[#1c2430]/60">
+                    ZOOM:
+                  </span>
+                  {["24h", "6h", "1h", "15m"].map((level) => {
                     const active = zoomLevel === level;
                     return (
                       <button
@@ -1449,9 +1637,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         type="button"
                         onClick={() => applyZoomPreset(level as any)}
                         className={`px-1.8 py-0.5 cursor-pointer rounded-none border-0 transition-all font-mono font-bold ${
-                          active 
-                            ? "bg-[#1c2430] text-white" 
-                            : "text-[#7a828c] hover:text-white"
+                          active ? "bg-[#1c2430] text-white" : "text-[#7a828c] hover:text-white"
                         }`}
                       >
                         {level.toUpperCase()}
@@ -1465,7 +1651,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               <div className="flex flex-wrap items-center gap-3 text-[7.5px] font-mono tracking-widest uppercase font-black">
                 <div className="text-right">
                   <span className="text-[#7a828c] block">RACE DURATION</span>
-                  <span className="text-white text-[9px]">{String(raceDurationHours).padStart(2, '0')}:00:00</span>
+                  <span className="text-white text-[9px]">
+                    {String(raceDurationHours).padStart(2, "0")}:00:00
+                  </span>
                 </div>
                 <div className="w-px h-5 bg-[#1c2430]" />
                 <div className="text-right">
@@ -1495,7 +1683,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                 <div className="w-px h-5 bg-[#1c2430]" />
                 <div className="text-right">
                   <span className="text-[#7a828c] block">STRATEGY SCORE</span>
-                  <span className="text-[#00D17F] text-[9px] drop-shadow-[0_0_4px_#00D17F]">92%</span>
+                  <span className="text-[#00D17F] text-[9px] drop-shadow-[0_0_4px_#00D17F]">
+                    92%
+                  </span>
                 </div>
               </div>
             </div>
@@ -1503,16 +1693,18 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             {showManagerSettings && (
               <div className="border border-[#FFB800]/30 bg-[#FFB800]/5 p-3 rounded-none mb-3 grid grid-cols-1 md:grid-cols-3 gap-3 relative font-mono text-left select-none shrink-0">
                 <div className="absolute top-0 right-0 h-full w-1.5 bg-[#FFB800]" />
-                
+
                 {/* Column 1: Race session setup */}
                 <div className="space-y-2 border-r border-[#1c2430] pr-3">
                   <span className="text-[9.5px] font-black text-[#FFB800] uppercase tracking-wider block font-rajdhani">
                     🏆 RACE SESSION PARAMETERS
                   </span>
-                  
+
                   {/* Duration input */}
                   <div className="flex flex-col gap-1 text-[8.5px]">
-                    <label className="text-[#7a828c] uppercase font-bold">Race Duration (Hours)</label>
+                    <label className="text-[#7a828c] uppercase font-bold">
+                      Race Duration (Hours)
+                    </label>
                     <div className="flex bg-black border border-[#1c2430] p-0.5">
                       {[1, 2, 4, 6, 12, 24].map((h) => {
                         const isDur = raceDurationHours === h;
@@ -1554,21 +1746,47 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
                   {/* Active tyre compound checklist */}
                   <div className="flex flex-col gap-1 text-[8.5px] pt-1">
-                    <label className="text-[#7a828c] uppercase font-bold">Allowed Tyre Compounds</label>
+                    <label className="text-[#7a828c] uppercase font-bold">
+                      Allowed Tyre Compounds
+                    </label>
                     <div className="grid grid-cols-2 gap-1.5 font-mono text-[8px] text-white">
                       {[
-                        { id: "soft", label: "SOFT (S1)", state: tyreSoftAllowed, setter: setTyreSoftAllowed, color: "#FF4D4D" },
-                        { id: "medium", label: "MEDIUM (S2)", state: tyreMediumAllowed, setter: setTyreMediumAllowed, color: "#FFB800" },
-                        { id: "hard", label: "HARD (S3)", state: tyreHardAllowed, setter: setTyreHardAllowed, color: "#E2E4E8" },
-                        { id: "wet", label: "WET (S4)", state: tyreWetAllowed, setter: setTyreWetAllowed, color: "#3B82F6" },
+                        {
+                          id: "soft",
+                          label: "SOFT (S1)",
+                          state: tyreSoftAllowed,
+                          setter: setTyreSoftAllowed,
+                          color: "#FF4D4D",
+                        },
+                        {
+                          id: "medium",
+                          label: "MEDIUM (S2)",
+                          state: tyreMediumAllowed,
+                          setter: setTyreMediumAllowed,
+                          color: "#FFB800",
+                        },
+                        {
+                          id: "hard",
+                          label: "HARD (S3)",
+                          state: tyreHardAllowed,
+                          setter: setTyreHardAllowed,
+                          color: "#E2E4E8",
+                        },
+                        {
+                          id: "wet",
+                          label: "WET (S4)",
+                          state: tyreWetAllowed,
+                          setter: setTyreWetAllowed,
+                          color: "#3B82F6",
+                        },
                       ].map((t) => (
                         <div
                           key={t.id}
                           onClick={() => t.setter(!t.state)}
                           className="flex items-center gap-1.5 cursor-pointer hover:bg-black/40 p-0.5 border border-[#1c2430] bg-black/20"
                         >
-                          <span 
-                            className="w-1 h-3 shrink-0" 
+                          <span
+                            className="w-1 h-3 shrink-0"
                             style={{ backgroundColor: t.state ? t.color : "#3A3F47" }}
                           />
                           <span className={t.state ? "font-bold" : "text-[#7a828c] line-through"}>
@@ -1579,7 +1797,8 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     </div>
                   </div>
                   <p className="text-[7.5px] text-[#7a828c] font-sans leading-normal">
-                    Disallowing compounds grays them out on the timeline and alerts the AI strategist so it never suggests disallowed tyres.
+                    Disallowing compounds grays them out on the timeline and alerts the AI
+                    strategist so it never suggests disallowed tyres.
                   </p>
                 </div>
 
@@ -1592,25 +1811,63 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     <div className="flex gap-1.5 items-start">
                       <span className="text-[#FF4D4D] font-bold">1.</span>
                       <p>
-                        <strong className="text-white uppercase font-mono text-[7.5px]">Driver Offline?</strong> Ensure driver executed <code className="font-mono bg-black text-red-400 px-0.5 border border-[#1c2430]">npm start</code> inside <code className="font-mono bg-black text-white px-0.5 border border-[#1c2430]">local-bridge/</code>.
+                        <strong className="text-white uppercase font-mono text-[7.5px]">
+                          Driver Offline?
+                        </strong>{" "}
+                        Ensure driver executed{" "}
+                        <code className="font-mono bg-black text-red-400 px-0.5 border border-[#1c2430]">
+                          npm start
+                        </code>{" "}
+                        inside{" "}
+                        <code className="font-mono bg-black text-white px-0.5 border border-[#1c2430]">
+                          local-bridge/
+                        </code>
+                        .
                       </p>
                     </div>
                     <div className="flex gap-1.5 items-start">
                       <span className="text-[#FF4D4D] font-bold">2.</span>
                       <p>
-                        <strong className="text-white uppercase font-mono text-[7.5px]">Handshake Fail?</strong> The `SUPABASE_ANON_KEY` inside <code className="font-mono bg-black text-white px-0.5 border border-[#1c2430]">local-bridge/.env</code> must match your Project keys.
+                        <strong className="text-white uppercase font-mono text-[7.5px]">
+                          Handshake Fail?
+                        </strong>{" "}
+                        The `SUPABASE_ANON_KEY` inside{" "}
+                        <code className="font-mono bg-black text-white px-0.5 border border-[#1c2430]">
+                          local-bridge/.env
+                        </code>{" "}
+                        must match your Project keys.
                       </p>
                     </div>
                     <div className="flex gap-1.5 items-start">
                       <span className="text-[#FF4D4D] font-bold">3.</span>
                       <p>
-                        <strong className="text-white uppercase font-mono text-[7.5px]">Code Mismatch?</strong> Ensure driver's `.env` uses your exact capitalized code: <strong className="text-white font-mono bg-black px-1 border border-[#1c2430]">{teamCode || "PITWALL-XXXX"}</strong>.
+                        <strong className="text-white uppercase font-mono text-[7.5px]">
+                          Code Mismatch?
+                        </strong>{" "}
+                        Ensure driver's `.env` uses your exact capitalized code:{" "}
+                        <strong className="text-white font-mono bg-black px-1 border border-[#1c2430]">
+                          {teamCode || "PITWALL-XXXX"}
+                        </strong>
+                        .
                       </p>
                     </div>
                     <div className="flex gap-1.5 items-start">
                       <span className="text-[#FF4D4D] font-bold">4.</span>
                       <p>
-                        <strong className="text-white uppercase font-mono text-[7.5px]">DB Paused?</strong> Free Supabase projects auto-pause after 7 days. Restore project active status on <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-[#3B82F6] hover:underline font-mono">supabase.com</a>.
+                        <strong className="text-white uppercase font-mono text-[7.5px]">
+                          DB Paused?
+                        </strong>{" "}
+                        Free Supabase projects auto-pause after 7 days. Restore project active
+                        status on{" "}
+                        <a
+                          href="https://supabase.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#3B82F6] hover:underline font-mono"
+                        >
+                          supabase.com
+                        </a>
+                        .
                       </p>
                     </div>
                   </div>
@@ -1632,7 +1889,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     </div>
                     <div className="flex justify-between border-b border-[#1c2430]/50 pb-0.5">
                       <span>RELAY PIPELINE:</span>
-                      <span className={`font-bold ${teamConnected ? "text-[#00D17F]" : "text-red-400"}`}>
+                      <span
+                        className={`font-bold ${teamConnected ? "text-[#00D17F]" : "text-red-400"}`}
+                      >
                         {teamConnected ? "CONNECTED" : "DISCONNECTED"}
                       </span>
                     </div>
@@ -1641,16 +1900,18 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       <span className="text-white font-bold font-mono">JWT ROW-SECURITY</span>
                     </div>
                   </div>
-                  
+
                   <div className="mt-2.5 p-1 bg-black/40 border border-[#1c2430] text-center text-[7px] uppercase text-[#7a828c]">
-                    <span className="text-white font-bold">EXPLANATIVE SUMMARY:</span> This is your Race Wall Strategy center. Configure race duration and compounds to adapt live fuel math. Send credentials to drivers to sync timing stands.
+                    <span className="text-white font-bold">EXPLANATIVE SUMMARY:</span> This is your
+                    Race Wall Strategy center. Configure race duration and compounds to adapt live
+                    fuel math. Send credentials to drivers to sync timing stands.
                   </div>
                 </div>
               </div>
             )}
 
             {/* Gantt Timeline scale rulers - Flush mounted panels */}
-            <div 
+            <div
               onWheel={onTimelineWheel}
               onMouseDown={onTimelineMouseDown}
               onMouseMove={onTimelineMouseMove}
@@ -1659,7 +1920,6 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               onContextMenu={onContextMenu}
               className="relative border border-[#1c2430] bg-[#05070a] p-2.5 rounded-none overflow-hidden select-none select-none cursor-ew-resize timeline-gantt-container"
             >
-              
               {/* Vertical grids backing */}
               <div className="absolute inset-y-0 left-[110px] right-0 flex pointer-events-none z-0">
                 {Array.from({ length: 7 }).map((_, idx) => (
@@ -1671,7 +1931,6 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               </div>
 
               <div className="relative z-10 space-y-3">
-                
                 {/* Horizontal scale hours header */}
                 <div className="flex border-b border-[#1c2430]/60 pb-1.5 font-mono text-[7.5px] text-[#7a828c] font-black uppercase tracking-widest">
                   <span className="w-24 shrink-0 text-[#7a828c] font-rajdhani">RACE TIMELINE</span>
@@ -1683,7 +1942,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       const mins = Math.round(currentMin % 60);
                       let label = "";
                       if (raceDurationHours >= 4 && timelineZoom < 4) {
-                        label = `${hrs}:${String(mins).padStart(2, '0')}`;
+                        label = `${hrs}:${String(mins).padStart(2, "0")}`;
                         if (idx === 0) label = "START";
                         if (idx === 6) label = `FINISH (${raceDurationHours}H)`;
                       } else {
@@ -1700,18 +1959,20 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   <div className="flex items-center relative py-0.5">
                     <div className="w-24 shrink-0 pr-2">
                       <span className="text-[9px] font-black text-white tracking-widest flex items-center gap-1.5 uppercase leading-none">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
-                        #{selectedCar.number} {selectedCar.name.split(" ").slice(-1)[0]}
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />#
+                        {selectedCar.number} {selectedCar.name.split(" ").slice(-1)[0]}
                       </span>
                     </div>
 
                     <div className="flex-1 relative bg-[#0b0f14]/80 border border-[#1c2430] p-1 h-12 rounded-none shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] overflow-hidden">
                       {activeStints.map((stint, stintIdx) => {
-                        const driver = drivers.find(d => d.id === stint.driverId);
-                        
+                        const driver = drivers.find((d) => d.id === stint.driverId);
+
                         // Contextual Highlights: Dim stints if they do not match driver selection filter
-                        const isDimmed = selectedRosterDriverId && stint.driverId !== selectedRosterDriverId;
-                        const isHighlighted = selectedRosterDriverId && stint.driverId === selectedRosterDriverId;
+                        const isDimmed =
+                          selectedRosterDriverId && stint.driverId !== selectedRosterDriverId;
+                        const isHighlighted =
+                          selectedRosterDriverId && stint.driverId === selectedRosterDriverId;
                         const isHovered = hoveredStintIndex === stintIdx;
 
                         const slotStyle = getSlotStyle(stintIdx);
@@ -1722,13 +1983,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                             key={stint.id}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
-                              const drvId = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("driverId");
+                              const drvId =
+                                e.dataTransfer.getData("text/plain") ||
+                                e.dataTransfer.getData("driverId");
                               if (drvId) handleStintDriverDrop(stintIdx, drvId);
                             }}
                             onClick={() => {
                               // Click to cycle drivers for easy non-drag touchscreen use
                               if (drivers.length === 0) return;
-                              const currentDriverIdx = drivers.findIndex(d => d.id === stint.driverId);
+                              const currentDriverIdx = drivers.findIndex(
+                                (d) => d.id === stint.driverId,
+                              );
                               let nextDriverId = "";
                               if (stint.driverId === "") {
                                 nextDriverId = drivers[0].id;
@@ -1742,8 +2007,8 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                             onMouseEnter={() => setHoveredStintIndex(stintIdx)}
                             onMouseLeave={() => setHoveredStintIndex(null)}
                             className={`rounded-none border relative flex flex-col justify-center items-center px-1.5 select-none overflow-hidden transition-all duration-150 group/slot cursor-pointer ${
-                              driver 
-                                ? "bg-gradient-to-b from-[#11161d] to-[#0b0f14] shadow-md" 
+                              driver
+                                ? "bg-gradient-to-b from-[#11161d] to-[#0b0f14] shadow-md"
                                 : "bg-[#05070a] border-dashed border-[#1c2430] hover:bg-[#11161d]/40"
                             } ${isDimmed ? "opacity-25" : "opacity-100"} ${
                               isHighlighted ? "ring-1 ring-[#FFB800]" : ""
@@ -1752,14 +2017,18 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                               ...slotStyle,
                               left: `calc(${parseFloat(slotStyle.left as string)}% + 2px)`,
                               width: `calc(${parseFloat(slotStyle.width as string)}% - 4px)`,
-                              borderColor: driver ? driver.color : "#1C2430"
+                              borderColor: driver ? driver.color : "#1C2430",
                             }}
-                            title={driver ? `Driver: ${driver.name}\n${stint.note}. Hover to highlight fuel curve. Click to cycle drivers.` : "Drag driver here or click to assign."}
+                            title={
+                              driver
+                                ? `Driver: ${driver.name}\n${stint.note}. Hover to highlight fuel curve. Click to cycle drivers.`
+                                : "Drag driver here or click to assign."
+                            }
                           >
                             {driver ? (
                               <div className="flex flex-col items-center justify-center pointer-events-none w-full h-full relative">
-                                <span 
-                                  className="absolute top-0 inset-x-0 h-[2px] block pointer-events-none" 
+                                <span
+                                  className="absolute top-0 inset-x-0 h-[2px] block pointer-events-none"
                                   style={{ backgroundColor: driver.color }}
                                 />
                                 <div className="text-[9px] font-mono font-black tracking-widest text-[#E2E4E8] uppercase text-center mt-0.5 font-rajdhani pointer-events-none">
@@ -1800,33 +2069,41 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     </span>
                   </div>
                   <div className="flex-1 relative h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] select-none text-[6.5px] overflow-hidden">
-                    <div 
+                    <div
                       className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                        tyreSoftAllowed ? "bg-[#FF4D4D]/25 text-[#FF4D4D]" : "bg-black/40 text-[#7a828c] line-through decoration-red-500/50"
+                        tyreSoftAllowed
+                          ? "bg-[#FF4D4D]/25 text-[#FF4D4D]"
+                          : "bg-black/40 text-[#7a828c] line-through decoration-red-500/50"
                       }`}
                       style={getSlotStyle(0)}
                     >
                       SOFT (S1) {!tyreSoftAllowed && "LOCKED"}
                     </div>
-                    <div 
+                    <div
                       className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                        tyreMediumAllowed ? "bg-[#FFB800]/25 text-[#FFB800]" : "bg-black/40 text-[#7a828c] line-through decoration-amber-500/50"
+                        tyreMediumAllowed
+                          ? "bg-[#FFB800]/25 text-[#FFB800]"
+                          : "bg-black/40 text-[#7a828c] line-through decoration-amber-500/50"
                       }`}
                       style={getSlotStyle(1)}
                     >
                       MEDIUM (S2) {!tyreMediumAllowed && "LOCKED"}
                     </div>
-                    <div 
+                    <div
                       className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                        tyreHardAllowed ? "bg-[#E2E4E8]/15 text-[#E2E4E8]/70" : "bg-black/40 text-[#7a828c] line-through decoration-white/50"
+                        tyreHardAllowed
+                          ? "bg-[#E2E4E8]/15 text-[#E2E4E8]/70"
+                          : "bg-black/40 text-[#7a828c] line-through decoration-white/50"
                       }`}
                       style={getSlotStyle(2)}
                     >
                       HARD (S3) {!tyreHardAllowed && "LOCKED"}
                     </div>
-                    <div 
+                    <div
                       className={`font-black flex items-center justify-center tracking-widest uppercase font-rajdhani ${
-                        tyreWetAllowed ? "bg-[#3B82F6]/25 text-[#3B82F6]" : "bg-black/40 text-[#7a828c] line-through decoration-blue-500/50"
+                        tyreWetAllowed
+                          ? "bg-[#3B82F6]/25 text-[#3B82F6]"
+                          : "bg-black/40 text-[#7a828c] line-through decoration-blue-500/50"
                       }`}
                       style={getSlotStyle(3)}
                     >
@@ -1843,39 +2120,71 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     </span>
                   </div>
                   <div className="flex-1 relative h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px] overflow-hidden">
-                    <div className="flex items-center justify-between px-1.5" style={getSlotStyle(0)}>
-                      <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span><span className="text-white">{zoomLevel === "24h" ? "2.65L" : "2.80L"}</span>
+                    <div
+                      className="flex items-center justify-between px-1.5"
+                      style={getSlotStyle(0)}
+                    >
+                      <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span>
+                      <span className="text-white">{zoomLevel === "24h" ? "2.65L" : "2.80L"}</span>
                     </div>
-                    <div className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5" style={getSlotStyle(1)}>
-                      <span className="text-[#FF4D4D] font-rajdhani">PIT_WINDOW</span><span className="text-white">LAP {zoomLevel === "24h" ? "42" : "45"}</span>
+                    <div
+                      className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5"
+                      style={getSlotStyle(1)}
+                    >
+                      <span className="text-[#FF4D4D] font-rajdhani">PIT_WINDOW</span>
+                      <span className="text-white">LAP {zoomLevel === "24h" ? "42" : "45"}</span>
                     </div>
-                    <div className="flex items-center justify-between px-1.5" style={getSlotStyle(2)}>
-                      <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span><span className="text-white">2.82L</span>
+                    <div
+                      className="flex items-center justify-between px-1.5"
+                      style={getSlotStyle(2)}
+                    >
+                      <span className="text-[#00D17F] font-rajdhani">MIN_BURN</span>
+                      <span className="text-white">2.82L</span>
                     </div>
-                    <div className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5" style={getSlotStyle(3)}>
-                      <span className="text-[#FF4D4D] font-rajdhani">PIT_LEGAL</span><span className="text-white">LAP 180</span>
+                    <div
+                      className="flex items-center justify-between px-1.5 bg-[#FF4D4D]/5"
+                      style={getSlotStyle(3)}
+                    >
+                      <span className="text-[#FF4D4D] font-rajdhani">PIT_LEGAL</span>
+                      <span className="text-white">LAP 180</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Layer 4: FCY / Safety Car Caution Risk */}
-                <div className={`flex items-center relative py-0.5 transition-all duration-200 ${focusMode === "fcy" ? "bg-yellow-500/5 ring-1 ring-yellow-500/30" : ""}`}>
+                <div
+                  className={`flex items-center relative py-0.5 transition-all duration-200 ${focusMode === "fcy" ? "bg-yellow-500/5 ring-1 ring-yellow-500/30" : ""}`}
+                >
                   <div className="w-24 shrink-0 pr-2">
-                    <span className={`text-[7px] font-bold tracking-widest uppercase font-rajdhani transition-colors ${focusMode === "fcy" ? "text-[#FFB800]" : "text-[#7a828c]"}`}>
+                    <span
+                      className={`text-[7px] font-bold tracking-widest uppercase font-rajdhani transition-colors ${focusMode === "fcy" ? "text-[#FFB800]" : "text-[#7a828c]"}`}
+                    >
                       CAUTION FCY %
                     </span>
                   </div>
                   <div className="flex-1 relative h-4 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] font-mono text-[6.5px] overflow-hidden">
-                    <div className="bg-orange-500/10 flex items-center justify-center font-bold text-orange-400 tracking-wider font-rajdhani" style={getSlotStyle(0)}>
+                    <div
+                      className="bg-orange-500/10 flex items-center justify-center font-bold text-orange-400 tracking-wider font-rajdhani"
+                      style={getSlotStyle(0)}
+                    >
                       FCY RISK: 18% (LOW)
                     </div>
-                    <div className={`bg-red-500/20 flex items-center justify-center font-bold text-red-400 tracking-wider font-rajdhani ${focusMode === "fcy" ? "animate-pulse border-red-500" : ""}`} style={getSlotStyle(1)}>
+                    <div
+                      className={`bg-red-500/20 flex items-center justify-center font-bold text-red-400 tracking-wider font-rajdhani ${focusMode === "fcy" ? "animate-pulse border-red-500" : ""}`}
+                      style={getSlotStyle(1)}
+                    >
                       FCY RISK: 75% (CRITICAL)
                     </div>
-                    <div className="bg-yellow-500/15 flex items-center justify-center font-bold text-[#FFB800] tracking-wider font-rajdhani" style={getSlotStyle(2)}>
+                    <div
+                      className="bg-yellow-500/15 flex items-center justify-center font-bold text-[#FFB800] tracking-wider font-rajdhani"
+                      style={getSlotStyle(2)}
+                    >
                       FCY RISK: 40% (MEDIUM)
                     </div>
-                    <div className="bg-emerald-500/5 flex items-center justify-center font-bold text-[#00D17F] tracking-wider font-rajdhani" style={getSlotStyle(3)}>
+                    <div
+                      className="bg-emerald-500/5 flex items-center justify-center font-bold text-[#00D17F] tracking-wider font-rajdhani"
+                      style={getSlotStyle(3)}
+                    >
                       FCY RISK: 8% (NOMINAL)
                     </div>
                   </div>
@@ -1888,22 +2197,48 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       MET WEATHER
                     </span>
                   </div>
-                  <div className={`flex-1 relative transition-all duration-300 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] overflow-hidden ${focusMode === "wet" ? "h-10" : "h-4"}`}>
-                    <div className="text-[#f59e0b] bg-[#f59e0b]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold" style={getSlotStyle(0)}>
+                  <div
+                    className={`flex-1 relative transition-all duration-300 rounded-none border border-[#1c2430] bg-[#0b0f14]/50 p-[1px] overflow-hidden ${focusMode === "wet" ? "h-10" : "h-4"}`}
+                  >
+                    <div
+                      className="text-[#f59e0b] bg-[#f59e0b]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold"
+                      style={getSlotStyle(0)}
+                    >
                       <span>100% DRY / SUNNY</span>
-                      {focusMode === "wet" && <span className="text-[5px] text-[#7a828c] mt-0.5">SLICK WINDOW</span>}
+                      {focusMode === "wet" && (
+                        <span className="text-[5px] text-[#7a828c] mt-0.5">SLICK WINDOW</span>
+                      )}
                     </div>
-                    <div className="text-[#60a5fa] bg-[#60a5fa]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold" style={getSlotStyle(1)}>
+                    <div
+                      className="text-[#60a5fa] bg-[#60a5fa]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold"
+                      style={getSlotStyle(1)}
+                    >
                       <span>40% DAMP OVERCAST</span>
-                      {focusMode === "wet" && <span className="text-[5px] text-[#60a5fa] mt-0.5">SLICK CHASSIS OPTIMAL</span>}
+                      {focusMode === "wet" && (
+                        <span className="text-[5px] text-[#60a5fa] mt-0.5">
+                          SLICK CHASSIS OPTIMAL
+                        </span>
+                      )}
                     </div>
-                    <div className="text-[#94a3b8] bg-[#94a3b8]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold" style={getSlotStyle(2)}>
+                    <div
+                      className="text-[#94a3b8] bg-[#94a3b8]/5 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold"
+                      style={getSlotStyle(2)}
+                    >
                       <span>65% WET TRANSITION</span>
-                      {focusMode === "wet" && <span className="text-[5px] text-[#94a3b8] mt-0.5">CROSSOVER IN 4 LAPS</span>}
+                      {focusMode === "wet" && (
+                        <span className="text-[5px] text-[#94a3b8] mt-0.5">
+                          CROSSOVER IN 4 LAPS
+                        </span>
+                      )}
                     </div>
-                    <div className="text-blue-400 bg-blue-500/10 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold animate-pulse" style={getSlotStyle(3)}>
+                    <div
+                      className="text-blue-400 bg-blue-500/10 flex flex-col items-center justify-center uppercase tracking-wider font-rajdhani leading-none text-[6.5px] font-bold animate-pulse"
+                      style={getSlotStyle(3)}
+                    >
                       <span>80% WET STORM WARNING</span>
-                      {focusMode === "wet" && <span className="text-[5px] text-blue-300 mt-0.5">HEAVY WET TYRES</span>}
+                      {focusMode === "wet" && (
+                        <span className="text-[5px] text-blue-300 mt-0.5">HEAVY WET TYRES</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1917,33 +2252,50 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     </span>
                   </div>
                   <div className="flex-1 relative h-6 rounded-none border border-dashed border-[#1c2430]/65 bg-[#05070a]/20 p-[1px] opacity-60 text-[6.5px] overflow-hidden">
-                    <div className="flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight" style={getSlotStyle(0)}>
-                      <span className="font-bold text-white uppercase text-[6px] font-rajdhani">#12 BMW HYBRID</span>
+                    <div
+                      className="flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight"
+                      style={getSlotStyle(0)}
+                    >
+                      <span className="font-bold text-white uppercase text-[6px] font-rajdhani">
+                        #12 BMW HYBRID
+                      </span>
                       <span className="font-mono text-[5.5px]">PIT WINDOW: LAP 42-48</span>
                     </div>
-                    <div className="flex flex-col justify-center px-1.5 bg-yellow-500/5 text-[#FFB800]/70 leading-tight" style={getSlotStyle(1)}>
-                      <span className="font-bold uppercase text-[6px] font-rajdhani">UNDERCUT PROJECTION</span>
+                    <div
+                      className="flex flex-col justify-center px-1.5 bg-yellow-500/5 text-[#FFB800]/70 leading-tight"
+                      style={getSlotStyle(1)}
+                    >
+                      <span className="font-bold uppercase text-[6px] font-rajdhani">
+                        UNDERCUT PROJECTION
+                      </span>
                       <span className="font-mono text-[5.5px]">CHANCE: 64% (HIGH)</span>
                     </div>
-                    <div className="flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight" style={getSlotStyle(2)}>
-                      <span className="font-bold text-white uppercase text-[6px] font-rajdhani">#3 CADILLAC WTR</span>
+                    <div
+                      className="flex flex-col justify-center px-1.5 text-[#7a828c] leading-tight"
+                      style={getSlotStyle(2)}
+                    >
+                      <span className="font-bold text-white uppercase text-[6px] font-rajdhani">
+                        #3 CADILLAC WTR
+                      </span>
                       <span className="font-mono text-[5.5px]">FUEL OFFSET: -1.2 LAPS</span>
                     </div>
-                    <div className="flex flex-col justify-center px-1.5 bg-red-500/5 text-[#FF4D4D]/70 leading-tight" style={getSlotStyle(3)}>
-                      <span className="font-bold uppercase text-[6px] font-rajdhani">TRAFFIC CONVERGENCE</span>
+                    <div
+                      className="flex flex-col justify-center px-1.5 bg-red-500/5 text-[#FF4D4D]/70 leading-tight"
+                      style={getSlotStyle(3)}
+                    >
+                      <span className="font-bold uppercase text-[6px] font-rajdhani">
+                        TRAFFIC CONVERGENCE
+                      </span>
                       <span className="font-mono text-[5.5px]">LAP 195 · SECTOR 2</span>
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
-
           </div>
 
           {/* SECTION: STRATEGIC FUEL & TYRE DECAY TELEMETRY GRAPH - Edge-to-edge layout */}
           <div className="border-b border-[#1c2430] bg-[#05070a] p-2.5 h-[160px] flex-none flex flex-col relative select-none rounded-none">
-            
             {/* Strategy selector tabs */}
             <div className="flex items-center justify-between border-b border-[#1c2430]/75 pb-1.5 mb-2.5 shrink-0 select-none">
               <div className="flex bg-[#0b0f14] border border-[#1c2430] rounded-none p-0.5">
@@ -1959,8 +2311,8 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                       key={t.id}
                       onClick={() => setGraphTab(t.id as any)}
                       className={`px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest cursor-pointer transition-all rounded-none border-0 ${
-                        isActive 
-                          ? "bg-[#1c2430] text-white" 
+                        isActive
+                          ? "bg-[#1c2430] text-white"
                           : "text-[#7a828c] hover:text-[#E2E4E8] hover:bg-[#11161d]/50"
                       }`}
                     >
@@ -1976,7 +2328,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             </div>
 
             {/* SVG Interactive Telemetry Graph - Shared borders */}
-            <div 
+            <div
               onWheel={onTimelineWheel}
               onMouseDown={onTimelineMouseDown}
               onMouseMove={onTimelineMouseMove}
@@ -1985,12 +2337,23 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               onContextMenu={onContextMenu}
               className="flex-1 min-h-0 relative bg-[#030508] border border-[#1c2430] rounded-none p-2 flex flex-col justify-between shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] cursor-ew-resize timeline-graph-container"
             >
-              
               <div className="absolute inset-0 p-2.5 pointer-events-none select-none flex flex-col justify-between font-mono text-[7px] text-[#7a828c]/25 uppercase tracking-widest border-t border-[#1c2430]/5">
-                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>100% / MAX</span><span>ESTIMATED DOCK</span></div>
-                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>75%</span><span>STINT LAP LIMIT</span></div>
-                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>50%</span><span>PIT RECHARGE</span></div>
-                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5"><span>25% / MIN</span><span>CRITICAL LIMIT</span></div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5">
+                  <span>100% / MAX</span>
+                  <span>ESTIMATED DOCK</span>
+                </div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5">
+                  <span>75%</span>
+                  <span>STINT LAP LIMIT</span>
+                </div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5">
+                  <span>50%</span>
+                  <span>PIT RECHARGE</span>
+                </div>
+                <div className="flex justify-between border-b border-[#1c2430]/10 pb-0.5">
+                  <span>25% / MIN</span>
+                  <span>CRITICAL LIMIT</span>
+                </div>
                 <div className="flex justify-between font-black text-[#7a828c]/40">
                   {Array.from({ length: 7 }).map((_, idx) => {
                     const pct = idx / 6;
@@ -2000,10 +2363,18 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     if (raceDurationHours >= 4 && timelineZoom < 4) {
                       if (idx === 0) return <span key={idx}>T+0:00</span>;
                       if (idx === 6) return <span key={idx}>FINISH</span>;
-                      return <span key={idx}>{hrs}:{String(mins).padStart(2, '0')}</span>;
+                      return (
+                        <span key={idx}>
+                          {hrs}:{String(mins).padStart(2, "0")}
+                        </span>
+                      );
                     } else {
                       if (idx === 0) return <span key={idx}>T+0 MIN</span>;
-                      return <span key={idx}>{hrs > 0 ? `${hrs}H ` : ""}${mins}M</span>;
+                      return (
+                        <span key={idx}>
+                          {hrs > 0 ? `${hrs}H ` : ""}${mins}M
+                        </span>
+                      );
                     }
                   })}
                 </div>
@@ -2011,18 +2382,87 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
               {/* Dynamic SVG Strategy Graph curve rendering (Contextual Highlight Expansion Sync) */}
               <div className="w-full h-full relative z-10 pt-1 pb-5 px-1">
-                <svg viewBox="0 0 600 120" width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full block overflow-visible">
-                  
+                <svg
+                  viewBox="0 0 600 120"
+                  width="100%"
+                  height="100%"
+                  preserveAspectRatio="none"
+                  className="w-full h-full block overflow-visible"
+                >
                   {/* Grid Lines */}
-                  <line x1="0" y1="30" x2="600" y2="30" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="0" y1="60" x2="600" y2="60" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1="0" y1="90" x2="600" y2="90" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  
-                  <line x1={mapX(100)} y1="0" x2={mapX(100)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1={mapX(200)} y1="0" x2={mapX(200)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1={mapX(300)} y1="0" x2={mapX(300)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1={mapX(400)} y1="0" x2={mapX(400)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <line x1={mapX(500)} y1="0" x2={mapX(500)} y2="120" stroke="#1c2430" strokeWidth="0.5" strokeDasharray="2 2" />
+                  <line
+                    x1="0"
+                    y1="30"
+                    x2="600"
+                    y2="30"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1="0"
+                    y1="60"
+                    x2="600"
+                    y2="60"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1="0"
+                    y1="90"
+                    x2="600"
+                    y2="90"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+
+                  <line
+                    x1={mapX(100)}
+                    y1="0"
+                    x2={mapX(100)}
+                    y2="120"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1={mapX(200)}
+                    y1="0"
+                    x2={mapX(200)}
+                    y2="120"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1={mapX(300)}
+                    y1="0"
+                    x2={mapX(300)}
+                    y2="120"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1={mapX(400)}
+                    y1="0"
+                    x2={mapX(400)}
+                    y2="120"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
+                  <line
+                    x1={mapX(500)}
+                    y1="0"
+                    x2={mapX(500)}
+                    y2="120"
+                    stroke="#1c2430"
+                    strokeWidth="0.5"
+                    strokeDasharray="2 2"
+                  />
 
                   {graphTab === "fuel" && (
                     <>
@@ -2032,7 +2472,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 0 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 0 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 0 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
                       {/* Segment 2 */}
@@ -2041,7 +2483,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 1 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 1 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 1 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
                       {/* Segment 3 */}
@@ -2050,7 +2494,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 2 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 2 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 2 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
                       {/* Segment 4 */}
@@ -2059,14 +2505,40 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#3B82F6"
                         strokeWidth={hoveredStintIndex === 3 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 3 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 3 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
 
                       {/* Verticals pit stops */}
-                      <line x1={mapX(138)} y1="100" x2={mapX(140)} y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
-                      <line x1={mapX(273)} y1="95" x2={mapX(275)} y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
-                      <line x1={mapX(408)} y1="102" x2={mapX(410)} y2="20" stroke="#FF4D4D" strokeWidth="0.8" strokeDasharray="2 2" />
+                      <line
+                        x1={mapX(138)}
+                        y1="100"
+                        x2={mapX(140)}
+                        y2="20"
+                        stroke="#FF4D4D"
+                        strokeWidth="0.8"
+                        strokeDasharray="2 2"
+                      />
+                      <line
+                        x1={mapX(273)}
+                        y1="95"
+                        x2={mapX(275)}
+                        y2="20"
+                        stroke="#FF4D4D"
+                        strokeWidth="0.8"
+                        strokeDasharray="2 2"
+                      />
+                      <line
+                        x1={mapX(408)}
+                        y1="102"
+                        x2={mapX(410)}
+                        y2="20"
+                        stroke="#FF4D4D"
+                        strokeWidth="0.8"
+                        strokeDasharray="2 2"
+                      />
 
                       {/* Pit stop markers */}
                       <circle
@@ -2096,10 +2568,59 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         onMouseLeave={() => setHoveredStintIndex(null)}
                         className="cursor-pointer transition-all duration-150"
                       />
-                      <text x={mapX(138)} y="111" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(0)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
-                      <text x={mapX(273)} y="106" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(1)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
-                      <text x={mapX(408)} y="113" fill="#FFB800" fontSize="6.5" textAnchor="middle" fontWeight="bold" fontFamily="monospace" onMouseEnter={() => setHoveredStintIndex(2)} onMouseLeave={() => setHoveredStintIndex(null)} className="cursor-pointer">PIT</text>
-                      <text x={mapX(590)} y="72" fill="#3B82F6" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">24.6 L</text>
+                      <text
+                        x={mapX(138)}
+                        y="111"
+                        fill="#FFB800"
+                        fontSize="6.5"
+                        textAnchor="middle"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                        onMouseEnter={() => setHoveredStintIndex(0)}
+                        onMouseLeave={() => setHoveredStintIndex(null)}
+                        className="cursor-pointer"
+                      >
+                        PIT
+                      </text>
+                      <text
+                        x={mapX(273)}
+                        y="106"
+                        fill="#FFB800"
+                        fontSize="6.5"
+                        textAnchor="middle"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                        onMouseEnter={() => setHoveredStintIndex(1)}
+                        onMouseLeave={() => setHoveredStintIndex(null)}
+                        className="cursor-pointer"
+                      >
+                        PIT
+                      </text>
+                      <text
+                        x={mapX(408)}
+                        y="113"
+                        fill="#FFB800"
+                        fontSize="6.5"
+                        textAnchor="middle"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                        onMouseEnter={() => setHoveredStintIndex(2)}
+                        onMouseLeave={() => setHoveredStintIndex(null)}
+                        className="cursor-pointer"
+                      >
+                        PIT
+                      </text>
+                      <text
+                        x={mapX(590)}
+                        y="72"
+                        fill="#3B82F6"
+                        fontSize="7.5"
+                        textAnchor="end"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                      >
+                        24.6 L
+                      </text>
                     </>
                   )}
 
@@ -2111,7 +2632,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 0 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 0 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 0 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
                       {/* Segment 2 */}
@@ -2120,7 +2643,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 1 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 1 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 1 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
                       {/* Segment 3 */}
@@ -2129,7 +2654,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 2 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 2 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 2 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
                       {/* Segment 4 */}
@@ -2138,14 +2665,26 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         fill="none"
                         stroke="#00D17F"
                         strokeWidth={hoveredStintIndex === 3 ? "3" : "1.8"}
-                        opacity={hoveredStintIndex !== null && hoveredStintIndex !== 3 ? "0.25" : "1"}
+                        opacity={
+                          hoveredStintIndex !== null && hoveredStintIndex !== 3 ? "0.25" : "1"
+                        }
                         className="transition-all duration-150"
                       />
 
                       <circle cx={mapX(138)} cy="85" r="3" fill="#00D17F" />
                       <circle cx={mapX(273)} cy="78" r="3" fill="#00D17F" />
                       <circle cx={mapX(408)} cy="90" r="3" fill="#00D17F" />
-                      <text x={mapX(590)} y="65" fill="#00D17F" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">52% LIFE</text>
+                      <text
+                        x={mapX(590)}
+                        y="65"
+                        fill="#00D17F"
+                        fontSize="7.5"
+                        textAnchor="end"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                      >
+                        52% LIFE
+                      </text>
                     </>
                   )}
 
@@ -2159,7 +2698,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                         strokeWidth="1.8"
                         className="drop-shadow-[0_0_4px_rgba(255,184,0,0.3)]"
                       />
-                      <text x={mapX(590)} y="102" fill="#FFB800" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">28.4°C</text>
+                      <text
+                        x={mapX(590)}
+                        y="102"
+                        fill="#FFB800"
+                        fontSize="7.5"
+                        textAnchor="end"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                      >
+                        28.4°C
+                      </text>
                     </>
                   )}
 
@@ -2167,19 +2716,30 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     <>
                       {/* Delta to leader trace */}
                       <path
-                        d={mapPath("M 5,50 Q 70,53 138,55 M 140,42 Q 205,45 273,46 M 275,35 Q 340,33 408,32 M 410,22 Q 500,16 595,12")}
+                        d={mapPath(
+                          "M 5,50 Q 70,53 138,55 M 140,42 Q 205,45 273,46 M 275,35 Q 340,33 408,32 M 410,22 Q 500,16 595,12",
+                        )}
                         fill="none"
                         stroke="#FF4D4D"
                         strokeWidth="1.8"
                         className="drop-shadow-[0_0_4px_rgba(255,77,77,0.3)]"
                       />
-                      <text x={mapX(590)} y="24" fill="#FF4D4D" fontSize="7.5" textAnchor="end" fontWeight="bold" fontFamily="monospace">-12.4s (LEAD)</text>
+                      <text
+                        x={mapX(590)}
+                        y="24"
+                        fill="#FF4D4D"
+                        fontSize="7.5"
+                        textAnchor="end"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                      >
+                        -12.4s (LEAD)
+                      </text>
                     </>
                   )}
                 </svg>
               </div>
             </div>
-
           </div>
 
           {/* SECTION: TACTICAL TIMING SHEET SPREADSHEET MATRIX */}
@@ -2199,48 +2759,88 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               <tbody className="divide-y divide-[#1c2430]/35">
                 <tr className="hover:bg-[#11161d]/40 transition-colors">
                   <td className="px-2 py-0.8 text-[#7a828c]">STRAT_01</td>
-                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">RACE PACE PROJECTION TARGET</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">
+                    RACE PACE PROJECTION TARGET
+                  </td>
                   <td className="px-2 py-0.8 text-right font-bold">1:45.850</td>
                   <td className="px-2 py-0.8 text-right text-red-400 font-bold">+0.120s</td>
                   <td className="px-2 py-0.8 text-right text-[#7a828c]">1:45.730</td>
-                  <td className="px-2 py-0.8 text-center"><span className="text-[#FFB800] bg-[#FFB800]/5 border border-[#FFB800]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">WARNING</span></td>
-                  <td className="px-2 py-0.8 text-[#7a828c] truncate">S1 (LA SOURCE) EXCEEDING DELTA WINDOW</td>
+                  <td className="px-2 py-0.8 text-center">
+                    <span className="text-[#FFB800] bg-[#FFB800]/5 border border-[#FFB800]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">
+                      WARNING
+                    </span>
+                  </td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">
+                    S1 (LA SOURCE) EXCEEDING DELTA WINDOW
+                  </td>
                 </tr>
                 <tr className="bg-[#0b0f14]/40 hover:bg-[#11161d]/40 transition-colors">
                   <td className="px-2 py-0.8 text-[#7a828c]">STRAT_02</td>
-                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">FUEL BURN EFFICIENCY RATIO</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">
+                    FUEL BURN EFFICIENCY RATIO
+                  </td>
                   <td className="px-2 py-0.8 text-right font-bold">2.85 L/LAP</td>
                   <td className="px-2 py-0.8 text-right text-[#00D17F] font-bold">-0.05 L/LAP</td>
                   <td className="px-2 py-0.8 text-right text-[#7a828c]">2.80 L/LAP</td>
-                  <td className="px-2 py-0.8 text-center"><span className="text-[#00D17F] bg-[#00D17F]/5 border border-[#00D17F]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">OPTIMAL</span></td>
-                  <td className="px-2 py-0.8 text-[#7a828c] truncate">TARGET COMPLIANT FOR 215 LAP STINT LIMIT</td>
+                  <td className="px-2 py-0.8 text-center">
+                    <span className="text-[#00D17F] bg-[#00D17F]/5 border border-[#00D17F]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">
+                      OPTIMAL
+                    </span>
+                  </td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">
+                    TARGET COMPLIANT FOR 215 LAP STINT LIMIT
+                  </td>
                 </tr>
                 <tr className="hover:bg-[#11161d]/40 transition-colors">
                   <td className="px-2 py-0.8 text-[#7a828c]">STRAT_03</td>
-                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">POTENTIAL OVERCUT STRATEGY GAIN</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">
+                    POTENTIAL OVERCUT STRATEGY GAIN
+                  </td>
                   <td className="px-2 py-0.8 text-right font-bold text-[#00D17F]">+18.650s</td>
                   <td className="px-2 py-0.8 text-right text-[#00D17F] font-bold">+3.420s</td>
                   <td className="px-2 py-0.8 text-right text-[#7a828c]">+15.230s</td>
-                  <td className="px-2 py-0.8 text-center"><span className="text-[#00D17F] bg-[#00D17F]/5 border border-[#00D17F]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">OPTIMAL</span></td>
-                  <td className="px-2 py-0.8 text-[#7a828c] truncate">GREEN CAUTION WINDOW PREDICTION ALIGNED</td>
+                  <td className="px-2 py-0.8 text-center">
+                    <span className="text-[#00D17F] bg-[#00D17F]/5 border border-[#00D17F]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">
+                      OPTIMAL
+                    </span>
+                  </td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">
+                    GREEN CAUTION WINDOW PREDICTION ALIGNED
+                  </td>
                 </tr>
                 <tr className="bg-[#0b0f14]/40 hover:bg-[#11161d]/40 transition-colors">
                   <td className="px-2 py-0.8 text-[#7a828c]">STRAT_04</td>
-                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">TYRE WEAR RATIO (FRONT-LEFT)</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">
+                    TYRE WEAR RATIO (FRONT-LEFT)
+                  </td>
                   <td className="px-2 py-0.8 text-right font-bold">1.65 %/LAP</td>
                   <td className="px-2 py-0.8 text-right text-red-400 font-bold">+0.15 %/LAP</td>
                   <td className="px-2 py-0.8 text-right text-[#7a828c]">1.50 %/LAP</td>
-                  <td className="px-2 py-0.8 text-center"><span className="text-[#FF4D4D] bg-[#FF4D4D]/5 border border-red-500/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">CRITICAL</span></td>
-                  <td className="px-2 py-0.8 text-[#7a828c] truncate">DOUBLE STINT NOT ADVISED · HIGH DEGRADATION</td>
+                  <td className="px-2 py-0.8 text-center">
+                    <span className="text-[#FF4D4D] bg-[#FF4D4D]/5 border border-red-500/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">
+                      CRITICAL
+                    </span>
+                  </td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">
+                    DOUBLE STINT NOT ADVISED · HIGH DEGRADATION
+                  </td>
                 </tr>
                 <tr className="hover:bg-[#11161d]/40 transition-colors">
                   <td className="px-2 py-0.8 text-[#7a828c]">STRAT_05</td>
-                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">NEXT MANDATORY PIT STOP OPEN</td>
+                  <td className="px-2 py-0.8 font-sans font-bold text-white text-[8.5px]">
+                    NEXT MANDATORY PIT STOP OPEN
+                  </td>
                   <td className="px-2 py-0.8 text-right font-bold">LAP 91-97</td>
                   <td className="px-2 py-0.8 text-right text-white font-bold">-1.5 LAPS</td>
                   <td className="px-2 py-0.8 text-right text-[#7a828c]">LAP 93</td>
-                  <td className="px-2 py-0.8 text-center"><span className="text-[#3B82F6] bg-[#3B82F6]/5 border border-[#3B82F6]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">LEGAL</span></td>
-                  <td className="px-2 py-0.8 text-[#7a828c] truncate">RECHARGE ALIGNED WITH PIT WINDOW 2</td>
+                  <td className="px-2 py-0.8 text-center">
+                    <span className="text-[#3B82F6] bg-[#3B82F6]/5 border border-[#3B82F6]/25 px-1 uppercase text-[6.5px] tracking-wider rounded-none font-sans font-bold">
+                      LEGAL
+                    </span>
+                  </td>
+                  <td className="px-2 py-0.8 text-[#7a828c] truncate">
+                    RECHARGE ALIGNED WITH PIT WINDOW 2
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -2249,14 +2849,14 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
         {/* COLUMN 3: LIVE PIT WALL TELEMETRY HUD MONITOR & SPARKLINES (span 1) - Shared Borders */}
         <section className="col-span-1 bg-[#0b0f14] flex flex-col justify-start select-none overflow-hidden h-full rounded-none">
-          
           {/* ACTIVE CHANNEL TIMING MONITOR HUD */}
           <div className="border-b border-[#1c2430] bg-[#05070a] rounded-none font-mono text-[8px] overflow-hidden select-none">
-            
             {/* Contiguous Status Strip */}
             <div className="bg-[#11161d] border-b border-[#1c2430] px-2.5 py-1.5 flex items-center justify-between font-rajdhani text-[9.5px] font-bold text-white tracking-wider">
               <div className="flex items-center gap-1.5">
-                <span className={`size-1.5 rounded-full ${teamConnected ? "bg-[#00D17F] shadow-[0_0_6px_#00D17F]" : "bg-red-500 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.7)]"}`} />
+                <span
+                  className={`size-1.5 rounded-full ${teamConnected ? "bg-[#00D17F] shadow-[0_0_6px_#00D17F]" : "bg-red-500 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.7)]"}`}
+                />
                 <span>ACTIVE MONITOR CHANNEL HUD</span>
               </div>
               <div className="flex items-center gap-2">
@@ -2264,15 +2864,17 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   type="button"
                   onClick={() => setShowTeamCodePanel(true)}
                   className={`text-[8px] border px-1.5 py-0.5 uppercase tracking-widest font-mono font-bold transition-all rounded-none cursor-pointer ${
-                    teamCode 
-                      ? "text-[#00D17F] bg-[#00D17F]/10 border-[#00D17F]/30 hover:bg-[#00D17F]/20" 
+                    teamCode
+                      ? "text-[#00D17F] bg-[#00D17F]/10 border-[#00D17F]/30 hover:bg-[#00D17F]/20"
                       : "text-[#3B82F6] bg-[#3B82F6]/10 border-[#3B82F6]/30 hover:bg-[#3B82F6]/20"
                   }`}
                 >
                   {teamCode ? `🔗 ${teamCode}` : "+ JOIN TEAM"}
                 </button>
                 {activeTeamTelemetry && (
-                  <span className="text-red-400 text-[8px] bg-red-500/10 border border-red-500/25 px-1 py-0.5 uppercase font-mono tracking-widest animate-pulse font-sans font-bold">LIVE</span>
+                  <span className="text-red-400 text-[8px] bg-red-500/10 border border-red-500/25 px-1 py-0.5 uppercase font-mono tracking-widest animate-pulse font-sans font-bold">
+                    LIVE
+                  </span>
                 )}
               </div>
             </div>
@@ -2284,38 +2886,56 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                   {activeTeamTelemetry ? activeTeamTelemetry.driverName : "L. VANTHOOR"}
                 </span>
                 <span className="font-mono text-white bg-[#11161d] border border-[#1c2430] px-1 rounded-none text-[8.5px]">
-                  {activeTeamTelemetry && activeTeamTelemetry.carOperationalState?.sequenceId 
-                    ? `LAP ${activeTeamTelemetry.carOperationalState.sequenceId}` 
+                  {activeTeamTelemetry && activeTeamTelemetry.carOperationalState?.sequenceId
+                    ? `LAP ${activeTeamTelemetry.carOperationalState.sequenceId}`
                     : "LAP 68"}
                 </span>
               </div>
               <div className="flex justify-between font-mono text-[7px] tracking-wider">
                 <span>{selectedCar ? selectedCar.name.toUpperCase() : "PORSCHE 963 LMDH"}</span>
-                <span className="text-[#3B82F6] font-sans font-bold">WEC {selectedCar ? selectedCar.carClass : "GTP"} CLASS</span>
+                <span className="text-[#3B82F6] font-sans font-bold">
+                  WEC {selectedCar ? selectedCar.carClass : "GTP"} CLASS
+                </span>
               </div>
             </div>
 
             {/* Monospace Telemetry Grid */}
             <div className="grid grid-cols-3 gap-0 border-b border-[#1c2430] bg-[#0b0f14] text-center font-mono">
               <div className="p-1 border-r border-[#1c2430]">
-                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">SPEED</span>
+                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">
+                  SPEED
+                </span>
                 <span className="text-[9.5px] font-black text-white block mt-0.5">
-                  {activeTeamTelemetry ? activeTeamTelemetry.speedKph : (t.connected ? t.speedKph : 243)}{" "}
+                  {activeTeamTelemetry
+                    ? activeTeamTelemetry.speedKph
+                    : t.connected
+                      ? t.speedKph
+                      : 243}{" "}
                   <span className="text-[6.5px] text-[#3B82F6]">KPH</span>
                 </span>
               </div>
               <div className="p-1 border-r border-[#1c2430]">
-                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">GEAR</span>
+                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">
+                  GEAR
+                </span>
                 <span className="text-[9.5px] font-black text-[#FFB800] block mt-0.5">
-                  {activeTeamTelemetry 
-                    ? activeTeamTelemetry.gear === 0 ? "N" : activeTeamTelemetry.gear === -1 ? "R" : activeTeamTelemetry.gear 
-                    : (t.connected ? t.gear : 6)}
+                  {activeTeamTelemetry
+                    ? activeTeamTelemetry.gear === 0
+                      ? "N"
+                      : activeTeamTelemetry.gear === -1
+                        ? "R"
+                        : activeTeamTelemetry.gear
+                    : t.connected
+                      ? t.gear
+                      : 6}
                 </span>
               </div>
               <div className="p-1">
-                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">RPM</span>
+                <span className="text-[6.5px] text-[#7a828c] uppercase tracking-widest block leading-none font-sans font-bold">
+                  RPM
+                </span>
                 <span className="text-[9.5px] font-black text-red-400 block mt-0.5">
-                  {activeTeamTelemetry ? activeTeamTelemetry.rpm : (t.connected ? t.rpm : 7850)}
+                  {activeTeamTelemetry ? activeTeamTelemetry.rpm : t.connected ? t.rpm : 7850}
                 </span>
               </div>
             </div>
@@ -2326,10 +2946,15 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               <div>
                 <div className="flex justify-between mb-0.5 leading-none">
                   <span className="text-[#00D17F] font-bold text-[7.5px]">THROTTLE</span>
-                  <span className="text-white font-bold text-[7.5px]">{t.connected ? `${(t.throttle * 100).toFixed(0)}%` : "78%"}</span>
+                  <span className="text-white font-bold text-[7.5px]">
+                    {t.connected ? `${(t.throttle * 100).toFixed(0)}%` : "78%"}
+                  </span>
                 </div>
                 <div className="h-1 bg-[#11161d] rounded-none overflow-hidden border border-[#1c2430]">
-                  <div className="h-full bg-[#00D17F] rounded-none transition-all" style={{ width: t.connected ? `${t.throttle * 100}%` : "78%" }} />
+                  <div
+                    className="h-full bg-[#00D17F] rounded-none transition-all"
+                    style={{ width: t.connected ? `${t.throttle * 100}%` : "78%" }}
+                  />
                 </div>
               </div>
 
@@ -2337,10 +2962,15 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               <div>
                 <div className="flex justify-between mb-0.5 leading-none">
                   <span className="text-[#FF4D4D] font-bold text-[7.5px]">BRAKE</span>
-                  <span className="text-white font-bold text-[7.5px]">{t.connected ? `${(t.brake * 100).toFixed(0)}%` : "12%"}</span>
+                  <span className="text-white font-bold text-[7.5px]">
+                    {t.connected ? `${(t.brake * 100).toFixed(0)}%` : "12%"}
+                  </span>
                 </div>
                 <div className="h-1 bg-[#11161d] rounded-none overflow-hidden border border-[#1c2430]">
-                  <div className="h-full bg-[#FF4D4D] rounded-none transition-all" style={{ width: t.connected ? `${t.brake * 100}%` : "12%" }} />
+                  <div
+                    className="h-full bg-[#FF4D4D] rounded-none transition-all"
+                    style={{ width: t.connected ? `${t.brake * 100}%` : "12%" }}
+                  />
                 </div>
               </div>
             </div>
@@ -2348,7 +2978,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             {/* Sector Splits Tabular Row */}
             <div className="p-1.5 space-y-1 border-b border-[#1c2430] bg-[#05070a]/75 text-[8px]">
               <div className="flex justify-between font-bold border-b border-[#1c2430]/30 pb-0.5 mb-1 text-[7px] text-[#7a828c] tracking-wider uppercase font-rajdhani">
-                <span>TRACK SECTOR</span><span>DURATION</span><span>DELTA</span>
+                <span>TRACK SECTOR</span>
+                <span>DURATION</span>
+                <span>DELTA</span>
               </div>
               <div className="flex justify-between font-mono">
                 <span className="text-[#7a828c]">S1 (LA SOURCE)</span>
@@ -2384,23 +3016,29 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               <div className="flex justify-between border-t border-[#1c2430]/30 pt-0.5 mt-0.5">
                 <span className="text-[#7a828c] font-rajdhani text-[8.5px]">LEADER DELTA:</span>
                 <span className="text-red-400 font-bold font-mono tracking-widest italic">
-                  {activeTeamTelemetry && activeTeamTelemetry.deltaSec 
-                    ? `+${activeTeamTelemetry.deltaSec.toFixed(3)}s` 
+                  {activeTeamTelemetry && activeTeamTelemetry.deltaSec
+                    ? `+${activeTeamTelemetry.deltaSec.toFixed(3)}s`
                     : "+0.842s"}
                 </span>
               </div>
             </div>
-
           </div>
 
           {/* Animated SVG Spa GP Track Circuit Minimap - Tactical Overlay System */}
           <div className="p-2 bg-[#05070a] border-b border-[#1c2430] rounded-none flex flex-col items-center justify-center">
             <div className="w-full flex items-center justify-between border-b border-[#1c2430]/35 pb-1 mb-1.5 text-[7.5px] font-bold text-[#7a828c] font-rajdhani">
               <span className="uppercase">GP CIRCUIT TACTICAL MAP</span>
-              <span className="text-right text-[#FFB800] uppercase tracking-widest font-mono text-[6.5px]">TRAFFIC WINDOW: +4.2s (CLEAR)</span>
+              <span className="text-right text-[#FFB800] uppercase tracking-widest font-mono text-[6.5px]">
+                TRAFFIC WINDOW: +4.2s (CLEAR)
+              </span>
             </div>
-            
-            <svg width="200" height="85" viewBox="0 0 260 110" className="overflow-visible select-none">
+
+            <svg
+              width="200"
+              height="85"
+              viewBox="0 0 260 110"
+              className="overflow-visible select-none"
+            >
               {/* Sector 1 Steel Path */}
               <path
                 d="M 50,75 L 45,70 L 48,55 L 65,40 L 95,35"
@@ -2410,7 +3048,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              
+
               {/* Sector 2 Highlighted Path */}
               <path
                 d="M 95,35 L 140,35 L 175,45 L 195,58 L 220,60"
@@ -2449,7 +3087,7 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                 strokeWidth="2"
                 strokeDasharray="2 2"
               />
-              
+
               {/* TACTICAL OVERLAY: FCY Caution risk T7-T9 (Yellow alert block overlay) */}
               <path
                 d="M 140,35 L 175,45 L 195,58"
@@ -2470,16 +3108,89 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               </circle>
 
               {/* Monospace Checkpoints & Sector Tags */}
-              <text x="32" y="85" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">LA SOURCE (S1)</text>
-              <text x="32" y="48" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">EAU ROUGE</text>
-              <text x="110" y="27" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold" textAnchor="middle">KEMMEL STR.</text>
-              <text x="180" y="32" fill="#FFB800" fontSize="5.5" fontFamily="monospace" fontWeight="bold">LES COMBES (FCY)</text>
-              <text x="245" y="50" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">POUHON (S2)</text>
-              <text x="188" y="103" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">BLANCHIMONT</text>
-              <text x="100" y="93" fill="#7a828c" fontSize="5.5" fontFamily="monospace" fontWeight="bold">BUS STOP (S3)</text>
-              
+              <text
+                x="32"
+                y="85"
+                fill="#7a828c"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                LA SOURCE (S1)
+              </text>
+              <text
+                x="32"
+                y="48"
+                fill="#7a828c"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                EAU ROUGE
+              </text>
+              <text
+                x="110"
+                y="27"
+                fill="#7a828c"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                KEMMEL STR.
+              </text>
+              <text
+                x="180"
+                y="32"
+                fill="#FFB800"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                LES COMBES (FCY)
+              </text>
+              <text
+                x="245"
+                y="50"
+                fill="#7a828c"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                POUHON (S2)
+              </text>
+              <text
+                x="188"
+                y="103"
+                fill="#7a828c"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                BLANCHIMONT
+              </text>
+              <text
+                x="100"
+                y="93"
+                fill="#7a828c"
+                fontSize="5.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                BUS STOP (S3)
+              </text>
+
               {/* Pit Exit Merge tag */}
-              <text x="70" y="60" fill="#FF4D4D" fontSize="5" fontFamily="monospace" fontWeight="bold">PIT_MERGE</text>
+              <text
+                x="70"
+                y="60"
+                fill="#FF4D4D"
+                fontSize="5"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                PIT_MERGE
+              </text>
             </svg>
           </div>
 
@@ -2488,19 +3199,28 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             <span className="text-[7.5px] text-[#7a828c] uppercase font-bold border-b border-[#1c2430]/25 pb-1 mb-1 block font-rajdhani">
               LIVE CHANNELS STREAM TRACES
             </span>
-            
+
             {/* Speed trace */}
             <div className="flex items-center justify-between">
-              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">SPEED</span>
+              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">
+                SPEED
+              </span>
               <Sparkline data={sparkData.speed} color="#3B82F6" />
               <span className="text-white font-bold font-mono w-14 text-right">
-                {activeTeamTelemetry ? activeTeamTelemetry.speedKph : (t.connected ? t.speedKph : 243)} km/h
+                {activeTeamTelemetry
+                  ? activeTeamTelemetry.speedKph
+                  : t.connected
+                    ? t.speedKph
+                    : 243}{" "}
+                km/h
               </span>
             </div>
 
             {/* Throttle trace */}
             <div className="flex items-center justify-between">
-              <span className="text-[#00D17F] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">THROTTLE</span>
+              <span className="text-[#00D17F] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">
+                THROTTLE
+              </span>
               <Sparkline data={sparkData.throttle} color="#00D17F" />
               <span className="text-white font-bold font-mono w-14 text-right">
                 {t.connected ? `${(t.throttle * 100).toFixed(0)}%` : "78%"}
@@ -2509,7 +3229,9 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
             {/* Brake trace */}
             <div className="flex items-center justify-between">
-              <span className="text-[#FF4D4D] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">BRAKE</span>
+              <span className="text-[#FF4D4D] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">
+                BRAKE
+              </span>
               <Sparkline data={sparkData.brake} color="#FF4D4D" />
               <span className="text-white font-bold font-mono w-14 text-right">
                 {t.connected ? `${(t.brake * 100).toFixed(0)}%` : "12%"}
@@ -2518,55 +3240,69 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
             {/* RPM trace */}
             <div className="flex items-center justify-between">
-              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">RPM</span>
+              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">
+                RPM
+              </span>
               <Sparkline data={sparkData.rpm} color="#FFB800" />
               <span className="text-white font-bold font-mono w-14 text-right">
-                {activeTeamTelemetry ? activeTeamTelemetry.rpm : (t.connected ? t.rpm : 7850)} rpm
+                {activeTeamTelemetry ? activeTeamTelemetry.rpm : t.connected ? t.rpm : 7850} rpm
               </span>
             </div>
 
             {/* Fuel trace */}
             <div className="flex items-center justify-between">
-              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">FUEL</span>
+              <span className="text-[#7a828c] uppercase font-bold w-12 shrink-0 text-[7px] font-rajdhani">
+                FUEL
+              </span>
               <Sparkline data={sparkData.fuel} color="#8B5CF6" />
               <span className="text-white font-bold font-mono w-14 text-right">
-                {activeTeamTelemetry ? activeTeamTelemetry.fuelRemainingL.toFixed(1) : (t.connected ? t.fuelRemainingL.toFixed(1) : "54.2")} L
+                {activeTeamTelemetry
+                  ? activeTeamTelemetry.fuelRemainingL.toFixed(1)
+                  : t.connected
+                    ? t.fuelRemainingL.toFixed(1)
+                    : "54.2"}{" "}
+                L
               </span>
             </div>
           </div>
         </section>
-
       </div>
 
       {/* BOTTOM CONSOLE ROW GRID (Snapping edge-to-edge - span 5 columns) - Shared borders */}
       <footer className="grid grid-cols-5 gap-0 bg-[#0b0f14] relative z-10 shrink-0 select-none rounded-none">
-        
         {/* Widget 6: TEAM MET WEATHER STATUS */}
         <div className="p-2.5 border-r border-[#1c2430] font-mono text-[8.5px] space-y-1.5 flex flex-col justify-between rounded-none">
           <span className="text-[7.5px] font-black text-[#7a828c] uppercase tracking-widest border-b border-[#1c2430]/40 pb-0.5 flex items-center gap-1.5">
-            <span className="size-1 bg-[#00D17F] rounded-full" />
-            6 TEAM STATUS
+            <span className="size-1 bg-[#00D17F] rounded-full" />6 TEAM STATUS
           </span>
 
           <div className="grid grid-cols-2 gap-1.5 text-[#7a828c] pt-0.5">
             <div>
-              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">TRACK TEMP</span>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">
+                TRACK TEMP
+              </span>
               <span className="text-white font-bold font-mono text-[10px]">28.4 °C</span>
             </div>
             <div>
-              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">AIR TEMP</span>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">
+                AIR TEMP
+              </span>
               <span className="text-white font-bold font-mono text-[10px]">22.1 °C</span>
             </div>
             <div>
-              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">HUMIDITY</span>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">
+                HUMIDITY
+              </span>
               <span className="text-white font-bold font-mono text-[10px]">45%</span>
             </div>
             <div>
-              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">WIND VEL</span>
+              <span className="block uppercase text-[6.5px] text-[#7a828c] font-bold">
+                WIND VEL
+              </span>
               <span className="text-white font-bold font-mono text-[10px]">6.2 km/h</span>
             </div>
           </div>
-          
+
           <div className="pt-1.5 border-t border-[#1c2430]/40 flex justify-between items-center text-[7px] font-bold">
             <span className="text-[#7a828c] uppercase">TRACK GRIP</span>
             <span className="text-[#00D17F] font-black uppercase">HIGH</span>
@@ -2580,19 +3316,28 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
           </span>
 
           <div className="space-y-1 py-0.5">
-            {drivers.map(d => {
-              const indicator = 
-                d.status === "Driving" ? "bg-red-400" :
-                d.status === "Available" ? "bg-[#00D17F]" :
-                d.status === "In Garage" ? "bg-[#3B82F6]" : "bg-[#FFB800]";
+            {drivers.map((d) => {
+              const indicator =
+                d.status === "Driving"
+                  ? "bg-red-400"
+                  : d.status === "Available"
+                    ? "bg-[#00D17F]"
+                    : d.status === "In Garage"
+                      ? "bg-[#3B82F6]"
+                      : "bg-[#FFB800]";
 
               return (
-                <div key={d.id} className="flex items-center justify-between text-[#E2E4E8] leading-none">
+                <div
+                  key={d.id}
+                  className="flex items-center justify-between text-[#E2E4E8] leading-none"
+                >
                   <div className="flex items-center gap-1.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${indicator}`} />
                     <span className="uppercase text-[8.5px]">{d.name}</span>
                   </div>
-                  <span className="text-[#7a828c] text-[7.5px] uppercase">{d.status || "Available"}</span>
+                  <span className="text-[#7a828c] text-[7.5px] uppercase">
+                    {d.status || "Available"}
+                  </span>
                 </div>
               );
             })}
@@ -2607,7 +3352,12 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
 
           <div className="flex items-center gap-3 py-0.5 flex-1 min-h-0">
             {/* Inline Technical SVG side view blueprint vector layout */}
-            <svg width="80" height="30" viewBox="0 0 110 40" className="overflow-visible opacity-75 shrink-0">
+            <svg
+              width="80"
+              height="30"
+              viewBox="0 0 110 40"
+              className="overflow-visible opacity-75 shrink-0"
+            >
               <path
                 d="M 5,28 L 22,28 A 6,6 0 0,1 34,28 L 65,28 A 6,6 0 0,1 77,28 L 96,28 L 98,22 L 92,20 L 92,10 L 72,12 L 56,12 L 42,16 L 24,18 L 10,24 Z"
                 fill="none"
@@ -2624,11 +3374,26 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             </svg>
 
             <div className="grid grid-cols-1 gap-x-0 gap-y-0.5 text-[7px] leading-none flex-1">
-              <div className="flex justify-between"><span>PUNCTURE PROB</span><span className="text-[#00D17F] font-bold">8.2% [NOMINAL]</span></div>
-              <div className="flex justify-between"><span>BRAKE THERMAL</span><span className="text-[#00D17F] font-bold">640°C [LIMIT 680]</span></div>
-              <div className="flex justify-between"><span>HYBRID REGEN DEFICIT</span><span className="text-white font-bold">-0.12 kW</span></div>
-              <div className="flex justify-between"><span>OVERHEAT COEFF</span><span className="text-[#00D17F] font-bold">0.14 [NOMINAL]</span></div>
-              <div className="flex justify-between"><span>TYRE SLIP LIMIT</span><span className="text-[#FFB800] font-bold">1.05 [WARNING]</span></div>
+              <div className="flex justify-between">
+                <span>PUNCTURE PROB</span>
+                <span className="text-[#00D17F] font-bold">8.2% [NOMINAL]</span>
+              </div>
+              <div className="flex justify-between">
+                <span>BRAKE THERMAL</span>
+                <span className="text-[#00D17F] font-bold">640°C [LIMIT 680]</span>
+              </div>
+              <div className="flex justify-between">
+                <span>HYBRID REGEN DEFICIT</span>
+                <span className="text-white font-bold">-0.12 kW</span>
+              </div>
+              <div className="flex justify-between">
+                <span>OVERHEAT COEFF</span>
+                <span className="text-[#00D17F] font-bold">0.14 [NOMINAL]</span>
+              </div>
+              <div className="flex justify-between">
+                <span>TYRE SLIP LIMIT</span>
+                <span className="text-[#FFB800] font-bold">1.05 [WARNING]</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2645,32 +3410,48 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               className="cursor-pointer hover:bg-[#11161d] hover:text-[#FFB800] p-0.5 transition-all flex justify-between"
               title="Click to jump to Stint 4 Track Temp"
             >
-              <span><span className="text-white">14:32:15</span> TRACK TEMP RISING +1.2°C</span>
-              <span className="text-[6px] border border-[#FFB800]/30 px-1 font-bold text-[#FFB800] rounded-none font-rajdhani">ANOMALY</span>
+              <span>
+                <span className="text-white">14:32:15</span> TRACK TEMP RISING +1.2°C
+              </span>
+              <span className="text-[6px] border border-[#FFB800]/30 px-1 font-bold text-[#FFB800] rounded-none font-rajdhani">
+                ANOMALY
+              </span>
             </div>
             <div
               onClick={() => handleAnomalyClick("pit", 1)}
               className="cursor-pointer hover:bg-[#11161d] hover:text-[#3B82F6] p-0.5 transition-all flex justify-between"
               title="Click to jump to Stint 2 Fuel curve"
             >
-              <span><span className="text-[#3B82F6]">14:31:48</span> CAR #7 ENTERED PITS</span>
-              <span className="text-[6px] border border-[#3B82F6]/30 px-1 font-bold text-[#3B82F6] rounded-none font-rajdhani">PIT_BOX</span>
+              <span>
+                <span className="text-[#3B82F6]">14:31:48</span> CAR #7 ENTERED PITS
+              </span>
+              <span className="text-[6px] border border-[#3B82F6]/30 px-1 font-bold text-[#3B82F6] rounded-none font-rajdhani">
+                PIT_BOX
+              </span>
             </div>
             <div
               onClick={() => handleAnomalyClick("caution", 2)}
               className="cursor-pointer hover:bg-[#11161d] hover:text-[#FF4D4D] p-0.5 transition-all flex justify-between"
               title="Click to jump to Stint 3 Delta timeline"
             >
-              <span><span className="text-[#FFB800]">14:30:22</span> YELLOW FLAG SECTOR 2 T7</span>
-              <span className="text-[6px] border border-red-500/30 px-1 font-bold text-[#FF4D4D] rounded-none font-rajdhani">CAUTION</span>
+              <span>
+                <span className="text-[#FFB800]">14:30:22</span> YELLOW FLAG SECTOR 2 T7
+              </span>
+              <span className="text-[6px] border border-red-500/30 px-1 font-bold text-[#FF4D4D] rounded-none font-rajdhani">
+                CAUTION
+              </span>
             </div>
             <div
               onClick={() => handleAnomalyClick("green", 0)}
               className="cursor-pointer hover:bg-[#11161d] hover:text-[#00D17F] p-0.5 transition-all flex justify-between"
               title="Click to jump to Stint 1 Tyre Life"
             >
-              <span><span className="text-[#00D17F]">14:28:11</span> GREEN FLAG RESOLVED - SPA OK</span>
-              <span className="text-[6px] border border-[#00D17F]/30 px-1 font-bold text-[#00D17F] rounded-none font-rajdhani">RESOLVED</span>
+              <span>
+                <span className="text-[#00D17F]">14:28:11</span> GREEN FLAG RESOLVED - SPA OK
+              </span>
+              <span className="text-[6px] border border-[#00D17F]/30 px-1 font-bold text-[#00D17F] rounded-none font-rajdhani">
+                RESOLVED
+              </span>
             </div>
           </div>
         </div>
@@ -2679,7 +3460,11 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
         <div className="p-2.5 font-mono text-[8.5px] flex items-stretch gap-2.5 bg-[#05070a]/50 select-none rounded-none">
           {/* Coach photo from the public folder */}
           <div className="w-10 bg-[#11161d] border border-[#1c2430] rounded-none overflow-hidden shrink-0 flex items-center justify-center">
-            <img src="/images/coach-avatar.png" alt="AI Coach" className="w-full h-full object-cover" />
+            <img
+              src="/images/coach-avatar.png"
+              alt="AI Coach"
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <div className="flex-1 flex flex-col justify-between min-w-0 leading-tight">
@@ -2688,7 +3473,8 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                 AI PIT WALL COACH
               </span>
               <p className="text-[7px] text-[#7a828c] uppercase leading-none font-sans line-clamp-2">
-                "Good pace from Laurens. front tyres are in optimal temperature windows. next stint keep managing fuel. push to speak"
+                "Good pace from Laurens. front tyres are in optimal temperature windows. next stint
+                keep managing fuel. push to speak"
               </p>
             </div>
 
@@ -2697,7 +3483,6 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
             </button>
           </div>
         </div>
-
       </footer>
 
       {/* Modal configuration overlays */}
@@ -2716,20 +3501,30 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               <h3 className="text-xs font-black uppercase tracking-widest text-[#E2E4E8] mb-4 border-b border-[#1c2430] pb-2">
                 TEAM CHANNEL CONNECTION
               </h3>
-              
+
               <div className="space-y-4">
                 {teamCode ? (
                   <div className="space-y-3.5">
                     <div className="p-3 bg-[#00D17F]/5 border border-[#00D17F]/30 text-center font-mono">
-                      <span className="text-[7.5px] font-bold text-[#7a828c] uppercase tracking-widest block mb-1">ACTIVE CHANNEL</span>
-                      <span className="text-white text-sm font-black tracking-widest block font-orbitron">{teamCode}</span>
+                      <span className="text-[7.5px] font-bold text-[#7a828c] uppercase tracking-widest block mb-1">
+                        ACTIVE CHANNEL
+                      </span>
+                      <span className="text-white text-sm font-black tracking-widest block font-orbitron">
+                        {teamCode}
+                      </span>
                       <span className="text-[7px] text-[#00D17F] font-bold uppercase tracking-wider block mt-2">
-                        {teamConnected ? "● SECURELY SUBSCRIBED TO REALTIME RELAY" : "○ SUBMITTING TO RELAY CHANNEL..."}
+                        {teamConnected
+                          ? "● SECURELY SUBSCRIBED TO REALTIME RELAY"
+                          : "○ SUBMITTING TO RELAY CHANNEL..."}
                       </span>
                     </div>
 
                     <div className="text-[8px] text-[#7a828c] uppercase leading-relaxed font-sans text-center">
-                      Drivers must place the pre-filled <code className="text-[#FFB800] font-mono font-bold">.env</code> in their bridge directory and run <code className="text-[#FFB800] font-mono font-bold">npm start</code> to publish telemetry.
+                      Drivers must place the pre-filled{" "}
+                      <code className="text-[#FFB800] font-mono font-bold">.env</code> in their
+                      bridge directory and run{" "}
+                      <code className="text-[#FFB800] font-mono font-bold">npm start</code> to
+                      publish telemetry.
                     </div>
 
                     <button
@@ -2745,18 +3540,21 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     </button>
                   </div>
                 ) : (
-                  <form 
+                  <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (teamCodeInput.trim()) {
                         setTeamCode(teamCodeInput.trim().toUpperCase());
                         setShowTeamCodePanel(false);
                       }
-                    }} 
+                    }}
                     className="space-y-4"
                   >
                     <div className="flex flex-col gap-1.5">
-                      <label htmlFor="team-code-input" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                      <label
+                        htmlFor="team-code-input"
+                        className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                      >
                         TEAM CODE SEQUENCE
                       </label>
                       <input
@@ -2806,7 +3604,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               </h3>
               <form onSubmit={handleAddCar} className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="car-name" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                  <label
+                    htmlFor="car-name"
+                    className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                  >
                     CAR MODEL VECTOR
                   </label>
                   <input
@@ -2818,10 +3619,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     placeholder="PORSCHE 963"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="car-num" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                    <label
+                      htmlFor="car-num"
+                      className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                    >
                       VEHICLE NO
                     </label>
                     <input
@@ -2834,7 +3638,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="car-cls" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                    <label
+                      htmlFor="car-cls"
+                      className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                    >
                       CLASS
                     </label>
                     <select
@@ -2880,7 +3687,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
               </h3>
               <form onSubmit={handleAddDriver} className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="drv-name" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                  <label
+                    htmlFor="drv-name"
+                    className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                  >
                     FULL DIRECTIVE NAME
                   </label>
                   <input
@@ -2892,10 +3702,13 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     placeholder="LAURENS VANTHOOR"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="drv-short" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                    <label
+                      htmlFor="drv-short"
+                      className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                    >
                       3-LETTER SIG
                     </label>
                     <input
@@ -2910,7 +3723,10 @@ Be concise, technical, and authoritative. Speak like a pro-team strategist.`;
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="drv-color" className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5">
+                    <label
+                      htmlFor="drv-color"
+                      className="text-[8px] font-black text-[#7a828c] uppercase tracking-widest pl-0.5"
+                    >
                       SIGNATURE COLOR
                     </label>
                     <input

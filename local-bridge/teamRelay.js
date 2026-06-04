@@ -26,17 +26,27 @@ let publishCount = 0;
 let reconnectTimer = null;
 let reconnectDelay = 2000;
 
-function getTeamCode() { return process.env.TEAM_CODE?.trim() || ""; }
-function getDriverName() { return process.env.DRIVER_NAME?.trim() || ""; }
-function getSupabaseUrl() { return process.env.SUPABASE_URL?.trim() || ""; }
-function getSupabaseAnonKey() { return process.env.SUPABASE_ANON_KEY?.trim() || ""; }
+function getTeamCode() {
+  return process.env.TEAM_CODE?.trim() || "";
+}
+function getDriverName() {
+  return process.env.DRIVER_NAME?.trim() || "";
+}
+function getSupabaseUrl() {
+  return process.env.SUPABASE_URL?.trim() || "";
+}
+function getSupabaseAnonKey() {
+  return process.env.SUPABASE_ANON_KEY?.trim() || "";
+}
 
 function scheduleReconnect() {
   if (reconnectTimer) return;
-  
+
   isReady = false;
   const maxDelay = 30000;
-  console.log(`[team-relay] [${new Date().toISOString()}] Scheduling reconnect in ${reconnectDelay}ms...`);
+  console.log(
+    `[team-relay] [${new Date().toISOString()}] Scheduling reconnect in ${reconnectDelay}ms...`,
+  );
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     reconnectDelay = Math.min(reconnectDelay * 2, maxDelay);
@@ -98,7 +108,9 @@ function init() {
             reconnectTimer = null;
           }
           lastError = null;
-          console.log(`[team-relay] [${new Date().toISOString()}] ✓ Connected to channel "${channelName}" — publishing at 2Hz`);
+          console.log(
+            `[team-relay] [${new Date().toISOString()}] ✓ Connected to channel "${channelName}" — publishing at 2Hz`,
+          );
         } else if (status === "CHANNEL_ERROR") {
           isReady = false;
           lastError = "Channel error — check SUPABASE_URL and SUPABASE_ANON_KEY";
@@ -145,17 +157,21 @@ function publish(t, sessionData) {
       publishCount: ++publishCount,
       carOperationalState: {
         ...digest,
-        activeDriver: getDriverName() || digest.activeDriver
-      }
+        activeDriver: getDriverName() || digest.activeDriver,
+      },
     };
 
-    channel
-      .send({ type: "broadcast", event: "telemetry", payload })
-      .catch((err) => {
-        console.warn(`[team-relay] [${new Date().toISOString()}] Publish send promise catch:`, err.message);
-      });
+    channel.send({ type: "broadcast", event: "telemetry", payload }).catch((err) => {
+      console.warn(
+        `[team-relay] [${new Date().toISOString()}] Publish send promise catch:`,
+        err.message,
+      );
+    });
   } catch (err) {
-    console.error(`[team-relay] [${new Date().toISOString()}] publish() caught exception:`, err.message);
+    console.error(
+      `[team-relay] [${new Date().toISOString()}] publish() caught exception:`,
+      err.message,
+    );
   }
 }
 

@@ -1,1 +1,28 @@
-import{s}from"./tts.functions-LY4Ks8GB.js";import{a0 as c}from"./index-BF1LFLDu.js";import"./react-core-hSJfnumv.js";import"./vendor-CUluG-o1.js";import"./charts-DDN7mcLY.js";import"./supabase-DZ6I_NU8.js";import"./zustand-BHt0iSzh.js";import"./icons-UNkcvPbk.js";import"./radix-ui-BcE8c2tf.js";async function d(i,o,a){const e=new Audio(`data:${o};base64,${i}`);if(a&&typeof e.setSinkId=="function")try{await e.setSinkId(a)}catch(r){console.warn("[tts-client] setSinkId failed, falling back to default device:",r)}await e.play()}async function I(i,o){const{elevenLabsApiKey:a,elevenLabsVoiceId:e,audioOutputDeviceId:r}=c.getState(),t=await s({data:{text:i,apiKey:a,voiceId:e}});if(t.error)return t.error;if(!t.audioBase64)return"No audio data returned.";const n=o??r;return await d(t.audioBase64,t.mime??"audio/mpeg",n),null}export{d as playOnSelectedDevice,I as speak};
+import { s } from "./tts.functions-LY4Ks8GB.js";
+import { a0 as c } from "./index-BF1LFLDu.js";
+import "./react-core-hSJfnumv.js";
+import "./vendor-CUluG-o1.js";
+import "./charts-DDN7mcLY.js";
+import "./supabase-DZ6I_NU8.js";
+import "./zustand-BHt0iSzh.js";
+import "./icons-UNkcvPbk.js";
+import "./radix-ui-BcE8c2tf.js";
+async function d(i, o, a) {
+  const e = new Audio(`data:${o};base64,${i}`);
+  if (a && typeof e.setSinkId == "function")
+    try {
+      await e.setSinkId(a);
+    } catch (r) {
+      console.warn("[tts-client] setSinkId failed, falling back to default device:", r);
+    }
+  await e.play();
+}
+async function I(i, o) {
+  const { elevenLabsApiKey: a, elevenLabsVoiceId: e, audioOutputDeviceId: r } = c.getState(),
+    t = await s({ data: { text: i, apiKey: a, voiceId: e } });
+  if (t.error) return t.error;
+  if (!t.audioBase64) return "No audio data returned.";
+  const n = o ?? r;
+  return (await d(t.audioBase64, t.mime ?? "audio/mpeg", n), null);
+}
+export { d as playOnSelectedDevice, I as speak };

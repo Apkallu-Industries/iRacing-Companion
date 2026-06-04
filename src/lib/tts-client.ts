@@ -39,12 +39,8 @@ export async function playOnSelectedDevice(
  *
  * Returns an error string if TTS fails, otherwise null.
  */
-export async function speak(
-  text: string,
-  overrideDeviceId?: string,
-): Promise<null | string> {
-  const { elevenLabsApiKey, elevenLabsVoiceId, audioOutputDeviceId } =
-    useWorkbench.getState();
+export async function speak(text: string, overrideDeviceId?: string): Promise<null | string> {
+  const { elevenLabsApiKey, elevenLabsVoiceId, audioOutputDeviceId } = useWorkbench.getState();
 
   const resp = (await speakText({
     data: {

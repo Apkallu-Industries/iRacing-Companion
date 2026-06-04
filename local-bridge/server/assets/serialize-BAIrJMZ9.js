@@ -8,7 +8,7 @@ const PWLAP_FLAGS = {
   // Ed25519
   COMPRESSED: 4,
   // Zstandard
-  INCLUDE_PII: 8
+  INCLUDE_PII: 8,
   // Include driver name
 };
 function serializeHeader(header) {
@@ -76,7 +76,7 @@ function deserializeHeader(buf) {
     signature: !sigAllZeros ? signature : void 0,
     granularity,
     created_at_ms,
-    reserved: bytes.slice(offset)
+    reserved: bytes.slice(offset),
   };
 }
 function hasFlag(flags, flag) {
@@ -111,21 +111,17 @@ async function deriveKeyFromPassword(password, salt) {
       name: "PBKDF2",
       salt,
       iterations: 1e5,
-      hash: "SHA-256"
+      hash: "SHA-256",
     },
     baseKey,
     { name: "AES-GCM", length: 256 },
     false,
     // not extractable
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   );
 }
 async function encryptAES256GCM(data, key, iv) {
-  const encrypted = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    data
-  );
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
   return new Uint8Array(encrypted);
 }
 function generateSalt() {
@@ -136,16 +132,13 @@ function generateSalt() {
 async function signEd25519(data, privateKeyBytes) {
   if (crypto.subtle && "sign" in crypto.subtle) {
     try {
-      const key = await crypto.subtle.importKey("raw", privateKeyBytes, "Ed25519", false, [
-        "sign"
-      ]);
+      const key = await crypto.subtle.importKey("raw", privateKeyBytes, "Ed25519", false, ["sign"]);
       const signature = await crypto.subtle.sign("Ed25519", key, data);
       return new Uint8Array(signature);
-    } catch (e) {
-    }
+    } catch (e) {}
   }
   throw new Error(
-    "Ed25519 signing not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser."
+    "Ed25519 signing not supported by SubtleCrypto. Please add tweetnacl library or use a modern browser.",
   );
 }
 async function serializePwlap(content, options) {
@@ -179,7 +172,7 @@ async function serializePwlap(content, options) {
     iv_nonce: iv,
     signature,
     granularity: granularityToNum(options.granularity),
-    created_at_ms: Date.now()
+    created_at_ms: Date.now(),
   };
   const headerBytes = serializeHeader(header);
   return concatBytes(headerBytes, contentBytes).buffer;
@@ -225,7 +218,7 @@ async function deserializePwlap(buffer, password, publicKey) {
     encrypted,
     signed,
     compressed,
-    valid: true
+    valid: true,
   };
 }
 function concatBytes(...arrays) {
@@ -277,7 +270,4 @@ async function decompressContent(data) {
   }
   throw new Error("Unable to decompress content; no decompression library available");
 }
-export {
-  deserializePwlap as d,
-  serializePwlap as s
-};
+export { deserializePwlap as d, serializePwlap as s };

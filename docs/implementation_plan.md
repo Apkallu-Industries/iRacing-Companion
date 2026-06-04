@@ -12,6 +12,7 @@ Refresh all outdated npm dependencies to their latest stable versions and improv
 ## Open Questions
 
 > [!WARNING]
+>
 > 1. **Team integration details** – The bridge currently posts telemetry to Microsoft Teams via a webhook. Do you have a specific webhook URL or authentication method that must remain unchanged?
 > 2. **Runtime environment** – The bridge runs as a Node.js process started by `npm run bridge` (or similar). Should we add automatic restarts on crash (e.g., using `nodemon` or a Windows Service)?
 > 3. **Telemetry schema** – Are there any new telemetry fields you expect to handle that are not currently encoded in `binaryEncoder.js`?
@@ -20,6 +21,7 @@ Refresh all outdated npm dependencies to their latest stable versions and improv
 ## Proposed Changes
 
 ---
+
 ### Package Updates
 
 - **Root `package.json`** – Upgrade to latest versions:
@@ -52,6 +54,7 @@ Refresh all outdated npm dependencies to their latest stable versions and improv
 - Run `npm install` after updating `package.json` files.
 
 ---
+
 ### Telemetry Bridge Hardening
 
 1. **Error‑handling wrapper** around `encodeTelemetry` in `local-bridge/binaryEncoder.js`:
@@ -67,6 +70,7 @@ Refresh all outdated npm dependencies to their latest stable versions and improv
 6. **Schema versioning** – Add a version field to the encoded telemetry payload so future changes can be detected and ignored safely.
 
 ---
+
 ### Code Adjustments
 
 - Update imports where Vite or React version changes affect API (e.g., `import { defineConfig } from 'vite'` may need adjustments).
@@ -75,25 +79,30 @@ Refresh all outdated npm dependencies to their latest stable versions and improv
 - Add new `zod` schema file `local-bridge/telemetry-schema.ts` and import it in `binaryEncoder.js`.
 
 ---
+
 ### Verification Plan
 
 **Automated Tests**
+
 - Run existing test suite (`npm run test` if present) after upgrades.
 - Add a new test `local-bridge/__tests__/telemetry-bridge.test.ts` that simulates a malformed telemetry frame and asserts the process does not crash.
 
 **Manual Verification**
+
 - Start the bridge (`npm run bridge` or `node local-bridge/server.js`).
 - Verify telemetry appears in the UI and that the Teams webhook receives messages.
 - Simulate network loss (disconnect internet) and confirm reconnection attempts log correctly.
 - Check that the UI reflects `t.connected` state appropriately.
 
 ---
+
 ### Documentation Updates
 
 - Update `BRIDGE_ARCHITECTURE.md` with new error‑handling flow diagram.
 - Add a section in `TEAMS.md` describing webhook configuration and retry behavior.
 
 ---
+
 ## Timeline
 
 - **Day 1**: Apply package version bumps, run `npm install`, fix any compile errors.
@@ -102,14 +111,17 @@ Refresh all outdated npm dependencies to their latest stable versions and improv
 - **Day 4**: Write/adjust tests, run full verification, update docs.
 
 ---
+
 ## Verification Plan
 
 ### Automated Tests
+
 - `npm run lint -- --fix` after upgrades to ensure no lint errors.
 - Run `npm run build` to confirm the production bundle compiles.
 - Execute the new bridge unit test.
 
 ### Manual Verification
+
 - Launch the dev server (`npm run dev`) and confirm UI loads without console errors.
 - Open a live telemetry session and observe stable data flow.
 - Verify Teams messages are posted even after temporary network drops.

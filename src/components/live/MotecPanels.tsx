@@ -206,10 +206,10 @@ export function TraceStack({
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const dpr = window.devicePixelRatio || 1;
-    
+
     // Scale traces to fill the available space dynamically
     const cssW = dimensions.width || wrap.clientWidth || 600;
-    const cssH = dimensions.height || wrap.clientHeight || (TRACES.length * ROW_H);
+    const cssH = dimensions.height || wrap.clientHeight || TRACES.length * ROW_H;
     const rowHeight = cssH / TRACES.length;
 
     if (canvas.width !== Math.floor(cssW * dpr) || canvas.height !== Math.floor(cssH * dpr)) {
@@ -301,7 +301,11 @@ export function TraceStack({
         for (let si = 0; si < trace.fields.length; si++) {
           const v = smoothed[`${trace.key}:${si}`]?.[idx] ?? 0;
           ctx.fillStyle = trace.colors[si];
-          ctx.fillText((trace.fmt ?? ((x) => x.toFixed(2)))(v), cssW - 8, y0 + Math.min(16, rowHeight * 0.28) + si * 14);
+          ctx.fillText(
+            (trace.fmt ?? ((x) => x.toFixed(2)))(v),
+            cssW - 8,
+            y0 + Math.min(16, rowHeight * 0.28) + si * 14,
+          );
         }
         ctx.textAlign = "left";
       }
@@ -402,11 +406,11 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
     const dpr = window.devicePixelRatio || 1;
-    
+
     const parent = wrap.parentElement;
     const cssW = wrap.clientWidth;
     const parentH = parent ? parent.clientHeight : 0;
-    
+
     // Keep the diagram square, scale to fit parents, but limit to 550px max for professional proportions.
     const cssH = parentH > 0 ? parentH : cssW;
     const size = Math.max(120, Math.min(cssW, cssH, 550) - 16);
@@ -486,7 +490,10 @@ export function GGScatter({ samples }: { samples: Sample[] }) {
       ref={wrapRef}
       className="w-full h-full flex items-center justify-center p-2 bg-background/30"
     >
-      <canvas ref={canvasRef} className="block rounded border border-border/80 shadow-md bg-[#0a0a0a]" />
+      <canvas
+        ref={canvasRef}
+        className="block rounded border border-border/80 shadow-md bg-[#0a0a0a]"
+      />
     </div>
   );
 }

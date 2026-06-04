@@ -41,7 +41,7 @@ export function exportStintPackage(
   session: StintPackage["session"],
   samples: StintPackage["samples"],
   events: StintPackage["events"],
-  snapshots: SessionSnapshot[]
+  snapshots: SessionSnapshot[],
 ): Uint8Array {
   const payload: StintPackage = {
     session,
@@ -49,7 +49,7 @@ export function exportStintPackage(
     events,
     snapshots,
     created_at: new Date().toISOString(),
-    version: "1.0.0"
+    version: "1.0.0",
   };
 
   const jsonString = JSON.stringify(payload);

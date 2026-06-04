@@ -22,7 +22,8 @@ export const Route = createFileRoute("/driver-bridge")({
       { title: "Driver Cockpit HUD — Pit Wall" },
       {
         name: "description",
-        content: "Simplified high-performance live telemetry cockpit HUD designed specifically for drivers.",
+        content:
+          "Simplified high-performance live telemetry cockpit HUD designed specifically for drivers.",
       },
     ],
   }),
@@ -34,7 +35,7 @@ function DriverBridgePage() {
   const [driverName, setDriverName] = useState("");
   const [iracingId, setIracingId] = useState("");
   const [teamCode, setTeamCode] = useState("");
-  
+
   const [isConfigured, setIsConfigured] = useState(false);
   const [bridgeConnected, setBridgeConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -77,7 +78,7 @@ function DriverBridgePage() {
         setLoading(false);
       }
     };
-    
+
     checkBridge();
     const interval = setInterval(checkBridge, 3000);
     return () => clearInterval(interval);
@@ -93,7 +94,7 @@ function DriverBridgePage() {
       setErrorMsg("iRacing ID is required.");
       return;
     }
-    
+
     setSyncing(true);
     setErrorMsg(null);
 
@@ -132,11 +133,11 @@ function DriverBridgePage() {
     const rpmWarn = t.rpmShiftWarn || 8800;
     const rpmBlink = t.rpmShiftRedline || 9800;
 
-    const range = rpmBlink - (rpmWarn * 0.8);
+    const range = rpmBlink - rpmWarn * 0.8;
     const step = range / 10;
 
     for (let i = 0; i < 10; i++) {
-      const threshold = (rpmWarn * 0.8) + (i * step);
+      const threshold = rpmWarn * 0.8 + i * step;
       const active = rpm >= threshold;
       let colorClass = "bg-zinc-800/80";
 
@@ -152,7 +153,10 @@ function DriverBridgePage() {
         }
       }
       lights.push(
-        <div key={i} className={`h-3 rounded-full flex-1 transition-all duration-75 ${colorClass}`} />
+        <div
+          key={i}
+          className={`h-3 rounded-full flex-1 transition-all duration-75 ${colorClass}`}
+        />,
       );
     }
     return lights;
@@ -176,7 +180,9 @@ function DriverBridgePage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-[#05070A] text-foreground font-mono">
         <Activity className="h-8 w-8 text-primary animate-spin mb-3" />
-        <span className="text-xs uppercase tracking-widest text-muted-foreground animate-pulse">Initializing cockpit telemetry...</span>
+        <span className="text-xs uppercase tracking-widest text-muted-foreground animate-pulse">
+          Initializing cockpit telemetry...
+        </span>
       </div>
     );
   }
@@ -202,12 +208,19 @@ function DriverBridgePage() {
         <div className="flex items-center gap-6">
           <div className="hidden md:flex items-center gap-3 border border-[#1C2430] bg-[#11161D] px-3 py-1 text-[10px]">
             <span className="text-[#7A828C] font-bold">LOCAL BRIDGE</span>
-            <span className={`flex items-center gap-1.5 font-bold ${bridgeConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${bridgeConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-              {bridgeConnected ? 'ONLINE (ws:3001)' : 'OFFLINE'}
+            <span
+              className={`flex items-center gap-1.5 font-bold ${bridgeConnected ? "text-emerald-400" : "text-amber-400"}`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${bridgeConnected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`}
+              />
+              {bridgeConnected ? "ONLINE (ws:3001)" : "OFFLINE"}
             </span>
           </div>
-          <Link to="/" className="text-xs text-[#7A828C] hover:text-white uppercase tracking-wider font-bold transition-all border border-[#1C2430] bg-[#11161D] px-3.5 py-1">
+          <Link
+            to="/"
+            className="text-xs text-[#7A828C] hover:text-white uppercase tracking-wider font-bold transition-all border border-[#1C2430] bg-[#11161D] px-3.5 py-1"
+          >
             Back
           </Link>
         </div>
@@ -215,7 +228,6 @@ function DriverBridgePage() {
 
       {/* Main Workspace */}
       <div className="flex-1 w-full max-w-none px-4 md:px-12 lg:px-16 py-8 flex flex-col justify-center items-center z-10 relative">
-        
         {!isConfigured ? (
           /* STATE A: WIZARD CONFIGURATION FORM */
           <div className="w-full max-w-xl bg-[#0B0F14]/80 border border-[#1C2430] rounded-3xl p-8 shadow-2xl backdrop-blur-md relative overflow-hidden">
@@ -312,23 +324,24 @@ function DriverBridgePage() {
                 How to connect your Local Bridge
               </h4>
               <p className="text-muted-foreground text-[11px] leading-relaxed mb-4">
-                Drivers must run the telemetry bridge locally to grab and stream their live iRacing data. 
-                Download the bridge zip file, extract it, and execute in your command prompt:
+                Drivers must run the telemetry bridge locally to grab and stream their live iRacing
+                data. Download the bridge zip file, extract it, and execute in your command prompt:
               </p>
               <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-emerald-400 w-full mb-3 select-all">
                 {`cd C:\\PitWall\\bridge\nnpm install\nnpm start`}
               </pre>
               <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/10 text-muted-foreground rounded-xl leading-normal text-[11px] font-sans">
                 <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
-                <span>The bridge remains completely local on your PC. No credentials or external accounts are requested.</span>
+                <span>
+                  The bridge remains completely local on your PC. No credentials or external
+                  accounts are requested.
+                </span>
               </div>
             </div>
-
           </div>
         ) : (
           /* STATE B: SIMPLIFIED HIGH-PERFORMANCE COCKPIT HUD */
           <div className="w-full space-y-6">
-            
             {/* Shift Light LED Bar */}
             <div className="flex items-center gap-1.5 w-full bg-[#0B0F14] border border-[#1C2430] rounded-2xl p-2.5 shadow-xl shrink-0">
               {getShiftLights()}
@@ -338,11 +351,15 @@ function DriverBridgePage() {
             <div className="flex flex-col md:flex-row gap-4 items-stretch justify-between text-xs w-full">
               <div className="flex-1 bg-[#0B0F14] border border-[#1C2430] rounded-2xl p-4 flex items-center justify-between shadow-lg">
                 <div>
-                  <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">Active Driver Profile</span>
+                  <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">
+                    Active Driver Profile
+                  </span>
                   <span className="text-sm font-bold text-white uppercase">{driverName}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">iRacing ID</span>
+                  <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">
+                    iRacing ID
+                  </span>
                   <span className="text-sm font-bold text-primary font-mono">{iracingId}</span>
                 </div>
               </div>
@@ -350,8 +367,12 @@ function DriverBridgePage() {
               {teamCode && (
                 <div className="flex-1 bg-[#0B0F14] border border-[#1c2430] rounded-2xl p-4 flex items-center justify-between shadow-lg">
                   <div>
-                    <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">Paddock Sync Team</span>
-                    <span className="text-sm font-bold text-white font-mono uppercase">{teamCode}</span>
+                    <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">
+                      Paddock Sync Team
+                    </span>
+                    <span className="text-sm font-bold text-white font-mono uppercase">
+                      {teamCode}
+                    </span>
                   </div>
                   <span className="text-[8px] bg-primary/10 border border-primary/20 text-primary px-2 py-0.5 rounded-full uppercase font-bold tracking-widest font-mono">
                     CONNECTED
@@ -361,21 +382,23 @@ function DriverBridgePage() {
 
               <div className="flex-1 bg-[#0B0F14] border border-[#1c2430] rounded-2xl p-4 flex items-center justify-between shadow-lg">
                 <div>
-                  <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">Current Session</span>
+                  <span className="text-[#7A828C] block uppercase text-[9px] tracking-widest">
+                    Current Session
+                  </span>
                   <span className="text-sm font-bold text-white uppercase truncate max-w-[200px] block">
                     {t.session !== "SESSION — TRACK" ? t.session : "WAITTING FOR SIM..."}
                   </span>
                 </div>
-                <span className={`w-2.5 h-2.5 rounded-full shrink-0 shadow ${t.connected ? "bg-emerald-400 shadow-emerald-400" : "bg-amber-400 shadow-amber-400"}`} />
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 shadow ${t.connected ? "bg-emerald-400 shadow-emerald-400" : "bg-amber-400 shadow-amber-400"}`}
+                />
               </div>
             </div>
 
             {/* Core Driver HUD Panels */}
             <div className="grid lg:grid-cols-12 gap-6 items-stretch w-full">
-              
               {/* Left Column: Big Gear, Speed & Input traces (Cols 1-7) */}
               <div className="lg:col-span-7 flex flex-col gap-6 justify-between items-stretch">
-                
                 {/* Huge Gear & Speed Readout */}
                 <div className="border border-[#1C2430] bg-[#0B0F14] rounded-3xl p-8 flex-1 flex items-center justify-around shadow-2xl relative overflow-hidden min-h-[260px]">
                   <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-[90px] pointer-events-none" />
@@ -385,26 +408,36 @@ function DriverBridgePage() {
                     <span className="text-[132px] font-sans font-black italic tracking-tighter text-white select-none leading-none">
                       {t.gear === 0 ? "N" : t.gear === -1 ? "R" : t.gear}
                     </span>
-                    <span className="absolute bottom-4 font-mono text-[9px] uppercase tracking-widest text-[#7A828C]">Gear</span>
+                    <span className="absolute bottom-4 font-mono text-[9px] uppercase tracking-widest text-[#7A828C]">
+                      Gear
+                    </span>
                   </div>
 
                   <div className="flex flex-col justify-center gap-1.5 font-mono border-l border-[#1C2430] pl-10 flex-1">
                     <div>
-                      <span className="text-[#7A828C] uppercase text-[9px] tracking-widest block">VELOCITY</span>
+                      <span className="text-[#7A828C] uppercase text-[9px] tracking-widest block">
+                        VELOCITY
+                      </span>
                       <div className="text-5xl font-sans font-black italic tracking-tighter text-white leading-none mt-1">
-                        {Math.round(t.speedKph)} <span className="text-xs not-italic text-[#7A828C]">KPH</span>
+                        {Math.round(t.speedKph)}{" "}
+                        <span className="text-xs not-italic text-[#7A828C]">KPH</span>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4">
-                      <span className="text-[#7A828C] uppercase text-[9px] tracking-widest block">ENGINE SPEED</span>
+                      <span className="text-[#7A828C] uppercase text-[9px] tracking-widest block">
+                        ENGINE SPEED
+                      </span>
                       <div className="text-xl font-bold text-white mt-1">
-                        {Math.round(t.rpm)} <span className="text-[10px] font-normal text-[#7A828C]">RPM</span>
+                        {Math.round(t.rpm)}{" "}
+                        <span className="text-[10px] font-normal text-[#7A828C]">RPM</span>
                       </div>
                       <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden mt-1.5">
                         <div
                           className="h-full bg-primary"
-                          style={{ width: `${Math.min(100, (t.rpm / (t.rpmMax || 11000)) * 100)}%` }}
+                          style={{
+                            width: `${Math.min(100, (t.rpm / (t.rpmMax || 11000)) * 100)}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -413,9 +446,10 @@ function DriverBridgePage() {
 
                 {/* Micro input bar traces */}
                 <div className="border border-[#1C2430] bg-[#0B0F14] rounded-3xl p-6 shadow-xl">
-                  <h3 className="text-[10px] text-white uppercase font-bold tracking-wider mb-4">Input Controls</h3>
+                  <h3 className="text-[10px] text-white uppercase font-bold tracking-wider mb-4">
+                    Input Controls
+                  </h3>
                   <div className="space-y-3">
-                    
                     {/* Throttle (Green) */}
                     <div className="grid grid-cols-12 gap-3 items-center">
                       <span className="col-span-2 text-[#7A828C] text-[10px] font-bold">THR</span>
@@ -425,7 +459,9 @@ function DriverBridgePage() {
                           style={{ width: `${(t.throttle || 0) * 100}%` }}
                         />
                       </div>
-                      <span className="col-span-2 text-right text-xs font-bold text-white">{Math.round((t.throttle || 0) * 100)}%</span>
+                      <span className="col-span-2 text-right text-xs font-bold text-white">
+                        {Math.round((t.throttle || 0) * 100)}%
+                      </span>
                     </div>
 
                     {/* Brake (Red) */}
@@ -437,7 +473,9 @@ function DriverBridgePage() {
                           style={{ width: `${(t.brake || 0) * 100}%` }}
                         />
                       </div>
-                      <span className="col-span-2 text-right text-xs font-bold text-white">{Math.round((t.brake || 0) * 100)}%</span>
+                      <span className="col-span-2 text-right text-xs font-bold text-white">
+                        {Math.round((t.brake || 0) * 100)}%
+                      </span>
                     </div>
 
                     {/* Clutch (Blue/Grey) */}
@@ -449,7 +487,9 @@ function DriverBridgePage() {
                           style={{ width: `${(t.clutch || 0) * 100}%` }}
                         />
                       </div>
-                      <span className="col-span-2 text-right text-xs font-bold text-white">{Math.round((t.clutch || 0) * 100)}%</span>
+                      <span className="col-span-2 text-right text-xs font-bold text-white">
+                        {Math.round((t.clutch || 0) * 100)}%
+                      </span>
                     </div>
 
                     {/* Steering degree indicator */}
@@ -459,69 +499,105 @@ function DriverBridgePage() {
                         <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-zinc-700" />
                         <div
                           className="absolute h-2 w-2 rounded-sm bg-cyan-400 shadow-[0_0_6px_#22d3ee]"
-                          style={{ left: `calc(50% + ${Math.max(-50, Math.min(50, ((t.steeringDeg || 0) / 360) * 50))}% - 4px)` }}
+                          style={{
+                            left: `calc(50% + ${Math.max(-50, Math.min(50, ((t.steeringDeg || 0) / 360) * 50))}% - 4px)`,
+                          }}
                         />
                       </div>
-                      <span className="col-span-2 text-right text-xs font-bold text-white">{Math.round(t.steeringDeg || 0)}°</span>
+                      <span className="col-span-2 text-right text-xs font-bold text-white">
+                        {Math.round(t.steeringDeg || 0)}°
+                      </span>
                     </div>
-
                   </div>
                 </div>
-
               </div>
 
               {/* Right Column: Timing, Fuel, and Tires (Cols 8-12) */}
               <div className="lg:col-span-5 flex flex-col gap-6 justify-between items-stretch">
-                
                 {/* Timings and Delta */}
                 <div className="border border-[#1C2430] bg-[#0B0F14] rounded-3xl p-6 shadow-xl space-y-4">
                   <div className="flex justify-between items-center border-b border-[#1C2430] pb-2">
-                    <h3 className="text-[10px] text-white uppercase font-bold tracking-wider">Sector Times</h3>
+                    <h3 className="text-[10px] text-white uppercase font-bold tracking-wider">
+                      Sector Times
+                    </h3>
                     <div className="flex items-center gap-3 text-[10px] font-bold">
-                      <span className="text-[#7A828C]">S1: <span className="text-white">{t.sectors?.s1 || "--.---"}</span></span>
-                      <span className="text-[#7A828C]">S2: <span className="text-white">{t.sectors?.s2 || "--.---"}</span></span>
-                      <span className="text-[#7A828C]">S3: <span className="text-white">{t.sectors?.s3 || "--.---"}</span></span>
+                      <span className="text-[#7A828C]">
+                        S1: <span className="text-white">{t.sectors?.s1 || "--.---"}</span>
+                      </span>
+                      <span className="text-[#7A828C]">
+                        S2: <span className="text-white">{t.sectors?.s2 || "--.---"}</span>
+                      </span>
+                      <span className="text-[#7A828C]">
+                        S3: <span className="text-white">{t.sectors?.s3 || "--.---"}</span>
+                      </span>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-[#7A828C] text-[9px] tracking-widest uppercase block">Last Lap</span>
-                      <span className="text-lg font-bold text-white">{t.lastLap || "--:--.---"}</span>
+                      <span className="text-[#7A828C] text-[9px] tracking-widest uppercase block">
+                        Last Lap
+                      </span>
+                      <span className="text-lg font-bold text-white">
+                        {t.lastLap || "--:--.---"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[#7A828C] text-[9px] tracking-widest uppercase block">Best Lap</span>
-                      <span className="text-lg font-bold text-emerald-400">{t.bestLap || "--:--.---"}</span>
+                      <span className="text-[#7A828C] text-[9px] tracking-widest uppercase block">
+                        Best Lap
+                      </span>
+                      <span className="text-lg font-bold text-emerald-400">
+                        {t.bestLap || "--:--.---"}
+                      </span>
                     </div>
                   </div>
-                  
-                  <div className={`p-4 rounded-2xl flex items-center justify-between border ${t.deltaSec >= 0 ? "bg-red-500/5 border-red-500/20 text-red-400" : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"}`}>
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">Lap Delta</span>
+
+                  <div
+                    className={`p-4 rounded-2xl flex items-center justify-between border ${t.deltaSec >= 0 ? "bg-red-500/5 border-red-500/20 text-red-400" : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"}`}
+                  >
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-widest">
+                      Lap Delta
+                    </span>
                     <span className="text-2xl font-bold tracking-wider font-mono">
-                      {t.deltaSec >= 0 ? "+" : ""}{t.deltaSec.toFixed(3)}s
+                      {t.deltaSec >= 0 ? "+" : ""}
+                      {t.deltaSec.toFixed(3)}s
                     </span>
                   </div>
                 </div>
 
                 {/* Tire Grid Quad */}
                 <div className="border border-[#1C2430] bg-[#0B0F14] rounded-3xl p-6 shadow-xl">
-                  <h3 className="text-[10px] text-white uppercase font-bold tracking-wider mb-4 border-b border-[#1C2430] pb-2">Tire Management</h3>
+                  <h3 className="text-[10px] text-white uppercase font-bold tracking-wider mb-4 border-b border-[#1C2430] pb-2">
+                    Tire Management
+                  </h3>
                   <div className="grid grid-cols-2 gap-4 font-mono text-[10px]">
                     {(["fl", "fr", "rl", "rr"] as const).map((corner) => {
                       const tire = t.tires?.[corner];
                       if (!tire) return null;
                       const label = corner.toUpperCase();
-                      
+
                       return (
-                        <div key={corner} className="bg-background border border-[#1C2430]/60 rounded-2xl p-3 space-y-1.5">
+                        <div
+                          key={corner}
+                          className="bg-background border border-[#1C2430]/60 rounded-2xl p-3 space-y-1.5"
+                        >
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-[#7A828C]">{label}</span>
-                            <span className={`font-bold ${getTireTempColor(tire.tempC)}`}>{Math.round(tire.tempC)}°C</span>
+                            <span className={`font-bold ${getTireTempColor(tire.tempC)}`}>
+                              {Math.round(tire.tempC)}°C
+                            </span>
                           </div>
-                          <div className="text-[11px] font-bold text-white">{tire.pressureBar.toFixed(2)} bar</div>
+                          <div className="text-[11px] font-bold text-white">
+                            {tire.pressureBar.toFixed(2)} bar
+                          </div>
                           <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden mt-1">
-                            <div className={`h-full ${getTireWearColor(tire.estWearPct)}`} style={{ width: `${tire.estWearPct}%` }} />
+                            <div
+                              className={`h-full ${getTireWearColor(tire.estWearPct)}`}
+                              style={{ width: `${tire.estWearPct}%` }}
+                            />
                           </div>
-                          <div className="text-[9px] text-[#7A828C] text-right font-bold">{Math.round(tire.estWearPct)}% wear</div>
+                          <div className="text-[9px] text-[#7A828C] text-right font-bold">
+                            {Math.round(tire.estWearPct)}% wear
+                          </div>
                         </div>
                       );
                     })}
@@ -531,17 +607,25 @@ function DriverBridgePage() {
                 {/* Fuel & Stint Info */}
                 <div className="border border-[#1C2430] bg-[#0B0F14] rounded-3xl p-6 shadow-xl grid grid-cols-2 gap-6">
                   <div>
-                    <span className="text-[#7A828C] text-[9px] tracking-widest block uppercase mb-1">Fuel Remaining</span>
-                    <span className="text-xl font-bold text-white font-mono">{t.fuelRemainingL.toFixed(1)} <span className="text-xs text-[#7A828C]">L</span></span>
+                    <span className="text-[#7A828C] text-[9px] tracking-widest block uppercase mb-1">
+                      Fuel Remaining
+                    </span>
+                    <span className="text-xl font-bold text-white font-mono">
+                      {t.fuelRemainingL.toFixed(1)}{" "}
+                      <span className="text-xs text-[#7A828C]">L</span>
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[#7A828C] text-[9px] tracking-widest block uppercase mb-1">Estimated Laps</span>
-                    <span className="text-xl font-bold text-primary font-mono">{t.lapsEstimated.toFixed(1)} <span className="text-xs text-[#7A828C]">Laps</span></span>
+                    <span className="text-[#7A828C] text-[9px] tracking-widest block uppercase mb-1">
+                      Estimated Laps
+                    </span>
+                    <span className="text-xl font-bold text-primary font-mono">
+                      {t.lapsEstimated.toFixed(1)}{" "}
+                      <span className="text-xs text-[#7A828C]">Laps</span>
+                    </span>
                   </div>
                 </div>
-
               </div>
-
             </div>
 
             {/* Bottom Actions Row */}
@@ -553,16 +637,16 @@ function DriverBridgePage() {
                 ↺ Modify Driver Profile
               </button>
             </div>
-
           </div>
         )}
-
       </div>
 
       {/* Footer */}
       <footer className="border-t border-[#1C2430] bg-[#0B0F14]/50 py-4 px-6 text-[#7A828C] text-[8px] font-mono tracking-wider z-10 select-none">
         <div className="mx-auto w-full max-w-none px-4 md:px-12 lg:px-16 flex flex-col md:flex-row items-center justify-between gap-4">
-          <span className="font-sans font-black italic tracking-tighter text-white">PIT WALL DRIVER STATION</span>
+          <span className="font-sans font-black italic tracking-tighter text-white">
+            PIT WALL DRIVER STATION
+          </span>
           <span>© 2026 PIT WALL WORKSTATION · ACTIVE LOCAL WS PIPELINE</span>
         </div>
       </footer>

@@ -101,7 +101,9 @@ export function KeyboardShortcuts() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md font-mono text-sm bg-panel border border-border text-foreground">
         <DialogHeader>
-          <DialogTitle className="font-mono text-xs uppercase tracking-wider text-primary">Workstation Shortcuts</DialogTitle>
+          <DialogTitle className="font-mono text-xs uppercase tracking-wider text-primary">
+            Workstation Shortcuts
+          </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             Fast keyboard-first controls. Disabled while typing in text inputs.
           </DialogDescription>

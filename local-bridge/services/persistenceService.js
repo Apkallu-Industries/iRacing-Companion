@@ -28,11 +28,15 @@ class PersistenceService {
       this.db = this.client.db("iracing_companion");
       this.connected = true;
       console.log("[persistence-service] Connected to MongoDB client.");
-      
+
       // Run index healing and retention compaction asynchronously on initialization
-      this.healIndexes().catch(err => console.error("[persistence-service] Index healing failure:", err));
-      executeRetentionPolicy(this.db).catch(err => console.error("[persistence-service] Compaction sweep failure:", err));
-      
+      this.healIndexes().catch((err) =>
+        console.error("[persistence-service] Index healing failure:", err),
+      );
+      executeRetentionPolicy(this.db).catch((err) =>
+        console.error("[persistence-service] Compaction sweep failure:", err),
+      );
+
       return true;
     } catch (e) {
       console.error(`[persistence-service] Database connection failed: ${e.message}`);
@@ -49,11 +53,17 @@ class PersistenceService {
       await this.db.collection("laps").createIndex({ session_id: 1, lap_number: 1 });
       await this.db.collection("scanner_events").createIndex({ session_id: 1, timestamp: -1 });
       await this.db.collection("setup_changes").createIndex({ session_id: 1, timestamp: -1 });
-      await this.db.collection("session_notes").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
+      await this.db
+        .collection("session_notes")
+        .createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
       await this.db.collection("team_profiles").createIndex({ id: 1 }, { unique: true });
       await this.db.collection("engineering_notes").createIndex({ session_id: 1, timestamp: -1 });
-      await this.db.collection("notebook_bookmarks").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
-      await this.db.collection("setup_snapshots").createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
+      await this.db
+        .collection("notebook_bookmarks")
+        .createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
+      await this.db
+        .collection("setup_snapshots")
+        .createIndex({ session_id: 1, lap_number: 1, timestamp: -1 });
       console.log("[persistence-service] Indexes healed successfully.");
     } catch (e) {
       console.warn(`[persistence-service] Index heal warning: ${e.message}`);

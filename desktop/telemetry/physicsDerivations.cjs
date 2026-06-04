@@ -11,9 +11,17 @@ const { resolveVehicleProfile } = require("./vehicleProfiles.cjs");
 /**
  * Creates a standard TelemetryValue wrapper for derived channels.
  */
-function derivedVal(value, confidence, source, derivedFrom, origin = "iRacing", tickSource = 0, latency = 0) {
+function derivedVal(
+  value,
+  confidence,
+  source,
+  derivedFrom,
+  origin = "iRacing",
+  tickSource = 0,
+  latency = 0,
+) {
   const freshness = typeof latency === "number" && latency >= 0 ? latency : 0;
-  
+
   // Temporal Confidence Decay:
   // If packet freshness stalls (>100ms), decay derived confidence exponentially.
   let decayedConfidence = confidence;
@@ -31,8 +39,8 @@ function derivedVal(value, confidence, source, derivedFrom, origin = "iRacing", 
       simSource: null,
       origin: origin || "iRacing",
       tickSource: typeof tickSource === "number" ? tickSource : 0,
-      latency: freshness
-    }
+      latency: freshness,
+    },
   };
 }
 
@@ -57,26 +65,27 @@ function derivePhysicsChannels(current, prev, rawOriginal = {}, vehicleProfile =
   const latency = current.timestamp.provenance?.latency || 0;
 
   // Resolve active vehicle dynamic profile if not supplied
-  const profile = vehicleProfile || resolveVehicleProfile(rawOriginal?.car ?? rawOriginal?.Car ?? "default");
+  const profile =
+    vehicleProfile || resolveVehicleProfile(rawOriginal?.car ?? rawOriginal?.Car ?? "default");
   const wheelbase = profile.wheelbase;
 
   // 1. Steering Velocity (rad/s)
   const steeringCurr = current.car.inputs.steering.value;
   const steeringPrev = prev ? prev.car.inputs.steering.value : steeringCurr;
   const steeringVelocityVal = (steeringCurr - steeringPrev) / safeDt;
-  
+
   // Confidence decays if frame interval jitter is extremely high
   let steeringVelocityConfidence = 0.95;
-  if (dt > 0.050) steeringVelocityConfidence = 0.70; // high jitter penalty
+  if (dt > 0.05) steeringVelocityConfidence = 0.7; // high jitter penalty
 
   const steeringVelocity = derivedVal(
-    steeringVelocityVal, 
-    steeringVelocityConfidence, 
-    "derived", 
+    steeringVelocityVal,
+    steeringVelocityConfidence,
+    "derived",
     ["inputs.steering"],
     origin,
     tickSource,
-    latency
+    latency,
   );
 
   // 2. Input Aggression Gradients
@@ -84,26 +93,26 @@ function derivePhysicsChannels(current, prev, rawOriginal = {}, vehicleProfile =
   const throttlePrev = prev ? prev.car.inputs.throttle.value : throttleCurr;
   const throttleGradientVal = (throttleCurr - throttlePrev) / safeDt;
   const throttleGradient = derivedVal(
-    throttleGradientVal, 
-    0.95, 
-    "derived", 
+    throttleGradientVal,
+    0.95,
+    "derived",
     ["inputs.throttle"],
     origin,
     tickSource,
-    latency
+    latency,
   );
 
   const brakeCurr = current.car.inputs.brake.value;
   const brakePrev = prev ? prev.car.inputs.brake.value : brakeCurr;
   const brakeGradientVal = (brakeCurr - brakePrev) / safeDt;
   const brakeGradient = derivedVal(
-    brakeGradientVal, 
-    0.95, 
-    "derived", 
+    brakeGradientVal,
+    0.95,
+    "derived",
     ["inputs.brake"],
     origin,
     tickSource,
-    latency
+    latency,
   );
 
   // 3. Actual Yaw Rate (rad/s)
@@ -140,39 +149,38 @@ function derivePhysicsChannels(current, prev, rawOriginal = {}, vehicleProfile =
       simSource: yawSource === "measured" ? "YawRate" : "Yaw",
       origin: origin,
       tickSource: tickSource,
-      latency: latency
-    }
+      latency: latency,
+    },
   };
 
   // 4. Expected Yaw Rate (rad/s) based on Kinematic Bicycle Model
   const speed = current.car.speed.value;
-  const expectedYawRateVal = speed > 2.0 
-    ? (speed / wheelbase) * Math.tan(steeringCurr)
-    : 0;
+  const expectedYawRateVal = speed > 2.0 ? (speed / wheelbase) * Math.tan(steeringCurr) : 0;
 
   // Kinematic model confidence decays at extremely low speed (friction/slip dominates)
   // or extremely high speed (where aerodynamic yaw slip angle dominates over pure kinematics)
   let expectedYawRateConfidence = 0.95;
   if (speed < 5.0) {
-    expectedYawRateConfidence = Math.max(0.40, speed / 5.0 * 0.95);
-  } else if (speed > 70.0) { // >250 km/h aero slip effects
-    expectedYawRateConfidence = 0.80;
+    expectedYawRateConfidence = Math.max(0.4, (speed / 5.0) * 0.95);
+  } else if (speed > 70.0) {
+    // >250 km/h aero slip effects
+    expectedYawRateConfidence = 0.8;
   }
 
   const expectedYawRate = derivedVal(
-    expectedYawRateVal, 
-    expectedYawRateConfidence, 
-    "derived", 
+    expectedYawRateVal,
+    expectedYawRateConfidence,
+    "derived",
     ["car.speed", "inputs.steering"],
     origin,
     tickSource,
-    latency
+    latency,
   );
 
   // 5. Understeer & Oversteer Indices (Heuristics)
   let understeerIndexVal = 0;
   let oversteerIndexVal = 0;
-  let heuristicConfidence = 0.90;
+  let heuristicConfidence = 0.9;
 
   if (speed > 5.0 && Math.abs(steeringCurr) > 0.02) {
     const signSteer = Math.sign(steeringCurr);
@@ -190,7 +198,7 @@ function derivePhysicsChannels(current, prev, rawOriginal = {}, vehicleProfile =
 
     // Confidence penalties for small steering inputs where noise dominates
     if (Math.abs(steeringCurr) < 0.05) {
-      heuristicConfidence = 0.60;
+      heuristicConfidence = 0.6;
     }
   } else {
     // If steering or speed is below dynamic thresholds, index is inactive
@@ -198,23 +206,23 @@ function derivePhysicsChannels(current, prev, rawOriginal = {}, vehicleProfile =
   }
 
   const understeerIndex = derivedVal(
-    understeerIndexVal, 
-    heuristicConfidence, 
-    "heuristic", 
+    understeerIndexVal,
+    heuristicConfidence,
+    "heuristic",
     ["car.speed", "inputs.steering", "derived.actualYawRate"],
     origin,
     tickSource,
-    latency
+    latency,
   );
 
   const oversteerIndex = derivedVal(
-    oversteerIndexVal, 
-    heuristicConfidence, 
-    "heuristic", 
+    oversteerIndexVal,
+    heuristicConfidence,
+    "heuristic",
     ["car.speed", "inputs.steering", "derived.actualYawRate"],
     origin,
     tickSource,
-    latency
+    latency,
   );
 
   // Preserve raw fields on the current frame object for the next delta tick
@@ -228,11 +236,11 @@ function derivePhysicsChannels(current, prev, rawOriginal = {}, vehicleProfile =
     actualYawRate,
     expectedYawRate,
     understeerIndex,
-    oversteerIndex
+    oversteerIndex,
   };
 }
 
 module.exports = {
   derivePhysicsChannels,
-  derivedVal
+  derivedVal,
 };

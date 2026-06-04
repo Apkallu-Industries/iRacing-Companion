@@ -10,10 +10,10 @@ import { type SessionObjectiveMode } from "./objectiveModes";
 
 export interface ArbitratedRecommendation {
   actionToken: "ADJUST_SETUP" | "BOX_IMMEDIATE" | "EXTEND_STINT_FUEL_SAVE" | "MAINTAIN_PACE";
-  targetChannel: string;            // e.g. "Rear Rebound", "Pit Lane", "Throttle"
+  targetChannel: string; // e.g. "Rear Rebound", "Pit Lane", "Throttle"
   direction: "INCREASE" | "DECREASE" | "BOX" | "MAINTAIN";
-  confidenceIndex: number;          // 0 to 100
-  conflictResolved: string;         // description of what was resolved
+  confidenceIndex: number; // 0 to 100
+  conflictResolved: string; // description of what was resolved
   rationale: string;
 }
 
@@ -25,9 +25,8 @@ export function arbitrateRecommendations(
   isTireOverheating: boolean,
   isStabilityRiskHigh: boolean,
   isFuelMarginCritical: boolean,
-  isPitCrossoverReached: boolean
+  isPitCrossoverReached: boolean,
 ): ArbitratedRecommendation {
-  
   // 1. Conflict evaluation:
   // Stability risk demands "Increase Rear Rebound" to slow rear unloading.
   // Overheating tires demand "Decrease Rear Rebound" to limit friction slides.
@@ -41,8 +40,10 @@ export function arbitrateRecommendations(
       targetChannel: "Pit Lane",
       direction: "BOX",
       confidenceIndex: 99,
-      conflictResolved: "Conflict resolved: Fuel combustion exhaustion takes priority over tyre preservation limits.",
-      rationale: "Fuel reserves depleted below maximum stint threshold. Box immediately to avoid straightaway combustion starvation.",
+      conflictResolved:
+        "Conflict resolved: Fuel combustion exhaustion takes priority over tyre preservation limits.",
+      rationale:
+        "Fuel reserves depleted below maximum stint threshold. Box immediately to avoid straightaway combustion starvation.",
     };
   }
 
@@ -53,8 +54,10 @@ export function arbitrateRecommendations(
       targetChannel: "Pit Lane",
       direction: "BOX",
       confidenceIndex: 92,
-      conflictResolved: "Conflict resolved: Pit crossover time-loss exceeds worn tyre rubber pace losses.",
-      rationale: "Fresh-compound pace delta gains surpass pit lane transit penalty bounds. Box this lap.",
+      conflictResolved:
+        "Conflict resolved: Pit crossover time-loss exceeds worn tyre rubber pace losses.",
+      rationale:
+        "Fresh-compound pace delta gains surpass pit lane transit penalty bounds. Box this lap.",
     };
   }
 
@@ -67,8 +70,10 @@ export function arbitrateRecommendations(
         targetChannel: "Rear Rebound",
         direction: "INCREASE",
         confidenceIndex: 85,
-        conflictResolved: "Conflict resolved: Qualifying hotlap attack prioritizes lateral corner bite over thermal tire decay.",
-        rationale: "Increase rear rebound by +1 click to anchor entry pitch under heavy trail-braking deceleration, overriding thermal cooling guidelines.",
+        conflictResolved:
+          "Conflict resolved: Qualifying hotlap attack prioritizes lateral corner bite over thermal tire decay.",
+        rationale:
+          "Increase rear rebound by +1 click to anchor entry pitch under heavy trail-braking deceleration, overriding thermal cooling guidelines.",
       };
     } else {
       // Prioritize tyre longevity in race stint or fuel save mode
@@ -77,8 +82,10 @@ export function arbitrateRecommendations(
         targetChannel: "Rear Rebound",
         direction: "DECREASE",
         confidenceIndex: 78,
-        conflictResolved: "Conflict resolved: Stint preservation prioritizes thermal tire core cooling over extreme pivot grip.",
-        rationale: "De-tune rear rebound by -1 click to reduce driven-axle friction sliding coefficient, preserving tyre carcass carcass life.",
+        conflictResolved:
+          "Conflict resolved: Stint preservation prioritizes thermal tire core cooling over extreme pivot grip.",
+        rationale:
+          "De-tune rear rebound by -1 click to reduce driven-axle friction sliding coefficient, preserving tyre carcass carcass life.",
       };
     }
   }
@@ -91,7 +98,8 @@ export function arbitrateRecommendations(
       direction: "INCREASE",
       confidenceIndex: 88,
       conflictResolved: "Chassis vector slide detected. Heuristics locked.",
-      rationale: "Increase rear rebound damping by +1 click to restrict deceleration pitch rate, stabilizing underbody diffuser flow.",
+      rationale:
+        "Increase rear rebound damping by +1 click to restrict deceleration pitch rate, stabilizing underbody diffuser flow.",
     };
   }
 
@@ -102,6 +110,7 @@ export function arbitrateRecommendations(
     direction: "MAINTAIN",
     confidenceIndex: 90,
     conflictResolved: "No conflicts active. Base vectors clean.",
-    rationale: "Telemetry signals within green envelope margins. Maintain active stint objective pace targets.",
+    rationale:
+      "Telemetry signals within green envelope margins. Maintain active stint objective pace targets.",
   };
 }

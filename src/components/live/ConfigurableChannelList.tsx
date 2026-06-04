@@ -315,7 +315,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
   return (
     <div className="rounded-sm border border-border bg-background">
       <div className="flex items-center justify-between border-b border-border px-2 py-1.5">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Channels</span>
+        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Channels
+        </span>
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] tabular-nums text-muted-foreground">
             {visibleChannels.length}/{registry.length}
@@ -365,7 +367,9 @@ export function ConfigurableChannelList({ t }: { t: Telemetry }) {
                 className="flex items-center gap-2 px-2 py-1 text-[11px] cursor-pointer hover:bg-muted/60 transition-colors group"
                 onClick={() => {
                   toggleMode(c.key);
-                  window.dispatchEvent(new CustomEvent('pitwall-contextual-channel', { detail: { channel: c.key } }));
+                  window.dispatchEvent(
+                    new CustomEvent("pitwall-contextual-channel", { detail: { channel: c.key } }),
+                  );
                 }}
                 title={`Click to switch to ${isTrace ? "RAW" : "TRACE"} view`}
               >

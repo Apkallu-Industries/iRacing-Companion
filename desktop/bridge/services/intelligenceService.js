@@ -5,7 +5,9 @@
  * stability calculations decoupled from iRacing SDK socket streams.
  */
 
-const { predictNextTickInstability } = require("../../src/lib/session-intelligence/predictiveEngine");
+const {
+  predictNextTickInstability,
+} = require("../../src/lib/session-intelligence/predictiveEngine");
 const telemetryService = require("./telemetryService");
 
 class IntelligenceService {
@@ -35,7 +37,7 @@ class IntelligenceService {
       mgukDeploykW: currentFrame.mgukDeploykW,
       frontLeftDeflection: currentFrame.frontLeftDeflection,
       rearRightSpeedMps: currentFrame.rearRightSpeedMps,
-      rearLeftSpeedMps: currentFrame.rearLeftSpeedMps
+      rearLeftSpeedMps: currentFrame.rearLeftSpeedMps,
     };
 
     const prevTick = {
@@ -50,7 +52,7 @@ class IntelligenceService {
       mgukDeploykW: this.previousFrame.mgukDeploykW,
       frontLeftDeflection: this.previousFrame.frontLeftDeflection,
       rearRightSpeedMps: this.previousFrame.rearRightSpeedMps,
-      rearLeftSpeedMps: this.previousFrame.rearLeftSpeedMps
+      rearLeftSpeedMps: this.previousFrame.rearLeftSpeedMps,
     };
 
     const prediction = predictNextTickInstability(currTick, prevTick);

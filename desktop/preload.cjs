@@ -15,7 +15,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("pitWallRuntime", {
   // ── Identity & Machine Info ──────────────────────────────────────────────
-  
+
   /**
    * Returns the full workstation runtime manifest:
    * hostname, platform, CPU model, RAM, monitor count, bridge status, etc.
@@ -29,20 +29,19 @@ contextBridge.exposeInMainWorld("pitWallRuntime", {
   getMonitorLayout: () => ipcRenderer.invoke("get-monitor-layout"),
 
   // ── Instrument Windows ────────────────────────────────────────────────────
-  
+
   /**
    * Opens a properly-configured detached instrument window.
    * @param type  - Instrument type: "timing" | "tires" | "hybrid" | "strategy" | "telemetry" | "engineering"
    * @param url   - Full URL to load in the new window (e.g. http://localhost:8080/detached/timing)
    */
-  openInstrumentWindow: (type, url) =>
-    ipcRenderer.invoke("open-instrument-window", { type, url }),
+  openInstrumentWindow: (type, url) => ipcRenderer.invoke("open-instrument-window", { type, url }),
 
   // ── Bridge Control ────────────────────────────────────────────────────────
-  
+
   /** Returns the current bridge status: "running" | "crashed" | "starting" */
   getBridgeStatus: () => ipcRenderer.invoke("get-bridge-status"),
-  
+
   /** Triggers a clean bridge restart (stops → waits 300ms → starts again) */
   restartBridge: () => ipcRenderer.invoke("restart-bridge"),
 
@@ -53,12 +52,12 @@ contextBridge.exposeInMainWorld("pitWallRuntime", {
   refreshAiMode: () => ipcRenderer.invoke("refresh-ai-mode"),
 
   // ── App Info ──────────────────────────────────────────────────────────────
-  
+
   /** Returns app version, isDev flag, platform, dashboardUrl */
   getAppInfo: () => ipcRenderer.invoke("get-app-info"),
 
   // ── Event listeners ───────────────────────────────────────────────────────
-  
+
   /**
    * Subscribe to bridge status change events emitted from the main process.
    * The callback receives the new status: "running" | "crashed" | "starting"
@@ -78,7 +77,8 @@ contextBridge.exposeInMainWorld("pitWallRuntime", {
   getSupervisorStatus: () => ipcRenderer.invoke("supervisor:get-status"),
   getActiveSession: () => ipcRenderer.invoke("supervisor:get-active-session"),
   listSessions: () => ipcRenderer.invoke("supervisor:get-sessions"),
-  startSession: (sessionId, meta) => ipcRenderer.invoke("supervisor:start-session", { sessionId, meta }),
+  startSession: (sessionId, meta) =>
+    ipcRenderer.invoke("supervisor:start-session", { sessionId, meta }),
   stopSession: (sessionId) => ipcRenderer.invoke("supervisor:stop-session", { sessionId }),
   onTelemetryLive: (callback) => {
     const listener = (_, packet) => callback(packet);

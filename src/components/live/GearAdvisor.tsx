@@ -262,7 +262,9 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
           <div className="text-[9px] text-muted-foreground">{advice.action.detail}</div>
         </div>
         <div className="text-right">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Gear · RPM</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+            Gear · RPM
+          </div>
           <div className="text-lg tabular-nums text-foreground">
             {advice.gear || "—"}
             <span className="text-muted-foreground"> · </span>
@@ -294,7 +296,9 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
               >
                 {s ? s.ratio.toFixed(2) : "—"}
               </div>
-              <div className="text-[8px] text-muted-foreground tabular-nums">{s ? s.samples : 0}</div>
+              <div className="text-[8px] text-muted-foreground tabular-nums">
+                {s ? s.samples : 0}
+              </div>
             </div>
           );
         })}
@@ -303,7 +307,9 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
       {/* Shift previews + gap advice */}
       <div className="grid grid-cols-2 gap-px bg-muted text-[11px]">
         <div className="bg-background p-2">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">After ↑shift</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+            After ↑shift
+          </div>
           <div className="tabular-nums text-foreground">
             {advice.rpmAfterUp ? `${Math.round(advice.rpmAfterUp)} rpm` : "—"}
           </div>
@@ -312,7 +318,9 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
           </div>
         </div>
         <div className="bg-background p-2">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">After ↓shift</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+            After ↓shift
+          </div>
           <div className="tabular-nums text-foreground">
             {advice.rpmAfterDown ? `${Math.round(advice.rpmAfterDown)} rpm` : "—"}
           </div>
@@ -324,7 +332,9 @@ export function GearAdvisor({ t, samples }: { t: Telemetry; samples: Sample[] })
 
       {advice.gaps.length > 0 && (
         <div className="border-t border-border px-2 py-1.5">
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1">Ratio Gaps</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1">
+            Ratio Gaps
+          </div>
           <div className="grid grid-cols-1 gap-0.5 text-[10px] tabular-nums">
             {advice.gaps.map((g) => {
               const tag = g.pct < 12 ? "tight" : g.pct > 28 ? "wide" : "ok";

@@ -52,21 +52,39 @@ export function F1SectorComparison({ t }: { t: Telemetry }) {
               <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{s1 ?? "—"}</td>
               <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{s2 ?? "—"}</td>
               <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{s3 ?? "—"}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{totalThis || "—"}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">
+                {totalThis || "—"}
+              </td>
             </tr>
             <tr className="border-b border-border">
               <td className="px-2 py-1.5 text-muted-foreground text-[9px] uppercase">Best Lap</td>
-              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{bestS1 ?? "—"}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{bestS2 ?? "—"}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{bestS3 ?? "—"}</td>
-              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{totalBest || "—"}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">
+                {bestS1 ?? "—"}
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">
+                {bestS2 ?? "—"}
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">
+                {bestS3 ?? "—"}
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums text-foreground">
+                {totalBest || "—"}
+              </td>
             </tr>
             <tr>
               <td className="px-2 py-1.5 text-muted-foreground text-[9px] uppercase">Delta</td>
-              <td className={`px-2 py-1.5 text-right tabular-nums ${deltaColor(deltaS1)}`}>{fmtDelta(deltaS1)}</td>
-              <td className={`px-2 py-1.5 text-right tabular-nums ${deltaColor(deltaS2)}`}>{fmtDelta(deltaS2)}</td>
-              <td className={`px-2 py-1.5 text-right tabular-nums ${deltaColor(deltaS3)}`}>{fmtDelta(deltaS3)}</td>
-              <td className={`px-2 py-1.5 text-right tabular-nums font-bold ${totalDelta < 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              <td className={`px-2 py-1.5 text-right tabular-nums ${deltaColor(deltaS1)}`}>
+                {fmtDelta(deltaS1)}
+              </td>
+              <td className={`px-2 py-1.5 text-right tabular-nums ${deltaColor(deltaS2)}`}>
+                {fmtDelta(deltaS2)}
+              </td>
+              <td className={`px-2 py-1.5 text-right tabular-nums ${deltaColor(deltaS3)}`}>
+                {fmtDelta(deltaS3)}
+              </td>
+              <td
+                className={`px-2 py-1.5 text-right tabular-nums font-bold ${totalDelta < 0 ? "text-emerald-400" : "text-rose-400"}`}
+              >
                 {fmtDelta(totalDelta)}
               </td>
             </tr>

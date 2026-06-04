@@ -20,11 +20,7 @@ export interface PreparedTrackMap {
 /**
  * Transforms a point [x, y] with rotation and horizontal mirroring around center (0.5, 0.5)
  */
-function transformPoint(
-  p: [number, number],
-  rotationDeg = 0,
-  mirrorX = false
-): [number, number] {
+function transformPoint(p: [number, number], rotationDeg = 0, mirrorX = false): [number, number] {
   let x = p[0];
   let y = p[1];
 
@@ -53,14 +49,14 @@ function transformPoint(
 export function prepareSpline(
   rawPoints: [number, number][],
   rotationDeg = 0,
-  mirrorX = false
+  mirrorX = false,
 ): PreparedSpline {
   if (!rawPoints || rawPoints.length === 0) {
     return { points: [], cumulativeLengths: [], totalLength: 0 };
   }
 
   // 1. Apply orientation transformations to points
-  const points = rawPoints.map(p => transformPoint(p, rotationDeg, mirrorX));
+  const points = rawPoints.map((p) => transformPoint(p, rotationDeg, mirrorX));
 
   const n = points.length;
   const cumulativeLengths = new Array(n + 1);
@@ -74,7 +70,7 @@ export function prepareSpline(
     const dx = p1[0] - p0[0];
     const dy = p1[1] - p0[1];
     const segmentLength = Math.sqrt(dx * dx + dy * dy);
-    
+
     currentDist += segmentLength;
     cumulativeLengths[i + 1] = currentDist;
   }
@@ -110,12 +106,15 @@ export function prepareTrackMap(def: TrackMapDefinition): PreparedTrackMap {
  * @param prepared Precomputed PreparedSpline
  * @param pct Distance percentage along lap (0.0 to 1.0)
  */
-export function getCoordinatesAtPct(prepared: PreparedSpline, pct: number): { x: number; y: number } {
+export function getCoordinatesAtPct(
+  prepared: PreparedSpline,
+  pct: number,
+): { x: number; y: number } {
   const { points, cumulativeLengths, totalLength } = prepared;
   if (!points || points.length === 0) return { x: 0.5, y: 0.5 };
 
   // Cleanly wrap pct if out of bounds
-  let p = (pct % 1.0 + 1.0) % 1.0;
+  let p = ((pct % 1.0) + 1.0) % 1.0;
   const targetDistance = p * totalLength;
 
   // Find segment containing the target distance
@@ -126,7 +125,7 @@ export function getCoordinatesAtPct(prepared: PreparedSpline, pct: number): { x:
 
   const p0 = points[i];
   const p1 = points[(i + 1) % points.length];
-  
+
   const dist0 = cumulativeLengths[i];
   const dist1 = cumulativeLengths[i + 1];
   const segmentLength = dist1 - dist0;
@@ -142,7 +141,11 @@ export function getCoordinatesAtPct(prepared: PreparedSpline, pct: number): { x:
 /**
  * Generates SVG path scaled to viewport dimensions from pre-oriented spline coordinates
  */
-export function getSvgPathFromSpline(prepared: PreparedSpline, width: number, height: number): string {
+export function getSvgPathFromSpline(
+  prepared: PreparedSpline,
+  width: number,
+  height: number,
+): string {
   const { points } = prepared;
   if (!points || points.length === 0) return "";
 

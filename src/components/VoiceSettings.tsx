@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Mic, RotateCcw, Volume2, Loader2, AlertCircle, CheckCircle2, Speaker, Radio } from "lucide-react";
+import {
+  Mic,
+  RotateCcw,
+  Volume2,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Speaker,
+  Radio,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -224,11 +233,7 @@ function MicLevelMeter({ deviceId }: { deviceId: string }) {
             const threshold = (i / bars) * 100;
             const lit = level > threshold;
             const color =
-              i < bars * 0.6
-                ? "bg-emerald-500"
-                : i < bars * 0.85
-                  ? "bg-yellow-500"
-                  : "bg-rose-500";
+              i < bars * 0.6 ? "bg-emerald-500" : i < bars * 0.85 ? "bg-yellow-500" : "bg-rose-500";
             return (
               <div
                 key={i}
@@ -383,7 +388,11 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
               disabled={testing}
               className="flex-1 font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
             >
-              {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Volume2 className="h-3.5 w-3.5 text-primary" />}
+              {testing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Volume2 className="h-3.5 w-3.5 text-primary" />
+              )}
               Test on Selected Device
             </Button>
             <Button
@@ -402,7 +411,9 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
             <div className="rounded border border-rose-500/30 bg-rose-500/5 p-2.5 text-[10px] text-rose-400 font-mono flex items-start gap-1.5 leading-normal animate-in fade-in">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               <div>
-                <span className="font-semibold uppercase tracking-wider text-[9px] block mb-0.5">Test Error:</span>
+                <span className="font-semibold uppercase tracking-wider text-[9px] block mb-0.5">
+                  Test Error:
+                </span>
                 {testError}
               </div>
             </div>
@@ -457,7 +468,6 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-
           {/* ── ElevenLabs ── */}
           <section className="space-y-3">
             <h3 className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold flex items-center gap-1.5">
@@ -519,7 +529,11 @@ export function VoiceSettings({ inline }: { inline?: boolean }) {
               disabled={testing}
               className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5 h-8 cursor-pointer"
             >
-              {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Volume2 className="h-3.5 w-3.5 text-primary animate-pulse" />}
+              {testing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Volume2 className="h-3.5 w-3.5 text-primary animate-pulse" />
+              )}
               Test Voice on Selected Device
             </Button>
 

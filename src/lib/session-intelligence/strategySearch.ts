@@ -7,10 +7,10 @@
 
 export interface PitLapStrategyOutcome {
   pitLap: number;
-  undercutViabilityPct: number;    // chance of gaining time relative to standard pit
-  overcutPaceDecayS: number;       // pace loss from running worn tires extra laps
+  undercutViabilityPct: number; // chance of gaining time relative to standard pit
+  overcutPaceDecayS: number; // pace loss from running worn tires extra laps
   trafficClearanceConfidence: number; // confidence that pit exit will merge into clean air
-  totalTimeDeltaSec: number;       // net stint time gain/loss (negative is gain)
+  totalTimeDeltaSec: number; // net stint time gain/loss (negative is gain)
   isRecommended: boolean;
 }
 
@@ -35,7 +35,7 @@ export function searchOptimalPitWindow(
   tireGripPct: number,
   fuelLapsRemaining: number,
   trafficGapSec: number,
-  safetyCarProbability = 15
+  safetyCarProbability = 15,
 ): SearchEngineResult {
   const outcomes: PitLapStrategyOutcome[] = [];
 
@@ -49,7 +49,7 @@ export function searchOptimalPitWindow(
   for (let lap = startLap; lap <= endLap; lap++) {
     // 1. Model tire carcass decay for each extended lap
     const lapsExtended = lap - currentLap;
-    const projectedGrip = Math.max(50.0, tireGripPct - (lapsExtended * 2.8));
+    const projectedGrip = Math.max(50.0, tireGripPct - lapsExtended * 2.8);
 
     // Overcut pace decay (seconds lost per lap run on worn tires)
     let overcutPaceDecay = 0;
@@ -64,11 +64,15 @@ export function searchOptimalPitWindow(
 
     // 3. Traffic clearance confidence
     // Exit merges inside pack if gaps are narrow
-    let trafficConfidence = Math.max(10, Math.min(95, Math.round(trafficGapSec * 15 + (lap % 3) * 5)));
+    let trafficConfidence = Math.max(
+      10,
+      Math.min(95, Math.round(trafficGapSec * 15 + (lap % 3) * 5)),
+    );
 
     // 4. Calculate Net Stint time delta (Pit stop time penalty is ~24.5s)
     const pitStopPenalty = 24.5;
-    const netTimeDelta = overcutPaceDecay - undercutGains - (safetyCarProbability > 40 ? 12.0 : 0.0);
+    const netTimeDelta =
+      overcutPaceDecay - undercutGains - (safetyCarProbability > 40 ? 12.0 : 0.0);
 
     const isRecommended = false; // Resolved after loop
 
@@ -78,7 +82,7 @@ export function searchOptimalPitWindow(
       overcutPaceDecayS: Number(overcutPaceDecay.toFixed(2)),
       trafficClearanceConfidence: trafficConfidence,
       totalTimeDeltaSec: Number(netTimeDelta.toFixed(2)),
-      isRecommended
+      isRecommended,
     });
 
     if (netTimeDelta < minDelta) {
@@ -95,10 +99,15 @@ export function searchOptimalPitWindow(
   });
 
   const optimalOutcome = outcomes.find((o) => o.pitLap === bestPitLap);
-  const confidenceScore = optimalOutcome ? Math.round((optimalOutcome.undercutViabilityPct + optimalOutcome.trafficClearanceConfidence) / 2) : 50;
+  const confidenceScore = optimalOutcome
+    ? Math.round(
+        (optimalOutcome.undercutViabilityPct + optimalOutcome.trafficClearanceConfidence) / 2,
+      )
+    : 50;
 
   // Compile narrative verdict
-  const verdictDescription = `STRATEGY ENGINE: Optimal window identified at Lap ${bestPitLap}. ` +
+  const verdictDescription =
+    `STRATEGY ENGINE: Optimal window identified at Lap ${bestPitLap}. ` +
     `Pitting here yields a net stint time delta of ${minDelta.toFixed(2)}s relative to baseline parameters. ` +
     `Undercut success is rated at ${optimalOutcome?.undercutViabilityPct}% with a ${optimalOutcome?.trafficClearanceConfidence}% clean-air exit probability.`;
 
@@ -106,6 +115,6 @@ export function searchOptimalPitWindow(
     optimalPitLap: bestPitLap,
     confidenceScore,
     outcomes,
-    verdictDescription
+    verdictDescription,
   };
 }

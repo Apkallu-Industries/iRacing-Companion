@@ -9,10 +9,10 @@ export interface TrafficIntersection {
   leadingCarClass: "GT3" | "LMP2" | "GTP_HYBRID";
   leadingCarNumber: string;
   distanceAheadM: number;
-  closingSpeedMps: number;          // Speed delta (closing speed)
-  estimatedIntersectionSec: number;  // Time to intercept (seconds)
-  catchCornerNumber: number;         // Corner number where overtake will occur
-  dirtyAirWashExposureSec: number;   // estimated downforce loss duration
+  closingSpeedMps: number; // Speed delta (closing speed)
+  estimatedIntersectionSec: number; // Time to intercept (seconds)
+  catchCornerNumber: number; // Corner number where overtake will occur
+  dirtyAirWashExposureSec: number; // estimated downforce loss duration
   passErsMapRecommendation: string;
 }
 
@@ -27,9 +27,8 @@ export function forecastTrafficIntersections(
   speedMps: number,
   gapAheadSec: number,
   trackPosPct: number,
-  trackLengthM = 7004 // Spa default
+  trackLengthM = 7004, // Spa default
 ): TrafficIntersection[] {
-  
   if (gapAheadSec <= 0 || gapAheadSec > 25.0) {
     return [];
   }
@@ -72,9 +71,11 @@ export function forecastTrafficIntersections(
   // Expose hybrid pass recommendations
   let passAdvice = "Maintain standard straightaway ERS harvesting.";
   if (catchCorner === 3 || catchCorner === 15) {
-    passAdvice = "High-speed sector pass. Trigger ERS Boost map on exit corner to secure straightaway overtake before turn entry.";
+    passAdvice =
+      "High-speed sector pass. Trigger ERS Boost map on exit corner to secure straightaway overtake before turn entry.";
   } else if (isSlowCorner) {
-    passAdvice = "Slow-speed entry pack. Defer overtake. Harvest hybrid SoC reserves in corner entry, prepare exit straight sweep.";
+    passAdvice =
+      "Slow-speed entry pack. Defer overtake. Harvest hybrid SoC reserves in corner entry, prepare exit straight sweep.";
   }
 
   return [
@@ -87,6 +88,6 @@ export function forecastTrafficIntersections(
       catchCornerNumber: catchCorner,
       dirtyAirWashExposureSec: washExposure,
       passErsMapRecommendation: passAdvice,
-    }
+    },
   ];
 }

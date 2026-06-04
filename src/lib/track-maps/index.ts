@@ -21,17 +21,14 @@ function buildFallbackSpline(): [number, number][] {
   const spline: [number, number][] = [];
   const cx = 0.5;
   const cy = 0.5;
-  const rx = 0.40;
-  const ry = 0.30;
+  const rx = 0.4;
+  const ry = 0.3;
   // A beautiful rounded squircle/oval layout
   for (let i = 0; i < 40; i++) {
     const ang = (i / 40) * Math.PI * 2;
     // Add subtle wave deformation to look like a realistic motorsport road course
-    const deformation = 1.0 + Math.sin(ang * 3) * 0.08; 
-    spline.push([
-      cx + Math.cos(ang) * rx * deformation,
-      cy + Math.sin(ang) * ry * deformation,
-    ]);
+    const deformation = 1.0 + Math.sin(ang * 3) * 0.08;
+    spline.push([cx + Math.cos(ang) * rx * deformation, cy + Math.sin(ang) * ry * deformation]);
   }
   return spline;
 }
@@ -61,8 +58,12 @@ export function getTrackMap(trackName?: string): PreparedTrackMap {
   if (lowerName.includes("mans") || lowerName.includes("sarthe")) {
     return PREPARED_LEMANS;
   }
-  
-  if (lowerName.includes("spa") || lowerName.includes("francorchamps") || lowerName.includes("belgium")) {
+
+  if (
+    lowerName.includes("spa") ||
+    lowerName.includes("francorchamps") ||
+    lowerName.includes("belgium")
+  ) {
     return PREPARED_SPA;
   }
 
@@ -70,7 +71,11 @@ export function getTrackMap(trackName?: string): PreparedTrackMap {
     return PREPARED_DAYTONA;
   }
 
-  if (lowerName.includes("nurburgring") || lowerName.includes("nürburgring") || lowerName.includes("nordschleife")) {
+  if (
+    lowerName.includes("nurburgring") ||
+    lowerName.includes("nürburgring") ||
+    lowerName.includes("nordschleife")
+  ) {
     return PREPARED_NURBURGRING;
   }
 

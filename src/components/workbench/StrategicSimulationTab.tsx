@@ -39,9 +39,7 @@ import {
   arbitrateRecommendations,
   type ArbitratedRecommendation,
 } from "@/lib/session-intelligence/recommendationArbitrator";
-import {
-  generateVoiceBrief,
-} from "@/lib/session-intelligence/voiceOps";
+import { generateVoiceBrief } from "@/lib/session-intelligence/voiceOps";
 import { toast } from "sonner";
 
 interface StrategicSimulationTabProps {
@@ -61,7 +59,9 @@ export function StrategicSimulationTab({
   const [pitLap, setPitLap] = useState(22);
   const [tireGrip, setTireGrip] = useState(82.4);
   const [fuelLaps, setFuelLaps] = useState(12.5);
-  const [activeObjective, setActiveObjective] = useState<"RACE_STINT" | "FUEL_SAVE" | "QUALIFYING_ATTACK" | "SAFETY_CAR">("RACE_STINT");
+  const [activeObjective, setActiveObjective] = useState<
+    "RACE_STINT" | "FUEL_SAVE" | "QUALIFYING_ATTACK" | "SAFETY_CAR"
+  >("RACE_STINT");
   const [rainIntensity, setRainIntensity] = useState(0); // 0 to 100
   const [rubberLevel, setRubberLevel] = useState(80);
 
@@ -71,7 +71,7 @@ export function StrategicSimulationTab({
     activeLap,
     tireGrip,
     fuelLaps,
-    24.5 // pit stops penalty
+    24.5, // pit stops penalty
   );
 
   // 2. Evaluate active strategy decision tree
@@ -79,7 +79,7 @@ export function StrategicSimulationTab({
     tireGrip,
     fuelLaps,
     sim.trafficEmergenceGapSec,
-    activeObjective
+    activeObjective,
   );
 
   // 3. Compute weather evolutions
@@ -87,28 +87,39 @@ export function StrategicSimulationTab({
     18.5, // ambient
     21.2, // track
     rainIntensity,
-    rubberLevel
+    rubberLevel,
   );
 
   // 4. Multiclass traffic radar
   const traffic: TrafficIntersection[] = forecastTrafficIntersections(
     42.8, // speed mps
     1.15, // time gap ahead
-    32.4  // track pos pct
+    32.4, // track pos pct
   );
 
   // 5. Arbitrate recommendations
   const arbitration: ArbitratedRecommendation = arbitrateRecommendations(
-    activeObjective === "SAFETY_CAR" ? "SAFETY_CAR" : activeObjective === "FUEL_SAVE" ? "FUEL_SAVE" : activeObjective === "QUALIFYING_ATTACK" ? "QUALIFYING_ATTACK" : "RACE_STINT",
+    activeObjective === "SAFETY_CAR"
+      ? "SAFETY_CAR"
+      : activeObjective === "FUEL_SAVE"
+        ? "FUEL_SAVE"
+        : activeObjective === "QUALIFYING_ATTACK"
+          ? "QUALIFYING_ATTACK"
+          : "RACE_STINT",
     tireGrip < 78.0,
     true, // stability risk high simulating slide correction
     fuelLaps < 1.0,
-    sim.totalTimeDeltaSec < -2.0
+    sim.totalTimeDeltaSec < -2.0,
   );
 
   // Trigger professional trackside engineering radio call
   const playRadioCall = () => {
-    let briefType: "THERMAL_RUNAWAY" | "TRAFFIC_CATCH" | "CROSSOVER_REACHED" | "FUEL_CRITICAL" | "STABILITY_BREAK" = "STABILITY_BREAK";
+    let briefType:
+      | "THERMAL_RUNAWAY"
+      | "TRAFFIC_CATCH"
+      | "CROSSOVER_REACHED"
+      | "FUEL_CRITICAL"
+      | "STABILITY_BREAK" = "STABILITY_BREAK";
     let payloadValue: string | number = "T-eight";
 
     if (fuelLaps < 1.5) {
@@ -139,7 +150,8 @@ export function StrategicSimulationTab({
         className="p-3 border rounded-sm flex items-center justify-between gap-4"
         style={{
           borderColor: arbitration.actionToken === "BOX_IMMEDIATE" ? "#FF4D4D" : "#1A202C",
-          backgroundColor: arbitration.actionToken === "BOX_IMMEDIATE" ? "rgba(255,77,77,0.05)" : "#0B0F19",
+          backgroundColor:
+            arbitration.actionToken === "BOX_IMMEDIATE" ? "rgba(255,77,77,0.05)" : "#0B0F19",
         }}
       >
         <div className="flex items-center gap-2">
@@ -150,8 +162,8 @@ export function StrategicSimulationTab({
                 arbitration.actionToken === "BOX_IMMEDIATE"
                   ? "#FF4D4D"
                   : arbitration.actionToken === "ADJUST_SETUP"
-                  ? "#FFB800"
-                  : "#00D17F",
+                    ? "#FFB800"
+                    : "#00D17F",
             }}
           />
           <div className="flex flex-col gap-0.5">
@@ -170,8 +182,8 @@ export function StrategicSimulationTab({
                 arbitration.confidenceIndex > 85
                   ? "#00D17F"
                   : arbitration.confidenceIndex > 70
-                  ? "#FFB800"
-                  : "#FF4D4D",
+                    ? "#FFB800"
+                    : "#FF4D4D",
             }}
           >
             {arbitration.confidenceIndex}%
@@ -206,14 +218,18 @@ export function StrategicSimulationTab({
                 RECOMMENDED BRANCH ACTION
               </span>
               <span className="text-[#00D17F] font-black block mb-1">{tree.recommendedAction}</span>
-              <span className="text-[#718096] text-[8px] uppercase block">Branch Confidence: {tree.probabilityWeightPct}%</span>
+              <span className="text-[#718096] text-[8px] uppercase block">
+                Branch Confidence: {tree.probabilityWeightPct}%
+              </span>
             </div>
 
             <div className="p-2 border border-[#1A202C] bg-[#07090E] rounded-sm text-[8.5px]">
               <span className="text-[#718096] uppercase font-bold block mb-0.5">
                 ALTERNATIVE STRATEGY: {tree.alternativeBranchName.toUpperCase()}
               </span>
-              <span className="text-[#E2E8F0] leading-relaxed block">{tree.alternativeBranchNarrative}</span>
+              <span className="text-[#E2E8F0] leading-relaxed block">
+                {tree.alternativeBranchNarrative}
+              </span>
             </div>
           </div>
         </div>
@@ -232,19 +248,25 @@ export function StrategicSimulationTab({
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Grip Coeff</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Grip Coeff
+              </span>
               <span className="text-white text-base font-bold tabular-nums">
                 {weather.globalFrictionGripCoeff}x
               </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Rain Core Cooling</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Rain Core Cooling
+              </span>
               <span className="text-white text-base font-bold tabular-nums">
                 -{weather.rainThermalCoolingOffset}°C/lap
               </span>
             </div>
             <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Crossover Probability</span>
+              <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+                Crossover Probability
+              </span>
               <span
                 className="text-base font-black tabular-nums"
                 style={{ color: weather.crossoverViabilityPct > 50 ? "#FF4D4D" : "#00D17F" }}
@@ -258,7 +280,9 @@ export function StrategicSimulationTab({
             <span className="text-[#718096] uppercase font-bold block mb-1">
               Active Environment Compound Recommendation
             </span>
-            <span className="text-[#3B82F6] font-black block mb-1">{weather.optimalTireCompound}</span>
+            <span className="text-[#3B82F6] font-black block mb-1">
+              {weather.optimalTireCompound}
+            </span>
             <span className="text-white leading-relaxed">{weather.verdictDescription}</span>
           </div>
 
@@ -293,7 +317,9 @@ export function StrategicSimulationTab({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-            <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Finishing time Delta</span>
+            <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+              Finishing time Delta
+            </span>
             <span
               className="text-base font-black tabular-nums"
               style={{ color: sim.totalTimeDeltaSec < 0 ? "#00D17F" : "#FF4D4D" }}
@@ -303,12 +329,20 @@ export function StrategicSimulationTab({
             </span>
           </div>
           <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-            <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Undercut Success rate</span>
-            <span className="text-white text-base font-bold tabular-nums">{sim.undercutViabilityPct}%</span>
+            <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+              Undercut Success rate
+            </span>
+            <span className="text-white text-base font-bold tabular-nums">
+              {sim.undercutViabilityPct}%
+            </span>
           </div>
           <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
-            <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">Fuel conservation target</span>
-            <span className="text-white text-base font-bold tabular-nums">{sim.fuelSaveTargetL} L/lap</span>
+            <span className="text-[#718096] text-[8px] block uppercase font-bold mb-0.5">
+              Fuel conservation target
+            </span>
+            <span className="text-white text-base font-bold tabular-nums">
+              {sim.fuelSaveTargetL} L/lap
+            </span>
           </div>
         </div>
 
@@ -321,7 +355,8 @@ export function StrategicSimulationTab({
 
         <div>
           <label className="text-[#718096] text-[8px] block uppercase font-bold mb-1">
-            Simulate Pitting on Lap: <span className="text-[#3B82F6] font-bold">Lap {pitLap}</span> (Baseline Optimal: L24)
+            Simulate Pitting on Lap: <span className="text-[#3B82F6] font-bold">Lap {pitLap}</span>{" "}
+            (Baseline Optimal: L24)
           </label>
           <input
             type="range"
@@ -364,12 +399,20 @@ export function StrategicSimulationTab({
               <tbody className="divide-y divide-[#1A202C]">
                 {traffic.map((c, idx) => (
                   <tr key={idx} className="hover:bg-[#131924]">
-                    <td className="py-2 text-white font-bold">{c.leadingCarNumber} ({c.leadingCarClass})</td>
+                    <td className="py-2 text-white font-bold">
+                      {c.leadingCarNumber} ({c.leadingCarClass})
+                    </td>
                     <td className="py-2 tabular-nums">{c.distanceAheadM}m</td>
                     <td className="py-2 tabular-nums">{c.closingSpeedMps}</td>
-                    <td className="py-2 font-bold text-[#FFB800]">T{c.catchCornerNumber} ({c.estimatedIntersectionSec}s)</td>
-                    <td className="py-2 tabular-nums text-[#FF4D4D] font-bold">{c.dirtyAirWashExposureSec}s</td>
-                    <td className="py-2 text-[#718096] leading-relaxed">{c.passErsMapRecommendation}</td>
+                    <td className="py-2 font-bold text-[#FFB800]">
+                      T{c.catchCornerNumber} ({c.estimatedIntersectionSec}s)
+                    </td>
+                    <td className="py-2 tabular-nums text-[#FF4D4D] font-bold">
+                      {c.dirtyAirWashExposureSec}s
+                    </td>
+                    <td className="py-2 text-[#718096] leading-relaxed">
+                      {c.passErsMapRecommendation}
+                    </td>
                   </tr>
                 ))}
                 {traffic.length === 0 && (
@@ -401,7 +444,8 @@ export function StrategicSimulationTab({
                 Verbal Radio Briefing
               </span>
               <p className="text-white italic">
-                "Short. Operational. Dense. Click below to synthesize the clinical trackside radio callout."
+                "Short. Operational. Dense. Click below to synthesize the clinical trackside radio
+                callout."
               </p>
             </div>
           </div>

@@ -102,7 +102,13 @@ export function buildCoachUserMessage(detailed: boolean, payload: any): string {
       ? [
           `\nWORKSPACE: ${payload.activeWorkspace ?? "lite"}`,
           payload?.enabledMathChannels?.length
-            ? `DERIVED MATH CHANNELS AVAILABLE:\n${(payload.enabledMathChannels as Array<{ name: string; unit: string; expression: string }>)
+            ? `DERIVED MATH CHANNELS AVAILABLE:\n${(
+                payload.enabledMathChannels as Array<{
+                  name: string;
+                  unit: string;
+                  expression: string;
+                }>
+              )
                 .map((m) => `  - ${m.name} (${m.unit}): ${m.expression}`)
                 .join("\n")}`
             : "",

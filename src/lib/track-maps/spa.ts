@@ -14,7 +14,7 @@ export const spaMap: TrackMapDefinition = {
     [0.15, 0.68], // Downhill straight towards Eau Rouge
     [0.21, 0.73],
     [0.24, 0.77],
-    [0.28, 0.80], // Eau Rouge compression
+    [0.28, 0.8], // Eau Rouge compression
     [0.29, 0.76], // Raidillon Left
     [0.28, 0.71], // Raidillon Right climb
     [0.31, 0.63], // Kemmel Straight start
@@ -36,18 +36,18 @@ export const spaMap: TrackMapDefinition = {
     [0.51, 0.58], // Pouhon First Apex
     [0.45, 0.63], // Pouhon Second Apex
     [0.46, 0.69], // Pouhon exit
-    [0.50, 0.73], // Fagnes approach
+    [0.5, 0.73], // Fagnes approach
     [0.55, 0.75], // Fagnes Right
     [0.59, 0.78], // Fagnes Left
     [0.63, 0.82], // Campus apex
     [0.68, 0.87], // Stavelot entry
-    [0.71, 0.90], // Stavelot Apex
+    [0.71, 0.9], // Stavelot Apex
     [0.67, 0.92], // Stavelot exit
     [0.58, 0.89], // Courbe Paul Frère
     [0.48, 0.85], // Blanchimont entry
     [0.38, 0.82], // Blanchimont 1
     [0.28, 0.78], // Blanchimont 2
-    [0.20, 0.75], // Bus Stop Chicane approach
+    [0.2, 0.75], // Bus Stop Chicane approach
     [0.17, 0.76], // Bus Stop Right
     [0.18, 0.74], // Bus Stop Left
   ],
@@ -68,9 +68,9 @@ export const spaMap: TrackMapDefinition = {
   ],
   pitLane: {
     spline: [
-      [0.20, 0.75], // Exits before Bus Stop chicane
+      [0.2, 0.75], // Exits before Bus Stop chicane
       [0.17, 0.72], // Speed limit marker
-      [0.15, 0.70], // Parallel crew wall
+      [0.15, 0.7], // Parallel crew wall
       [0.13, 0.68], // Parallel pits
       [0.14, 0.65], // Acceleration lane
       [0.18, 0.68], // Merges after La Source hairpin

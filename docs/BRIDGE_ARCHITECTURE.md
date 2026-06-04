@@ -40,7 +40,7 @@ interface Telemetry {
   // Connection
   connected: boolean;
   source: "live" | "simulated";
-  session: string;       // "PRACTICE — MONZA"
+  session: string; // "PRACTICE — MONZA"
   track: string;
   car: string;
   carNumber: string;
@@ -49,9 +49,9 @@ interface Telemetry {
   safetyRating: number;
 
   // Driver inputs
-  throttle: number;      // 0–1
-  brake: number;         // 0–1
-  clutch: number;        // 0–1
+  throttle: number; // 0–1
+  brake: number; // 0–1
+  clutch: number; // 0–1
   steeringDeg: number;
 
   // Engine & speed
@@ -63,9 +63,9 @@ interface Telemetry {
   rpmShiftRedline: number;
 
   // Lap timing
-  lastLap: string;       // "1:23.456"
+  lastLap: string; // "1:23.456"
   bestLap: string;
-  deltaSec: number;      // delta to personal best
+  deltaSec: number; // delta to personal best
   sectors: { s1: string; s2: string; s3: string; bestSector: null };
 
   // Fuel
@@ -73,15 +73,18 @@ interface Telemetry {
   lapsEstimated: number;
 
   // Tyres (fl / fr / rl / rr)
-  tires: Record<"fl"|"fr"|"rl"|"rr", {
-    tempC: number;
-    pressureBar: number;
-    wearPct: number;
-    estWearPct: number;
-    brakeTempC: number;
-    brakeLinePress: number;
-    state: "hot" | "cold" | "ok";
-  }>;
+  tires: Record<
+    "fl" | "fr" | "rl" | "rr",
+    {
+      tempC: number;
+      pressureBar: number;
+      wearPct: number;
+      estWearPct: number;
+      brakeTempC: number;
+      brakeLinePress: number;
+      state: "hot" | "cold" | "ok";
+    }
+  >;
 
   // Physics
   gLat: number;
@@ -124,17 +127,17 @@ interface Telemetry {
 
 Every packet includes an `extras` object with high-value channels that the AI engines consume. Channels are `0` when the car or session does not export them.
 
-| Key | SDK Source | Units | AI use |
-|---|---|---|---|
-| `YawRate` | `v.YawRate` | rad/s | Oversteer / snap detection |
-| `Yaw` | `v.Yaw` | rad | Cumulative rotation |
-| `LFshockDefl` .. `RRshockDefl` | `v.LFshockDefl` | m | Damper travel, bump/rebound |
-| `BrakeLinePressureLF` .. `RR` | `v.LFbrakeLinePress` | Pa | Brake bias indicator |
-| `LFwheelSpeed` .. `RRwheelSpeed` | `v.LFwheelSpeed` | rad/s | Wheel lock detection |
-| `Pitch`, `Roll` | `v.Pitch`, `v.Roll` | rad | Car attitude |
-| `PitchRate`, `RollRate` | `v.PitchRate` | rad/s | Dynamic loads |
-| `LFtireForceLatN`, `RFtireForceLatN` | `v.LFtireForceLatN` | N | Grip level |
-| `VelocityX/Y/Z` | `v.VelocityX` | m/s | Body velocity vector |
+| Key                                  | SDK Source           | Units | AI use                      |
+| ------------------------------------ | -------------------- | ----- | --------------------------- |
+| `YawRate`                            | `v.YawRate`          | rad/s | Oversteer / snap detection  |
+| `Yaw`                                | `v.Yaw`              | rad   | Cumulative rotation         |
+| `LFshockDefl` .. `RRshockDefl`       | `v.LFshockDefl`      | m     | Damper travel, bump/rebound |
+| `BrakeLinePressureLF` .. `RR`        | `v.LFbrakeLinePress` | Pa    | Brake bias indicator        |
+| `LFwheelSpeed` .. `RRwheelSpeed`     | `v.LFwheelSpeed`     | rad/s | Wheel lock detection        |
+| `Pitch`, `Roll`                      | `v.Pitch`, `v.Roll`  | rad   | Car attitude                |
+| `PitchRate`, `RollRate`              | `v.PitchRate`        | rad/s | Dynamic loads               |
+| `LFtireForceLatN`, `RFtireForceLatN` | `v.LFtireForceLatN`  | N     | Grip level                  |
+| `VelocityX/Y/Z`                      | `v.VelocityX`        | m/s   | Body velocity vector        |
 
 ---
 
@@ -160,7 +163,9 @@ const telemetry = useTelemetry();
 ```typescript
 interface LapResult {
   lapTimeS: number;
-  s1S, s2S, s3S: number | null;
+  s1S;
+  s2S;
+  s3S: number | null;
   fuelUsedL: number;
   isValid: boolean;
   maxBrakePct: number;
@@ -171,8 +176,8 @@ interface LapResult {
   bigGSpike: boolean;
   // extras accumulated during lap:
   extras: {
-    peakYawRateRads: number;       // rad/s — max absolute yaw rate in lap
-    peakShockFL: number;           // m — max absolute FL shock deflection
+    peakYawRateRads: number; // rad/s — max absolute yaw rate in lap
+    peakShockFL: number; // m — max absolute FL shock deflection
     maxBrakeLinePressTotal: number; // Pa — max total brake line pressure
   };
 }
@@ -212,19 +217,19 @@ AdvisorButton.tsx       → dispatchAdvisorCall({ extrasSnapshot })
 
 ## File References
 
-| File | Purpose |
-|---|---|
-| `local-bridge/server.js` | Bridge — reads irsdk, maps Telemetry, broadcasts |
-| `src/lib/telemetry-types.ts` | `Telemetry` TypeScript interface |
-| `src/lib/useTelemetry.ts` | React hook — WebSocket consumer |
-| `src/lib/useTelemetryBuffer.ts` | 30s rolling buffer at 60Hz |
-| `src/lib/live/useLapAggregate.ts` | Per-lap accumulation (extras included) |
-| `src/lib/advisor.prompts.ts` | Advisor user message builder (extras + wsCtx) |
-| `src/lib/llm.ts` | AI dispatch — cloud/local, workspace + extras injection |
-| `src/lib/tts.client.ts` | Client TTS with `setSinkId` output device routing |
-| `src/lib/store.ts` | Zustand — ElevenLabs key, output device ID, mic device ID |
-| `desktop/main.cjs` | Electron — spawns bridge, tray, single-instance lock |
-| `desktop/scripts/copy-bridge.js` | Syncs `local-bridge/` → `desktop/bridge/` |
+| File                              | Purpose                                                   |
+| --------------------------------- | --------------------------------------------------------- |
+| `local-bridge/server.js`          | Bridge — reads irsdk, maps Telemetry, broadcasts          |
+| `src/lib/telemetry-types.ts`      | `Telemetry` TypeScript interface                          |
+| `src/lib/useTelemetry.ts`         | React hook — WebSocket consumer                           |
+| `src/lib/useTelemetryBuffer.ts`   | 30s rolling buffer at 60Hz                                |
+| `src/lib/live/useLapAggregate.ts` | Per-lap accumulation (extras included)                    |
+| `src/lib/advisor.prompts.ts`      | Advisor user message builder (extras + wsCtx)             |
+| `src/lib/llm.ts`                  | AI dispatch — cloud/local, workspace + extras injection   |
+| `src/lib/tts.client.ts`           | Client TTS with `setSinkId` output device routing         |
+| `src/lib/store.ts`                | Zustand — ElevenLabs key, output device ID, mic device ID |
+| `desktop/main.cjs`                | Electron — spawns bridge, tray, single-instance lock      |
+| `desktop/scripts/copy-bridge.js`  | Syncs `local-bridge/` → `desktop/bridge/`                 |
 
 ---
 
@@ -237,32 +242,43 @@ The bridge exposes a high-fidelity control interface for the active in-game iRac
 Exposed via `{ command: string, ...parameters }` JSON payloads:
 
 #### 1. Seek Replay (`seek`)
+
 Commands the simulator to seek to a specific session number and absolute session time.
-* **Payload**: `{ command: "seek", sessionNum: number, sessionTimeMS: number }`
-* **Underlying SDK API**: `triggerReplaySessionSearch(session, time)`
+
+- **Payload**: `{ command: "seek", sessionNum: number, sessionTimeMS: number }`
+- **Underlying SDK API**: `triggerReplaySessionSearch(session, time)`
 
 #### 2. Change Playback Speed (`speed`)
+
 Controls the simulator's play, pause, fast forward, or rewind rate.
-* **Payload**: `{ command: "speed", speed: number, slowMotion: boolean }`
-* **Underlying SDK API**: `changeReplaySpeed(speed, slowMotion)`
+
+- **Payload**: `{ command: "speed", speed: number, slowMotion: boolean }`
+- **Underlying SDK API**: `changeReplaySpeed(speed, slowMotion)`
 
 #### 3. Shift Playback Position (`position`)
+
 Jumps relative to absolute replay margins (0 = Begin, 1 = Current, 2 = End).
-* **Payload**: `{ command: "position", position: number, frame: number }`
-* **Underlying SDK API**: `changeReplayPosition(position, frame)`
+
+- **Payload**: `{ command: "position", position: number, frame: number }`
+- **Underlying SDK API**: `changeReplayPosition(position, frame)`
 
 #### 4. Search Tapes (`search`)
+
 Controls iRacing search skips like previous/next lap, frame, or incident markers.
-* **Payload**: `{ command: "search", searchCommand: number }` (e.g. ReplaySearchCommand values 0–9)
-* **Underlying SDK API**: `searchReplay(command)`
+
+- **Payload**: `{ command: "search", searchCommand: number }` (e.g. ReplaySearchCommand values 0–9)
+- **Underlying SDK API**: `searchReplay(command)`
 
 #### 5. Change Replay State (`state`)
+
 Triggers tape operations such as tape erasing or state switching.
-* **Payload**: `{ command: "state", state: number }` (ReplayStateCommand values)
-* **Underlying SDK API**: `changeReplayState(state)`
+
+- **Payload**: `{ command: "state", state: number }` (ReplayStateCommand values)
+- **Underlying SDK API**: `changeReplayState(state)`
 
 #### 6. Switch Active Focus and Camera View (`camera`)
-Commands the spectator camera to switch drivers and angles in real-time.
-* **Payload**: `{ command: "camera", position: number, group: number, camera: number }`
-* **Underlying SDK API**: `changeCameraPosition(position, group, camera)`
 
+Commands the spectator camera to switch drivers and angles in real-time.
+
+- **Payload**: `{ command: "camera", position: number, group: number, camera: number }`
+- **Underlying SDK API**: `changeCameraPosition(position, group, camera)`

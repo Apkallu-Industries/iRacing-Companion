@@ -34,7 +34,7 @@ class SessionSnapshotStore {
     visibleTraces: string[],
     activeQueryYaml: string,
     aiNarrativeCache: string,
-    engineeringNotes: string
+    engineeringNotes: string,
   ): SessionSnapshot {
     const snapshot: SessionSnapshot = {
       id: `snap_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -47,7 +47,7 @@ class SessionSnapshotStore {
       visibleTraces,
       activeQueryYaml,
       aiNarrativeCache,
-      engineeringNotes
+      engineeringNotes,
     };
 
     this.memoryCache.set(snapshot.id, snapshot);

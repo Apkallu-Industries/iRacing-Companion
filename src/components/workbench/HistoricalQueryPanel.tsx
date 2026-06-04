@@ -51,27 +51,32 @@ import {
 // ─── Category helpers ─────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { id: "thermal",  label: "THERMAL",   color: "#FF4D4D" },
-  { id: "hybrid",   label: "HYBRID",    color: "#8B5CF6" },
-  { id: "inputs",   label: "INPUTS",    color: "#00D17F" },
-  { id: "dynamics", label: "DYNAMICS",  color: "#3B82F6" },
+  { id: "thermal", label: "THERMAL", color: "#FF4D4D" },
+  { id: "hybrid", label: "HYBRID", color: "#8B5CF6" },
+  { id: "inputs", label: "INPUTS", color: "#00D17F" },
+  { id: "dynamics", label: "DYNAMICS", color: "#3B82F6" },
 ] as const;
 
 type CategoryId = "thermal" | "hybrid" | "inputs" | "dynamics";
 
 function CategoryIcon({ id, className }: { id: string; className?: string }) {
   switch (id) {
-    case "thermal":  return <AlertTriangle className={className} style={{ color: "#FF4D4D" }} />;
-    case "hybrid":   return <Zap           className={className} style={{ color: "#8B5CF6" }} />;
-    case "inputs":   return <Activity      className={className} style={{ color: "#00D17F" }} />;
-    case "dynamics": return <Shield        className={className} style={{ color: "#3B82F6" }} />;
-    default:         return <Activity      className={className} style={{ color: "#7A828C" }} />;
+    case "thermal":
+      return <AlertTriangle className={className} style={{ color: "#FF4D4D" }} />;
+    case "hybrid":
+      return <Zap className={className} style={{ color: "#8B5CF6" }} />;
+    case "inputs":
+      return <Activity className={className} style={{ color: "#00D17F" }} />;
+    case "dynamics":
+      return <Shield className={className} style={{ color: "#3B82F6" }} />;
+    default:
+      return <Activity className={className} style={{ color: "#7A828C" }} />;
   }
 }
 
 function severityColor(s: string) {
   if (s === "critical") return "#FF4D4D";
-  if (s === "warning")  return "#FFB800";
+  if (s === "warning") return "#FFB800";
   return "#3B82F6";
 }
 
@@ -88,8 +93,8 @@ function MongoOfflineState() {
         HISTORICAL INTELLIGENCE
       </span>
       <span className="text-[8.5px] leading-relaxed max-w-xs" style={{ color: "#3D4751" }}>
-        MongoDB is not connected. Install MongoDB Community Server or ensure
-        the PitWallMongoDB service is running to enable cross-session analytics.
+        MongoDB is not connected. Install MongoDB Community Server or ensure the PitWallMongoDB
+        service is running to enable cross-session analytics.
       </span>
       <div
         className="mt-4 px-3 py-1.5 rounded-sm text-[8px] font-bold uppercase tracking-widest"
@@ -113,7 +118,11 @@ function SessionRow({
   onSelect: () => void;
 }) {
   const date = new Date(session.start_time);
-  const label = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
+  const label = date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+  });
   const hasEnded = !!session.end_time;
 
   return (
@@ -159,16 +168,12 @@ function LapTable({ sessionId }: { sessionId: string }) {
 
   if (loading) {
     return (
-      <div className="p-3 text-[8px] text-[#7A828C] font-mono animate-pulse">
-        LOADING LAPS…
-      </div>
+      <div className="p-3 text-[8px] text-[#7A828C] font-mono animate-pulse">LOADING LAPS…</div>
     );
   }
 
   if (laps.length === 0) {
-    return (
-      <div className="p-3 text-[8px] text-[#3D4751] font-mono">NO LAP DATA</div>
-    );
+    return <div className="p-3 text-[8px] text-[#3D4751] font-mono">NO LAP DATA</div>;
   }
 
   const fastestTime = Math.min(...laps.filter((l) => l.duration_s > 0).map((l) => l.duration_s));
@@ -193,10 +198,7 @@ function LapTable({ sessionId }: { sessionId: string }) {
             style={{ borderBottom: "1px solid #0D1117" }}
           >
             <span className="text-[#7A828C]">L{lap.lap_number}</span>
-            <span
-              style={{ color: isFastest ? "#00D17F" : "white" }}
-              className="font-bold"
-            >
+            <span style={{ color: isFastest ? "#00D17F" : "white" }} className="font-bold">
               {formatLapTime(lap.duration_s)}
             </span>
             <span className="text-[#7A828C]">{lap.fuel_remaining_l.toFixed(1)}L</span>
@@ -216,30 +218,32 @@ export function HistoricalQueryPanel() {
 
   const [selectedSession, setSelectedSession] = useState<StoredSession | null>(null);
   const [showLaps, setShowLaps] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sessions" | "events" | "intelligence" | "strategic" | "simulation" | "sandbox" | "endurance">("sessions");
+  const [activeTab, setActiveTab] = useState<
+    "sessions" | "events" | "intelligence" | "strategic" | "simulation" | "sandbox" | "endurance"
+  >("sessions");
 
   // Event query state
-  const [queryMode,     setQueryMode]     = useState<"structured" | "tql">("tql");
-  const [tqlQuery,      setTqlQuery]      = useState(
-    "find:\n  classification=STABILITY\n  severity>=warning"
+  const [queryMode, setQueryMode] = useState<"structured" | "tql">("tql");
+  const [tqlQuery, setTqlQuery] = useState(
+    "find:\n  classification=STABILITY\n  severity>=warning",
   );
-  const [queryTrack,    setQueryTrack]    = useState("");
-  const [queryCar,      setQueryCar]      = useState("");
+  const [queryTrack, setQueryTrack] = useState("");
+  const [queryCar, setQueryCar] = useState("");
   const [queryCategory, setQueryCategory] = useState<CategoryId | "">("");
   const [querySeverity, setQuerySeverity] = useState<"" | "critical" | "warning" | "info">("");
-  const [queryCorner,   setQueryCorner]   = useState("");
-  const [hasQueried,    setHasQueried]    = useState(false);
+  const [queryCorner, setQueryCorner] = useState("");
+  const [hasQueried, setHasQueried] = useState(false);
 
   const eventParams = useMemo<EventQueryParams>(() => {
     if (queryMode === "tql") {
       return { q: tqlQuery };
     }
     return {
-      track:    queryTrack    || undefined,
-      car:      queryCar      || undefined,
+      track: queryTrack || undefined,
+      car: queryCar || undefined,
       category: queryCategory || undefined,
       severity: (querySeverity as EventQueryParams["severity"]) || undefined,
-      corner:   queryCorner ? parseInt(queryCorner, 10) : undefined,
+      corner: queryCorner ? parseInt(queryCorner, 10) : undefined,
     };
   }, [queryMode, tqlQuery, queryTrack, queryCar, queryCategory, querySeverity, queryCorner]);
 
@@ -315,7 +319,17 @@ export function HistoricalQueryPanel() {
 
       {/* ── Tabs ───────────────────────────────────────────────────── */}
       <div className="flex shrink-0" style={{ borderBottom: "1px solid #1C2430" }}>
-        {(["sessions", "events", "intelligence", "strategic", "simulation", "sandbox", "endurance"] as const).map((tab) => (
+        {(
+          [
+            "sessions",
+            "events",
+            "intelligence",
+            "strategic",
+            "simulation",
+            "sandbox",
+            "endurance",
+          ] as const
+        ).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -340,8 +354,8 @@ export function HistoricalQueryPanel() {
             <div className="p-4 flex flex-col items-center text-center gap-1.5">
               <Info className="h-4 w-4 text-[#3D4751]" />
               <span className="text-[8.5px] text-[#7A828C]">
-                No sessions recorded yet. Start iRacing with the bridge running
-                and MongoDB connected to begin session history.
+                No sessions recorded yet. Start iRacing with the bridge running and MongoDB
+                connected to begin session history.
               </span>
             </div>
           ) : (
@@ -384,7 +398,10 @@ export function HistoricalQueryPanel() {
       {activeTab === "events" && (
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Query Mode Switcher */}
-          <div className="flex hairline-b bg-[#0B0F14]" style={{ borderBottom: "1px solid #1C2430" }}>
+          <div
+            className="flex hairline-b bg-[#0B0F14]"
+            style={{ borderBottom: "1px solid #1C2430" }}
+          >
             <button
               onClick={() => setQueryMode("tql")}
               className={`flex-1 py-1 text-[7.5px] font-bold uppercase tracking-wider transition-all ${
@@ -447,7 +464,9 @@ export function HistoricalQueryPanel() {
                   >
                     <option value="">ALL CATEGORIES</option>
                     {CATEGORIES.map((c) => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.label}
+                      </option>
                     ))}
                   </select>
                   <select
@@ -608,7 +627,7 @@ export function HistoricalQueryPanel() {
 function SessionMemorySection({ sessionId }: { sessionId: string }) {
   const [notes, setNotes] = useState<StoredSessionNote[]>([]);
   const [changes, setChanges] = useState<StoredSetupChange[]>([]);
-  
+
   const [noteText, setNoteText] = useState("");
   const [changeText, setChangeText] = useState("");
   const [lapNum, setLapNum] = useState("");
@@ -667,13 +686,16 @@ function SessionMemorySection({ sessionId }: { sessionId: string }) {
     }
   };
 
-  if (loading) return <div className="p-3 text-[8px] text-[#7A828C] font-mono">LOADING MEMORY STACK…</div>;
+  if (loading)
+    return <div className="p-3 text-[8px] text-[#7A828C] font-mono">LOADING MEMORY STACK…</div>;
 
   return (
     <div className="grid grid-cols-2 gap-3 p-3 font-mono border-t border-[#1C2430] bg-[#05070A]">
       {/* Team Notes */}
       <div className="flex flex-col gap-2">
-        <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">TEAM NOTES</span>
+        <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">
+          TEAM NOTES
+        </span>
         <form onSubmit={handleAddNote} className="flex gap-1.5">
           <input
             style={{
@@ -717,7 +739,10 @@ function SessionMemorySection({ sessionId }: { sessionId: string }) {
             <span className="text-[8px] text-[#3D4751]">NO NOTES FOR THIS STINT</span>
           ) : (
             notes.map((note) => (
-              <div key={note._id} className="p-1.5 bg-[#080C10] border border-[#0D1117] rounded-xs flex flex-col gap-0.5">
+              <div
+                key={note._id}
+                className="p-1.5 bg-[#080C10] border border-[#0D1117] rounded-xs flex flex-col gap-0.5"
+              >
                 <div className="flex items-center justify-between text-[7px] text-[#7A828C]">
                   <span>{note.engineer_name}</span>
                   {note.lap_number !== undefined && (
@@ -733,7 +758,9 @@ function SessionMemorySection({ sessionId }: { sessionId: string }) {
 
       {/* Setup Changes */}
       <div className="flex flex-col gap-2">
-        <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">SETUP GRAPH ADJUSTMENTS</span>
+        <span className="text-[8px] text-[#7A828C] font-bold uppercase tracking-wider">
+          SETUP GRAPH ADJUSTMENTS
+        </span>
         <form onSubmit={handleAddChange} className="flex gap-1.5">
           <input
             style={{
@@ -761,7 +788,10 @@ function SessionMemorySection({ sessionId }: { sessionId: string }) {
             <span className="text-[8px] text-[#3D4751]">NO SETUP CHANGES RECORDED</span>
           ) : (
             changes.map((change) => (
-              <div key={change._id} className="p-1.5 bg-[#080C10] border border-[#0D1117] rounded-xs flex flex-col gap-0.5">
+              <div
+                key={change._id}
+                className="p-1.5 bg-[#080C10] border border-[#0D1117] rounded-xs flex flex-col gap-0.5"
+              >
                 <div className="flex items-center justify-between text-[7px] text-[#7A828C]">
                   <span className="text-[#00D17F] font-bold">SETUP ADJUSTMENT</span>
                   {change.lap_number !== undefined && (

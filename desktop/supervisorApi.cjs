@@ -18,8 +18,9 @@ const os = require("os");
 function start(opts = {}) {
   const port = opts.port || 17777;
   const host = "127.0.0.1";
-  const getStatus = typeof opts.getStatus === "function" ? opts.getStatus : () => ({}) ;
-  const onExternalTelemetry = typeof opts.onExternalTelemetry === "function" ? opts.onExternalTelemetry : () => false;
+  const getStatus = typeof opts.getStatus === "function" ? opts.getStatus : () => ({});
+  const onExternalTelemetry =
+    typeof opts.onExternalTelemetry === "function" ? opts.onExternalTelemetry : () => false;
 
   const sseLiveClients = new Set();
   const sseRawClients = new Set();
@@ -61,21 +62,27 @@ function start(opts = {}) {
   function broadcastTelemetry(obj) {
     const payload = `data: ${JSON.stringify(obj)}\n\n`;
     for (const res of sseLiveClients) {
-      try { res.write(payload); } catch {}
+      try {
+        res.write(payload);
+      } catch {}
     }
   }
 
   function broadcastRawTelemetry(obj) {
     const payload = `data: ${JSON.stringify(obj)}\n\n`;
     for (const res of sseRawClients) {
-      try { res.write(payload); } catch {}
+      try {
+        res.write(payload);
+      } catch {}
     }
   }
 
   function broadcastEvent(obj) {
     const payload = `data: ${JSON.stringify(obj)}\n\n`;
     for (const res of sseEventClients) {
-      try { res.write(payload); } catch {}
+      try {
+        res.write(payload);
+      } catch {}
     }
   }
 
@@ -128,7 +135,11 @@ function start(opts = {}) {
       req.on("data", (c) => (body += c.toString()));
       req.on("end", () => {
         if (!body) return resolve(null);
-        try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+        try {
+          resolve(JSON.parse(body));
+        } catch (e) {
+          reject(e);
+        }
       });
       req.on("error", reject);
     });
@@ -139,7 +150,10 @@ function start(opts = {}) {
     // CORS / local-only safety header
     res.setHeader("Access-Control-Allow-Origin", "http://127.0.0.1");
     if (req.method === "OPTIONS") {
-      res.writeHead(204, { "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" });
+      res.writeHead(204, {
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      });
       return res.end();
     }
 
@@ -168,7 +182,9 @@ function start(opts = {}) {
         const id = body?.sessionId;
         const s = sessions.get(id);
         if (!s) {
-          res.writeHead(404); res.end("not found"); return;
+          res.writeHead(404);
+          res.end("not found");
+          return;
         }
         s.endedAt = Date.now();
         sessions.set(id, s);
@@ -182,7 +198,9 @@ function start(opts = {}) {
       if (req.method === "POST" && p.pathname === "/import/file") {
         const body = await parseJson(req);
         const targetDir = path.join(process.env.APPDATA || process.cwd(), "PitWall", "imports");
-        try { fs.mkdirSync(targetDir, { recursive: true }); } catch {}
+        try {
+          fs.mkdirSync(targetDir, { recursive: true });
+        } catch {}
         const filename = body?.path ? path.basename(body.path) : `import-${Date.now()}`;
         const filePath = path.join(targetDir, filename);
         if (body?.contentBase64) {
@@ -277,7 +295,14 @@ function start(opts = {}) {
   });
 
   return {
-    stop: () => new Promise((resolve) => { try { server.close(() => resolve()); } catch { resolve(); } }),
+    stop: () =>
+      new Promise((resolve) => {
+        try {
+          server.close(() => resolve());
+        } catch {
+          resolve();
+        }
+      }),
     broadcastTelemetry,
     broadcastRawTelemetry,
     broadcastEvent,

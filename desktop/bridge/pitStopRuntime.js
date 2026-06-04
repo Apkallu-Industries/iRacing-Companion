@@ -26,11 +26,11 @@ class PitStopRuntime {
     changeTires,
     swapDrivers,
     trailingTrafficDistM = 500,
-    trailingTrafficSpeedMps = 60
+    trailingTrafficSpeedMps = 60,
   ) {
     // 1. Calculate stationary durations
     const fuelingTime = fuelToLoadL / this.fuelFlowRate;
-    
+
     // In WEC/IMSA, fueling and tire changes can run concurrently or sequentially depending on rules.
     // We assume sequential here for safety margin projections (conservative bounds)
     let stationaryTime = fuelingTime;
@@ -47,7 +47,8 @@ class PitStopRuntime {
 
     // 2. Predict track rejoin gaps relative to trailing pack
     // Trailing car closing speed sweeps down pit lane
-    const trailingTimeArrival = trailingTrafficSpeedMps > 0 ? trailingTrafficDistM / trailingTrafficSpeedMps : 999;
+    const trailingTimeArrival =
+      trailingTrafficSpeedMps > 0 ? trailingTrafficDistM / trailingTrafficSpeedMps : 999;
     const exitGapsSeconds = trailingTimeArrival - totalTimeLoss;
 
     let exitSlotVerdict = "SAFE_REJOIN";
@@ -67,7 +68,7 @@ class PitStopRuntime {
       totalTimeLossSec: Number(totalTimeLoss.toFixed(1)),
       rejoinGapSec: Number(exitGapsSeconds.toFixed(1)),
       exitSlotVerdict,
-      rationale
+      rationale,
     };
   }
 }

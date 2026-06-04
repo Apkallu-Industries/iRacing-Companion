@@ -44,12 +44,14 @@ class QueryPlanner {
         severity: 1,
         classification: 1,
         label: 1,
-        description: 1
+        description: 1,
       };
     }
 
     // 3. Prevent pathological unbounded scans by enforcing limits
-    const limit = filter.limit ? Math.min(parseInt(filter.limit, 10), this.maxLimit) : this.defaultLimit;
+    const limit = filter.limit
+      ? Math.min(parseInt(filter.limit, 10), this.maxLimit)
+      : this.defaultLimit;
     delete filter.limit; // Clean up limit parameter from mongo filter object
 
     // 4. Determine optimal Index Hint matching created indices
@@ -66,7 +68,7 @@ class QueryPlanner {
       filter,
       projection,
       limit,
-      hint
+      hint,
     };
   }
 }

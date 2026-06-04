@@ -8,7 +8,7 @@ export const lockupScanner = {
   scan(parsed: IbtParsed, startTick: number, endTick: number) {
     const rules = DECLARATIVE_RULES.filter((r) => r.category === "thermal");
     return compileAndRunDSL(parsed, rules);
-  }
+  },
 };
 
 export const wheelspinScanner = {
@@ -16,7 +16,7 @@ export const wheelspinScanner = {
   scan(parsed: IbtParsed, startTick: number, endTick: number) {
     const rules = DECLARATIVE_RULES.filter((r) => r.category === "inputs");
     return compileAndRunDSL(parsed, rules);
-  }
+  },
 };
 
 export const aeroScanner = {
@@ -24,7 +24,7 @@ export const aeroScanner = {
   scan(parsed: IbtParsed, startTick: number, endTick: number) {
     const rules = DECLARATIVE_RULES.filter((r) => r.category === "dynamics");
     return compileAndRunDSL(parsed, rules);
-  }
+  },
 };
 
 export const ersScanner = {
@@ -32,15 +32,10 @@ export const ersScanner = {
   scan(parsed: IbtParsed, startTick: number, endTick: number) {
     const rules = DECLARATIVE_RULES.filter((r) => r.category === "hybrid");
     return compileAndRunDSL(parsed, rules);
-  }
+  },
 };
 
-export const scanners = [
-  lockupScanner,
-  wheelspinScanner,
-  aeroScanner,
-  ersScanner,
-];
+export const scanners = [lockupScanner, wheelspinScanner, aeroScanner, ersScanner];
 
 export function scanTelemetrySession(parsed: IbtParsed): Omit<TelemetryEvent, "id">[] {
   // Execute through our modular Declarative DSL Compiler

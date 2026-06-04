@@ -97,12 +97,14 @@ function AIEngineerTerminal() {
     {
       timestamp: "15:45:12",
       type: "OBSERVATION",
-      content: "Rear instability detected under trail braking. Shock telemetry reports high rebound velocity mismatch in rear axle.",
+      content:
+        "Rear instability detected under trail braking. Shock telemetry reports high rebound velocity mismatch in rear axle.",
     },
     {
       timestamp: "15:45:14",
       type: "RECOMMENDATION",
-      content: "- Reduce rear rebound dampers 1 click\n- Smooth brake pressure release ramp\n- Shift throttle rotation point 2.5 meters earlier",
+      content:
+        "- Reduce rear rebound dampers 1 click\n- Smooth brake pressure release ramp\n- Shift throttle rotation point 2.5 meters earlier",
     },
   ]);
 
@@ -110,34 +112,79 @@ function AIEngineerTerminal() {
   const [setup, setSetup] = useState<SetupItem[]>([
     {
       param: "COLD TIRE PRESSURES (PSI)",
-      fl: "24.5", fr: "24.8", rl: "24.2", rr: "24.5",
-      flDelta: "-0.5", frDelta: "-0.8", rlDelta: "+0.3", rrDelta: "+0.0",
-      flStatus: "warn", frStatus: "warn", rlStatus: "adjust", rrStatus: "ok"
+      fl: "24.5",
+      fr: "24.8",
+      rl: "24.2",
+      rr: "24.5",
+      flDelta: "-0.5",
+      frDelta: "-0.8",
+      rlDelta: "+0.3",
+      rrDelta: "+0.0",
+      flStatus: "warn",
+      frStatus: "warn",
+      rlStatus: "adjust",
+      rrStatus: "ok",
     },
     {
       param: "SPRING RATE (N/MM)",
-      fl: "180", fr: "180", rl: "150", rr: "150",
-      flDelta: "0", frDelta: "0", rlDelta: "-10", rrDelta: "-10",
-      flStatus: "ok", frStatus: "ok", rlStatus: "adjust", rrStatus: "adjust"
+      fl: "180",
+      fr: "180",
+      rl: "150",
+      rr: "150",
+      flDelta: "0",
+      frDelta: "0",
+      rlDelta: "-10",
+      rrDelta: "-10",
+      flStatus: "ok",
+      frStatus: "ok",
+      rlStatus: "adjust",
+      rrStatus: "adjust",
     },
     {
       param: "DAMPER REBOUND (CLICKS)",
-      fl: "12", fr: "12", rl: "10", rr: "10",
-      flDelta: "+0", frDelta: "+0", rlDelta: "-1", rrDelta: "-1",
-      flStatus: "ok", frStatus: "ok", rlStatus: "adjust", rrStatus: "adjust"
+      fl: "12",
+      fr: "12",
+      rl: "10",
+      rr: "10",
+      flDelta: "+0",
+      frDelta: "+0",
+      rlDelta: "-1",
+      rrDelta: "-1",
+      flStatus: "ok",
+      frStatus: "ok",
+      rlStatus: "adjust",
+      rrStatus: "adjust",
     },
     {
       param: "DAMPER BUMP (CLICKS)",
-      fl: "8", fr: "8", rl: "6", rr: "6",
-      flDelta: "+0", frDelta: "+0", rlDelta: "+0", rrDelta: "+0",
-      flStatus: "ok", frStatus: "ok", rlStatus: "ok", rrStatus: "ok"
+      fl: "8",
+      fr: "8",
+      rl: "6",
+      rr: "6",
+      flDelta: "+0",
+      frDelta: "+0",
+      rlDelta: "+0",
+      rrDelta: "+0",
+      flStatus: "ok",
+      frStatus: "ok",
+      rlStatus: "ok",
+      rrStatus: "ok",
     },
     {
       param: "CAMBER DEGREES",
-      fl: "-3.20", fr: "-3.15", rl: "-2.45", rr: "-2.40",
-      flDelta: "+0.10", frDelta: "+0.10", rlDelta: "+0.00", rrDelta: "+0.00",
-      flStatus: "adjust", frStatus: "adjust", rlStatus: "ok", rrStatus: "ok"
-    }
+      fl: "-3.20",
+      fr: "-3.15",
+      rl: "-2.45",
+      rr: "-2.40",
+      flDelta: "+0.10",
+      frDelta: "+0.10",
+      rlDelta: "+0.00",
+      rrDelta: "+0.00",
+      flStatus: "adjust",
+      frStatus: "adjust",
+      rlStatus: "ok",
+      rrStatus: "ok",
+    },
   ]);
 
   // Sync with live telemetry details
@@ -166,9 +213,18 @@ function AIEngineerTerminal() {
     setLoading(true);
     addSystemLog(`STINT SYSTEM DISPATCH: ANALYZING LAST 5 RUNS ON ${activeTrack.toUpperCase()}...`);
     setTimeout(() => {
-      addEngineLog("STINT_ANALYSIS", `LATERAL FORCE CORRELATION AT ${activeTrack.toUpperCase()} CORNER SPAN.`);
-      addEngineLog("OBSERVATION", "Tire temperatures at FR axle peaking at 98.4°C. Severe slide energy on exit slip angles.");
-      addEngineLog("RECOMMENDATION", "- Reduce tire pressures on FR by 0.8 psi\n- Adjust brake bias forward 0.5% to decrease front slide loading\n- Open ERS map deployment by 1 click");
+      addEngineLog(
+        "STINT_ANALYSIS",
+        `LATERAL FORCE CORRELATION AT ${activeTrack.toUpperCase()} CORNER SPAN.`,
+      );
+      addEngineLog(
+        "OBSERVATION",
+        "Tire temperatures at FR axle peaking at 98.4°C. Severe slide energy on exit slip angles.",
+      );
+      addEngineLog(
+        "RECOMMENDATION",
+        "- Reduce tire pressures on FR by 0.8 psi\n- Adjust brake bias forward 0.5% to decrease front slide loading\n- Open ERS map deployment by 1 click",
+      );
       setLoading(false);
       toast.success("Sector stint analysis completed.");
     }, 1200);
@@ -179,20 +235,38 @@ function AIEngineerTerminal() {
     addSystemLog("DAMPER MATH COMPILATION ROUTINE: RESOLVING SHOCK TRANSIENTS...");
     setTimeout(() => {
       addEngineLog("STINT_ANALYSIS", "RESOLVED SUSPENSION HISTOGRAMS.");
-      addEngineLog("OBSERVATION", "Over-stiffness detected over Turn 11 high curbs. Compression energy causing wheel hop.");
-      addEngineLog("RECOMMENDATION", "- Soften front bump dampers by 2 clicks\n- Increase rear rebound by 1 click to control pitch velocity");
-      
+      addEngineLog(
+        "OBSERVATION",
+        "Over-stiffness detected over Turn 11 high curbs. Compression energy causing wheel hop.",
+      );
+      addEngineLog(
+        "RECOMMENDATION",
+        "- Soften front bump dampers by 2 clicks\n- Increase rear rebound by 1 click to control pitch velocity",
+      );
+
       // Update damper settings in matrix
       setSetup((prev) =>
         prev.map((item) => {
           if (item.param.includes("DAMPER BUMP")) {
-            return { ...item, flDelta: "-2", frDelta: "-2", flStatus: "adjust", frStatus: "adjust" };
+            return {
+              ...item,
+              flDelta: "-2",
+              frDelta: "-2",
+              flStatus: "adjust",
+              frStatus: "adjust",
+            };
           }
           if (item.param.includes("DAMPER REBOUND")) {
-            return { ...item, rlDelta: "-2", rrDelta: "-2", rlStatus: "adjust", rrStatus: "adjust" };
+            return {
+              ...item,
+              rlDelta: "-2",
+              rrDelta: "-2",
+              rlStatus: "adjust",
+              rrStatus: "adjust",
+            };
           }
           return item;
-        })
+        }),
       );
       setLoading(false);
       toast.success("Damper coefficients adjusted in matrix.");
@@ -204,9 +278,15 @@ function AIEngineerTerminal() {
     addSystemLog("THERMODYNAMIC TIRE WEAR REGIME: RESOLVING PRESSURE DEFICITS...");
     setTimeout(() => {
       addEngineLog("STINT_ANALYSIS", "TIRE CARCASS EXPANSION COEFFICIENT RESOLUTION.");
-      addEngineLog("OBSERVATION", "Rear right tire cold core pressure failing to reach active window target (active: 23.8, target: 24.5).");
-      addEngineLog("RECOMMENDATION", "- Increase rear right cold pressure by 0.5 psi\n- Decrease front left pressure by 0.3 psi to equalize wear footprint");
-      
+      addEngineLog(
+        "OBSERVATION",
+        "Rear right tire cold core pressure failing to reach active window target (active: 23.8, target: 24.5).",
+      );
+      addEngineLog(
+        "RECOMMENDATION",
+        "- Increase rear right cold pressure by 0.5 psi\n- Decrease front left pressure by 0.3 psi to equalize wear footprint",
+      );
+
       setSetup((prev) =>
         prev.map((item) => {
           if (item.param.includes("COLD TIRE PRESSURES")) {
@@ -215,11 +295,11 @@ function AIEngineerTerminal() {
               flDelta: "-0.3",
               rrDelta: "+0.5",
               flStatus: "adjust",
-              rrStatus: "adjust"
+              rrStatus: "adjust",
             };
           }
           return item;
-        })
+        }),
       );
       setLoading(false);
       toast.success("Cold tire targets optimized.");
@@ -248,7 +328,7 @@ function AIEngineerTerminal() {
             timestamp: new Date().toTimeString().split(" ")[0],
             type: "SYSTEM",
             content: "PW-ENGINEER ENGINE: CONSOLE RESET COMPLETE.",
-          }
+          },
         ]);
         setLoading(false);
         return;
@@ -263,7 +343,8 @@ function AIEngineerTerminal() {
 
       let setupContextStr = "";
       if (parsedSetup) {
-        setupContextStr = "\nActual Parsed iRacing Setup Parameters:\n" +
+        setupContextStr =
+          "\nActual Parsed iRacing Setup Parameters:\n" +
           Object.entries(parsedSetup.flat)
             .map(([k, v]) => `- ${k}: ${v}`)
             .join("\n");
@@ -349,12 +430,18 @@ function AIEngineerTerminal() {
         }
       } else {
         // Fallback simulated response
-        addEngineLog("RECOMMENDATION", `ENGINE PROTOCOL ECHO: UNABLE TO CONTACT SERVER (${res.status}).\nPROPOSED TWEAK: Reduce ERS deployment by 2% to equalize thermal exit limits.`);
+        addEngineLog(
+          "RECOMMENDATION",
+          `ENGINE PROTOCOL ECHO: UNABLE TO CONTACT SERVER (${res.status}).\nPROPOSED TWEAK: Reduce ERS deployment by 2% to equalize thermal exit limits.`,
+        );
       }
     } catch (e: any) {
       addEngineLog("ERROR", `LLM OFFLINE: ${e.message}. ENGAGING LOCAL SIM MODE.`);
       addEngineLog("OBSERVATION", "Mild understeer on apex throttle transitions.");
-      addEngineLog("RECOMMENDATION", "- Soften front anti-roll bar 1 step\n- Increase rear aerodynamic wing angle (+0.5°)");
+      addEngineLog(
+        "RECOMMENDATION",
+        "- Soften front anti-roll bar 1 step\n- Increase rear aerodynamic wing angle (+0.5°)",
+      );
     } finally {
       setLoading(false);
     }
@@ -376,13 +463,14 @@ function AIEngineerTerminal() {
     if (params.get("analyzeSetup") === "true") {
       // Clear parameter from URL so it doesn't run again on refresh
       window.history.replaceState({}, document.title, window.location.pathname);
-      
+
       const autoRun = async () => {
         addSystemLog("PIT WALL COMMS PROTOCOL: AUTOMATIC VEHICLE SETUP HANDSHAKE INITIALIZED.");
         // Small delay to allow initial setup logs to draw nicely
         await new Promise((resolve) => setTimeout(resolve, 600));
-        
-        const autoCmd = "Please analyze my parsed setup and suggest baseline handling optimizations.";
+
+        const autoCmd =
+          "Please analyze my parsed setup and suggest baseline handling optimizations.";
         addEngineLog("SYSTEM", `> ENGINE_CMD: ${autoCmd}`);
         await sendPrompt(autoCmd);
       };
@@ -428,19 +516,24 @@ function AIEngineerTerminal() {
 
       {/* Main split grid layout */}
       <main className="flex-1 min-h-0 w-full grid grid-cols-12 gap-0 border-t border-[#1C2430]">
-        
         {/* LEFT COLUMN: ACTIVE TERMINAL CONSOLE LOGS (Cols 1-7) */}
         <section className="col-span-7 flex flex-col justify-between overflow-hidden border-r border-[#1C2430] bg-[#05070A]">
           {/* Console Header */}
           <div className="px-4 py-2 border-b border-[#1C2430] bg-[#0B0F14] text-[9px] uppercase tracking-widest text-[#7A828C] font-black flex items-center justify-between shrink-0">
-            <span className="flex items-center gap-1.5"><TerminalIcon className="h-3.5 w-3.5 text-[#3B82F6]" /> Active Strategy Terminal Logs</span>
+            <span className="flex items-center gap-1.5">
+              <TerminalIcon className="h-3.5 w-3.5 text-[#3B82F6]" /> Active Strategy Terminal Logs
+            </span>
             <div className="flex gap-2">
               <button
                 onClick={speakLastRecom}
                 disabled={speaking}
                 className="flex items-center gap-1 border border-[#1C2430] bg-[#11161D] hover:bg-[#161C24] px-2 py-0.5 rounded text-[8px] tracking-wider text-white disabled:opacity-40"
               >
-                {speaking ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Volume2 className="h-2.5 w-2.5" />}
+                {speaking ? (
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                ) : (
+                  <Volume2 className="h-2.5 w-2.5" />
+                )}
                 SPEAK LAST
               </button>
               <button
@@ -486,8 +579,13 @@ function AIEngineerTerminal() {
           </div>
 
           {/* Console Command Input Bar */}
-          <form onSubmit={handleCommandSubmit} className="border-t border-[#1C2430] bg-[#0B0F14] p-3 flex gap-2 shrink-0">
-            <span className="text-[#3B82F6] font-black text-xs shrink-0 self-center pl-1">&gt; ENGINE_CMD:</span>
+          <form
+            onSubmit={handleCommandSubmit}
+            className="border-t border-[#1C2430] bg-[#0B0F14] p-3 flex gap-2 shrink-0"
+          >
+            <span className="text-[#3B82F6] font-black text-xs shrink-0 self-center pl-1">
+              &gt; ENGINE_CMD:
+            </span>
             <input
               type="text"
               value={cmdInput}
@@ -511,7 +609,9 @@ function AIEngineerTerminal() {
         <section className="col-span-5 flex flex-col justify-between overflow-hidden bg-[#0B0F14]">
           {/* Setup Header */}
           <div className="px-4 py-2 border-b border-[#1C2430] bg-[#0B0F14] text-[9px] uppercase tracking-widest text-[#7A828C] font-black flex items-center justify-between shrink-0">
-            <span className="flex items-center gap-1.5"><Sliders className="h-3.5 w-3.5 text-[#3B82F6]" /> Calibrated Dampers & Tires Matrix</span>
+            <span className="flex items-center gap-1.5">
+              <Sliders className="h-3.5 w-3.5 text-[#3B82F6]" /> Calibrated Dampers & Tires Matrix
+            </span>
             <span className="text-[8px] border border-[#1C2430] px-1.5 py-0.5 bg-[#05070A] text-[#7A828C]">
               4-CORNER MATRIX
             </span>
@@ -519,7 +619,9 @@ function AIEngineerTerminal() {
 
           {/* Quick-tweak operations bar */}
           <div className="border-b border-[#1C2430]/60 bg-[#11161D] p-3 shrink-0 flex items-center justify-between">
-            <span className="text-[9px] uppercase font-bold text-[#7A828C]">Presets Quick Tweak:</span>
+            <span className="text-[9px] uppercase font-bold text-[#7A828C]">
+              Presets Quick Tweak:
+            </span>
             <div className="flex gap-2">
               <button
                 onClick={optimizeTires}
@@ -621,10 +723,12 @@ function AIEngineerTerminal() {
                 active calibration guidelines
               </h4>
               <p className="mt-0.5">
-                • Delta figures in <span className="text-[#00D17F] font-bold">green</span> represent optimal recommended offsets resolved from rolling telemetry telemetry logs.
+                • Delta figures in <span className="text-[#00D17F] font-bold">green</span> represent
+                optimal recommended offsets resolved from rolling telemetry telemetry logs.
               </p>
               <p className="mt-0.5">
-                • Figures in <span className="text-[#FF4D4D] font-bold">red</span> represent variables triggering alert constraints during peak high lateral compression periods.
+                • Figures in <span className="text-[#FF4D4D] font-bold">red</span> represent
+                variables triggering alert constraints during peak high lateral compression periods.
               </p>
             </div>
           </div>
@@ -637,7 +741,6 @@ function AIEngineerTerminal() {
             </span>
           </div>
         </section>
-
       </main>
 
       {/* Timing footer */}
@@ -647,9 +750,15 @@ function AIEngineerTerminal() {
           TELEMETRY CONSOLE COUPLING ACTIVE
         </span>
         <div className="flex gap-4 font-bold text-white">
-          <span>ERS: <span className="text-[#8B5CF6]">4.2MJ / 4.0MJ</span></span>
-          <span>BBIAS: <span className="text-[#00D17F]">{t.brakeBias.toFixed(1)}%</span></span>
-          <span>SOF: <span>{t.sof.toLocaleString()}</span></span>
+          <span>
+            ERS: <span className="text-[#8B5CF6]">4.2MJ / 4.0MJ</span>
+          </span>
+          <span>
+            BBIAS: <span className="text-[#00D17F]">{t.brakeBias.toFixed(1)}%</span>
+          </span>
+          <span>
+            SOF: <span>{t.sof.toLocaleString()}</span>
+          </span>
         </div>
       </footer>
     </div>

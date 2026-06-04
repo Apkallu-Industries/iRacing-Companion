@@ -20,16 +20,19 @@ import {
   Activity,
   Award,
 } from "lucide-react";
-import {
-  TEAM_PROFILES,
-  type TeamKnowledgeProfile,
-} from "@/lib/session-intelligence/profiles";
+import { TEAM_PROFILES, type TeamKnowledgeProfile } from "@/lib/session-intelligence/profiles";
 import {
   generateDriverFingerprint,
   type DriverFingerprint,
 } from "@/lib/driver-model/driverFingerprint";
-import { classifyCornerArchetype, type CornerArchetype } from "@/lib/driver-model/cornerArchetypeLearner";
-import { predictNextTickInstability, type TelemetryTickFrame } from "@/lib/session-intelligence/predictiveEngine";
+import {
+  classifyCornerArchetype,
+  type CornerArchetype,
+} from "@/lib/driver-model/cornerArchetypeLearner";
+import {
+  predictNextTickInstability,
+  type TelemetryTickFrame,
+} from "@/lib/session-intelligence/predictiveEngine";
 import { calculateSetupAdviceConfidence } from "@/lib/session-intelligence/setupConfidence";
 import { type StoredSetupChange } from "@/lib/session-intelligence/mongoSessionStore";
 import { toast } from "sonner";
@@ -48,16 +51,21 @@ export function IntelligenceDashboard({
   trackName = "Spa-Francorchamps",
 }: IntelligenceDashboardProps) {
   // --- States ---
-  const [activeTab, setActiveTab] = useState<"driver" | "corners" | "predictive" | "setup" | "notebook">("driver");
+  const [activeTab, setActiveTab] = useState<
+    "driver" | "corners" | "predictive" | "setup" | "notebook"
+  >("driver");
   const [driverName, setDriverName] = useState("Dany M.");
-  
+
   // Custom states for Notebook Strategy
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
-  const [notesList, setNotesList] = useState<Array<{ title: string; content: string; timestamp: string }>>([
+  const [notesList, setNotesList] = useState<
+    Array<{ title: string; content: string; timestamp: string }>
+  >([
     {
       title: "Monza Sector 2 Trail-Brake release adjustment",
-      content: "Chassis bottoming transiently through Ascari. Increased front packers by +1 click, resolving stability lockup risk on entry trail.",
+      content:
+        "Chassis bottoming transiently through Ascari. Increased front packers by +1 click, resolving stability lockup risk on entry trail.",
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
@@ -101,30 +109,86 @@ export function IntelligenceDashboard({
     mockBrakeMetrics,
     mockThrottleMetrics,
     mockSteeringMetrics,
-    mockConsistency
+    mockConsistency,
   );
 
   // Corner archetypes mock list mapping track corners dynamically
   const learnedCorners = [
     { corner: "T1 (La Source)", apex: 62.4, latG: 1.12, trail: 1.45, shock: 42, exitStraight: 420 },
-    { corner: "T2/T3 (Eau Rouge)", apex: 224.2, latG: 1.85, trail: 0.12, shock: 198, exitStraight: 850 },
-    { corner: "T5 (Les Combes)", apex: 128.5, latG: 1.42, trail: 1.22, shock: 65, exitStraight: 280 },
+    {
+      corner: "T2/T3 (Eau Rouge)",
+      apex: 224.2,
+      latG: 1.85,
+      trail: 0.12,
+      shock: 198,
+      exitStraight: 850,
+    },
+    {
+      corner: "T5 (Les Combes)",
+      apex: 128.5,
+      latG: 1.42,
+      trail: 1.22,
+      shock: 65,
+      exitStraight: 280,
+    },
     { corner: "T8 (Bruxelles)", apex: 88.4, latG: 1.25, trail: 1.84, shock: 54, exitStraight: 150 },
-    { corner: "T15 (Stavelot)", apex: 184.2, latG: 1.72, trail: 0.42, shock: 88, exitStraight: 650 },
+    {
+      corner: "T15 (Stavelot)",
+      apex: 184.2,
+      latG: 1.72,
+      trail: 0.42,
+      shock: 88,
+      exitStraight: 650,
+    },
   ].map((c) => {
-    const classification = classifyCornerArchetype(c.apex / 3.6, c.latG, c.trail, c.shock, c.exitStraight);
+    const classification = classifyCornerArchetype(
+      c.apex / 3.6,
+      c.latG,
+      c.trail,
+      c.shock,
+      c.exitStraight,
+    );
     return { ...c, ...classification };
   });
 
   // Simulated setup adjustments for confidence weighting
   const setupHistory: StoredSetupChange[] = [
-    { change_type: "Rear Rebound", notes: "stabilize exit traction, reduced oversteer slide, resolved entry bottoming", lap_number: 5, parameter: "damping", delta: "-1 click", consequences: ["reduced slide"] },
-    { change_type: "Rear Rebound", notes: "improved exit rotation", lap_number: 12, parameter: "damping", delta: "-2 clicks", consequences: ["better rotation"] },
-    { change_type: "Rear Anti-Roll Bar", notes: "understeer sweep, compromised mid rotation", lap_number: 18, parameter: "arb", delta: "+1 click", consequences: ["understeer"] },
+    {
+      change_type: "Rear Rebound",
+      notes: "stabilize exit traction, reduced oversteer slide, resolved entry bottoming",
+      lap_number: 5,
+      parameter: "damping",
+      delta: "-1 click",
+      consequences: ["reduced slide"],
+    },
+    {
+      change_type: "Rear Rebound",
+      notes: "improved exit rotation",
+      lap_number: 12,
+      parameter: "damping",
+      delta: "-2 clicks",
+      consequences: ["better rotation"],
+    },
+    {
+      change_type: "Rear Anti-Roll Bar",
+      notes: "understeer sweep, compromised mid rotation",
+      lap_number: 18,
+      parameter: "arb",
+      delta: "+1 click",
+      consequences: ["understeer"],
+    },
   ];
 
-  const reboundConfidence = calculateSetupAdviceConfidence("Rear Rebound", setupHistory, "driver-01");
-  const arbConfidence = calculateSetupAdviceConfidence("Rear Anti-Roll Bar", setupHistory, "driver-01");
+  const reboundConfidence = calculateSetupAdviceConfidence(
+    "Rear Rebound",
+    setupHistory,
+    "driver-01",
+  );
+  const arbConfidence = calculateSetupAdviceConfidence(
+    "Rear Anti-Roll Bar",
+    setupHistory,
+    "driver-01",
+  );
 
   // Real-time predictive telemetry frame analysis simulator
   const [currBrake, setCurrBrake] = useState(0.85);
@@ -243,19 +307,27 @@ export function IntelligenceDashboard({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">COGNITION OVERALL RATING:</span>
-                  <span className="text-[#3B82F6] font-bold tabular-nums">{fingerprint.overallRating}%</span>
+                  <span className="text-[#3B82F6] font-bold tabular-nums">
+                    {fingerprint.overallRating}%
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">PACE VARIANCE (LAP SD):</span>
-                  <span className="text-white font-bold tabular-nums">{fingerprint.consistency.lapTimeStandardDeviationSec}s</span>
+                  <span className="text-white font-bold tabular-nums">
+                    {fingerprint.consistency.lapTimeStandardDeviationSec}s
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">APEX SPEED VARIABILITY:</span>
-                  <span className="text-white font-bold tabular-nums">±{fingerprint.consistency.apexSpeedStdDevMps} m/s</span>
+                  <span className="text-white font-bold tabular-nums">
+                    ±{fingerprint.consistency.apexSpeedStdDevMps} m/s
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">BRAKE MARKER DELTA:</span>
-                  <span className="text-white font-bold tabular-nums">±{fingerprint.consistency.brakeMarkersVarianceMeters}m</span>
+                  <span className="text-white font-bold tabular-nums">
+                    ±{fingerprint.consistency.brakeMarkersVarianceMeters}m
+                  </span>
                 </div>
               </div>
 
@@ -265,7 +337,9 @@ export function IntelligenceDashboard({
                 </span>
                 <ul className="list-disc pl-4 space-y-1 text-[#E2E8F0]">
                   {fingerprint.focusAreas.map((area, idx) => (
-                    <li key={idx} className="leading-relaxed">{area}</li>
+                    <li key={idx} className="leading-relaxed">
+                      {area}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -367,21 +441,25 @@ export function IntelligenceDashboard({
                               c.archetype === "HIGH_SPEED_AERO"
                                 ? "rgba(59,130,246,0.15)"
                                 : c.archetype === "SLOW_TRACTION"
-                                ? "rgba(235,94,85,0.15)"
-                                : "rgba(139,92,246,0.15)",
+                                  ? "rgba(235,94,85,0.15)"
+                                  : "rgba(139,92,246,0.15)",
                             color:
                               c.archetype === "HIGH_SPEED_AERO"
                                 ? "#3B82F6"
                                 : c.archetype === "SLOW_TRACTION"
-                                ? "#FF4D4D"
-                                : "#8B5CF6",
+                                  ? "#FF4D4D"
+                                  : "#8B5CF6",
                           }}
                         >
                           {c.archetype}
                         </span>
                       </td>
-                      <td className="py-2 tabular-nums text-white font-bold">{(c.confidence * 100).toFixed(0)}%</td>
-                      <td className="py-2 text-[#718096] leading-relaxed">{c.primarySignalReason}</td>
+                      <td className="py-2 tabular-nums text-white font-bold">
+                        {(c.confidence * 100).toFixed(0)}%
+                      </td>
+                      <td className="py-2 text-[#718096] leading-relaxed">
+                        {c.primarySignalReason}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -464,7 +542,9 @@ export function IntelligenceDashboard({
                   <span
                     className="px-2 py-0.5 rounded-sm text-[8px] font-black uppercase"
                     style={{
-                      backgroundColor: prediction.isRiskHigh ? "rgba(255,77,77,0.15)" : "rgba(0,209,127,0.15)",
+                      backgroundColor: prediction.isRiskHigh
+                        ? "rgba(255,77,77,0.15)"
+                        : "rgba(0,209,127,0.15)",
                       color: prediction.isRiskHigh ? "#FF4D4D" : "#00D17F",
                     }}
                   >
@@ -498,8 +578,12 @@ export function IntelligenceDashboard({
                   <span className="text-[#718096] text-[8px] block uppercase font-bold mb-1">
                     PRIMARY RISK FACTOR SIGNALS
                   </span>
-                  <span className="text-white font-bold block mb-2">{prediction.primaryTriggerFactor}</span>
-                  <span className="text-[#E2E8F0] block leading-relaxed">{prediction.recommendedCorrection}</span>
+                  <span className="text-white font-bold block mb-2">
+                    {prediction.primaryTriggerFactor}
+                  </span>
+                  <span className="text-[#E2E8F0] block leading-relaxed">
+                    {prediction.recommendedCorrection}
+                  </span>
                 </div>
               </div>
 
@@ -526,23 +610,31 @@ export function IntelligenceDashboard({
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">HISTORICAL TRIAL SAMPLES:</span>
-                  <span className="text-white font-bold tabular-nums">{reboundConfidence.totalHistoricalEvaluations} stints</span>
+                  <span className="text-white font-bold tabular-nums">
+                    {reboundConfidence.totalHistoricalEvaluations} stints
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">CONVERGENCE CONFIDENCE INDEX:</span>
-                  <span className="text-[#00D17F] font-black text-base tabular-nums">{reboundConfidence.confidenceRating}%</span>
+                  <span className="text-[#00D17F] font-black text-base tabular-nums">
+                    {reboundConfidence.confidenceRating}%
+                  </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
                   <span className="text-[#718096] text-[8px] block uppercase font-bold mb-1">
                     Historical Outcomes
                   </span>
-                  <span className="text-white leading-relaxed">{reboundConfidence.observedImpactDescription}</span>
+                  <span className="text-white leading-relaxed">
+                    {reboundConfidence.observedImpactDescription}
+                  </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
                   <span className="text-[#718096] text-[8px] block uppercase font-bold mb-1">
                     Delta Step Limit Recommendation
                   </span>
-                  <span className="text-white leading-relaxed">{reboundConfidence.recommendedDeltaLimit}</span>
+                  <span className="text-white leading-relaxed">
+                    {reboundConfidence.recommendedDeltaLimit}
+                  </span>
                 </div>
               </div>
             </div>
@@ -561,23 +653,31 @@ export function IntelligenceDashboard({
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">HISTORICAL TRIAL SAMPLES:</span>
-                  <span className="text-white font-bold tabular-nums">{arbConfidence.totalHistoricalEvaluations} stints</span>
+                  <span className="text-white font-bold tabular-nums">
+                    {arbConfidence.totalHistoricalEvaluations} stints
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#718096]">CONVERGENCE CONFIDENCE INDEX:</span>
-                  <span className="text-[#3B82F6] font-black text-base tabular-nums">{arbConfidence.confidenceRating}%</span>
+                  <span className="text-[#3B82F6] font-black text-base tabular-nums">
+                    {arbConfidence.confidenceRating}%
+                  </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
                   <span className="text-[#718096] text-[8px] block uppercase font-bold mb-1">
                     Historical Outcomes
                   </span>
-                  <span className="text-white leading-relaxed">{arbConfidence.observedImpactDescription}</span>
+                  <span className="text-white leading-relaxed">
+                    {arbConfidence.observedImpactDescription}
+                  </span>
                 </div>
                 <div className="p-3 border border-[#1A202C] bg-[#07090E] rounded-sm">
                   <span className="text-[#718096] text-[8px] block uppercase font-bold mb-1">
                     Delta Step Limit Recommendation
                   </span>
-                  <span className="text-white leading-relaxed">{arbConfidence.recommendedDeltaLimit}</span>
+                  <span className="text-white leading-relaxed">
+                    {arbConfidence.recommendedDeltaLimit}
+                  </span>
                 </div>
               </div>
             </div>
@@ -654,7 +754,9 @@ export function IntelligenceDashboard({
                   >
                     <div className="flex items-center justify-between mb-1 pb-1 border-b border-[#1A202C]/50">
                       <span className="font-bold text-white uppercase">{note.title}</span>
-                      <span className="text-[8px] text-[#718096] tabular-nums">{note.timestamp}</span>
+                      <span className="text-[8px] text-[#718096] tabular-nums">
+                        {note.timestamp}
+                      </span>
                     </div>
                     <span className="text-[#E2E8F0] leading-relaxed block">{note.content}</span>
                   </div>

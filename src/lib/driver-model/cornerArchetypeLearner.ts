@@ -32,7 +32,7 @@ export function classifyCornerArchetype(
   peakLateralG: number,
   trailBrakeSec: number,
   peakShockVelocityMax: number,
-  straightawayLengthAfter: number
+  straightawayLengthAfter: number,
 ): ArchetypeClassification {
   const apexSpeedKmH = apexSpeedMps * 3.6;
 
@@ -40,7 +40,7 @@ export function classifyCornerArchetype(
   if (peakShockVelocityMax > 150) {
     return {
       archetype: "COMPRESSION_ZONE",
-      confidence: 0.90,
+      confidence: 0.9,
       primarySignalReason: `Vertical shock deflection velocity reached ${peakShockVelocityMax} mm/s, indicating major mechanical compression.`,
     };
   }
@@ -78,7 +78,7 @@ export function classifyCornerArchetype(
   if (trailBrakeSec > 1.2 && peakLateralG < 1.3) {
     return {
       archetype: "BRAKE_RELEASE",
-      confidence: 0.80,
+      confidence: 0.8,
       primarySignalReason: `Extended trail-braking phase (${trailBrakeSec.toFixed(1)}s) requires high brake-release blending to pivot chassis footprint.`,
     };
   }

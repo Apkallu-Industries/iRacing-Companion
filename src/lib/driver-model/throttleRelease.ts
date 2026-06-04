@@ -6,8 +6,8 @@
  */
 
 export interface ThrottleSignatureMetrics {
-  throttleExitGradient: number;      // Throttle application speed (travel / sec)
-  liftAndCoastDurationSec: number;   // Time spent at 0% throttle & 0% brake prior to entry
+  throttleExitGradient: number; // Throttle application speed (travel / sec)
+  liftAndCoastDurationSec: number; // Time spent at 0% throttle & 0% brake prior to entry
   throttleOscillationFrequency: number; // Exit throttle modulations (adjustments / corner)
   correctionReactionTimeSec: number; // Time elapsed to lift throttle when rear slip > 10%
 }
@@ -19,10 +19,15 @@ export function analyzeThrottleSignature(
   throttle: number[],
   brake: number[],
   rearSlip: number[],
-  hz = 60
+  hz = 60,
 ): ThrottleSignatureMetrics {
   if (throttle.length === 0) {
-    return { throttleExitGradient: 0, liftAndCoastDurationSec: 0, throttleOscillationFrequency: 0, correctionReactionTimeSec: 0 };
+    return {
+      throttleExitGradient: 0,
+      liftAndCoastDurationSec: 0,
+      throttleOscillationFrequency: 0,
+      correctionReactionTimeSec: 0,
+    };
   }
 
   const dt = 1 / hz;
@@ -73,7 +78,7 @@ export function analyzeThrottleSignature(
         slipDetectionTicks = 0;
       }
       slipDetectionTicks++;
-      
+
       // Check if driver reacted by reducing throttle input
       if (delta < -0.04) {
         slipCorrectionTicks += slipDetectionTicks;
@@ -84,10 +89,11 @@ export function analyzeThrottleSignature(
     }
   }
 
-  const avgReactionSec = slipCorrectionTicks > 0 ? (slipCorrectionTicks * dt) : 0.35; // Default fallback to typical driver reaction
+  const avgReactionSec = slipCorrectionTicks > 0 ? slipCorrectionTicks * dt : 0.35; // Default fallback to typical driver reaction
 
   return {
-    throttleExitGradient: throttleSamples > 0 ? parseFloat((totalThrottles / throttleSamples).toFixed(2)) : 0,
+    throttleExitGradient:
+      throttleSamples > 0 ? parseFloat((totalThrottles / throttleSamples).toFixed(2)) : 0,
     liftAndCoastDurationSec: parseFloat((coastTicks * dt).toFixed(2)),
     throttleOscillationFrequency: modulationOscillations,
     correctionReactionTimeSec: parseFloat(avgReactionSec.toFixed(2)),

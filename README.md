@@ -42,7 +42,9 @@ Pit Wall is a two‑sided iRacing companion:
 ## Tech stack
 
 | Layer | Technology |
+
 |---|---|
+
 | Framework | TanStack Start v1 (React 19, SSR, file‑based routing) on Vite 7 |
 | Runtime | Cloudflare Workers (edge) for server functions & API routes |
 | Styling | Tailwind CSS v4 with `oklch` design tokens in `src/styles.css` |
@@ -60,6 +62,7 @@ Pit Wall is a two‑sided iRacing companion:
 ## Feature map
 
 | Area | Route | Highlights |
+
 |---|---|---|
 | Landing | `/` | Hero image, feature overview, OG image, schema.org |
 | How it works | `/how-it-works` | Architecture, parsing pipeline |
@@ -93,6 +96,7 @@ The local bridge (`local-bridge/server.js`) runs on your Windows sim PC and read
 **Bridge extras** — every packet now includes a rich `extras` block with high-fidelity channels the AI uses:
 
 | Channel | SDK Key | Units |
+
 |---|---|---|
 | Yaw rate | `YawRate` | rad/s |
 | Shock deflection ×4 | `LFshockDefl` etc. | m |
@@ -117,6 +121,7 @@ The local bridge (`local-bridge/server.js`) runs on your Windows sim PC and read
 Three workspace presets are available, lockable behind licence tiers:
 
 | Workspace | Key | Focus |
+
 |---|---|---|
 | iRacing Lite Workbook v1.2 | `lite` | Core telemetry channels |
 | iRacing Plus Workbook v1.3 | `plus` | Extended channels + math |
@@ -141,6 +146,7 @@ Route: **`/sessions/$id`** · Components: `src/components/workbench/*`
 ### Analysis panes
 
 | Component | What it does |
+
 |---|---|
 | `ChannelBrowser.tsx` | 250+ channels grouped and searchable, click-to-plot |
 | `StackedTraces.tsx` | Synchronized uPlot panels with min/max/avg readout |
@@ -163,17 +169,20 @@ Route: **`/sessions/$id`** · Components: `src/components/workbench/*`
 Three AI engines, all workspace-aware and bridge-extras-aware:
 
 ### Engine 1 — Live Coach (per lap, automatic)
+
 - Fires after every completed lap
 - Receives: track, car, lap time, sector times, PB delta, streak, brake/throttle peaks, tyre temps, **yaw rate, shock deflection, brake line pressure** from bridge extras
 - Speaks the call via ElevenLabs on the user's chosen output device
 - Rules-based fallback when AI confidence is low
 
 ### Engine 2 — Advisor (on demand)
+
 - Triggered via `AdvisorButton` on the live dashboard
 - Receives: last 5 valid laps, tyre temps/pressures, brake bias, diff map, conditions, **bridge extras snapshot**, active workspace channels, Setup Bible knowledge base
 - Returns 3-6 prioritised tips with setup citations
 
 ### Engine 3 — Offline Coach (IBT analysis)
+
 - Per-lap critique in the workbench
 - Receives: 60-bin per-lap arrays (speed, throttle, brake, gear, steer), GG envelope, brake linearity, slip/balance, counterfactual zones, active workspace
 
@@ -182,6 +191,7 @@ Three AI engines, all workspace-aware and bridge-extras-aware:
 Go to **Settings → AI Provider** to choose:
 
 | Provider | When to use |
+
 |---|---|
 | Cloud (Gemini 2.5 Pro) | Default — best quality, requires internet |
 | LM Studio | Local, fully offline, privacy-first |
@@ -283,7 +293,7 @@ See `supabase/migrations/` for the full schema history.
 
 ## Project structure
 
-```
+```text
 C:\Dev\iRacing-Companion\
 ├── local-bridge/               # iRacing → WebSocket bridge (60Hz)
 │   ├── server.js               # Main bridge — reads irsdk, broadcasts Telemetry
@@ -382,12 +392,17 @@ Pit Wall works fully offline for AI coaching using a local LLM:
 
 ### Setup
 
-1. Install [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.com/)
-2. Download an instruction-following model (recommended: `Llama 3 8B Instruct` or `Mistral 7B Instruct`)
+1. Install [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.com/).
+2. Download an instruction-following model.
+   - Recommended low-end model: `Qwen-2.5-7B-Instruct (Q4_K_M)` for consumer rigs with at least 16GB RAM and 6GB VRAM.
+   - Better if you have more memory: `Qwen-2.5-14B-Instruct` for 32GB RAM / 12GB VRAM, or `Qwen-2.5-72B-Instruct` for 64GB RAM / 16GB VRAM.
 3. Start the local server:
-   - **LM Studio**: Enable the local server in the app (defaults to `http://localhost:1234/v1`)
-   - **Ollama**: `ollama serve` (defaults to `http://localhost:11434/v1`)
-4. In Pit Wall Settings → AI Provider, select your engine and enter the Model ID
+   - **LM Studio**: Enable the local server in the app (defaults to `http://localhost:1234/v1`).
+   - **Ollama**: `ollama serve` (defaults to `http://localhost:11434/v1`).
+   - Optional headless launch: set `LMSTUDIO_LAUNCH_COMMAND`, `LMSTUDIO_PATH`, `OLLAMA_LAUNCH_COMMAND`, or `OLLAMA_PATH` in the desktop host environment.
+     - The desktop supervisor will only auto-launch the process if the expected port is not already listening.
+     - The chosen model must still be selected/configured inside LM Studio or Ollama once the server is running.
+4. In Pit Wall Settings → AI Provider, select your engine and enter the Model ID.
 
 > For the Setup Advisor, use a model that supports tool-calling (function calling) schemas.
 

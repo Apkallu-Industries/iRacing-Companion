@@ -27,36 +27,43 @@ import {
 
 export interface MechanicalStateInference {
   inferenceId: string;
-  inferredState: string;          // e.g. "DIFFUSER_VACUUM_STALL_GROUNDING", "REAR_TIRE_THERMAL_SATURATION"
-  confidenceIndex: number;        // 0 to 100
+  inferredState: string; // e.g. "DIFFUSER_VACUUM_STALL_GROUNDING", "REAR_TIRE_THERMAL_SATURATION"
+  confidenceIndex: number; // 0 to 100
   rootCauseNarrative: string;
   evidenceEventIds: string[];
   physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 export interface SetupTradeoffEvaluation {
-  proposedChange: string;         // e.g. "Reduce Rear Rebound -1 click"
+  proposedChange: string; // e.g. "Reduce Rear Rebound -1 click"
   primaryObjective: string;
   expectedGain: string;
   expectedCompromise: string;
   confidenceIndex: number;
   affectedCornerArchetypes: Array<
-    "slow_hairpin" | "medium_chicanes" | "highspeed_sweeper" | "heavy_braking_zone" | "curb_strike_zone"
+    | "slow_hairpin"
+    | "medium_chicanes"
+    | "highspeed_sweeper"
+    | "heavy_braking_zone"
+    | "curb_strike_zone"
   >;
   affectedDriverTraits: Array<
-    "cornerEntryRotationPreference" | "rearAxleStabilityTolerance" | "brakeReleaseStyle" | "throttleCommitmentConfidence"
+    | "cornerEntryRotationPreference"
+    | "rearAxleStabilityTolerance"
+    | "brakeReleaseStyle"
+    | "throttleCommitmentConfidence"
   >;
   stintLifecycleForecast: {
-    fuelDecayImpact: string;      // behavior as car burns fuel and rake rises
+    fuelDecayImpact: string; // behavior as car burns fuel and rake rises
     thermalLifecycleTrend: string; // tire thermal impact
-    gripBalanceShift: string;     // aeromechanical shift
+    gripBalanceShift: string; // aeromechanical shift
   };
   physicsTruthBoundary: PhysicsTruthBoundary;
 }
 
 export interface RecommendationOutcomePrediction {
-  predictedStateImpact: string;   // e.g. "Restores 85% diffuser downforce under compression"
-  mitigationCertainty: number;    // 0.0 to 1.0
+  predictedStateImpact: string; // e.g. "Restores 85% diffuser downforce under compression"
+  mitigationCertainty: number; // 0.0 to 1.0
   secondaryRiskIntroduced: string; // e.g. "Slightly slower direction change in chicanes"
   stabilityHorizonGainSec: number; // e.g. delay rear slide by 4 laps
 }
@@ -65,7 +72,7 @@ export interface DynamicBalanceProjection {
   currentRakeMm: number;
   projectedRakeShiftEndStintMm: number;
   fuelRakeSensitivity: "high" | "medium" | "low";
-  trackRubberGripFactor: number;   // 0.0 to 1.0 (grip improvement multiplier)
+  trackRubberGripFactor: number; // 0.0 to 1.0 (grip improvement multiplier)
   balanceMigrationNarrative: string;
 }
 
@@ -94,7 +101,7 @@ export interface UnifiedRecommendation {
 export function inferMechanicalState(
   events: TelemetryEvent[],
   episodes: EngineeringEpisode[],
-  traits: DriverBehaviorTraits
+  traits: DriverBehaviorTraits,
 ): MechanicalStateInference {
   const eventTypes = events.map((e) => e.eventType);
   const episodeTitles = episodes.map((ep) => ep.title);
@@ -102,34 +109,41 @@ export function inferMechanicalState(
   // Default inference
   let inferredState = "NOMINAL_VEHICLE_BALANCE";
   let confidenceIndex = 90;
-  let rootCauseNarrative = "Platform rake, damping, and thermal lifecycles are stabilized within optimum design parameters.";
+  let rootCauseNarrative =
+    "Platform rake, damping, and thermal lifecycles are stabilized within optimum design parameters.";
   let sourceTypes: PhysicsTruthBoundary["sourceTypes"] = ["deterministic_physics"];
 
   const hasBottoming = eventTypes.includes(RaceEventType.AERO_BOTTOM_OUT);
-  const hasLockups = eventTypes.includes(RaceEventType.BRAKE_LOCK_FRONT_LEFT) || eventTypes.includes(RaceEventType.BRAKE_LOCK_FRONT_RIGHT);
+  const hasLockups =
+    eventTypes.includes(RaceEventType.BRAKE_LOCK_FRONT_LEFT) ||
+    eventTypes.includes(RaceEventType.BRAKE_LOCK_FRONT_RIGHT);
   const hasRearSlide = eventTypes.includes(RaceEventType.REAR_TRACTION_COLLAPSE);
   const hasThermalRear = eventTypes.includes(RaceEventType.THERMAL_REAR_OVERLOAD);
   const hasOverRotation = eventTypes.includes(RaceEventType.ENTRY_OVER_ROTATION);
 
-  if (hasBottoming || episodeTitles.some(t => t.includes("Diffuser"))) {
+  if (hasBottoming || episodeTitles.some((t) => t.includes("Diffuser"))) {
     inferredState = "DIFFUSER_VACUUM_STALL_GROUNDING";
     confidenceIndex = 95;
-    rootCauseNarrative = "Aerodynamic downforce compression compresses rear heave springs past limits, grounding the skid block and breaking the low-pressure venturi seal.";
+    rootCauseNarrative =
+      "Aerodynamic downforce compression compresses rear heave springs past limits, grounding the skid block and breaking the low-pressure venturi seal.";
     sourceTypes = ["deterministic_physics"];
   } else if (hasRearSlide && hasThermalRear) {
     inferredState = "REAR_TIRE_THERMAL_SATURATION";
     confidenceIndex = 88;
-    rootCauseNarrative = "Rear tire carcass heating saturates operating limits. The resultant traction decay induces persistent friction sliding under acceleration.";
+    rootCauseNarrative =
+      "Rear tire carcass heating saturates operating limits. The resultant traction decay induces persistent friction sliding under acceleration.";
     sourceTypes = ["deterministic_physics", "historical_correlation"];
   } else if (hasOverRotation && traits.brakeReleaseStyle === "fast_decay") {
     inferredState = "LIFT_OFF_OVERSTEER_BRAKE_RELEASE_TIMING";
     confidenceIndex = 90;
-    rootCauseNarrative = "Aggressive or abrupt brake pedal release during turn-in collapses the front axle contact patch load before the chassis stabilizes, triggering dynamic lift-off oversteer.";
+    rootCauseNarrative =
+      "Aggressive or abrupt brake pedal release during turn-in collapses the front axle contact patch load before the chassis stabilizes, triggering dynamic lift-off oversteer.";
     sourceTypes = ["deterministic_physics", "behavioral_model"];
   } else if (hasLockups && traits.brakeReleaseStyle === "fast_decay") {
     inferredState = "BRAKE_RELEASE_LOAD_COLLAPSE";
     confidenceIndex = 85;
-    rootCauseNarrative = "Abrupt brake pressure decay (+18% variance) collapses front vertical load transfer during steering angle sweep, locking the tire footprint.";
+    rootCauseNarrative =
+      "Abrupt brake pressure decay (+18% variance) collapses front vertical load transfer during steering angle sweep, locking the tire footprint.";
     sourceTypes = ["deterministic_physics", "behavioral_model"];
   }
 
@@ -150,7 +164,7 @@ export function inferMechanicalState(
 export function getStrategistMechanicalState(
   events: TelemetryEvent[],
   episodes: EngineeringEpisode[],
-  traits: DriverBehaviorTraits
+  traits: DriverBehaviorTraits,
 ): MechanicalStateInference | null {
   const inference = inferMechanicalState(events, episodes, traits);
   if (inference.confidenceIndex < 90) {
@@ -166,7 +180,7 @@ export function getStrategistMechanicalState(
 export function getCoachingMechanicalState(
   events: TelemetryEvent[],
   episodes: EngineeringEpisode[],
-  traits: DriverBehaviorTraits
+  traits: DriverBehaviorTraits,
 ): MechanicalStateInference | null {
   const inference = inferMechanicalState(events, episodes, traits);
   if (inference.confidenceIndex < 75) {
@@ -182,7 +196,7 @@ export function getCoachingMechanicalState(
 export function getOverlayMechanicalState(
   events: TelemetryEvent[],
   episodes: EngineeringEpisode[],
-  traits: DriverBehaviorTraits
+  traits: DriverBehaviorTraits,
 ): MechanicalStateInference | null {
   const inference = inferMechanicalState(events, episodes, traits);
   if (inference.confidenceIndex < 60) {
@@ -196,14 +210,18 @@ export function getOverlayMechanicalState(
  */
 export function evaluateSetupTradeoff(
   proposedChange: string,
-  inference: MechanicalStateInference
+  inference: MechanicalStateInference,
 ): SetupTradeoffEvaluation {
   let primaryObjective = "Restore dynamic tyre contact pressure";
   let expectedGain = "Stabilized vertical force distribution";
   let expectedCompromise = "Reduced compliance in alternative sectors";
   let confidenceIndex = 80;
-  let affectedCornerArchetypes: SetupTradeoffEvaluation["affectedCornerArchetypes"] = ["medium_chicanes"];
-  let affectedDriverTraits: SetupTradeoffEvaluation["affectedDriverTraits"] = ["cornerEntryRotationPreference"];
+  let affectedCornerArchetypes: SetupTradeoffEvaluation["affectedCornerArchetypes"] = [
+    "medium_chicanes",
+  ];
+  let affectedDriverTraits: SetupTradeoffEvaluation["affectedDriverTraits"] = [
+    "cornerEntryRotationPreference",
+  ];
   let fuelDecayImpact = "Neutral shift during stint timeline.";
   let thermalLifecycleTrend = "Negligible thermal impact.";
   let gripBalanceShift = "Neutral shift.";
@@ -218,19 +236,24 @@ export function evaluateSetupTradeoff(
     confidenceIndex = 95;
     affectedCornerArchetypes = ["highspeed_sweeper"];
     affectedDriverTraits = ["rearAxleStabilityTolerance"];
-    fuelDecayImpact = "Alleviates high-speed entry snap as fuel weight decays and rear ride height rises.";
-    thermalLifecycleTrend = "Reduces rear sliding, cooling rear carcass core temperature growth rate by -1.5°C/lap.";
+    fuelDecayImpact =
+      "Alleviates high-speed entry snap as fuel weight decays and rear ride height rises.";
+    thermalLifecycleTrend =
+      "Reduces rear sliding, cooling rear carcass core temperature growth rate by -1.5°C/lap.";
     gripBalanceShift = "Shifts aerodynamic balance -1.5% rearward.";
     sourceTypes = ["deterministic_physics"];
   } else if (changeLower.includes("rebound") || changeLower.includes("compression")) {
     primaryObjective = "Optimize transient load transfer rate and tire patch vertical force";
     expectedGain = "Slower transient pitch rates, stabilizing underbody aerodynamics";
-    expectedCompromise = "Slower vehicle transient responsiveness during rapid steering transitions";
+    expectedCompromise =
+      "Slower vehicle transient responsiveness during rapid steering transitions";
     confidenceIndex = 88;
     affectedCornerArchetypes = ["heavy_braking_zone", "curb_strike_zone"];
     affectedDriverTraits = ["brakeReleaseStyle", "cornerEntryRotationPreference"];
-    fuelDecayImpact = "Stabilizes rear axle rotation on turn-in as dynamic center of gravity moves rearward.";
-    thermalLifecycleTrend = "Limits tire friction slide duration, reducing overall thermal escalation.";
+    fuelDecayImpact =
+      "Stabilizes rear axle rotation on turn-in as dynamic center of gravity moves rearward.";
+    thermalLifecycleTrend =
+      "Limits tire friction slide duration, reducing overall thermal escalation.";
     gripBalanceShift = "Shifts initial corner entry balance +0.8% forward.";
     sourceTypes = ["deterministic_physics", "historical_correlation"];
   } else if (changeLower.includes("diff") || changeLower.includes("differential")) {
@@ -240,8 +263,10 @@ export function evaluateSetupTradeoff(
     confidenceIndex = 90;
     affectedCornerArchetypes = ["slow_hairpin"];
     affectedDriverTraits = ["throttleCommitmentConfidence", "rearAxleStabilityTolerance"];
-    fuelDecayImpact = "Protects traction circle limit as rear vertical load decays due to fuel burn.";
-    thermalLifecycleTrend = "Locks footprint, potentially spiking local tread heat under extreme wheelspin.";
+    fuelDecayImpact =
+      "Protects traction circle limit as rear vertical load decays due to fuel burn.";
+    thermalLifecycleTrend =
+      "Locks footprint, potentially spiking local tread heat under extreme wheelspin.";
     gripBalanceShift = "Reduces yaw rotation mid-corner.";
     sourceTypes = ["deterministic_physics"];
   }
@@ -269,7 +294,7 @@ export function evaluateSetupTradeoff(
 export function predictRecommendationOutcome(
   inference: MechanicalStateInference,
   tradeoff: SetupTradeoffEvaluation,
-  traits: DriverBehaviorTraits
+  traits: DriverBehaviorTraits,
 ): RecommendationOutcomePrediction {
   let predictedStateImpact = "Improves general dynamic compliance.";
   let mitigationCertainty = 0.75;
@@ -277,17 +302,20 @@ export function predictRecommendationOutcome(
   let stabilityHorizonGainSec = 0.5;
 
   if (inference.inferredState === "DIFFUSER_VACUUM_STALL_GROUNDING") {
-    predictedStateImpact = "Prevents skid grounding and restores 95% of diffuser downforce under high downforce.";
+    predictedStateImpact =
+      "Prevents skid grounding and restores 95% of diffuser downforce under high downforce.";
     mitigationCertainty = 0.95;
     secondaryRiskIntroduced = "Slightly higher pitch stiffness, reducing curb-strike compliance.";
     stabilityHorizonGainSec = 1.2;
   } else if (inference.inferredState === "REAR_TIRE_THERMAL_SATURATION") {
-    predictedStateImpact = "Reduces exit slide wheelspin coefficient, keeping tires inside optimal friction window.";
+    predictedStateImpact =
+      "Reduces exit slide wheelspin coefficient, keeping tires inside optimal friction window.";
     mitigationCertainty = 0.88;
     secondaryRiskIntroduced = "Slight reduction in mechanical pivot rotation at slow apexes.";
     stabilityHorizonGainSec = 2.5;
   } else if (inference.inferredState === "BRAKE_RELEASE_LOAD_COLLAPSE") {
-    predictedStateImpact = "Smooths the transient load decay, giving the driver +15% more braking rotation stability.";
+    predictedStateImpact =
+      "Smooths the transient load decay, giving the driver +15% more braking rotation stability.";
     mitigationCertainty = 0.82;
     secondaryRiskIntroduced = "Slightly less responsive initial steering turn-in response.";
     stabilityHorizonGainSec = 0.8;
@@ -306,17 +334,17 @@ export function predictRecommendationOutcome(
  */
 export function projectDynamicBalance(
   fuelRemainingL: number,
-  averageRakeMm: number
+  averageRakeMm: number,
 ): DynamicBalanceProjection {
   const isHeavy = fuelRemainingL > 65.0;
   const projectShift = isHeavy ? -0.8 : -0.2; // heavier burns fuel, rear ride height rises
-  
+
   return {
     currentRakeMm: averageRakeMm,
     projectedRakeShiftEndStintMm: projectShift,
     fuelRakeSensitivity: isHeavy ? "high" : "medium",
     trackRubberGripFactor: 0.05, // +5% grip from rubbering in
-    balanceMigrationNarrative: isHeavy 
+    balanceMigrationNarrative: isHeavy
       ? "Heavier starting fuel load compresses rear. As fuel burns off, rear ride height will rise +0.8mm, increasing entry rotation pivot sensitivity."
       : "Rake is stabilized in core stint window. Balance migration will remain minimal.",
   };
@@ -328,11 +356,11 @@ export function projectDynamicBalance(
 export function projectThermalLifecycle(
   currentCarcassAvgC: number,
   trackTempC: number,
-  isTireSlipping: boolean
+  isTireSlipping: boolean,
 ): ThermalLifecycleProjection {
   const baseGrowth = trackTempC > 45.0 ? 0.8 : 0.3;
   const slideGrowth = isTireSlipping ? 1.8 : 0.0;
-  
+
   return {
     currentCarcassTempC: currentCarcassAvgC,
     projectedGrowthRatePerLapC: baseGrowth + slideGrowth,
@@ -355,36 +383,44 @@ export function executeCausalEngineeringLoop(
   fuelRemainingL: number,
   averageRakeMm: number,
   currentCarcassAvgC: number,
-  trackTempC: number
+  trackTempC: number,
 ): UnifiedRecommendation {
   // 1. Mechanical Inference (observe and classify root cause)
   const inference = inferMechanicalState(events, episodes, driverTraits);
 
   // 2. Dynamic Projections (incorporate session lifecycle)
   const balanceProj = projectDynamicBalance(fuelRemainingL, averageRakeMm);
-  const tireProj = projectThermalLifecycle(currentCarcassAvgC, trackTempC, events.some(e => e.eventType === RaceEventType.REAR_TRACTION_COLLAPSE));
+  const tireProj = projectThermalLifecycle(
+    currentCarcassAvgC,
+    trackTempC,
+    events.some((e) => e.eventType === RaceEventType.REAR_TRACTION_COLLAPSE),
+  );
 
   // 3. Setup Heuristic Mapping (select best mechanical correction)
-  let proposedAction = "Maintain current mechanical suspension parameters. Focus on stabilizing trail-brake deceleration.";
+  let proposedAction =
+    "Maintain current mechanical suspension parameters. Focus on stabilizing trail-brake deceleration.";
   let citationSource = "Standard iRacing Dynamic Profile Ruleset v1.0.0";
   let baseEvidenceChannel = "YawRate";
   let baseEvidenceVal = 0.12;
   let baseEvidenceThreshold = 0.25;
 
   if (inference.inferredState === "DIFFUSER_VACUUM_STALL_GROUNDING") {
-    proposedAction = "Increase front ride height +1.0mm or stiffen heave packers to protect splitter ride height.";
+    proposedAction =
+      "Increase front ride height +1.0mm or stiffen heave packers to protect splitter ride height.";
     citationSource = "iRacing Aerodynamics Setup Manual: Venturi Flow Seal Section";
     baseEvidenceChannel = "AeroBottomOutCount";
     baseEvidenceVal = events.length;
     baseEvidenceThreshold = 2;
   } else if (inference.inferredState === "REAR_TIRE_THERMAL_SATURATION") {
-    proposedAction = "Soften rear anti-roll bar by -1 click or reduce rear rebound damping by -1 click.";
+    proposedAction =
+      "Soften rear anti-roll bar by -1 click or reduce rear rebound damping by -1 click.";
     citationSource = "Carroll Smith Heuristics: Tuning Rear Axis Traction";
     baseEvidenceChannel = "TireCarcassTempRear";
     baseEvidenceVal = currentCarcassAvgC;
     baseEvidenceThreshold = 95.0;
   } else if (inference.inferredState === "BRAKE_RELEASE_LOAD_COLLAPSE") {
-    proposedAction = "Soften front compression damping by -1 click and smooth trail-brake pedal release rate.";
+    proposedAction =
+      "Soften front compression damping by -1 click and smooth trail-brake pedal release rate.";
     citationSource = "Tim McArthur Flowcharts: Brake Release Transient Instability";
     baseEvidenceChannel = "BrakeReleaseGradient";
     baseEvidenceVal = 6.2;

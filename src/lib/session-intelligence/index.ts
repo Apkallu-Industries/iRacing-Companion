@@ -14,7 +14,7 @@ export interface StintAnalysisReport {
   energyLossPct: number;
   setupAdvice: string;
   activeProfileId: "gt3" | "gtp" | "lemans";
-  
+
   tires: TireAnalysis;
   driver: DriverAnalysis;
   hybrid: HybridAnalysis;
@@ -23,7 +23,7 @@ export interface StintAnalysisReport {
 
 export function compileSessionReport(
   parsed: IbtParsed,
-  profileId: "gt3" | "gtp" | "lemans" = "gt3"
+  profileId: "gt3" | "gtp" | "lemans" = "gt3",
 ): StintAnalysisReport {
   const tires = analyzeTires(parsed);
   const driver = analyzeDriver(parsed);
@@ -44,7 +44,7 @@ export function compileSessionReport(
       if (arr.length === 0) return 100;
       const ok = Array.prototype.filter.call(
         arr,
-        (t: number) => t >= profile.minOptimalTempC && t <= profile.maxOptimalTempC
+        (t: number) => t >= profile.minOptimalTempC && t <= profile.maxOptimalTempC,
       ).length;
       return Math.round((ok / arr.length) * 100);
     };
@@ -54,7 +54,8 @@ export function compileSessionReport(
     tires.rlOperatingPct = countInRangeForProfile(lrTemp);
     tires.rrOperatingPct = countInRangeForProfile(rrTemp);
     tires.optimalFrictionWindowPct = Math.round(
-      (tires.flOperatingPct + tires.frOperatingPct + tires.rlOperatingPct + tires.rrOperatingPct) / 4
+      (tires.flOperatingPct + tires.frOperatingPct + tires.rlOperatingPct + tires.rrOperatingPct) /
+        4,
     );
   }
 
@@ -64,26 +65,27 @@ export function compileSessionReport(
   const bottomings = aero.bottomingCount;
 
   // Dynamic physics sensitivity weights defined by vehicle profile
-  const baseDelta = profileId === "gtp" ? 0.10 : profileId === "lemans" ? 0.08 : 0.15;
+  const baseDelta = profileId === "gtp" ? 0.1 : profileId === "lemans" ? 0.08 : 0.15;
   const driverDecayFactor = releaseScore * 0.012;
-  
+
   // GTP / LMDh prototypes weight energy waste and grounding stalls significantly higher!
   const energyLossWeight = profileId === "gtp" ? 0.055 : profileId === "lemans" ? 0.015 : 0.035;
   const aeroWeight = profileId === "gtp" ? 0.085 : profileId === "lemans" ? 0.025 : 0.045;
 
   const energyLossFactor = wasteScore * energyLossWeight;
   const aeroFactor = bottomings * aeroWeight;
-  
+
   const theoreticalImprovementDelta = Number(
-    Math.min(1.85, baseDelta + driverDecayFactor + energyLossFactor + aeroFactor).toFixed(3)
+    Math.min(1.85, baseDelta + driverDecayFactor + energyLossFactor + aeroFactor).toFixed(3),
   );
 
   // Identify the Primary Physical Limitation dynamically
   let primaryLimitation = "Front-Right understeer thermal saturation";
   if (bottomings > 3) {
-    primaryLimitation = profileId === "gtp" 
-      ? "Prototype underbody diffuser flow seal stall grounding" 
-      : "Splitter grounding & diffuser vacuum seal collapse";
+    primaryLimitation =
+      profileId === "gtp"
+        ? "Prototype underbody diffuser flow seal stall grounding"
+        : "Splitter grounding & diffuser vacuum seal collapse";
   } else if (releaseScore > 15) {
     primaryLimitation = "Rear platform yaw instability under trail braking";
   } else if (wasteScore > 5.5) {
@@ -97,7 +99,8 @@ export function compileSessionReport(
   } else if (bottomings > 0) {
     criticalFinding = `Platform ride height pitch bottomed out ${bottomings} times under high-speed downforce compression.`;
   } else {
-    criticalFinding = "Carcass thermals and pressures stabilized with zero severe structural drifts.";
+    criticalFinding =
+      "Carcass thermals and pressures stabilized with zero severe structural drifts.";
   }
 
   // Driver consistency summary
@@ -112,7 +115,8 @@ export function compileSessionReport(
   } else if (wasteScore > 5.5) {
     setupAdvice = profile.heuristics.understeerAdvice;
   } else {
-    setupAdvice = "Maintain current mechanical suspension parameters. Focus on stabilizing trail-brake deceleration.";
+    setupAdvice =
+      "Maintain current mechanical suspension parameters. Focus on stabilizing trail-brake deceleration.";
   }
 
   return {
@@ -135,6 +139,3 @@ export * from "./eventTaxonomy";
 export * from "./mechanicalReasoningEngine";
 export * from "./closedLoopLearning";
 export * from "./heuristicRegistry";
-
-
-

@@ -22,7 +22,8 @@ export function analyzeDriver(parsed: IbtParsed): DriverAnalysis {
       throttleConsistencyPct: 94,
       apexSpeedStdDev: 0.48,
       releaseVariancePct: 18,
-      summary: "High entry speed consistency. Trail-brake release profile degraded slightly (+18% variance) towards stint end as physical wear set in.",
+      summary:
+        "High entry speed consistency. Trail-brake release profile degraded slightly (+18% variance) towards stint end as physical wear set in.",
     };
   }
 
@@ -64,7 +65,7 @@ export function analyzeDriver(parsed: IbtParsed): DriverAnalysis {
     const slopes: number[] = [];
     let startDecel = -1;
     for (let i = 1; i < slice.length; i++) {
-      if (slice[i - 1] > 0.60 && slice[i] <= 0.60) {
+      if (slice[i - 1] > 0.6 && slice[i] <= 0.6) {
         startDecel = i;
       }
       if (startDecel !== -1 && slice[i] === 0) {

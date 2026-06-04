@@ -20,9 +20,10 @@ const MathExpressionSchema = z.object({
   speechAlertText: z.string().trim().max(256).optional(),
   speechAlertDebounceS: z.number().int().min(1).max(3600).optional(),
   created_at: z.string().datetime(),
-  updated_at: z.string().datetime()
+  updated_at: z.string().datetime(),
 });
-const TOKEN_RE = /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|<=|>=|==|!=|&&|\|\||[()+\-*/,<>=!&|])\s*/g;
+const TOKEN_RE =
+  /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|<=|>=|==|!=|&&|\|\||[()+\-*/,<>=!&|])\s*/g;
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;
 const FUNC_NAMES = /* @__PURE__ */ new Set([
   "min",
@@ -42,7 +43,7 @@ const FUNC_NAMES = /* @__PURE__ */ new Set([
   "floor",
   "ceil",
   "round",
-  "choose"
+  "choose",
 ]);
 function validateMathExpressionSyntax(input) {
   const expression = input.trim();
@@ -51,7 +52,7 @@ function validateMathExpressionSyntax(input) {
     return {
       ok: false,
       identifiers: [],
-      error: `Expression too long (max ${MATH_V1_MAX_EXPRESSION_LEN}).`
+      error: `Expression too long (max ${MATH_V1_MAX_EXPRESSION_LEN}).`,
     };
   }
   const tokens = [];
@@ -103,7 +104,7 @@ function validateMathExpressionSyntax(input) {
           return {
             ok: false,
             identifiers: [],
-            error: `Too many identifiers (max ${MATH_V1_MAX_IDENTIFIERS}).`
+            error: `Too many identifiers (max ${MATH_V1_MAX_IDENTIFIERS}).`,
           };
         }
       }
@@ -117,7 +118,4 @@ function validateMathExpressionSyntax(input) {
     return { ok: false, identifiers: [], error: "Expression cannot end with an operator." };
   return { ok: true, identifiers: [...identifiers] };
 }
-export {
-  MathExpressionSchema as M,
-  validateMathExpressionSyntax as v
-};
+export { MathExpressionSchema as M, validateMathExpressionSyntax as v };

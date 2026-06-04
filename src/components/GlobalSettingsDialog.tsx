@@ -274,7 +274,7 @@ export function GlobalSettingsDialog() {
           localStorage.setItem("pitwall_bridge_license", JSON.stringify(data));
         }
       }
-      
+
       const hwidRes = await fetch(`${httpUrl}/api/hwid`);
       if (hwidRes.ok) {
         const hwidData = await hwidRes.json();
@@ -644,89 +644,88 @@ export function GlobalSettingsDialog() {
                   ))}
                 </div>
               </div>
-                <div className="space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                        Base URL (OpenAI Compatible)
-                      </label>
-                      <Input
-                        type="text"
-                        value={llmBaseUrl}
-                        onChange={(e) => {
-                          setLlmBaseUrl(e.target.value);
-                          setAiTestResult(null);
-                        }}
-                        placeholder={activeProviderInfo?.url || "http://localhost:1234/v1"}
-                        className="font-mono text-xs"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                        Model ID
-                      </label>
-                      <Input
-                        type="text"
-                        value={llmModelId}
-                        onChange={(e) => {
-                          setLlmModelId(e.target.value);
-                          setAiTestResult(null);
-                        }}
-                        placeholder="e.g. liquid/lfm2.5-1.2b, llama-3-8b-instruct"
-                        className="font-mono text-xs"
-                      />
-                    </div>
+              <div className="space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                      Base URL (OpenAI Compatible)
+                    </label>
+                    <Input
+                      type="text"
+                      value={llmBaseUrl}
+                      onChange={(e) => {
+                        setLlmBaseUrl(e.target.value);
+                        setAiTestResult(null);
+                      }}
+                      placeholder={activeProviderInfo?.url || "http://localhost:1234/v1"}
+                      className="font-mono text-xs"
+                    />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                      API Token / Permission Key (Optional)
+                      Model ID
                     </label>
                     <Input
-                      type="password"
-                      value={llmApiKey}
+                      type="text"
+                      value={llmModelId}
                       onChange={(e) => {
-                        setLlmApiKey(e.target.value);
+                        setLlmModelId(e.target.value);
                         setAiTestResult(null);
                       }}
-                      placeholder="Enter LM Studio token or Bearer key if required"
+                      placeholder="e.g. liquid/lfm2.5-1.2b, llama-3-8b-instruct"
                       className="font-mono text-xs"
                     />
-                    <p className="text-[9px] text-muted-foreground mt-1">
-                      Required if your local server uses token authentication (e.g. LM Studio
-                      0.4.0+).
-                    </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={runAiTest}
-                      disabled={aiTesting}
-                      className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5"
-                    >
-                      <RefreshCw className={`h-3 w-3 ${aiTesting ? "animate-spin" : ""}`} />
-                      {aiTesting ? "Testing Connection..." : "Test Local Host Software Connection"}
-                    </Button>
-                    {aiTestResult && (
-                      <div
-                        className={`mt-3 rounded-lg p-3 border text-xs ${aiTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`}
-                      >
-                        <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
-                          {aiTestResult.success
-                            ? "✓ AI Connection Successful"
-                            : "✗ Connection Failed"}
-                        </div>
-                        <div className="whitespace-pre-line leading-relaxed font-mono text-[10px]">
-                          {aiTestResult.message}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                    API Token / Permission Key (Optional)
+                  </label>
+                  <Input
+                    type="password"
+                    value={llmApiKey}
+                    onChange={(e) => {
+                      setLlmApiKey(e.target.value);
+                      setAiTestResult(null);
+                    }}
+                    placeholder="Enter LM Studio token or Bearer key if required"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-[9px] text-muted-foreground mt-1">
+                    Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={runAiTest}
+                    disabled={aiTesting}
+                    className="w-full font-mono text-[10px] uppercase tracking-wider gap-1.5"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${aiTesting ? "animate-spin" : ""}`} />
+                    {aiTesting ? "Testing Connection..." : "Test Local Host Software Connection"}
+                  </Button>
+                  {aiTestResult && (
+                    <div
+                      className={`mt-3 rounded-lg p-3 border text-xs ${aiTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`}
+                    >
+                      <div className="font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono">
+                        {aiTestResult.success
+                          ? "✓ AI Connection Successful"
+                          : "✗ Connection Failed"}
+                      </div>
+                      <div className="whitespace-pre-line leading-relaxed font-mono text-[10px]">
+                        {aiTestResult.message}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             {/* TAB: Licensing */}
@@ -740,10 +739,13 @@ export function GlobalSettingsDialog() {
                   Hardware-Locked Licensing
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Unlock advanced offline analysis sheets and high-frequency real-time widgets. Your license key is cryptographically signed and locked to this PC's hardware.
+                  Unlock advanced offline analysis sheets and high-frequency real-time widgets. Your
+                  license key is cryptographically signed and locked to this PC's hardware.
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  <strong>Accessory devices:</strong> Any auxiliary dash readouts (phones, tablets, second PCs) connected to this PC's local IP address will automatically inherit this license!
+                  <strong>Accessory devices:</strong> Any auxiliary dash readouts (phones, tablets,
+                  second PCs) connected to this PC's local IP address will automatically inherit
+                  this license!
                 </p>
               </div>
 
@@ -759,7 +761,8 @@ export function GlobalSettingsDialog() {
                     </span>
                   ) : licenseState && licenseState.valid ? (
                     <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-mono tracking-wider font-semibold">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Activated ({licenseState.tier.toUpperCase()})
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Activated (
+                      {licenseState.tier.toUpperCase()})
                     </span>
                   ) : (
                     <span className="flex items-center gap-1.5 text-[10px] text-rose-400 uppercase font-mono tracking-wider font-semibold">
@@ -796,7 +799,9 @@ export function GlobalSettingsDialog() {
                       Expiration Date
                     </span>
                     <span className="text-xs font-mono text-foreground font-semibold">
-                      {licenseState.expires === "never" ? "Lifetime / No Expiration" : licenseState.expires}
+                      {licenseState.expires === "never"
+                        ? "Lifetime / No Expiration"
+                        : licenseState.expires}
                     </span>
                   </div>
                 )}
@@ -830,7 +835,8 @@ export function GlobalSettingsDialog() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-normal">
-                    Paste the license key received for your HWID and click Activate. This will save the credentials locally in the bridge workspace.
+                    Paste the license key received for your HWID and click Activate. This will save
+                    the credentials locally in the bridge workspace.
                   </p>
                 </div>
               </div>

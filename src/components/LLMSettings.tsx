@@ -123,6 +123,13 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
             </label>
           ))}
         </div>
+
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          To auto-launch LM Studio or Ollama when the desktop app starts, set
+          `LMSTUDIO_LAUNCH_COMMAND` / `LMSTUDIO_PATH` or `OLLAMA_LAUNCH_COMMAND` / `OLLAMA_PATH` in
+          the host environment. The supervisor only starts the process if the expected local port is
+          not already active.
+        </p>
       </div>
 
       <div className="space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2">
@@ -244,7 +251,7 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[380px] sm:w-[440px] flex flex-col p-0 bg-background text-foreground border-l border-border/60"
+        className="w-95 sm:w-[440px] flex flex-col p-0 bg-background text-foreground border-l border-border/60"
       >
         <SheetHeader className="px-4 pt-4">
           <SheetTitle className="font-mono text-sm tracking-wider">

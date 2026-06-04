@@ -7,7 +7,7 @@ let state = {
   endpoint: null,
   modelName: null,
   probing: false,
-  lastProbeAt: 0
+  lastProbeAt: 0,
 };
 const listeners = /* @__PURE__ */ new Set();
 function notify() {
@@ -17,13 +17,13 @@ async function probeLmStudio() {
   try {
     let res = await fetch(`${LMSTUDIO_BASE}/api/v1/models`, {
       signal: AbortSignal.timeout(1200),
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
     let isApiV1 = true;
     if (!res.ok) {
       res = await fetch(`${LMSTUDIO_BASE}/v1/models`, {
         signal: AbortSignal.timeout(1200),
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
       isApiV1 = false;
     }
@@ -38,7 +38,7 @@ async function probeLmStudio() {
 async function probeOllama() {
   try {
     const res = await fetch(`${OLLAMA_BASE}/api/tags`, {
-      signal: AbortSignal.timeout(1200)
+      signal: AbortSignal.timeout(1200),
     });
     if (!res.ok) return { ok: false, model: null };
     const data = await res.json();
@@ -57,10 +57,12 @@ async function probeLocalAi() {
     if (lmResult.ok) {
       state = {
         mode: "lmstudio",
-        endpoint: lmResult.isApiV1 ? `${LMSTUDIO_BASE}/api/v1/chat` : `${LMSTUDIO_BASE}/v1/chat/completions`,
+        endpoint: lmResult.isApiV1
+          ? `${LMSTUDIO_BASE}/api/v1/chat`
+          : `${LMSTUDIO_BASE}/v1/chat/completions`,
         modelName: lmResult.model,
         probing: false,
-        lastProbeAt: Date.now()
+        lastProbeAt: Date.now(),
       };
       notify();
       return { ...state };
@@ -72,7 +74,7 @@ async function probeLocalAi() {
         endpoint: `${OLLAMA_BASE}/v1/chat/completions`,
         modelName: ollamaResult.model,
         probing: false,
-        lastProbeAt: Date.now()
+        lastProbeAt: Date.now(),
       };
       notify();
       return { ...state };
@@ -82,7 +84,7 @@ async function probeLocalAi() {
       endpoint: null,
       modelName: null,
       probing: false,
-      lastProbeAt: Date.now()
+      lastProbeAt: Date.now(),
     };
     notify();
     return { ...state };
@@ -132,22 +134,21 @@ async function probeBridge() {
   try {
     const res = await fetch(BRIDGE_HEALTH_URL, {
       signal: AbortSignal.timeout(1500),
-      cache: "no-store"
+      cache: "no-store",
     });
     const latencyMs = now() - t0;
     if (!res.ok) return { ok: false, latencyMs };
     let data = {};
     try {
       data = await res.json();
-    } catch {
-    }
+    } catch {}
     return {
       ok: true,
       latencyMs,
       iRacingConnected: Boolean(data.iRacingConnected ?? false),
       assettoCorsaConnected: Boolean(data.assettoCorsaConnected ?? false),
       activeGame: String(data.activeGame ?? "iracing"),
-      version: String(data.version ?? "")
+      version: String(data.version ?? ""),
     };
   } catch {
     return { ok: false, latencyMs: now() - t0 };
@@ -161,7 +162,7 @@ async function probeAiEngine() {
       signal: AbortSignal.timeout(3e3),
       mode: "no-cors",
       // avoids CORS preflight — returns opaque response but confirms reachability
-      cache: "no-store"
+      cache: "no-store",
     });
     return { ok: true, latencyMs: now() - t0 };
   } catch {
@@ -182,7 +183,7 @@ async function probeMongoDB() {
   try {
     const res = await fetch(BRIDGE_MONGO_URL, {
       signal: AbortSignal.timeout(1500),
-      cache: "no-store"
+      cache: "no-store",
     });
     if (!res.ok) return { connected: false, sampleCount: 0, sessionId: null };
     const data = await res.json();
@@ -194,7 +195,7 @@ async function probeMongoDB() {
 const INITIAL_SERVICE = {
   status: "initializing",
   label: "INITIALIZING",
-  detail: "Probing…"
+  detail: "Probing…",
 };
 function useRuntimeStatus() {
   const [bridge, setBridge] = useState({ ...INITIAL_SERVICE });
@@ -223,24 +224,35 @@ function useRuntimeStatus() {
     setSessionStore({
       status: storeOk ? "active" : "offline",
       label: storeOk ? "ACTIVE" : "OFFLINE",
-      detail: storeOk ? "Local IndexedDB · .ibt / .pwlap file system ready" : "localStorage inaccessible — private mode?",
-      lastCheckedAt: now()
+      detail: storeOk
+        ? "Local IndexedDB · .ibt / .pwlap file system ready"
+        : "localStorage inaccessible — private mode?",
+      lastCheckedAt: now(),
     });
     const isElectron = typeof window !== "undefined" && window.pitWallRuntime !== void 0;
     setWorkstation({
       status: "active",
       label: isElectron ? "WORKSTATION MODE" : "PORTABLE MODE",
-      detail: isElectron ? `Electron runtime · v${window.pitWallRuntime?.version ?? "—"}` : "Browser mode · cloud connectivity only",
-      lastCheckedAt: now()
+      detail: isElectron
+        ? `Electron runtime · v${window.pitWallRuntime?.version ?? "—"}`
+        : "Browser mode · cloud connectivity only",
+      lastCheckedAt: now(),
     });
     const bridgeResult = await probeBridge();
-    const bridgeStatus = bridgeResult.ok ? bridgeResult.latencyMs < 500 ? "active" : "degraded" : "offline";
+    const bridgeStatus = bridgeResult.ok
+      ? bridgeResult.latencyMs < 500
+        ? "active"
+        : "degraded"
+      : "offline";
     setBridge({
       status: bridgeStatus,
-      label: bridgeStatus === "active" ? "ACTIVE" : bridgeStatus === "degraded" ? "DEGRADED" : "OFFLINE",
-      detail: bridgeResult.ok ? `ws://localhost:3001 · ${bridgeResult.latencyMs}ms${bridgeResult.version ? ` · v${bridgeResult.version}` : ""}` : "Bridge not reachable on port 3001 — start the local bridge",
+      label:
+        bridgeStatus === "active" ? "ACTIVE" : bridgeStatus === "degraded" ? "DEGRADED" : "OFFLINE",
+      detail: bridgeResult.ok
+        ? `ws://localhost:3001 · ${bridgeResult.latencyMs}ms${bridgeResult.version ? ` · v${bridgeResult.version}` : ""}`
+        : "Bridge not reachable on port 3001 — start the local bridge",
       latencyMs: bridgeResult.latencyMs,
-      lastCheckedAt: now()
+      lastCheckedAt: now(),
     });
     if (bridgeResult.ok) {
       const activeGame = bridgeResult.activeGame ?? "iracing";
@@ -248,15 +260,19 @@ function useRuntimeStatus() {
         setIRacing({
           status: bridgeResult.assettoCorsaConnected ? "active" : "degraded",
           label: bridgeResult.assettoCorsaConnected ? "CONNECTED" : "STANDBY",
-          detail: bridgeResult.assettoCorsaConnected ? "Assetto Corsa simulator telemetry stream active" : "Bridge online — waiting for Assetto Corsa to launch",
-          lastCheckedAt: now()
+          detail: bridgeResult.assettoCorsaConnected
+            ? "Assetto Corsa simulator telemetry stream active"
+            : "Bridge online — waiting for Assetto Corsa to launch",
+          lastCheckedAt: now(),
         });
       } else {
         setIRacing({
           status: bridgeResult.iRacingConnected ? "active" : "degraded",
           label: bridgeResult.iRacingConnected ? "CONNECTED" : "STANDBY",
-          detail: bridgeResult.iRacingConnected ? "iRacing simulator telemetry stream active" : "Bridge online — waiting for iRacing to launch",
-          lastCheckedAt: now()
+          detail: bridgeResult.iRacingConnected
+            ? "iRacing simulator telemetry stream active"
+            : "Bridge online — waiting for iRacing to launch",
+          lastCheckedAt: now(),
         });
       }
     } else {
@@ -264,38 +280,49 @@ function useRuntimeStatus() {
         status: "offline",
         label: "OFFLINE",
         detail: "Cannot detect simulator — bridge must be running first",
-        lastCheckedAt: now()
+        lastCheckedAt: now(),
       });
     }
     setMode(bridgeResult.ok ? "workstation" : "portable");
     if (bridgeResult.ok) {
       try {
         localStorage.setItem("pitwall_runtime_mode", "workstation");
-      } catch {
-      }
+      } catch {}
     }
     const aiResult = await probeAiEngine();
     setAiEngine({
       status: aiResult.ok ? "active" : "offline",
       label: aiResult.ok ? "ONLINE" : "OFFLINE",
-      detail: aiResult.ok ? `Cloud LLM reachable · avg ${aiResult.latencyMs}ms` : "Google AI APIs unreachable — check internet connection",
+      detail: aiResult.ok
+        ? `Cloud LLM reachable · avg ${aiResult.latencyMs}ms`
+        : "Google AI APIs unreachable — check internet connection",
       latencyMs: aiResult.latencyMs,
-      lastCheckedAt: now()
+      lastCheckedAt: now(),
     });
     const mongoResult = await probeMongoDB();
     setMongoDB({
       status: mongoResult.connected ? "active" : "offline",
       label: mongoResult.connected ? "RECORDING" : "OFFLINE",
-      detail: mongoResult.connected ? `mongodb://localhost:27017 · ${mongoResult.sampleCount} samples · session ${mongoResult.sessionId?.slice(-6) ?? ""}` : "MongoDB not connected — telemetry recording disabled",
-      lastCheckedAt: now()
+      detail: mongoResult.connected
+        ? `mongodb://localhost:27017 · ${mongoResult.sampleCount} samples · session ${mongoResult.sessionId?.slice(-6) ?? ""}`
+        : "MongoDB not connected — telemetry recording disabled",
+      lastCheckedAt: now(),
     });
     const aiRouterState = await probeLocalAi();
     setLocalAi({
       status: aiRouterState.mode !== "cloud" ? "active" : "offline",
-      label: aiRouterState.mode !== "cloud" ? aiRouterState.mode === "lmstudio" ? "LM STUDIO" : "OLLAMA" : "CLOUD FALLBACK",
-      detail: aiRouterState.mode !== "cloud" ? `Local inference · ${aiRouterState.modelName ?? "model detected"}` : "No local AI server detected — using cloud Gemini",
+      label:
+        aiRouterState.mode !== "cloud"
+          ? aiRouterState.mode === "lmstudio"
+            ? "LM STUDIO"
+            : "OLLAMA"
+          : "CLOUD FALLBACK",
+      detail:
+        aiRouterState.mode !== "cloud"
+          ? `Local inference · ${aiRouterState.modelName ?? "model detected"}`
+          : "No local AI server detected — using cloud Gemini",
       aiMode: aiRouterState.mode,
-      lastCheckedAt: now()
+      lastCheckedAt: now(),
     });
     if (!advancedRef.current && now() - startedAt.current >= SETTLED_TIMEOUT_MS) {
       advance();
@@ -313,9 +340,12 @@ function useRuntimeStatus() {
     };
   }, [runChecks, advance]);
   const allSettled = [bridge, iracing, aiEngine, sessionStore, workstation].every(
-    (s) => s.status !== "initializing"
+    (s) => s.status !== "initializing",
   );
-  const ready = advanced || bridge.status === "active" && sessionStore.status === "active" || sessionStore.status === "active" && bridge.status === "offline";
+  const ready =
+    advanced ||
+    (bridge.status === "active" && sessionStore.status === "active") ||
+    (sessionStore.status === "active" && bridge.status === "offline");
   return {
     bridge,
     iracing,
@@ -328,11 +358,7 @@ function useRuntimeStatus() {
     ready,
     mode,
     elapsedMs,
-    advance
+    advance,
   };
 }
-export {
-  useRuntimeStatus as a,
-  getAiModeLabel as g,
-  useLocalAiRouter as u
-};
+export { useRuntimeStatus as a, getAiModeLabel as g, useLocalAiRouter as u };

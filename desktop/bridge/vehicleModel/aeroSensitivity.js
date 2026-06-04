@@ -19,7 +19,7 @@ function calculateAeroSensitivity(
   pitchRad,
   frontDeflectionMm,
   frontPackersClicks,
-  rideHeightRearDeltaRearMm = 0
+  rideHeightRearDeltaRearMm = 0,
 ) {
   if (speedMps < 5.0) {
     return { downforceN: 0, stabilityRakeRating: 99, isBottoming: false };
@@ -29,33 +29,33 @@ function calculateAeroSensitivity(
   const baseCl = 3.4; // coefficient of lift/downforce
   const airDensity = 1.225; // kg/m^3
   const referenceArea = 2.0; // m^2
-  
+
   // 2. Adjust aerodynamic coefficient based on pitch rake (nose-down rake expands diffuser vacuum)
   // Optimal rake for GTP/GT3 typically sits around -0.010 to -0.014 radians (nose pitched forward)
-  const counterfactualRake = pitchRad - (rideHeightRearDeltaRearMm * 0.0005);
-  
+  const counterfactualRake = pitchRad - rideHeightRearDeltaRearMm * 0.0005;
+
   let rakeFactor = 1.0;
   if (counterfactualRake < -0.016) {
     // Nose pitched too low, splitter blocks airflow entering the underbody floor
-    rakeFactor = Math.max(0.70, 1.0 - (Math.abs(counterfactualRake) - 0.016) * 12.0);
+    rakeFactor = Math.max(0.7, 1.0 - (Math.abs(counterfactualRake) - 0.016) * 12.0);
   } else if (counterfactualRake > -0.002) {
     // Nose pitched too high, vacuum seal leaks pressure
-    rakeFactor = Math.max(0.75, 1.0 - (counterfactualRake - (-0.002)) * 8.0);
+    rakeFactor = Math.max(0.75, 1.0 - (counterfactualRake - -0.002) * 8.0);
   } else {
     // Highly efficient rake zone
-    const gap = Math.abs(counterfactualRake - (-0.011));
+    const gap = Math.abs(counterfactualRake - -0.011);
     rakeFactor = 1.0 + (0.14 - gap * 10);
   }
 
   // 3. Packer engagement and bottoming groundings
   // Mechanical front packers limit vertical suspension travel
-  const maxTravelMm = 45.0 + (frontPackersClicks * 1.5);
+  const maxTravelMm = 45.0 + frontPackersClicks * 1.5;
   const isBottoming = frontDeflectionMm > maxTravelMm;
 
   let bottomingMultiplier = 1.0;
   if (isBottoming) {
     // Diffuser vacuum stalls completely when front splitter hits the ground (pressure spikes)
-    bottomingMultiplier = Math.max(0.40, 1.0 - (frontDeflectionMm - maxTravelMm) * 0.08);
+    bottomingMultiplier = Math.max(0.4, 1.0 - (frontDeflectionMm - maxTravelMm) * 0.08);
   }
 
   // 4. Calculate final downforce force (Newtons)
@@ -69,10 +69,10 @@ function calculateAeroSensitivity(
   return {
     downforceN: Math.round(downforceN),
     stabilityRakeRating,
-    isBottoming
+    isBottoming,
   };
 }
 
 module.exports = {
-  calculateAeroSensitivity
+  calculateAeroSensitivity,
 };

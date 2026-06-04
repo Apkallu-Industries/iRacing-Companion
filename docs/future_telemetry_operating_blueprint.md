@@ -1,7 +1,8 @@
 # PIT WALL — TELEMETRY OPERATING ENVIRONMENT BLUEPRINT
+
 ## Next-Generation Motorsport Workstation Architecture
 
-This document establishes the technical blueprint for the next phase of Pit Wall's evolution from a telemetry dashboard into an elite, industrial-grade **Motorsport Telemetry Operating System**. 
+This document establishes the technical blueprint for the next phase of Pit Wall's evolution from a telemetry dashboard into an elite, industrial-grade **Motorsport Telemetry Operating System**.
 
 ---
 
@@ -32,18 +33,18 @@ interface TelemetryRuntimeState {
   activeLap: number | null;
   playbackSpeed: number;
   isPlaying: boolean;
-  
+
   // Workspace Composition
   activePreset: "gt3" | "gtp" | "coach" | "aero";
   selectedInstrument: "brakes" | "ers" | "chassis" | "tires" | "inputs" | null;
-  
+
   // Event Timeline
   events: TelemetryEvent[];
   activeEvent: TelemetryEvent | null;
-  
+
   // Calibrated Visual Filters
   focusMode: FocusMode;
-  
+
   // Actions
   setCursorTick: (tick: number) => void;
   setActiveLap: (lap: number | null) => void;
@@ -51,12 +52,12 @@ interface TelemetryRuntimeState {
   setPlaying: (playing: boolean) => void;
   setActivePreset: (preset: "gt3" | "gtp" | "coach" | "aero") => void;
   selectInstrument: (instrument: "brakes" | "ers" | "chassis" | "tires" | "inputs" | null) => void;
-  
+
   // Event Timeline Actions
   addEvent: (event: Omit<TelemetryEvent, "id">) => void;
   triggerEvent: (event: TelemetryEvent) => void;
   clearEvents: () => void;
-  
+
   // Focus Mode Actions
   setFocusMode: (mode: FocusMode) => void;
 }
@@ -78,15 +79,16 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
   setPlaying: (playing) => set({ isPlaying: playing }),
   setActivePreset: (preset) => set({ activePreset: preset }),
   selectInstrument: (instrument) => set({ selectedInstrument: instrument }),
-  
-  addEvent: (event) => set((state) => ({
-    events: [...state.events, { ...event, id: crypto.randomUUID() }]
-  })),
-  
+
+  addEvent: (event) =>
+    set((state) => ({
+      events: [...state.events, { ...event, id: crypto.randomUUID() }],
+    })),
+
   triggerEvent: (event) => {
     // Central Orchestration Trigger (Contextual Linking)
     set({ activeEvent: event, cursorTick: Math.round(event.timestampSec * 60) });
-    
+
     // Automatically switch active workspace preset matching event category
     if (event.category === "inputs") {
       set({ activePreset: "coach", selectedInstrument: "inputs" });
@@ -98,7 +100,7 @@ export const useTelemetryRuntimeStore = create<TelemetryRuntimeState>((set, get)
       set({ activePreset: "aero", selectedInstrument: "chassis" });
     }
   },
-  
+
   clearEvents: () => set({ events: [], activeEvent: null }),
   setFocusMode: (mode) => set({ focusMode: mode }),
 }));
@@ -122,6 +124,7 @@ graph TD
 ```
 
 ### Incident Anomaly Engine Scanners:
+
 1. **Lockup Scanner**: Fires when `Brake` > 0.82 and wheel speed delta exceeds 15% under deceleration.
 2. **ERS Saturation Scanner**: Fires when MGU-K deploy remains at max kW longer than 4.5 seconds.
 3. **Throttle Stability Scanner**: Tracks steering rate of change alongside rapid throttle pumping on corner exit.
@@ -133,6 +136,7 @@ graph TD
 To maximize cognitive bandwidth during intense race cmd situations, the **Focus Mode** dimming system leverages CSS filter cascades. When a specific Focus Mode is triggered, all unrelated channels, graphs, and indicators are visually attenuated (muted to `opacity: 0.15` and desaturated).
 
 ### Focus Mode Dimming Architecture:
+
 ```css
 /* Focus Mode CSS variables applied on container panels */
 .workspace-focus-brakes .channel-trace:not(.ch-brake):not(.ch-speed):not(.ch-yaw) {
@@ -152,7 +156,7 @@ To maximize cognitive bandwidth during intense race cmd situations, the **Focus 
 
 ## 4. Workstation Restraint and Visual Constraints
 
-Elite, professional race engineering tools communicate their value through **density, mechanical calibration, and absolute visual restraint**. 
+Elite, professional race engineering tools communicate their value through **density, mechanical calibration, and absolute visual restraint**.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -176,7 +180,8 @@ Elite, professional race engineering tools communicate their value through **den
 ```
 
 ### Visual Integrity Rules:
-*   **Color as Data**: No decorative gradients. Accents are strictly functional (e.g. Red is solely for thermal overheat/extreme line pressure, Purple is solely for ERS charge/deploy cycles).
-*   **High-Density Grid Layouts**: Maintain hard-edged structural panels with thin `#1C2430` borders and 0px–4px corner radii.
-*   **Mechanical Readouts**: Numerical figures must use monospace fonts (e.g., `Geist Mono` or `IBM Plex Mono`) and enforce tabular alignment (`font-variant-numeric: tabular-nums`).
-*   **Non-Intrusive Motion**: Animations are strictly utility-driven (real-time 60Hz signal traces, G-G grip coordinates updating, alert alarms flashing). Decorative sliding animations or complex card transitions are prohibited.
+
+- **Color as Data**: No decorative gradients. Accents are strictly functional (e.g. Red is solely for thermal overheat/extreme line pressure, Purple is solely for ERS charge/deploy cycles).
+- **High-Density Grid Layouts**: Maintain hard-edged structural panels with thin `#1C2430` borders and 0px–4px corner radii.
+- **Mechanical Readouts**: Numerical figures must use monospace fonts (e.g., `Geist Mono` or `IBM Plex Mono`) and enforce tabular alignment (`font-variant-numeric: tabular-nums`).
+- **Non-Intrusive Motion**: Animations are strictly utility-driven (real-time 60Hz signal traces, G-G grip coordinates updating, alert alarms flashing). Decorative sliding animations or complex card transitions are prohibited.

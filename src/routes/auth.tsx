@@ -54,7 +54,7 @@ function AuthPage() {
             disabled={busy}
             className="flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
           >
-            <Activity className="h-4 w-4" /> 
+            <Activity className="h-4 w-4" />
             {busy ? "Starting..." : "Enter Application"}
           </button>
         </div>

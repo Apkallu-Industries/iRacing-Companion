@@ -143,7 +143,8 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
           rr: { tempC: latest.tires.rr.tempC, pressureBar: latest.tires.rr.pressureBar },
         },
         // Bridge extras — only included when the bridge sends them (non-zero)
-        extrasSnapshot: latest.liveExtras.maxBrakeLinePressTotal > 0 ? latest.liveExtras : undefined,
+        extrasSnapshot:
+          latest.liveExtras.maxBrakeLinePressTotal > 0 ? latest.liveExtras : undefined,
       })) as { result?: AdvisorResp; error?: string; fallback?: "no-key" | "local" | "local-llm" };
       if (resp.error) {
         setError(resp.error);
@@ -187,7 +188,9 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
       {/* Track type + bias selector */}
       <div className="mb-3 grid gap-2 rounded-md bg-muted/40 ring-1 ring-white/5 p-2">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-16">Track</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-16">
+            Track
+          </span>
           <div className="flex gap-1">
             <button className={segBtn(trackType === "road")} onClick={() => setTrackType("road")}>
               Road
@@ -204,7 +207,9 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-16">Bias</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground w-16">
+            Bias
+          </span>
           <div className="flex gap-1">
             <button className={segBtn(cornerBias === "left")} onClick={() => setCornerBias("left")}>
               Left
@@ -248,7 +253,9 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
         <div className="mb-3 rounded-md bg-muted/40 ring-1 ring-white/5 p-2 space-y-2">
           {(["balance", "brakes", "tyres", "ride"] as const).map((group) => (
             <div key={group}>
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">{group}</div>
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-1">
+                {group}
+              </div>
               <div className="flex flex-wrap gap-1">
                 {SYMPTOM_OPTIONS.filter((s) => s.group === group).map((s) => {
                   const active = symptoms.includes(s.id);
@@ -309,8 +316,8 @@ export function AdvisorButton({ t }: { t: Telemetry }) {
 
       {!canAsk && !result && (
         <div className="rounded-md bg-muted/50 p-3 text-center text-xs text-muted-foreground">
-          Complete {MIN_LAPS} laps (clean or with incidents) and I'll read the data to coach style or recommend setup
-          changes.
+          Complete {MIN_LAPS} laps (clean or with incidents) and I'll read the data to coach style
+          or recommend setup changes.
         </div>
       )}
 

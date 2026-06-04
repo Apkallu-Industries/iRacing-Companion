@@ -5,14 +5,23 @@ import { useEffect } from "react";
 import { u as useTelemetryRuntimeStore } from "./registry-CA38QAmy.js";
 import { Shield, Activity, Zap, AlertTriangle } from "lucide-react";
 const fetchTrackCarHistory = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((data) => data).handler(createSsrRpc("ceb1da2412339a010c86cf3ecf77c3f4a412f494e3df16514997aba5cd89ec0c"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => data)
+  .handler(createSsrRpc("ceb1da2412339a010c86cf3ecf77c3f4a412f494e3df16514997aba5cd89ec0c"));
 const recordTelemetrySessionMeta = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((data) => data).handler(createSsrRpc("8807bcd1e24885bea42a273b01c13bf580f36251214035049bde39937b793996"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => data)
+  .handler(createSsrRpc("8807bcd1e24885bea42a273b01c13bf580f36251214035049bde39937b793996"));
 const fetchLocalTelemetryFile = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((data) => data).handler(createSsrRpc("a1b0f3efc363c9d2100e82f3978763c576b3995969d90cf9b2d2dbf0d4e1fa81"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => data)
+  .handler(createSsrRpc("a1b0f3efc363c9d2100e82f3978763c576b3995969d90cf9b2d2dbf0d4e1fa81"));
 function TelemetryEventTimeline() {
   const { events, activeEvent, triggerEvent, addEvent } = useTelemetryRuntimeStore();
   useEffect(() => {
@@ -22,36 +31,40 @@ function TelemetryEventTimeline() {
         label: "REAR LOCKUP DETECTED",
         category: "thermal",
         severity: "critical",
-        description: "Rear axle slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift bias forward.",
+        description:
+          "Rear axle slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift bias forward.",
         associatedChannels: ["Brake", "LFbrakeLinePress", "LRbrakeTemp"],
-        cornerNumber: 8
+        cornerNumber: 8,
       });
       addEvent({
         timestampSec: 28.4,
         label: "ERS DEPLOYMENT SATURATION",
         category: "hybrid",
         severity: "warning",
-        description: "MGU-K deploy saturated at 120kW for 5.2s. Potential state-of-charge exhaustion at back straight.",
+        description:
+          "MGU-K deploy saturated at 120kW for 5.2s. Potential state-of-charge exhaustion at back straight.",
         associatedChannels: ["EnergyStorePct", "MgukDeploykW"],
-        cornerNumber: 11
+        cornerNumber: 11,
       });
       addEvent({
         timestampSec: 42.1,
         label: "THROTTLE INSTABILITY AT CORNER EXIT",
         category: "inputs",
         severity: "info",
-        description: "Rapid throttle micro-pumping detected at Turn 3 exit. Steer smoothness rating dropped to 72%.",
+        description:
+          "Rapid throttle micro-pumping detected at Turn 3 exit. Steer smoothness rating dropped to 72%.",
         associatedChannels: ["Throttle", "SteeringWheelAngle"],
-        cornerNumber: 3
+        cornerNumber: 3,
       });
       addEvent({
         timestampSec: 68.9,
         label: "CHASSIS REB COMPRESSION GROUNDING",
         category: "dynamics",
         severity: "warning",
-        description: "Nose pitch rotation exceeding -1.8 deg. Splitter grounding threat detected under heavy heave load.",
+        description:
+          "Nose pitch rotation exceeding -1.8 deg. Splitter grounding threat detected under heavy heave load.",
         associatedChannels: ["LongAccel", "LatAccel", "pitch"],
-        cornerNumber: 5
+        cornerNumber: 5,
       });
     }
   }, [events.length, addEvent]);
@@ -83,7 +96,10 @@ function TelemetryEventTimeline() {
       text = "AERO PLATFORM";
       color = "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/10";
     }
-    return /* @__PURE__ */ jsx("span", { className: `text-[7px] font-black tracking-widest px-1 py-0.5 border rounded-xs uppercase ${color}`, children: text });
+    return /* @__PURE__ */ jsx("span", {
+      className: `text-[7px] font-black tracking-widest px-1 py-0.5 border rounded-xs uppercase ${color}`,
+      children: text,
+    });
   };
   const getSeverityStyles = (severity) => {
     switch (severity) {
@@ -95,56 +111,108 @@ function TelemetryEventTimeline() {
         return "border-l-2 border-l-[#3B82F6] bg-[#3B82F6]/5";
     }
   };
-  return /* @__PURE__ */ jsxs("div", { className: "h-full flex flex-col font-mono text-xs bg-[#0B0F14] text-white border-t border-[#1C2430]", children: [
-    /* @__PURE__ */ jsxs("div", { className: "px-3 py-1.5 border-b border-[#1C2430] bg-[#11161D] flex items-center justify-between shrink-0 select-none", children: [
-      /* @__PURE__ */ jsx("span", { className: "font-bold text-[9px] uppercase tracking-[0.25em] text-[#7A828C]", children: "TACTICAL EVENT TIMELINE" }),
-      /* @__PURE__ */ jsx("span", { className: "text-[7.5px] text-[#00D17F] font-black tracking-widest bg-[#00D17F]/10 px-1.5 py-0.5 border border-[#00D17F]/30 rounded", children: "ANOMALY SCANNERS LIVE" })
-    ] }),
-    /* @__PURE__ */ jsx("div", { className: "flex-1 overflow-y-auto p-1.5 space-y-1.5 bg-[#05070A]", children: events.map((event) => {
-      const isActive = activeEvent?.id === event.id;
-      return /* @__PURE__ */ jsxs(
-        "div",
-        {
-          onClick: () => triggerEvent(event),
-          className: `p-2 rounded-xs border transition-all duration-200 cursor-pointer ${getSeverityStyles(event.severity)} ${isActive ? "border-[#FFB800] shadow-[0_0_10px_rgba(255,184,0,0.15)] scale-[1.005]" : "border-[#1C2430] bg-[#0B0F14]/60 hover:border-[#263241] hover:bg-[#0B0F14]"}`,
-          children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between gap-2 mb-1", children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5", children: [
-                getCategoryIcon(event.category),
-                /* @__PURE__ */ jsx("span", { className: "font-black text-[9px] uppercase tracking-wider text-white", children: event.label })
-              ] }),
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5", children: [
-                event.metadata?.confidence !== void 0 && /* @__PURE__ */ jsxs("span", { className: "text-[7.5px] text-[#00D17F] font-black border border-[#00D17F]/30 bg-[#00D17F]/10 px-1 py-0.5 rounded-xs tabular-nums", title: "Scanner Signal Certainty Score", children: [
-                  (event.metadata.confidence * 100).toFixed(0),
-                  "% CERT"
-                ] }),
-                getClassificationBadge(event),
-                /* @__PURE__ */ jsxs("span", { className: "text-[8px] text-[#7A828C] font-bold tabular-nums", children: [
-                  "t = ",
-                  event.timestampSec.toFixed(2),
-                  "s ",
-                  event.cornerNumber ? `· T${event.cornerNumber}` : ""
-                ] })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx("p", { className: "text-[8.5px] leading-relaxed text-[#7A828C] select-text", children: event.description }),
-            /* @__PURE__ */ jsxs("div", { className: "mt-1.5 pt-1 border-t border-[#1C2430]/40 flex items-center justify-between", children: [
-              /* @__PURE__ */ jsx("div", { className: "flex flex-wrap gap-1", children: event.associatedChannels.map((ch) => /* @__PURE__ */ jsx(
-                "span",
-                {
-                  className: "text-[7.5px] px-1 py-0.5 bg-[#05070A] border border-[#1C2430] text-[#3B82F6] rounded-xs font-bold",
-                  children: ch
-                },
-                ch
-              )) }),
-              /* @__PURE__ */ jsx("span", { className: `text-[7px] font-black uppercase tracking-widest px-1 py-0.5 border rounded-xs ${event.severity === "critical" ? "text-[#FF4D4D] border-[#FF4D4D]/20 bg-[#FF4D4D]/5" : event.severity === "warning" ? "text-[#FFB800] border-[#FFB800]/20 bg-[#FFB800]/5" : "text-[#3B82F6] border-[#3B82F6]/20 bg-[#3B82F6]/5"}`, children: event.severity })
-            ] })
-          ]
-        },
-        event.id
-      );
-    }) })
-  ] });
+  return /* @__PURE__ */ jsxs("div", {
+    className:
+      "h-full flex flex-col font-mono text-xs bg-[#0B0F14] text-white border-t border-[#1C2430]",
+    children: [
+      /* @__PURE__ */ jsxs("div", {
+        className:
+          "px-3 py-1.5 border-b border-[#1C2430] bg-[#11161D] flex items-center justify-between shrink-0 select-none",
+        children: [
+          /* @__PURE__ */ jsx("span", {
+            className: "font-bold text-[9px] uppercase tracking-[0.25em] text-[#7A828C]",
+            children: "TACTICAL EVENT TIMELINE",
+          }),
+          /* @__PURE__ */ jsx("span", {
+            className:
+              "text-[7.5px] text-[#00D17F] font-black tracking-widest bg-[#00D17F]/10 px-1.5 py-0.5 border border-[#00D17F]/30 rounded",
+            children: "ANOMALY SCANNERS LIVE",
+          }),
+        ],
+      }),
+      /* @__PURE__ */ jsx("div", {
+        className: "flex-1 overflow-y-auto p-1.5 space-y-1.5 bg-[#05070A]",
+        children: events.map((event) => {
+          const isActive = activeEvent?.id === event.id;
+          return /* @__PURE__ */ jsxs(
+            "div",
+            {
+              onClick: () => triggerEvent(event),
+              className: `p-2 rounded-xs border transition-all duration-200 cursor-pointer ${getSeverityStyles(event.severity)} ${isActive ? "border-[#FFB800] shadow-[0_0_10px_rgba(255,184,0,0.15)] scale-[1.005]" : "border-[#1C2430] bg-[#0B0F14]/60 hover:border-[#263241] hover:bg-[#0B0F14]"}`,
+              children: [
+                /* @__PURE__ */ jsxs("div", {
+                  className: "flex items-center justify-between gap-2 mb-1",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "flex items-center gap-1.5",
+                      children: [
+                        getCategoryIcon(event.category),
+                        /* @__PURE__ */ jsx("span", {
+                          className: "font-black text-[9px] uppercase tracking-wider text-white",
+                          children: event.label,
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "flex items-center gap-1.5",
+                      children: [
+                        event.metadata?.confidence !== void 0 &&
+                          /* @__PURE__ */ jsxs("span", {
+                            className:
+                              "text-[7.5px] text-[#00D17F] font-black border border-[#00D17F]/30 bg-[#00D17F]/10 px-1 py-0.5 rounded-xs tabular-nums",
+                            title: "Scanner Signal Certainty Score",
+                            children: [(event.metadata.confidence * 100).toFixed(0), "% CERT"],
+                          }),
+                        getClassificationBadge(event),
+                        /* @__PURE__ */ jsxs("span", {
+                          className: "text-[8px] text-[#7A828C] font-bold tabular-nums",
+                          children: [
+                            "t = ",
+                            event.timestampSec.toFixed(2),
+                            "s ",
+                            event.cornerNumber ? `· T${event.cornerNumber}` : "",
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsx("p", {
+                  className: "text-[8.5px] leading-relaxed text-[#7A828C] select-text",
+                  children: event.description,
+                }),
+                /* @__PURE__ */ jsxs("div", {
+                  className:
+                    "mt-1.5 pt-1 border-t border-[#1C2430]/40 flex items-center justify-between",
+                  children: [
+                    /* @__PURE__ */ jsx("div", {
+                      className: "flex flex-wrap gap-1",
+                      children: event.associatedChannels.map((ch) =>
+                        /* @__PURE__ */ jsx(
+                          "span",
+                          {
+                            className:
+                              "text-[7.5px] px-1 py-0.5 bg-[#05070A] border border-[#1C2430] text-[#3B82F6] rounded-xs font-bold",
+                            children: ch,
+                          },
+                          ch,
+                        ),
+                      ),
+                    }),
+                    /* @__PURE__ */ jsx("span", {
+                      className: `text-[7px] font-black uppercase tracking-widest px-1 py-0.5 border rounded-xs ${event.severity === "critical" ? "text-[#FF4D4D] border-[#FF4D4D]/20 bg-[#FF4D4D]/5" : event.severity === "warning" ? "text-[#FFB800] border-[#FFB800]/20 bg-[#FFB800]/5" : "text-[#3B82F6] border-[#3B82F6]/20 bg-[#3B82F6]/5"}`,
+                      children: event.severity,
+                    }),
+                  ],
+                }),
+              ],
+            },
+            event.id,
+          );
+        }),
+      }),
+    ],
+  });
 }
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;
 const FUNC_NAMES = /* @__PURE__ */ new Set([
@@ -165,7 +233,7 @@ const FUNC_NAMES = /* @__PURE__ */ new Set([
   "floor",
   "ceil",
   "round",
-  "choose"
+  "choose",
 ]);
 const MAX_AST_NODES = 128;
 function compileMathExpression(input) {
@@ -259,7 +327,7 @@ function tokenize(input) {
       i += 1;
       continue;
     }
-    if (/\d/.test(ch) || ch === "." && /\d/.test(s[i + 1] ?? "")) {
+    if (/\d/.test(ch) || (ch === "." && /\d/.test(s[i + 1] ?? ""))) {
       let j = i + 1;
       while (j < s.length && /[\d.]/.test(s[j])) j += 1;
       const raw = s.slice(i, j);
@@ -311,7 +379,14 @@ class Parser {
   }
   parseComparison() {
     let node = this.parseAdditive();
-    while (this.matchOp("==") || this.matchOp("!=") || this.matchOp("<") || this.matchOp(">") || this.matchOp("<=") || this.matchOp(">=")) {
+    while (
+      this.matchOp("==") ||
+      this.matchOp("!=") ||
+      this.matchOp("<") ||
+      this.matchOp(">") ||
+      this.matchOp("<=") ||
+      this.matchOp(">=")
+    ) {
       const op = this.prev();
       const right = this.parseAdditive();
       node = { kind: "binary", op: op.value, left: node, right };
@@ -420,7 +495,7 @@ function assertArgCount(fn, count) {
     "exp",
     "floor",
     "ceil",
-    "round"
+    "round",
   ]);
   if (singleArgFns.has(fn) && count !== 1) {
     throw new Error(`${fn}() expects exactly 1 argument.`);
@@ -559,7 +634,7 @@ function evaluateMathExpressionForIbt(compiled, parsed) {
     "const.litre_to_gal": 0.219969248,
     "const.litre_to_usgal": 0.264172052,
     "const.rad_to_deg": 57.295779513,
-    "const.deg_to_rad": 0.0174532925
+    "const.deg_to_rad": 0.0174532925,
   };
   const channelIdentifiers = compiled.identifiers.filter((id) => !id.startsWith("const."));
   for (const id of channelIdentifiers) {
@@ -599,8 +674,8 @@ const fmt = {
   f1: (v) => v.toFixed(1),
   f2: (v) => v.toFixed(2),
   pct01: (v) => Math.round(v * 100).toString(),
-  gear: (g) => g === 0 ? "N" : g === -1 ? "R" : String(g),
-  bool: (v) => v ? "ON" : "OFF"
+  gear: (g) => (g === 0 ? "N" : g === -1 ? "R" : String(g)),
+  bool: (v) => (v ? "ON" : "OFF"),
 };
 const STATIC_CHANNELS = [
   // Drive
@@ -610,7 +685,7 @@ const STATIC_CHANNELS = [
     unit: "km/h",
     color: "#22d3ee",
     group: "Drive",
-    read: (t) => fmt.int(t.speedKph)
+    read: (t) => fmt.int(t.speedKph),
   },
   {
     key: "rpm",
@@ -618,7 +693,7 @@ const STATIC_CHANNELS = [
     unit: "rpm",
     color: "#e5e5e5",
     group: "Drive",
-    read: (t) => fmt.k(t.rpm)
+    read: (t) => fmt.k(t.rpm),
   },
   {
     key: "rpmMax",
@@ -626,7 +701,7 @@ const STATIC_CHANNELS = [
     unit: "rpm",
     color: "#737373",
     group: "Drive",
-    read: (t) => fmt.k(t.rpmMax)
+    read: (t) => fmt.k(t.rpmMax),
   },
   {
     key: "rpmShiftWarn",
@@ -634,7 +709,7 @@ const STATIC_CHANNELS = [
     unit: "rpm",
     color: "#fbbf24",
     group: "Drive",
-    read: (t) => fmt.k(t.rpmShiftWarn)
+    read: (t) => fmt.k(t.rpmShiftWarn),
   },
   {
     key: "rpmShiftRedline",
@@ -642,7 +717,7 @@ const STATIC_CHANNELS = [
     unit: "rpm",
     color: "#f43f5e",
     group: "Drive",
-    read: (t) => fmt.k(t.rpmShiftRedline)
+    read: (t) => fmt.k(t.rpmShiftRedline),
   },
   {
     key: "gear",
@@ -650,7 +725,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#fbbf24",
     group: "Drive",
-    read: (t) => fmt.gear(t.gear)
+    read: (t) => fmt.gear(t.gear),
   },
   // Inputs
   {
@@ -659,7 +734,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#22c55e",
     group: "Inputs",
-    read: (t) => fmt.pct01(t.throttle)
+    read: (t) => fmt.pct01(t.throttle),
   },
   {
     key: "brake",
@@ -667,7 +742,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#ef4444",
     group: "Inputs",
-    read: (t) => fmt.pct01(t.brake)
+    read: (t) => fmt.pct01(t.brake),
   },
   {
     key: "clutch",
@@ -675,7 +750,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#60a5fa",
     group: "Inputs",
-    read: (t) => fmt.pct01(t.clutch)
+    read: (t) => fmt.pct01(t.clutch),
   },
   {
     key: "steeringDeg",
@@ -683,7 +758,7 @@ const STATIC_CHANNELS = [
     unit: "°",
     color: "#facc15",
     group: "Inputs",
-    read: (t) => fmt.int(t.steeringDeg)
+    read: (t) => fmt.int(t.steeringDeg),
   },
   // Forces
   {
@@ -692,7 +767,7 @@ const STATIC_CHANNELS = [
     unit: "G",
     color: "#f97316",
     group: "Forces",
-    read: (t) => fmt.f2(t.gLat)
+    read: (t) => fmt.f2(t.gLat),
   },
   {
     key: "gLon",
@@ -700,7 +775,7 @@ const STATIC_CHANNELS = [
     unit: "G",
     color: "#38bdf8",
     group: "Forces",
-    read: (t) => fmt.f2(t.gLon)
+    read: (t) => fmt.f2(t.gLon),
   },
   // Tyres
   {
@@ -709,7 +784,7 @@ const STATIC_CHANNELS = [
     unit: "°C",
     color: "#fb923c",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.fl.tempC)
+    read: (t) => fmt.int(t.tires.fl.tempC),
   },
   {
     key: "tires.fr.tempC",
@@ -717,7 +792,7 @@ const STATIC_CHANNELS = [
     unit: "°C",
     color: "#fb923c",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.fr.tempC)
+    read: (t) => fmt.int(t.tires.fr.tempC),
   },
   {
     key: "tires.rl.tempC",
@@ -725,7 +800,7 @@ const STATIC_CHANNELS = [
     unit: "°C",
     color: "#fb923c",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.rl.tempC)
+    read: (t) => fmt.int(t.tires.rl.tempC),
   },
   {
     key: "tires.rr.tempC",
@@ -733,7 +808,7 @@ const STATIC_CHANNELS = [
     unit: "°C",
     color: "#fb923c",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.rr.tempC)
+    read: (t) => fmt.int(t.tires.rr.tempC),
   },
   {
     key: "tires.fl.pressureBar",
@@ -741,7 +816,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#a78bfa",
     group: "Tyres",
-    read: (t) => fmt.f2(t.tires.fl.pressureBar)
+    read: (t) => fmt.f2(t.tires.fl.pressureBar),
   },
   {
     key: "tires.fr.pressureBar",
@@ -749,7 +824,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#a78bfa",
     group: "Tyres",
-    read: (t) => fmt.f2(t.tires.fr.pressureBar)
+    read: (t) => fmt.f2(t.tires.fr.pressureBar),
   },
   {
     key: "tires.rl.pressureBar",
@@ -757,7 +832,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#a78bfa",
     group: "Tyres",
-    read: (t) => fmt.f2(t.tires.rl.pressureBar)
+    read: (t) => fmt.f2(t.tires.rl.pressureBar),
   },
   {
     key: "tires.rr.pressureBar",
@@ -765,7 +840,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#a78bfa",
     group: "Tyres",
-    read: (t) => fmt.f2(t.tires.rr.pressureBar)
+    read: (t) => fmt.f2(t.tires.rr.pressureBar),
   },
   {
     key: "tires.fl.wearPct",
@@ -773,7 +848,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#10b981",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.fl.wearPct)
+    read: (t) => fmt.int(t.tires.fl.wearPct),
   },
   {
     key: "tires.fr.wearPct",
@@ -781,7 +856,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#10b981",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.fr.wearPct)
+    read: (t) => fmt.int(t.tires.fr.wearPct),
   },
   {
     key: "tires.rl.wearPct",
@@ -789,7 +864,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#10b981",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.rl.wearPct)
+    read: (t) => fmt.int(t.tires.rl.wearPct),
   },
   {
     key: "tires.rr.wearPct",
@@ -797,7 +872,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#10b981",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.rr.wearPct)
+    read: (t) => fmt.int(t.tires.rr.wearPct),
   },
   {
     key: "tires.fl.estWearPct",
@@ -805,7 +880,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#34d399",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.fl.estWearPct)
+    read: (t) => fmt.f1(t.tires.fl.estWearPct),
   },
   {
     key: "tires.fr.estWearPct",
@@ -813,7 +888,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#34d399",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.fr.estWearPct)
+    read: (t) => fmt.f1(t.tires.fr.estWearPct),
   },
   {
     key: "tires.rl.estWearPct",
@@ -821,7 +896,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#34d399",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.rl.estWearPct)
+    read: (t) => fmt.f1(t.tires.rl.estWearPct),
   },
   {
     key: "tires.rr.estWearPct",
@@ -829,7 +904,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#34d399",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.rr.estWearPct)
+    read: (t) => fmt.f1(t.tires.rr.estWearPct),
   },
   // Brakes
   {
@@ -838,7 +913,7 @@ const STATIC_CHANNELS = [
     unit: "C",
     color: "#f43f5e",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.fl.brakeTempC)
+    read: (t) => fmt.int(t.tires.fl.brakeTempC),
   },
   {
     key: "tires.fr.brakeTempC",
@@ -846,7 +921,7 @@ const STATIC_CHANNELS = [
     unit: "C",
     color: "#f43f5e",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.fr.brakeTempC)
+    read: (t) => fmt.int(t.tires.fr.brakeTempC),
   },
   {
     key: "tires.rl.brakeTempC",
@@ -854,7 +929,7 @@ const STATIC_CHANNELS = [
     unit: "C",
     color: "#f43f5e",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.rl.brakeTempC)
+    read: (t) => fmt.int(t.tires.rl.brakeTempC),
   },
   {
     key: "tires.rr.brakeTempC",
@@ -862,7 +937,7 @@ const STATIC_CHANNELS = [
     unit: "C",
     color: "#f43f5e",
     group: "Tyres",
-    read: (t) => fmt.int(t.tires.rr.brakeTempC)
+    read: (t) => fmt.int(t.tires.rr.brakeTempC),
   },
   {
     key: "tires.fl.brakeLinePress",
@@ -870,7 +945,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#fca5a5",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.fl.brakeLinePress)
+    read: (t) => fmt.f1(t.tires.fl.brakeLinePress),
   },
   {
     key: "tires.fr.brakeLinePress",
@@ -878,7 +953,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#fca5a5",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.fr.brakeLinePress)
+    read: (t) => fmt.f1(t.tires.fr.brakeLinePress),
   },
   {
     key: "tires.rl.brakeLinePress",
@@ -886,7 +961,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#fca5a5",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.rl.brakeLinePress)
+    read: (t) => fmt.f1(t.tires.rl.brakeLinePress),
   },
   {
     key: "tires.rr.brakeLinePress",
@@ -894,7 +969,7 @@ const STATIC_CHANNELS = [
     unit: "bar",
     color: "#fca5a5",
     group: "Tyres",
-    read: (t) => fmt.f1(t.tires.rr.brakeLinePress)
+    read: (t) => fmt.f1(t.tires.rr.brakeLinePress),
   },
   // Session
   {
@@ -903,7 +978,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#e5e5e5",
     group: "Session",
-    read: (t) => t.lastLap
+    read: (t) => t.lastLap,
   },
   {
     key: "bestLap",
@@ -911,7 +986,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#34d399",
     group: "Session",
-    read: (t) => t.bestLap
+    read: (t) => t.bestLap,
   },
   {
     key: "deltaSec",
@@ -919,7 +994,7 @@ const STATIC_CHANNELS = [
     unit: "s",
     color: "#facc15",
     group: "Session",
-    read: (t) => `${t.deltaSec >= 0 ? "+" : ""}${t.deltaSec.toFixed(3)}`
+    read: (t) => `${t.deltaSec >= 0 ? "+" : ""}${t.deltaSec.toFixed(3)}`,
   },
   {
     key: "sectors.s1",
@@ -927,7 +1002,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Session",
-    read: (t) => t.sectors.s1 ?? "--.---"
+    read: (t) => t.sectors.s1 ?? "--.---",
   },
   {
     key: "sectors.s2",
@@ -935,7 +1010,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Session",
-    read: (t) => t.sectors.s2 ?? "--.---"
+    read: (t) => t.sectors.s2 ?? "--.---",
   },
   {
     key: "sectors.s3",
@@ -943,7 +1018,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Session",
-    read: (t) => t.sectors.s3 ?? "--.---"
+    read: (t) => t.sectors.s3 ?? "--.---",
   },
   {
     key: "session",
@@ -951,7 +1026,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#737373",
     group: "Session",
-    read: (t) => t.session
+    read: (t) => t.session,
   },
   {
     key: "track",
@@ -959,7 +1034,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#737373",
     group: "Session",
-    read: (t) => t.track
+    read: (t) => t.track,
   },
   { key: "car", label: "CAR", unit: "", color: "#737373", group: "Session", read: (t) => t.car },
   {
@@ -968,7 +1043,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#737373",
     group: "Session",
-    read: (t) => `#${t.carNumber}`
+    read: (t) => `#${t.carNumber}`,
   },
   {
     key: "sdkVersion",
@@ -976,7 +1051,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#737373",
     group: "Session",
-    read: (t) => t.sdkVersion
+    read: (t) => t.sdkVersion,
   },
   {
     key: "latencyMs",
@@ -984,7 +1059,7 @@ const STATIC_CHANNELS = [
     unit: "ms",
     color: "#a3a3a3",
     group: "Session",
-    read: (t) => fmt.int(t.latencyMs)
+    read: (t) => fmt.int(t.latencyMs),
   },
   {
     key: "safetyRating",
@@ -992,7 +1067,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Session",
-    read: (t) => fmt.f2(t.safetyRating)
+    read: (t) => fmt.f2(t.safetyRating),
   },
   {
     key: "sof",
@@ -1000,7 +1075,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Session",
-    read: (t) => t.sof.toLocaleString()
+    read: (t) => t.sof.toLocaleString(),
   },
   // Setup / strategy
   {
@@ -1009,7 +1084,7 @@ const STATIC_CHANNELS = [
     unit: "L",
     color: "#fb923c",
     group: "Setup",
-    read: (t) => fmt.f1(t.fuelRemainingL)
+    read: (t) => fmt.f1(t.fuelRemainingL),
   },
   {
     key: "lapsEstimated",
@@ -1017,7 +1092,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Setup",
-    read: (t) => fmt.f1(t.lapsEstimated)
+    read: (t) => fmt.f1(t.lapsEstimated),
   },
   {
     key: "brakeBias",
@@ -1025,7 +1100,7 @@ const STATIC_CHANNELS = [
     unit: "%",
     color: "#a3a3a3",
     group: "Setup",
-    read: (t) => fmt.f1(t.brakeBias)
+    read: (t) => fmt.f1(t.brakeBias),
   },
   {
     key: "diffMap",
@@ -1033,7 +1108,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#a3a3a3",
     group: "Setup",
-    read: (t) => `M${t.diffMap}`
+    read: (t) => `M${t.diffMap}`,
   },
   {
     key: "drsAvailable",
@@ -1041,7 +1116,7 @@ const STATIC_CHANNELS = [
     unit: "",
     color: "#22d3ee",
     group: "Setup",
-    read: (t) => fmt.bool(t.drsAvailable)
+    read: (t) => fmt.bool(t.drsAvailable),
   },
   // Env
   {
@@ -1050,7 +1125,7 @@ const STATIC_CHANNELS = [
     unit: "°C",
     color: "#7dd3fc",
     group: "Env",
-    read: (t) => fmt.int(t.airTempC)
+    read: (t) => fmt.int(t.airTempC),
   },
   {
     key: "trackTempC",
@@ -1058,8 +1133,8 @@ const STATIC_CHANNELS = [
     unit: "°C",
     color: "#fb923c",
     group: "Env",
-    read: (t) => fmt.int(t.trackTempC)
-  }
+    read: (t) => fmt.int(t.trackTempC),
+  },
 ];
 function buildRegistry(t) {
   const extras = Object.keys(t.extras ?? {}).map((k) => ({
@@ -1072,7 +1147,7 @@ function buildRegistry(t) {
       const v = tt.extras?.[k];
       if (typeof v !== "number") return "—";
       return Math.abs(v) >= 100 ? Math.round(v).toString() : v.toFixed(2);
-    }
+    },
   }));
   return [...STATIC_CHANNELS, ...extras];
 }
@@ -1109,7 +1184,7 @@ const DEFAULT_KEYS = [
   "tires.fl.estWearPct",
   "tires.fr.estWearPct",
   "tires.rl.estWearPct",
-  "tires.rr.estWearPct"
+  "tires.rr.estWearPct",
 ];
 function loadChannelPrefs() {
   if (typeof window === "undefined")
@@ -1124,7 +1199,7 @@ function loadChannelPrefs() {
     return {
       visible: parsed.visible,
       modeByKey: parsed.modeByKey ?? {},
-      mathExpressions: parsed.mathExpressions ?? []
+      mathExpressions: parsed.mathExpressions ?? [],
     };
   } catch {
     return { visible: DEFAULT_KEYS, modeByKey: {}, mathExpressions: [] };
@@ -1134,65 +1209,77 @@ function saveChannelPrefs(prefs) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-  } catch {
-  }
+  } catch {}
 }
 const DEFAULT_CHANNEL_KEYS = DEFAULT_KEYS;
 function MiniTrace({ values, color }) {
   const w = 100;
   const h = 20;
   if (values.length < 2) {
-    return /* @__PURE__ */ jsx("svg", { viewBox: `0 0 ${w} ${h}`, preserveAspectRatio: "none", className: "w-full h-5 block opacity-20", children: /* @__PURE__ */ jsx(
-      "line",
-      {
+    return /* @__PURE__ */ jsx("svg", {
+      viewBox: `0 0 ${w} ${h}`,
+      preserveAspectRatio: "none",
+      className: "w-full h-5 block opacity-20",
+      children: /* @__PURE__ */ jsx("line", {
         x1: "0",
         y1: h / 2,
         x2: w,
         y2: h / 2,
         stroke: color,
         strokeWidth: "1",
-        strokeDasharray: "2,3"
-      }
-    ) });
+        strokeDasharray: "2,3",
+      }),
+    });
   }
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = Math.max(1e-6, max - min);
-  const points = values.map((v, i) => {
-    const x = i / (values.length - 1) * (w - 1);
-    const y = h - 1 - (v - min) / span * (h - 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  const lastX = ((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1);
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * (w - 1);
+      const y = h - 1 - ((v - min) / span) * (h - 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const lastX = (((values.length - 1) / (values.length - 1)) * (w - 1)).toFixed(1);
   const fillPoints = `0,${h} ${points} ${lastX},${h}`;
   const gradId = `mg_${color.replace(/[^a-z0-9]/gi, "")}`;
-  return /* @__PURE__ */ jsxs("svg", { viewBox: `0 0 ${w} ${h}`, preserveAspectRatio: "none", className: "w-full h-5 block", children: [
-    /* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsxs("linearGradient", { id: gradId, x1: "0", y1: "0", x2: "0", y2: "1", children: [
-      /* @__PURE__ */ jsx("stop", { offset: "0%", stopColor: color, stopOpacity: "0.25" }),
-      /* @__PURE__ */ jsx("stop", { offset: "100%", stopColor: color, stopOpacity: "0.02" })
-    ] }) }),
-    /* @__PURE__ */ jsx("polygon", { points: fillPoints, fill: `url(#${gradId})` }),
-    /* @__PURE__ */ jsx(
-      "polyline",
-      {
+  return /* @__PURE__ */ jsxs("svg", {
+    viewBox: `0 0 ${w} ${h}`,
+    preserveAspectRatio: "none",
+    className: "w-full h-5 block",
+    children: [
+      /* @__PURE__ */ jsx("defs", {
+        children: /* @__PURE__ */ jsxs("linearGradient", {
+          id: gradId,
+          x1: "0",
+          y1: "0",
+          x2: "0",
+          y2: "1",
+          children: [
+            /* @__PURE__ */ jsx("stop", { offset: "0%", stopColor: color, stopOpacity: "0.25" }),
+            /* @__PURE__ */ jsx("stop", { offset: "100%", stopColor: color, stopOpacity: "0.02" }),
+          ],
+        }),
+      }),
+      /* @__PURE__ */ jsx("polygon", { points: fillPoints, fill: `url(#${gradId})` }),
+      /* @__PURE__ */ jsx("polyline", {
         points,
         fill: "none",
         stroke: color,
         strokeWidth: "1.25",
         strokeLinecap: "round",
-        strokeLinejoin: "round"
-      }
-    ),
-    values.length > 0 && /* @__PURE__ */ jsx(
-      "circle",
-      {
-        cx: ((values.length - 1) / (values.length - 1) * (w - 1)).toFixed(1),
-        cy: (h - 1 - (values[values.length - 1] - min) / span * (h - 2)).toFixed(1),
-        r: "2",
-        fill: color
-      }
-    )
-  ] });
+        strokeLinejoin: "round",
+      }),
+      values.length > 0 &&
+        /* @__PURE__ */ jsx("circle", {
+          cx: (((values.length - 1) / (values.length - 1)) * (w - 1)).toFixed(1),
+          cy: (h - 1 - ((values[values.length - 1] - min) / span) * (h - 2)).toFixed(1),
+          r: "2",
+          fill: color,
+        }),
+    ],
+  });
 }
 function computeHistogram(values, binCount) {
   const filtered = values.filter((v) => Number.isFinite(v));
@@ -1207,8 +1294,8 @@ function computeHistogram(values, binCount) {
         max: 0,
         count: 0,
         q1: 0,
-        q3: 0
-      }
+        q3: 0,
+      },
     };
   }
   const sorted = [...filtered].sort((a, b) => a - b);
@@ -1224,7 +1311,7 @@ function computeHistogram(values, binCount) {
       max: binMax,
       count: 0,
       label: `${binMin.toFixed(1)}-${binMax.toFixed(1)}`,
-      percentage: 0
+      percentage: 0,
     };
   });
   for (const v of filtered) {
@@ -1234,7 +1321,7 @@ function computeHistogram(values, binCount) {
   }
   const totalCount = filtered.length;
   for (const bin of bins) {
-    bin.percentage = bin.count / totalCount * 100;
+    bin.percentage = (bin.count / totalCount) * 100;
   }
   const mean = filtered.reduce((a, b) => a + b, 0) / filtered.length;
   const variance = filtered.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / filtered.length;
@@ -1252,8 +1339,8 @@ function computeHistogram(values, binCount) {
       max,
       count: filtered.length,
       q1,
-      q3
-    }
+      q3,
+    },
   };
 }
 export {
@@ -1270,5 +1357,5 @@ export {
   fetchTrackCarHistory as g,
   loadChannelPrefs as l,
   recordTelemetrySessionMeta as r,
-  saveChannelPrefs as s
+  saveChannelPrefs as s,
 };

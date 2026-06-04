@@ -33,7 +33,8 @@ export function analyzeTires(parsed: IbtParsed): TireAnalysis {
       pressureGrowthFL: 0.28,
       pressureGrowthFR: 0.31,
       optimalFrictionWindowPct: 88.5,
-      summary: "Tires stabilized inside optimal 75°C-95°C window. Front-right thermal growth peaking on lap 9 due to slight understeer sliding.",
+      summary:
+        "Tires stabilized inside optimal 75°C-95°C window. Front-right thermal growth peaking on lap 9 due to slight understeer sliding.",
     };
   }
 
@@ -77,7 +78,8 @@ export function analyzeTires(parsed: IbtParsed): TireAnalysis {
   if (thermalGrowthFR > 14) {
     summary += `Significant thermal saturation detected on Front-Right carcass (+${thermalGrowthFR}°C growth), indicating lateral slip overload under steering rotation.`;
   } else {
-    summary += "Carcass temperatures stabilized cleanly within targets with uniform pressure growth.";
+    summary +=
+      "Carcass temperatures stabilized cleanly within targets with uniform pressure growth.";
   }
 
   return {

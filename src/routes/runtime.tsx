@@ -37,8 +37,7 @@ function RuntimePage() {
 
   // In browser context (not Electron), skip immediately to /live
   const isElectron =
-    typeof window !== "undefined" &&
-    window.navigator.userAgent.toLowerCase().includes("electron");
+    typeof window !== "undefined" && window.navigator.userAgent.toLowerCase().includes("electron");
 
   useEffect(() => {
     if (isMounted && !isElectron) {

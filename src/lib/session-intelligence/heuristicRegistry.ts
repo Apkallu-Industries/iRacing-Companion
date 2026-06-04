@@ -15,9 +15,9 @@ export interface ValidationRecord {
 }
 
 export interface HeuristicVersionEntry {
-  heuristicId: string;           // e.g. "heur_gt3_rear_rebound_stabilization"
-  version: string;               // e.g. "1.0.0"
-  baseConfidenceIndex: number;   // e.g. 70
+  heuristicId: string; // e.g. "heur_gt3_rear_rebound_stabilization"
+  version: string; // e.g. "1.0.0"
+  baseConfidenceIndex: number; // e.g. 70
   activeConfidenceIndex: number; // e.g. 84 (Calibrated dynamically by Closed-Loop)
   deprecationStatus: "active" | "deprecated" | "archived";
   validationHistory: ValidationRecord[];
@@ -25,7 +25,12 @@ export interface HeuristicVersionEntry {
 }
 
 export interface SimilarityContext {
-  trackLayoutType: "slow_hairpin" | "medium_chicanes" | "highspeed_sweeper" | "heavy_braking_zone" | "curb_strike_zone";
+  trackLayoutType:
+    | "slow_hairpin"
+    | "medium_chicanes"
+    | "highspeed_sweeper"
+    | "heavy_braking_zone"
+    | "curb_strike_zone";
   optimalThermalWindowC: { min: number; max: number };
   vehicleClass: "gt3" | "gtp" | "lemans";
   driverTraits: {
@@ -42,7 +47,7 @@ export interface SimilarityContext {
  */
 export function calculateContextualSimilarity(
   pre: SimilarityContext,
-  post: SimilarityContext
+  post: SimilarityContext,
 ): number {
   let layoutScore = 0.05;
   let vehicleScore = 0.05;
@@ -51,30 +56,37 @@ export function calculateContextualSimilarity(
 
   // 1. Track Layout Similarity (30% weight)
   if (pre.trackLayoutType === post.trackLayoutType) {
-    layoutScore = 0.30;
+    layoutScore = 0.3;
   }
 
   // 2. Vehicle Class Similarity (30% weight)
   if (pre.vehicleClass === post.vehicleClass) {
-    vehicleScore = 0.30;
+    vehicleScore = 0.3;
   }
 
   // 3. Thermal Window Similarity (20% weight)
   const minDelta = Math.abs(pre.optimalThermalWindowC.min - post.optimalThermalWindowC.min);
   const maxDelta = Math.abs(pre.optimalThermalWindowC.max - post.optimalThermalWindowC.max);
-  thermalScore = Math.max(0.05, 0.20 - (minDelta + maxDelta) * 0.01);
+  thermalScore = Math.max(0.05, 0.2 - (minDelta + maxDelta) * 0.01);
 
   // 4. Personalized Driver Style Similarity (20% weight)
-  if (pre.driverTraits.cornerEntryRotationPreference === post.driverTraits.cornerEntryRotationPreference) {
+  if (
+    pre.driverTraits.cornerEntryRotationPreference ===
+    post.driverTraits.cornerEntryRotationPreference
+  ) {
     driverScore += 0.05;
   }
-  if (pre.driverTraits.rearAxleStabilityTolerance === post.driverTraits.rearAxleStabilityTolerance) {
+  if (
+    pre.driverTraits.rearAxleStabilityTolerance === post.driverTraits.rearAxleStabilityTolerance
+  ) {
     driverScore += 0.05;
   }
   if (pre.driverTraits.brakeReleaseStyle === post.driverTraits.brakeReleaseStyle) {
     driverScore += 0.05;
   }
-  if (pre.driverTraits.throttleCommitmentConfidence === post.driverTraits.throttleCommitmentConfidence) {
+  if (
+    pre.driverTraits.throttleCommitmentConfidence === post.driverTraits.throttleCommitmentConfidence
+  ) {
     driverScore += 0.05;
   }
 
@@ -96,24 +108,27 @@ export function calibrateHeuristicConfidence(
     timestamp: string;
     attributionSetupPct: number;
   },
-  similarityMultiplier: number
+  similarityMultiplier: number,
 ): HeuristicVersionEntry {
   // Multiply the raw confidence delta by the similarity multiplier (0.1 to 1.0)
   const effectiveShift = Math.round(validationOutcome.confidenceDelta * similarityMultiplier);
-  
+
   const updatedHistory = [...entry.validationHistory];
   updatedHistory.push({
     sessionId: validationOutcome.sessionId,
     outcomeStatus: validationOutcome.outcomeStatus,
     attributionSetupPct: validationOutcome.attributionSetupPct,
-    timestamp: validationOutcome.timestamp
+    timestamp: validationOutcome.timestamp,
   });
 
-  const newActiveConfidence = Math.max(30, Math.min(98, entry.activeConfidenceIndex + effectiveShift));
+  const newActiveConfidence = Math.max(
+    30,
+    Math.min(98, entry.activeConfidenceIndex + effectiveShift),
+  );
 
   return {
     ...entry,
     activeConfidenceIndex: newActiveConfidence,
-    validationHistory: updatedHistory
+    validationHistory: updatedHistory,
   };
 }

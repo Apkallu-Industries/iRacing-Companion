@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Activity,
@@ -29,6 +30,43 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useWorkbench } from "@/lib/store";
 
 type Sess = Tables<"telemetry_sessions">;
+
+type PitWallRuntime = {
+  getRuntimeManifest?: () => Promise<RuntimeManifest>;
+  ensureMongoDB?: () => Promise<void>;
+  restartBridge?: () => Promise<void>;
+  refreshAiMode?: () => Promise<void>;
+};
+
+type RuntimeManifest = {
+  // Basic system info
+  appVersion?: string;
+  hostname?: string;
+  platform?: string;
+  arch?: string;
+  cpuModel?: string;
+  cpuCores?: number;
+  gpuModel?: string;
+
+  // Memory and GPU
+  totalRamGb?: number | string;
+  freeRamGb?: number | string;
+  vramGb?: number | string;
+
+  // Daemon/status
+  mongoStatus?: "active" | string;
+  bridgeStatus?: string | boolean | string;
+  aiMode?: string;
+
+  // Uptime
+  uptimeSec?: number;
+};
+
+declare global {
+  interface Window {
+    pitWallRuntime?: PitWallRuntime;
+  }
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -69,18 +107,18 @@ function LandingPage() {
 
   const isElectron =
     typeof window !== "undefined" &&
-    ((window as any).pitWallRuntime !== undefined ||
-     window.navigator.userAgent.toLowerCase().includes("electron"));
+    (window.pitWallRuntime !== undefined ||
+      window.navigator.userAgent.toLowerCase().includes("electron"));
 
-  const [manifest, setManifest] = useState<any>(null);
+  const [manifest, setManifest] = useState<RuntimeManifest | null>(null);
 
   // Poll manifest in Electron mode
   useEffect(() => {
     if (!isElectron) return;
     const fetchManifest = async () => {
       try {
-        if ((window as any).pitWallRuntime?.getRuntimeManifest) {
-          const m = await (window as any).pitWallRuntime.getRuntimeManifest();
+        if (window.pitWallRuntime?.getRuntimeManifest) {
+          const m = await window.pitWallRuntime.getRuntimeManifest();
           setManifest(m);
         }
       } catch (err) {
@@ -143,39 +181,42 @@ function LandingPage() {
   };
 
   // Determine LLM Recommendation based on detected RAM and VRAM
-  const systemRam = manifest?.totalRamGb ? parseFloat(manifest.totalRamGb) : 16;
-  const systemVram = manifest?.vramGb ? parseFloat(manifest.vramGb) : 0;
+  const systemRam = manifest?.totalRamGb ? parseFloat(String(manifest.totalRamGb)) : 16;
+  const systemVram = manifest?.vramGb ? parseFloat(String(manifest.vramGb)) : 0;
 
   let recommendedLlmName = "Cloud API Mode (OpenAI/Anthropic)";
   let recommendedLlmUrl = "#";
   let recommendedLlmLinkText = "Configure Cloud API →";
-  let recommendedLlmDesc = "Local models smaller than 7B parameters lack native tool-use & strategic reasoning capabilities. Cloud Mode is recommended to prevent telemetry pipeline failures.";
+  let recommendedLlmDesc =
+    "Local models smaller than 7B parameters lack native tool-use & strategic reasoning capabilities. Cloud Mode is recommended to prevent telemetry pipeline failures.";
 
   if (systemRam >= 64 && systemVram >= 16) {
     recommendedLlmName = "Qwen-2.5-72B-Instruct (Q4_K_M)";
     recommendedLlmUrl = "https://huggingface.co/lmstudio-community/Qwen2.5-72B-Instruct-GGUF";
     recommendedLlmLinkText = "Download GGUF →";
-    recommendedLlmDesc = "Elite-tier offline strategy & tool use. Runs fully offline with 72B parameter reasoning using 48GB System RAM and 16GB VRAM.";
+    recommendedLlmDesc =
+      "Elite-tier offline strategy & tool use. Runs fully offline with 72B parameter reasoning using 48GB System RAM and 16GB VRAM.";
   } else if (systemRam >= 32 && systemVram >= 12) {
     recommendedLlmName = "Qwen-2.5-14B-Instruct (Q4_K_M)";
     recommendedLlmUrl = "https://huggingface.co/lmstudio-community/Qwen2.5-14B-Instruct-GGUF";
     recommendedLlmLinkText = "Download GGUF →";
-    recommendedLlmDesc = "Perfect balance of speed and outstanding native tool-calling strategy. Fits comfortably inside 12GB VRAM.";
+    recommendedLlmDesc =
+      "Perfect balance of speed and outstanding native tool-calling strategy. Fits comfortably inside 12GB VRAM.";
   } else if (systemRam >= 16 && systemVram >= 6) {
     recommendedLlmName = "Qwen-2.5-7B-Instruct (Q4_K_M)";
     recommendedLlmUrl = "https://huggingface.co/lmstudio-community/Qwen2.5-7B-Instruct-GGUF";
     recommendedLlmLinkText = "Download GGUF →";
-    recommendedLlmDesc = "Extremely reliable tool-use and telemetry formatting for standard consumer rigs with >= 6GB VRAM.";
+    recommendedLlmDesc =
+      "Extremely reliable tool-use and telemetry formatting for standard consumer rigs with >= 6GB VRAM.";
   }
 
   return (
     <main className="min-h-screen bg-[#05070A] text-[#E2E4E8] font-mono selection:bg-[#3B82F6]/30 selection:text-white overflow-x-hidden relative flex flex-col justify-between">
-      
       {/* ── METADATA CARBON BACKGROUND GRID ── */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#11161D_1px,transparent_1px),linear-gradient(to_bottom,#11161D_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-[0.15] pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#11161D_1px,transparent_1px),linear-gradient(to_bottom,#11161D_1px,transparent_1px)] bg-size-[3rem_3rem] opacity-[0.15] pointer-events-none z-0" />
 
       {/* ── TOP NAV / WORKSTATION HEADER ── */}
-      <nav className="border-b border-[#1C2430] bg-[#0B0F14]/90 backdrop-blur sticky top-0 z-50 px-6 py-2.5 flex items-center justify-between z-10 select-none">
+      <nav className="border-b border-[#1C2430] bg-[#0B0F14]/90 backdrop-blur sticky top-0 px-6 py-2.5 flex items-center justify-between z-10 select-none">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className="font-sans font-black italic tracking-tighter text-lg text-white">
@@ -207,7 +248,9 @@ function LandingPage() {
               SYS STATUS
             </span>
             <span className="flex items-center gap-1.5">
-              <span className={`h-1.5 w-1.5 rounded-full bg-[#00D17F] shadow-[0_0_8px_#00D17F] ${pulse ? 'animate-ping' : ''}`} />
+              <span
+                className={`h-1.5 w-1.5 rounded-full bg-[#00D17F] shadow-[0_0_8px_#00D17F] ${pulse ? "animate-ping" : ""}`}
+              />
               <span className="text-[8px] font-mono text-[#00D17F] font-black tracking-widest">
                 OPERATIONAL
               </span>
@@ -235,22 +278,32 @@ function LandingPage() {
                   </span>
                 </div>
                 <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans mt-1">
-                  Pit Wall <span className={activeGame === "assettocorsa" ? "text-[#00D17F]" : "text-[#3B82F6]"}>Workstation</span>
+                  Pit Wall{" "}
+                  <span
+                    className={activeGame === "assettocorsa" ? "text-[#00D17F]" : "text-[#3B82F6]"}
+                  >
+                    Workstation
+                  </span>
                 </h1>
                 <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg mt-1">
                   {activeGame === "assettocorsa" ? (
                     <>
-                      Race engineering command center. Streaming deterministic 60Hz live <span className="text-[#00D17F]">Assetto Corsa</span> shared memory telemetry, processing observer loops, and running latent Bayesian chassis degradation estimators.
+                      Race engineering command center. Streaming deterministic 60Hz live{" "}
+                      <span className="text-[#00D17F]">Assetto Corsa</span> shared memory telemetry,
+                      processing observer loops, and running latent Bayesian chassis degradation
+                      estimators.
                     </>
                   ) : (
                     <>
-                      Race engineering command center. Streaming deterministic 60Hz live <span className="text-[#3B82F6]">iRacing</span> telemetry, processing observer loops, and running latent Bayesian chassis degradation estimators.
+                      Race engineering command center. Streaming deterministic 60Hz live{" "}
+                      <span className="text-[#3B82F6]">iRacing</span> telemetry, processing observer
+                      loops, and running latent Bayesian chassis degradation estimators.
                     </>
                   )}
                 </p>
 
                 {/* Sleek Motors-themed Glassmorphic Game Selector */}
-                <div className="mt-3 border border-[#1C2430] bg-[#05070A]/80 p-1 flex items-center gap-1.5 rounded relative z-10 w-full max-w-[340px] shadow-inner select-none backdrop-blur-md">
+                <div className="mt-3 border border-[#1C2430] bg-[#05070A]/80 p-1 flex items-center gap-1.5 rounded relative z-10 w-full max-w-85 shadow-inner select-none backdrop-blur-md">
                   <button
                     type="button"
                     onClick={() => handleGameSelect("iracing")}
@@ -260,7 +313,9 @@ function LandingPage() {
                         : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
                     }`}
                   >
-                    <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "iracing" ? "bg-white animate-pulse" : "bg-[#7A828C]"}`} />
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${activeGame === "iracing" ? "bg-white animate-pulse" : "bg-[#7A828C]"}`}
+                    />
                     iRacing Simulator
                   </button>
                   <button
@@ -272,7 +327,9 @@ function LandingPage() {
                         : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
                     }`}
                   >
-                    <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "assettocorsa" ? "bg-zinc-950 animate-pulse" : "bg-[#7A828C]"}`} />
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${activeGame === "assettocorsa" ? "bg-zinc-950 animate-pulse" : "bg-[#7A828C]"}`}
+                    />
                     Assetto Corsa
                   </button>
                 </div>
@@ -297,8 +354,8 @@ function LandingPage() {
             </div>
 
             {/* Middle: Workstation Hero Image */}
-            <div className="hidden lg:block lg:w-[260px] xl:w-[320px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-xl flex-shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#3B82F6]/10 via-transparent to-[#00D17F]/10 opacity-30 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <div className="hidden lg:block lg:w-65 xl:w-[320px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-xl shrink-0">
+              <div className="absolute inset-0 bg-linear-to-tr from-[#3B82F6]/10 via-transparent to-[#00D17F]/10 opacity-30 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
               <img
                 src="/images/hero.png"
                 alt="Pit Wall Workstation"
@@ -308,7 +365,7 @@ function LandingPage() {
 
             {/* Right: Hardware Diagnostics & Services */}
             <div className="flex-1 border border-[#1C2430] bg-[#05070A]/85 backdrop-blur-sm p-5 flex flex-col justify-between rounded-sm relative overflow-hidden group">
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#11161D_1px,transparent_1px),linear-gradient(to_bottom,#11161D_1px,transparent_1px)] bg-[size:1.5rem_1.5rem] opacity-20 pointer-events-none" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#11161D_1px,transparent_1px),linear-gradient(to_bottom,#11161D_1px,transparent_1px)] bg-size-[1.5rem_1.5rem] opacity-20 pointer-events-none" />
 
               <div className="relative z-10 flex items-center justify-between border-b border-[#1C2430] pb-2.5 mb-4">
                 <span className="text-[9px] font-mono tracking-widest text-[#7A828C] font-bold uppercase flex items-center gap-1.5">
@@ -323,7 +380,9 @@ function LandingPage() {
 
               <div className="relative z-10 grid grid-cols-2 gap-4 text-[10px] uppercase font-bold tracking-wide">
                 <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2">
-                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">HOST CLIENT</span>
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">
+                    HOST CLIENT
+                  </span>
                   <span className="text-white truncate font-sans text-xs italic tracking-tight font-extrabold">
                     {manifest?.hostname ?? "WORKSTATION-PC"}
                   </span>
@@ -333,48 +392,73 @@ function LandingPage() {
                 </div>
 
                 <div className="flex flex-col gap-1 pl-2">
-                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">CPU CORES</span>
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">
+                    CPU CORES
+                  </span>
                   <span className="text-white truncate text-xs font-mono">
-                    {manifest?.cpuModel ? manifest.cpuModel.replace(/\(R\)|\(TM\)/g, "").trim() : "Detecting..."}
+                    {manifest?.cpuModel
+                      ? manifest.cpuModel.replace(/\(R\)|\(TM\)/g, "").trim()
+                      : "Detecting..."}
                   </span>
                   <span className="text-[#7A828C] text-[8px]">
                     LOGICAL CORES: {manifest?.cpuCores ?? 8}
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2 pt-2 border-t border-[#1C2430]/40">
-                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">RAM ALLOCATION</span>
+                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2 pt-2 border-t">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">
+                    RAM ALLOCATION
+                  </span>
                   <div className="flex items-center justify-between text-white text-xs font-mono">
-                    <span>{manifest ? `${(manifest.totalRamGb - manifest.freeRamGb).toFixed(1)} GB` : "0.0 GB"}</span>
+                    <span>
+                      {manifest && manifest.totalRamGb != null && manifest.freeRamGb != null
+                        ? `${(Number(manifest.totalRamGb) - Number(manifest.freeRamGb)).toFixed(1)} GB`
+                        : "0.0 GB"}
+                    </span>
                     <span className="text-[#7A828C]">/ {manifest?.totalRamGb ?? "16.0"} GB</span>
                   </div>
                   <div className="w-full bg-[#11161D] h-1 rounded-full overflow-hidden mt-0.5">
                     <div
                       className="bg-[#3B82F6] h-full transition-all duration-500"
-                      style={{ width: manifest ? `${((manifest.totalRamGb - manifest.freeRamGb) / manifest.totalRamGb) * 100}%` : "30%" }}
+                      style={{
+                        width:
+                          manifest && manifest.totalRamGb != null && manifest.freeRamGb != null
+                            ? `${((Number(manifest.totalRamGb) - Number(manifest.freeRamGb)) / Number(manifest.totalRamGb)) * 100}%`
+                            : "30%",
+                      }}
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1 pl-2 pt-2 border-t border-[#1C2430]/40">
-                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">PCIe GPU & VRAM</span>
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">
+                    PCIe GPU & VRAM
+                  </span>
                   <span className="text-white truncate font-sans text-xs italic tracking-tight font-extrabold">
                     {manifest?.gpuModel ?? "Detecting GPU..."}
                   </span>
                   <div className="flex items-center justify-between text-white text-[9px] font-mono">
                     <span className="text-[#7A828C]">VRAM:</span>
                     <span className="font-bold text-[#00D17F]">
-                      {manifest?.vramGb ? `${parseFloat(manifest.vramGb).toFixed(1)} GB` : "0.0 GB"}
+                      {manifest?.vramGb
+                        ? `${parseFloat(String(manifest.vramGb)).toFixed(1)} GB`
+                        : "0.0 GB"}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2 pt-2 border-t border-[#1C2430]/40">
-                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">SUPERVISOR DAEMONS</span>
+                <div className="flex flex-col gap-1 border-r border-[#1C2430]/40 pr-2 pt-2 border-t">
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">
+                    SUPERVISOR DAEMONS
+                  </span>
                   <div className="flex flex-col gap-1 text-[9px] font-mono mt-0.5">
                     <div className="flex items-center justify-between">
                       <span className="text-white">MONGO DATABASE:</span>
-                      <span className={manifest?.mongoStatus === "active" ? "text-[#00D17F]" : "text-[#FF4D4D]"}>
+                      <span
+                        className={
+                          manifest?.mongoStatus === "active" ? "text-[#00D17F]" : "text-[#FF4D4D]"
+                        }
+                      >
                         {manifest?.mongoStatus === "active" ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </div>
@@ -388,7 +472,9 @@ function LandingPage() {
                 </div>
 
                 <div className="flex flex-col gap-1 pl-2 pt-2 border-t border-[#1C2430]/40">
-                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">RECOMMENDED LOCAL LLM</span>
+                  <span className="text-[#7A828C] text-[8px] font-mono tracking-wider">
+                    RECOMMENDED LOCAL LLM
+                  </span>
                   <span className="text-[#3B82F6] truncate text-xs font-mono font-bold">
                     {recommendedLlmName}
                   </span>
@@ -415,10 +501,15 @@ function LandingPage() {
               {/* LLM Recommendation Footnote */}
               <div className="relative z-10 border-t border-[#1C2430]/40 pt-2 mt-3 text-[8.5px] font-mono text-[#7A828C] uppercase leading-relaxed flex flex-col gap-1.5">
                 <div>
-                  <span className="text-[#FFB800] font-bold">Safe Model Guideline:</span> {recommendedLlmDesc}
+                  <span className="text-[#FFB800] font-bold">Safe Model Guideline:</span>{" "}
+                  {recommendedLlmDesc}
                 </div>
                 <div className="text-[8px] text-[#7A828C]/80 normal-case border-t border-[#1C2430]/25 pt-1.5 mt-0.5 font-sans leading-relaxed">
-                  <span className="text-[#3B82F6] font-bold font-mono uppercase">Advanced Users:</span> Advanced LLM users may find a better model. Just remember to update the model name you have currently loaded in LM Studio inside the LM Studio settings to match.
+                  <span className="text-[#3B82F6] font-bold font-mono uppercase">
+                    Advanced Users:
+                  </span>{" "}
+                  Advanced LLM users may find a better model. Just remember to update the model name
+                  you have currently loaded in LM Studio inside the LM Studio settings to match.
                 </div>
               </div>
 
@@ -426,20 +517,30 @@ function LandingPage() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
                     <span className="text-[#7A828C]">BRIDGE:</span>
-                    <span className={manifest?.bridgeStatus === "running" ? "text-[#00D17F]" : manifest?.bridgeStatus === "crashed" ? "text-[#FF4D4D]" : "text-[#FFB800]"}>
-                      {manifest?.bridgeStatus ? String(manifest.bridgeStatus).toUpperCase() : "CONNECTING"}
+                    <span
+                      className={
+                        manifest?.bridgeStatus === "running"
+                          ? "text-[#00D17F]"
+                          : manifest?.bridgeStatus === "crashed"
+                            ? "text-[#FF4D4D]"
+                            : "text-[#FFB800]"
+                      }
+                    >
+                      {manifest?.bridgeStatus
+                        ? String(manifest.bridgeStatus).toUpperCase()
+                        : "CONNECTING"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-[#7A828C]">UPTIME:</span>
                     <span className="text-white">
-                      {manifest?.uptimeSec ? `${Math.floor(manifest.uptimeSec / 3600)}h ${Math.floor((manifest.uptimeSec % 3600) / 60)}m` : "0h 0m"}
+                      {manifest?.uptimeSec
+                        ? `${Math.floor(manifest.uptimeSec / 3600)}h ${Math.floor((manifest.uptimeSec % 3600) / 60)}m`
+                        : "0h 0m"}
                     </span>
                   </div>
                 </div>
-                <span className="text-[#7A828C] tracking-widest">
-                  PORT 3001 ACTIVE
-                </span>
+                <span className="text-[#7A828C] tracking-widest">PORT 3001 ACTIVE</span>
               </div>
             </div>
           </div>
@@ -460,22 +561,32 @@ function LandingPage() {
                 </span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase font-sans">
-                Enter the <span className={activeGame === "assettocorsa" ? "text-[#00D17F]" : "text-[#3B82F6]"}>Pit Wall</span>
+                Enter the{" "}
+                <span
+                  className={activeGame === "assettocorsa" ? "text-[#00D17F]" : "text-[#3B82F6]"}
+                >
+                  Pit Wall
+                </span>
               </h1>
               <p className="text-[10px] text-[#7A828C] leading-relaxed uppercase max-w-lg">
                 {activeGame === "assettocorsa" ? (
                   <>
-                    Stream high-fidelity 60Hz live <span className="text-[#00D17F]">Assetto Corsa</span> telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+                    Stream high-fidelity 60Hz live{" "}
+                    <span className="text-[#00D17F]">Assetto Corsa</span> telemetry, evaluate AI
+                    strategy timelines, analyze driver consistency fingerprints, and configure
+                    dampers directly from the pit wall workstation.
                   </>
                 ) : (
                   <>
-                    Stream high-fidelity 60Hz live <span className="text-[#3B82F6]">iRacing</span> telemetry, evaluate AI strategy timelines, analyze driver consistency fingerprints, and configure dampers directly from the pit wall workstation.
+                    Stream high-fidelity 60Hz live <span className="text-[#3B82F6]">iRacing</span>{" "}
+                    telemetry, evaluate AI strategy timelines, analyze driver consistency
+                    fingerprints, and configure dampers directly from the pit wall workstation.
                   </>
                 )}
               </p>
 
               {/* Sleek Motors-themed Glassmorphic Game Selector */}
-              <div className="mt-1 mb-2 border border-[#1C2430] bg-[#05070A]/80 p-1 flex items-center gap-1.5 rounded relative z-10 w-full max-w-[340px] shadow-inner select-none backdrop-blur-md">
+              <div className="mt-1 mb-2 border border-[#1C2430] bg-[#05070A]/80 p-1 flex items-center gap-1.5 rounded relative z-10 w-full max-w-85 shadow-inner select-none backdrop-blur-md">
                 <button
                   type="button"
                   onClick={() => handleGameSelect("iracing")}
@@ -485,7 +596,9 @@ function LandingPage() {
                       : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "iracing" ? "bg-white animate-pulse" : "bg-[#7A828C]"}`} />
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${activeGame === "iracing" ? "bg-white animate-pulse" : "bg-[#7A828C]"}`}
+                  />
                   iRacing Simulator
                 </button>
                 <button
@@ -497,7 +610,9 @@ function LandingPage() {
                       : "text-[#7A828C] hover:text-white hover:bg-[#11161D] bg-transparent"
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 rounded-full ${activeGame === "assettocorsa" ? "bg-zinc-950 animate-pulse" : "bg-[#7A828C]"}`} />
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${activeGame === "assettocorsa" ? "bg-zinc-950 animate-pulse" : "bg-[#7A828C]"}`}
+                  />
                   Assetto Corsa
                 </button>
               </div>
@@ -520,9 +635,9 @@ function LandingPage() {
             </div>
 
             {/* Right Hero Image */}
-            <div className="flex-1 w-full max-w-[650px] relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-2xl">
+            <div className="flex-1 w-full max-w-162.5 relative rounded-sm border border-[#1C2430] overflow-hidden bg-[#05070A] group shadow-2xl">
               {/* Glow border gradient effect */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#3B82F6]/20 via-transparent to-[#00D17F]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              <div className="absolute inset-0 bg-linear-to-tr from-[#3B82F6]/20 via-transparent to-[#00D17F]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
               <img
                 src="/images/hero.png"
                 alt="Pit Wall Telemetry Dashboard"
@@ -536,7 +651,6 @@ function LandingPage() {
       {/* ── MAIN WORKSPACE CONTAINER ── */}
       <section className="flex-1 w-full max-w-none px-4 md:px-12 lg:px-16 py-6 relative z-10">
         <div className="flex flex-col gap-4 w-full">
-          
           {/* Main Grid Header */}
           <div className="border border-[#1C2430] bg-[#0B0F14] px-4 py-2 text-[10px] tracking-widest text-[#7A828C] uppercase font-black flex items-center gap-2">
             <Sliders className="h-3.5 w-3.5 text-[#3B82F6]" />
@@ -545,7 +659,6 @@ function LandingPage() {
 
           {/* 8 Section Workstation Grid Tiles (Using full horizontal canvas) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 flex-1">
-            
             {/* Tile 1: LIVE TELEMETRY COMMAND */}
             <Link
               to="/live"
@@ -555,8 +668,10 @@ function LandingPage() {
                 <span className="p-1.5 rounded border border-[#1C2430] bg-[#0B0F14] text-[#3B82F6]">
                   <Gauge className="h-5 w-5" />
                 </span>
-                <span className={`text-[8px] font-bold tracking-widest px-2 py-0.5 border ${bridgeConnected ? 'border-[#00D17F]/30 bg-[#00D17F]/10 text-[#00D17F]' : 'border-[#7A828C]/30 bg-[#05070A] text-[#7A828C]'}`}>
-                  {bridgeConnected ? 'ACTIVE' : 'SIM READY'}
+                <span
+                  className={`text-[8px] font-bold tracking-widest px-2 py-0.5 border ${bridgeConnected ? "border-[#00D17F]/30 bg-[#00D17F]/10 text-[#00D17F]" : "border-[#7A828C]/30 bg-[#05070A] text-[#7A828C]"}`}
+                >
+                  {bridgeConnected ? "ACTIVE" : "SIM READY"}
                 </span>
               </div>
               <div className="mt-3">
@@ -564,7 +679,8 @@ function LandingPage() {
                   LIVE TELEMETRY COMMAND
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Launch the 60Hz real-time telemetry center. Displays sector splits, ERS deployment, tyres, and rolling graphs.
+                  Launch the 60Hz real-time telemetry center. Displays sector splits, ERS
+                  deployment, tyres, and rolling graphs.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#3B82F6] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2">
@@ -590,7 +706,8 @@ function LandingPage() {
                   TEAM STRATEGY COMMAND
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Endurance Strategy Operations Center. Coordinate driver stints, compute Le Mans fuel plans, and analyze live team streams.
+                  Endurance Strategy Operations Center. Coordinate driver stints, compute Le Mans
+                  fuel plans, and analyze live team streams.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#3B82F6] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2">
@@ -616,7 +733,8 @@ function LandingPage() {
                   ANALYSIS WORKBENCH
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Analyze saved iRacing .ibt files. Stacked synchronized traces, G-G diagram, sector overlays, and math channels.
+                  Analyze saved iRacing .ibt files. Stacked synchronized traces, G-G diagram, sector
+                  overlays, and math channels.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#3B82F6] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2">
@@ -642,7 +760,8 @@ function LandingPage() {
                   AI ENGINEER TERMINAL
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Motorsport-grade engineering console. Specific spring, damper, and tire pressure adjustments in race-team tone.
+                  Motorsport-grade engineering console. Specific spring, damper, and tire pressure
+                  adjustments in race-team tone.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#8B5CF6] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1 mt-2">
@@ -668,7 +787,8 @@ function LandingPage() {
                   INTERACTIVE TUTORIAL
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Learn to seed driver fingerprints, parse local .olap/.blap logs, and configure local bridge port settings.
+                  Learn to seed driver fingerprints, parse local .olap/.blap logs, and configure
+                  local bridge port settings.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#FFB800] inline-flex items-center gap-1 mt-2">
@@ -694,7 +814,8 @@ function LandingPage() {
                   TECHNICAL DOCUMENTATION
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Complete manual explaining telemetry structures, math channel expressions, and sector delta algorithms.
+                  Complete manual explaining telemetry structures, math channel expressions, and
+                  sector delta algorithms.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-white inline-flex items-center gap-1 mt-2">
@@ -720,7 +841,8 @@ function LandingPage() {
                   DEVELOPMENT ROADMAP
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Pit Wall development timeline. Check shipped milestones, active beta-testing status, and upcoming Monetization phases.
+                  Pit Wall development timeline. Check shipped milestones, active beta-testing
+                  status, and upcoming Monetization phases.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#FF4D4D] inline-flex items-center gap-1 mt-2">
@@ -746,7 +868,8 @@ function LandingPage() {
                   SYSTEM SETTINGS
                 </h3>
                 <p className="text-[10px] text-[#7A828C] leading-snug uppercase">
-                  Configure local MongoDB directories, local LLM endpoints, and hardware ID license keys.
+                  Configure local MongoDB directories, local LLM endpoints, and hardware ID license
+                  keys.
                 </p>
               </div>
               <span className="text-[9px] font-bold text-[#3B82F6] inline-flex items-center gap-1 mt-2">
@@ -766,9 +889,7 @@ function LandingPage() {
                 <Gauge className="h-4 w-4 text-[#00D17F]" />
                 DRIVER COCKPIT HUD GATEWAY
               </span>
-              <span className="text-[#00D17F] hover:underline font-bold">
-                LAUNCH COCKPIT HUD →
-              </span>
+              <span className="text-[#00D17F] hover:underline font-bold">LAUNCH COCKPIT HUD →</span>
             </Link>
 
             {/* Tile 7: ENGINEER ACCOUNT GATEWAY */}
@@ -778,10 +899,10 @@ function LandingPage() {
             >
               <span className="flex items-center gap-2 text-white font-bold">
                 <LogIn className="h-4 w-4 text-[#3B82F6]" />
-                {user ? 'Active Account Profile Linked' : 'ENGINEER LOGIN GATEWAY'}
+                {user ? "Active Account Profile Linked" : "ENGINEER LOGIN GATEWAY"}
               </span>
               <span className="text-[#3B82F6] hover:underline">
-                {user ? 'View profile →' : 'Sign in to save records →'}
+                {user ? "View profile →" : "Sign in to save records →"}
               </span>
             </Link>
           </div>
@@ -805,18 +926,20 @@ function LandingPage() {
                 >
                   <div className="flex items-start justify-between gap-1">
                     <span className="text-[10px] font-bold text-white uppercase tracking-wider truncate max-w-[70%]">
-                      {s.track ?? 'Spa-Francorchamps'}
+                      {s.track ?? "Spa-Francorchamps"}
                     </span>
                     <span className="text-[8px] border border-[#1C2430] px-1.5 py-0.5 text-[#7A828C]">
-                      {s.tick_rate ?? '60'} Hz
+                      {s.tick_rate ?? "60"} Hz
                     </span>
                   </div>
                   <span className="text-[9px] text-[#7A828C] truncate uppercase font-bold">
-                    Car: {s.car ?? 'AMG GT3'}
+                    Car: {s.car ?? "AMG GT3"}
                   </span>
                   <div className="flex justify-between text-[9px] text-[#7A828C] border-t border-[#1C2430]/40 pt-1.5 font-bold">
                     <span>BEST LAP:</span>
-                    <span className="text-[#00D17F] font-bold tracking-wider">{fmtLapTime(s.best_lap_s)}</span>
+                    <span className="text-[#00D17F] font-bold tracking-wider">
+                      {fmtLapTime(s.best_lap_s)}
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -826,7 +949,10 @@ function LandingPage() {
       )}
 
       {/* ── ONBOARDING TUTORIAL DETAIL AREA (HTML Onboarding Anchor) ── */}
-      <section id="onboarding-tutorial" className="w-full max-w-none px-4 md:px-12 lg:px-16 py-6 z-10 scroll-mt-14">
+      <section
+        id="onboarding-tutorial"
+        className="w-full max-w-none px-4 md:px-12 lg:px-16 py-6 z-10 scroll-mt-14"
+      >
         {isElectron ? (
           <div className="border border-[#1C2430] bg-[#0B0F14] p-5">
             <div className="mb-4 text-left border-b border-[#1C2430] pb-3">
@@ -837,7 +963,9 @@ function LandingPage() {
                 Local Telemetry supervisor daemon operations
               </h2>
               <p className="mt-1 text-xs text-[#7A828C] leading-relaxed max-w-4xl">
-                The workstation local supervisor runs continuous process monitors and local RPC loops to communicate directly with your local iRacing WebSocket bridge and MongoDB telemetry store.
+                The workstation local supervisor runs continuous process monitors and local RPC
+                loops to communicate directly with your local iRacing WebSocket bridge and MongoDB
+                telemetry store.
               </p>
             </div>
 
@@ -849,15 +977,18 @@ function LandingPage() {
                     <Database className="h-4 w-4" /> Telemetry Database
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    MongoDB stores indexed lap files, telemetry frames, and driver consistency fingerprints locally.
+                    MongoDB stores indexed lap files, telemetry frames, and driver consistency
+                    fingerprints locally.
                   </p>
                 </div>
                 <div className="flex items-center justify-between border-t border-[#1C2430]/40 pt-3">
-                  <span className="text-[9px] text-[#7A828C] font-mono">STATUS: {manifest?.mongoStatus === "active" ? "ACTIVE" : "OFFLINE"}</span>
+                  <span className="text-[9px] text-[#7A828C] font-mono">
+                    STATUS: {manifest?.mongoStatus === "active" ? "ACTIVE" : "OFFLINE"}
+                  </span>
                   <button
                     onClick={async () => {
-                      if ((window as any).pitWallRuntime?.ensureMongoDB) {
-                        await (window as any).pitWallRuntime.ensureMongoDB();
+                      if (window.pitWallRuntime?.ensureMongoDB) {
+                        await window.pitWallRuntime.ensureMongoDB();
                       }
                     }}
                     disabled={manifest?.mongoStatus === "active"}
@@ -875,15 +1006,21 @@ function LandingPage() {
                     <Wifi className="h-4 w-4" /> WebSocket Bridge
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    iRacing memory broker. Captures live game frames at 60Hz and exposes them on localhost ws port 3001.
+                    iRacing memory broker. Captures live game frames at 60Hz and exposes them on
+                    localhost ws port 3001.
                   </p>
                 </div>
                 <div className="flex items-center justify-between border-t border-[#1C2430]/40 pt-3">
-                  <span className="text-[9px] text-[#7A828C] font-mono">STATUS: {manifest?.bridgeStatus ? String(manifest.bridgeStatus).toUpperCase() : "STARTING"}</span>
+                  <span className="text-[9px] text-[#7A828C] font-mono">
+                    STATUS:{" "}
+                    {manifest?.bridgeStatus
+                      ? String(manifest.bridgeStatus).toUpperCase()
+                      : "STARTING"}
+                  </span>
                   <button
                     onClick={async () => {
-                      if ((window as any).pitWallRuntime?.restartBridge) {
-                        await (window as any).pitWallRuntime.restartBridge();
+                      if (window.pitWallRuntime?.restartBridge) {
+                        await window.pitWallRuntime.restartBridge();
                       }
                     }}
                     className="border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 text-[#3B82F6] px-3 py-1 text-[9px] uppercase font-bold transition-colors cursor-pointer"
@@ -900,15 +1037,18 @@ function LandingPage() {
                     <Sparkles className="h-4 w-4" /> Co-Pilot AI Strategy
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    Local LLM router. Probes local inference servers (Ollama, LM Studio) or falls back to cloud APIs.
+                    Local LLM router. Probes local inference servers (Ollama, LM Studio) or falls
+                    back to cloud APIs.
                   </p>
                 </div>
                 <div className="flex items-center justify-between border-t border-[#1C2430]/40 pt-3">
-                  <span className="text-[9px] text-[#7A828C] font-mono">MODE: {manifest?.aiMode ? String(manifest.aiMode).toUpperCase() : "CLOUD"}</span>
+                  <span className="text-[9px] text-[#7A828C] font-mono">
+                    MODE: {manifest?.aiMode ? String(manifest.aiMode).toUpperCase() : "CLOUD"}
+                  </span>
                   <button
                     onClick={async () => {
-                      if ((window as any).pitWallRuntime?.refreshAiMode) {
-                        await (window as any).pitWallRuntime.refreshAiMode();
+                      if (window.pitWallRuntime?.refreshAiMode) {
+                        await window.pitWallRuntime.refreshAiMode();
                       }
                     }}
                     className="border border-[#8B5CF6]/40 bg-[#8B5CF6]/10 hover:bg-[#8B5CF6]/20 text-[#8B5CF6] px-3 py-1 text-[9px] uppercase font-bold transition-colors cursor-pointer"
@@ -921,9 +1061,13 @@ function LandingPage() {
 
             {/* Local Server API status */}
             <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
-              <h3 className="font-bold text-white text-xs uppercase mb-1">Supervisor Daemon API endpoints</h3>
+              <h3 className="font-bold text-white text-xs uppercase mb-1">
+                Supervisor Daemon API endpoints
+              </h3>
               <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
-                The background supervisor hosts a local HTTP + SSE telemetry server at port <span className="font-mono text-white">17777</span>. Users can fetch telemetry programmatically or subscribe to the Server-Sent Events stream.
+                The background supervisor hosts a local HTTP + SSE telemetry server at port{" "}
+                <span className="font-mono text-white">17777</span>. Users can fetch telemetry
+                programmatically or subscribe to the Server-Sent Events stream.
               </p>
               <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
                 {`# Status Endpoint:\nGET http://127.0.0.1:17777/supervisor/status\n\n# SSE Live Telemetry Stream:\nGET http://127.0.0.1:17777/telemetry/live`}
@@ -965,7 +1109,9 @@ function LandingPage() {
                     <Wifi className="h-4 w-4" /> 2. Shared Memory Broker
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    The bridge compiles and spawns a native <span className="text-white font-bold">ac-reader.exe</span> to map original AC shared memory blocks to unified WebSocket streams.
+                    The bridge compiles and spawns a native{" "}
+                    <span className="text-white font-bold">ac-reader.exe</span> to map original AC
+                    shared memory blocks to unified WebSocket streams.
                   </p>
                 </div>
                 <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
@@ -973,7 +1119,8 @@ function LandingPage() {
                     <Cpu className="h-4 w-4" /> 3. Seamless Normalization
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    All telemetry speeds, gear indexes, tire temperatures, and shock deflections are normalized to match the existing DDRE contracts perfectly.
+                    All telemetry speeds, gear indexes, tire temperatures, and shock deflections are
+                    normalized to match the existing DDRE contracts perfectly.
                   </p>
                 </div>
               </div>
@@ -994,8 +1141,9 @@ function LandingPage() {
                     <Wifi className="h-4 w-4" /> 2. Port Allocation
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    By default, the bridge opens a localhost listener on WebSocket port <span className="text-white font-bold">3001</span>.
-                    Make sure no other programs are currently running on port 3001.
+                    By default, the bridge opens a localhost listener on WebSocket port{" "}
+                    <span className="text-white font-bold">3001</span>. Make sure no other programs
+                    are currently running on port 3001.
                   </p>
                 </div>
                 <div className="border border-[#1C2430] bg-[#11161D] p-4 flex flex-col gap-1.5">
@@ -1003,7 +1151,8 @@ function LandingPage() {
                     <Cpu className="h-4 w-4" /> 3. Local first
                   </div>
                   <p className="text-[#7A828C] text-[10px] leading-relaxed">
-                    All telemetry data is streamed locally. No external server packages are sent, keeping your strategy completely private and secure.
+                    All telemetry data is streamed locally. No external server packages are sent,
+                    keeping your strategy completely private and secure.
                   </p>
                 </div>
               </div>
@@ -1012,15 +1161,20 @@ function LandingPage() {
             <div className="space-y-3">
               <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h3 className="font-bold text-white text-xs uppercase">Step A: Install Pit Wall Desktop</h3>
+                  <h3 className="font-bold text-white text-xs uppercase">
+                    Step A: Install Pit Wall Desktop
+                  </h3>
                   <p className="text-[10px] text-[#7A828C] mt-0.5 leading-relaxed">
-                    The local bridge is bundled inside the Pit Wall Desktop installer. Download and run the installer — the bridge starts automatically when you launch the app.
-                    Place the app in <span className="font-mono text-white">C:\Program Files\Pit Wall</span> or your preferred location.
+                    The local bridge is bundled inside the Pit Wall Desktop installer. Download and
+                    run the installer — the bridge starts automatically when you launch the app.
+                    Place the app in{" "}
+                    <span className="font-mono text-white">C:\Program Files\Pit Wall</span> or your
+                    preferred location.
                   </p>
                 </div>
                 <Link
                   to="/roadmap"
-                  className="inline-flex items-center justify-center gap-2 border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 px-4 py-2 text-[10px] uppercase font-bold text-[#3B82F6] transition-colors flex-shrink-0"
+                  className="inline-flex items-center justify-center gap-2 border border-[#3B82F6]/40 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 px-4 py-2 text-[10px] uppercase font-bold text-[#3B82F6] transition-colors shrink-0"
                 >
                   Get Desktop App →
                 </Link>
@@ -1028,9 +1182,13 @@ function LandingPage() {
 
               {activeGame === "assettocorsa" ? (
                 <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
-                  <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and stream</h3>
+                  <h3 className="font-bold text-white text-xs uppercase mb-1">
+                    Step B: Launch and stream
+                  </h3>
                   <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
-                    Toggle active game to Assetto Corsa. The bridge will dynamically compile <span className="font-mono text-white">ac-reader.cs</span> and listen for Assetto Corsa memory frames. Start AC and drive!
+                    Toggle active game to Assetto Corsa. The bridge will dynamically compile{" "}
+                    <span className="font-mono text-white">ac-reader.cs</span> and listen for
+                    Assetto Corsa memory frames. Start AC and drive!
                   </p>
                   <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
                     {`# C# shared memory reader compiles automatically using built-in csc.exe.\n# Stream mapped telemetry at 60Hz:\nws://127.0.0.1:3001`}
@@ -1038,10 +1196,13 @@ function LandingPage() {
                 </div>
               ) : (
                 <div className="border border-[#1C2430] bg-[#11161D] p-4 text-left">
-                  <h3 className="font-bold text-white text-xs uppercase mb-1">Step B: Launch and connect</h3>
+                  <h3 className="font-bold text-white text-xs uppercase mb-1">
+                    Step B: Launch and connect
+                  </h3>
                   <p className="text-[10px] text-[#7A828C] mb-2 leading-relaxed">
-                    Launch Pit Wall Desktop. The bridge starts automatically in the background on port <span className="font-mono text-white">3001</span>.
-                    Start iRacing and join a session — the Live Telemetry dashboard will connect instantly.
+                    Launch Pit Wall Desktop. The bridge starts automatically in the background on
+                    port <span className="font-mono text-white">3001</span>. Start iRacing and join
+                    a session — the Live Telemetry dashboard will connect instantly.
                   </p>
                   <pre className="overflow-x-auto rounded border border-[#1C2430] bg-[#05070A] p-3.5 font-mono text-[10px] leading-relaxed text-[#00D17F] w-full">
                     {`# Bridge starts automatically — no commands needed.\n# Verify connection at:\nws://127.0.0.1:3001`}
@@ -1076,9 +1237,7 @@ function LandingPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span>
-              © 2026 PIT WALL WORKSTATION
-            </span>
+            <span>© 2026 PIT WALL WORKSTATION</span>
             <div className="h-5 w-7 border border-[#1C2430] bg-[#05070A] flex items-center justify-center text-[#7A828C] font-black italic text-[10px]">
               PW
             </div>

@@ -8,9 +8,9 @@ export const nurburgringMap: TrackMapDefinition = {
     mirrorX: false,
   },
   spline: [
-    [0.48, 0.20], // Start/Finish Line
-    [0.38, 0.20], // Start straight
-    [0.28, 0.20], // Castrol S approach
+    [0.48, 0.2], // Start/Finish Line
+    [0.38, 0.2], // Start straight
+    [0.28, 0.2], // Castrol S approach
     [0.21, 0.22], // Castrol S Turn 1 (Right)
     [0.18, 0.27], // Castrol S Turn 2 (Left)
     [0.19, 0.33], // Mercedes Arena entry
@@ -18,15 +18,15 @@ export const nurburgringMap: TrackMapDefinition = {
     [0.28, 0.36], // Arena Left exit
     [0.25, 0.42], // Valvoline Curve approach
     [0.22, 0.48], // Valvoline Hairpin entry
-    [0.20, 0.54], // Valvoline Hairpin apex
+    [0.2, 0.54], // Valvoline Hairpin apex
     [0.24, 0.58], // Valvoline Hairpin exit
     [0.32, 0.59], // Ford Curve entry
-    [0.39, 0.60], // Ford Curve apex (Right sweeper)
+    [0.39, 0.6], // Ford Curve apex (Right sweeper)
     [0.44, 0.65], // Downhill to Dunlop Hairpin
-    [0.50, 0.73],
+    [0.5, 0.73],
     [0.54, 0.81], // Dunlop entry
     [0.59, 0.84], // Dunlop Hairpin Apex (Bottom loop)
-    [0.63, 0.80], // Dunlop exit
+    [0.63, 0.8], // Dunlop exit
     [0.64, 0.72], // Audi S approach
     [0.66, 0.64], // Schumacher S (Left sweep)
     [0.72, 0.57], // Schumacher S (Right climb)
@@ -60,9 +60,9 @@ export const nurburgringMap: TrackMapDefinition = {
       [0.61, 0.26], // Coca-Cola chicane entry
       [0.57, 0.28], // Speed limit sign
       [0.52, 0.21], // Crew speed limit lane
-      [0.48, 0.20], // Parallel pit lane
-      [0.38, 0.20], // Exit acceleration
-      [0.28, 0.20], // Rejoin start straight
+      [0.48, 0.2], // Parallel pit lane
+      [0.38, 0.2], // Exit acceleration
+      [0.28, 0.2], // Rejoin start straight
     ],
     mergePct: 0.08,
     exitPct: 0.96,

@@ -17,10 +17,22 @@ export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSIn
   const rawBrake = t.brake ?? 0;
 
   // ERS variables
-  const soc = t.extras?.ersSoc ?? Math.max(12.5, Math.min(98.5, 78.4 + 15 * Math.sin((performance.now() / 8000)) - (rawThrottle * 3) + (rawBrake * 4.5)));
-  const batteryTemp = t.extras?.ersBatteryTemp ?? (42.5 + (soc * 0.1) + (rawThrottle * 5.2));
-  const mgukDeploy = t.extras?.mgukDeployKw ?? (rawThrottle > 0.15 ? Math.min(120, rawThrottle * 120 + Math.random() * 2) : 0);
-  const mgukRegen = t.extras?.mgukRegenKw ?? (rawBrake > 0.1 ? Math.min(200, rawBrake * 200 + Math.random() * 3) : 0);
+  const soc =
+    t.extras?.ersSoc ??
+    Math.max(
+      12.5,
+      Math.min(
+        98.5,
+        78.4 + 15 * Math.sin(performance.now() / 8000) - rawThrottle * 3 + rawBrake * 4.5,
+      ),
+    );
+  const batteryTemp = t.extras?.ersBatteryTemp ?? 42.5 + soc * 0.1 + rawThrottle * 5.2;
+  const mgukDeploy =
+    t.extras?.mgukDeployKw ??
+    (rawThrottle > 0.15 ? Math.min(120, rawThrottle * 120 + Math.random() * 2) : 0);
+  const mgukRegen =
+    t.extras?.mgukRegenKw ??
+    (rawBrake > 0.1 ? Math.min(200, rawBrake * 200 + Math.random() * 3) : 0);
   const efficiency = Math.max(88, Math.min(99.6, 96.5 + 2 * Math.sin(performance.now() / 4000)));
 
   // Determine recovery mode
@@ -57,7 +69,6 @@ export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSIn
     >
       <div className="p-3 h-full flex flex-col justify-between font-mono bg-[#05070A] text-white">
         <div className="grid grid-cols-12 gap-3 flex-1">
-          
           {/* Left panel (4 cols): SOC and Thermals */}
           <div className="col-span-5 flex flex-col justify-between border-r border-[#1C2430]/60 pr-3">
             <div className="flex items-center gap-1.5 text-[10px] text-[#7A828C] uppercase font-bold tracking-wider mb-2">
@@ -68,7 +79,9 @@ export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSIn
             {/* Battery Grids */}
             <div className="flex-1 flex flex-col justify-center">
               <div className="flex items-baseline gap-1.5 mb-1.5">
-                <span className="text-2xl font-black text-white tabular-nums tracking-tighter">{soc.toFixed(1)}%</span>
+                <span className="text-2xl font-black text-white tabular-nums tracking-tighter">
+                  {soc.toFixed(1)}%
+                </span>
                 <span className="text-[8px] text-[#8B5CF6] font-bold">SOC</span>
               </div>
 
@@ -112,10 +125,15 @@ export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSIn
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center text-[8px] text-[#7A828C]">
                   <span>DEPLOYMENT PRESSURE</span>
-                  <span className="tabular-nums font-bold text-[#FFB800]">{mgukDeploy.toFixed(0)} kW / 120kW</span>
+                  <span className="tabular-nums font-bold text-[#FFB800]">
+                    {mgukDeploy.toFixed(0)} kW / 120kW
+                  </span>
                 </div>
                 <div className="w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden">
-                  <div className="h-full bg-[#FFB800] transition-all duration-75" style={{ width: `${(mgukDeploy / 120) * 100}%` }} />
+                  <div
+                    className="h-full bg-[#FFB800] transition-all duration-75"
+                    style={{ width: `${(mgukDeploy / 120) * 100}%` }}
+                  />
                 </div>
               </div>
 
@@ -123,10 +141,15 @@ export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSIn
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-center text-[8px] text-[#7A828C]">
                   <span>RECOVERY HARVEST</span>
-                  <span className="tabular-nums font-bold text-[#00D17F]">{mgukRegen.toFixed(0)} kW / 200kW</span>
+                  <span className="tabular-nums font-bold text-[#00D17F]">
+                    {mgukRegen.toFixed(0)} kW / 200kW
+                  </span>
                 </div>
                 <div className="w-full bg-[#0B0F14] h-2 rounded-xs border border-[#1C2430] overflow-hidden">
-                  <div className="h-full bg-[#00D17F] transition-all duration-75" style={{ width: `${(mgukRegen / 200) * 100}%` }} />
+                  <div
+                    className="h-full bg-[#00D17F] transition-all duration-75"
+                    style={{ width: `${(mgukRegen / 200) * 100}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -146,7 +169,6 @@ export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSIn
                 <div className="text-[#8B5CF6] text-[10px] font-black">75%</div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

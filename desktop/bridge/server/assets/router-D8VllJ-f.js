@@ -1,5 +1,17 @@
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { Link, useRouter, useLocation, useCanGoBack, createRootRouteWithContext, Outlet, HeadContent, Scripts, createFileRoute, lazyRouteComponent, createRouter } from "@tanstack/react-router";
+import {
+  Link,
+  useRouter,
+  useLocation,
+  useCanGoBack,
+  createRootRouteWithContext,
+  Outlet,
+  HeadContent,
+  Scripts,
+  createFileRoute,
+  lazyRouteComponent,
+  createRouter,
+} from "@tanstack/react-router";
 import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import * as React from "react";
 import { useState, useEffect, createContext, useContext, useRef, useCallback } from "react";
@@ -12,7 +24,35 @@ import { persist } from "zustand/middleware";
 import { z } from "zod";
 import { r as requireSupabaseAuth } from "./auth-middleware-Cz-8T2yV.js";
 import { M as MathExpressionSchema } from "./schema-BU1MXGgz.js";
-import { HelpCircle, X, CheckCircle2, Circle, ArrowLeft, ArrowRight, Wifi, LineChart, Brain, Gauge, Zap, FolderOpen, Database, Settings, ChevronRight, Laptop, Cpu, Server, Key, Keyboard, RefreshCw, AlertCircle, Terminal, Check, Copy, Trash2, RotateCcw } from "lucide-react";
+import {
+  HelpCircle,
+  X,
+  CheckCircle2,
+  Circle,
+  ArrowLeft,
+  ArrowRight,
+  Wifi,
+  LineChart,
+  Brain,
+  Gauge,
+  Zap,
+  FolderOpen,
+  Database,
+  Settings,
+  ChevronRight,
+  Laptop,
+  Cpu,
+  Server,
+  Key,
+  Keyboard,
+  RefreshCw,
+  AlertCircle,
+  Terminal,
+  Check,
+  Copy,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -22,26 +62,34 @@ import { cva } from "class-variance-authority";
 import { s as supabaseAdmin } from "./client.server-Y-0AANJ4.js";
 const appCss = "/assets/styles-ZOw2R66A.css";
 const getLocalSessions = createServerFn({
-  method: "GET"
+  method: "GET",
 }).handler(createSsrRpc("a89391221bf6d4f3c3355bf0dfc3e706c4f9b13cc230e42657eaa76688007322"));
 const getLocalSessionById = createServerFn({
-  method: "POST"
-}).inputValidator((id) => String(id)).handler(createSsrRpc("fe521dc5b8ea6cac3c068abd8536973e9e6b2e73ee00f80cc9617f99f0e4e5b4"));
+  method: "POST",
+})
+  .inputValidator((id) => String(id))
+  .handler(createSsrRpc("fe521dc5b8ea6cac3c068abd8536973e9e6b2e73ee00f80cc9617f99f0e4e5b4"));
 const insertLocalSession = createServerFn({
-  method: "POST"
-}).inputValidator((data) => data).handler(createSsrRpc("e29d9c58ccb381c467fd97ec72f1e31b8c84c96077dc15cb2d778a800c642838"));
+  method: "POST",
+})
+  .inputValidator((data) => data)
+  .handler(createSsrRpc("e29d9c58ccb381c467fd97ec72f1e31b8c84c96077dc15cb2d778a800c642838"));
 const deleteLocalSession = createServerFn({
-  method: "POST"
-}).inputValidator((id) => String(id)).handler(createSsrRpc("be9659ec40533955d232ff49315c9aa649bd7db83b1fcfc216a660325004c844"));
+  method: "POST",
+})
+  .inputValidator((id) => String(id))
+  .handler(createSsrRpc("be9659ec40533955d232ff49315c9aa649bd7db83b1fcfc216a660325004c844"));
 const testLocalDbConnection = createServerFn({
-  method: "POST"
+  method: "POST",
 }).handler(createSsrRpc("6fc40750dfd6c278f7c72bfbb36ff3225675daeec7f93fc991cb7f630fa6730c"));
 const getDbConfig = createServerFn({
-  method: "GET"
+  method: "GET",
 }).handler(createSsrRpc("6be988dd8f4ee314ac93db05da28d1eb8f2018797e18c521292bed6c4d850965"));
 const saveDbConfig = createServerFn({
-  method: "POST"
-}).inputValidator((config) => config).handler(createSsrRpc("992e611799973d8db599cacccf15200b19b5669290f9410c9c9e16579f533001"));
+  method: "POST",
+})
+  .inputValidator((config) => config)
+  .handler(createSsrRpc("992e611799973d8db599cacccf15200b19b5669290f9410c9c9e16579f533001"));
 class LocalTelemetryStore {
   dbPromise = null;
   initDb() {
@@ -97,47 +145,51 @@ class LocalTelemetryStore {
         req.onsuccess = () => resolve();
         req.onerror = () => reject(req.error);
       });
-    } catch {
-    }
+    } catch {}
   }
 }
 const localTelemetryStore = new LocalTelemetryStore();
-const dummyClient = new Proxy({}, {
-  get(target, prop) {
-    if (prop === "auth") {
-      return {
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {
-        } } } }),
-        getSession: async () => ({ data: { session: null } }),
-        signOut: async () => {
-        }
+const dummyClient = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      if (prop === "auth") {
+        return {
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          getSession: async () => ({ data: { session: null } }),
+          signOut: async () => {},
+        };
+      }
+      return () => {
+        const chain = new Proxy(
+          {},
+          {
+            get(t, p) {
+              if (p === "then") {
+                return (resolve) => resolve({ data: null, error: null });
+              }
+              return () => chain;
+            },
+          },
+        );
+        return chain;
       };
-    }
-    return () => {
-      const chain = new Proxy({}, {
-        get(t, p) {
-          if (p === "then") {
-            return (resolve) => resolve({ data: null, error: null });
-          }
-          return () => chain;
-        }
-      });
-      return chain;
-    };
-  }
-});
+    },
+  },
+);
 function getProxiedClient() {
   let realClient;
   try {
     const SUPABASE_URL = "https://bqnyztfkpsvmvelfdzgw.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxbnl6dGZrcHN2bXZlbGZkemd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMzkwMzcsImV4cCI6MjA5NDYxNTAzN30.F4TUaBCIRyopmCuMHJIjjFPOzVaUITJrE8LLXlfSZ-g";
+    const SUPABASE_PUBLISHABLE_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxbnl6dGZrcHN2bXZlbGZkemd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMzkwMzcsImV4cCI6MjA5NDYxNTAzN30.F4TUaBCIRyopmCuMHJIjjFPOzVaUITJrE8LLXlfSZ-g";
     if (SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY) {
       realClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
         auth: {
           storage: typeof window !== "undefined" ? localStorage : void 0,
           persistSession: true,
-          autoRefreshToken: true
-        }
+          autoRefreshToken: true,
+        },
       });
     }
   } catch (err) {
@@ -148,7 +200,8 @@ function getProxiedClient() {
     get(target, prop, receiver) {
       if (prop === "from") {
         return (tableName) => {
-          const isLocal = typeof window !== "undefined" && (localStorage.getItem("apex_local_session") || false);
+          const isLocal =
+            typeof window !== "undefined" && (localStorage.getItem("apex_local_session") || false);
           if (isLocal && tableName === "telemetry_sessions") {
             const builder = {
               select: () => builder,
@@ -184,7 +237,7 @@ function getProxiedClient() {
                 } catch (err) {
                   resolve({ data: null, error: { message: err.message } });
                 }
-              }
+              },
             };
             return builder;
           }
@@ -192,7 +245,8 @@ function getProxiedClient() {
         };
       }
       if (prop === "storage") {
-        const isLocal = typeof window !== "undefined" && (localStorage.getItem("apex_local_session") || false);
+        const isLocal =
+          typeof window !== "undefined" && (localStorage.getItem("apex_local_session") || false);
         if (isLocal) {
           return {
             from: (bucketName) => {
@@ -224,37 +278,40 @@ function getProxiedClient() {
                     } catch (e) {
                       return { data: null, error: e };
                     }
-                  }
+                  },
                 };
               }
               return target.storage.from(bucketName);
-            }
+            },
           };
         }
       }
       return Reflect.get(target, prop, receiver);
-    }
+    },
   });
 }
 let _supabase;
-const supabase = new Proxy({}, {
-  get(_, prop, receiver) {
-    if (!_supabase) _supabase = getProxiedClient();
-    return Reflect.get(_supabase, prop, receiver);
-  }
-});
+const supabase = new Proxy(
+  {},
+  {
+    get(_, prop, receiver) {
+      if (!_supabase) _supabase = getProxiedClient();
+      return Reflect.get(_supabase, prop, receiver);
+    },
+  },
+);
 const Ctx$1 = createContext({
   session: null,
   user: null,
   loading: true,
-  signOut: async () => {
-  }
+  signOut: async () => {},
 });
 function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    const localSess = typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
+    const localSess =
+      typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
     if (localSess) {
       try {
         setSession(JSON.parse(localSess));
@@ -268,7 +325,8 @@ function AuthProvider({ children }) {
       if (s) {
         setSession(s);
       } else {
-        const ls = typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
+        const ls =
+          typeof window !== "undefined" ? localStorage.getItem("apex_local_session") : null;
         if (ls) {
           try {
             setSession(JSON.parse(ls));
@@ -289,45 +347,39 @@ function AuthProvider({ children }) {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
-  return /* @__PURE__ */ jsx(
-    Ctx$1.Provider,
-    {
-      value: {
-        session,
-        user: session?.user ?? null,
-        loading,
-        signOut: async () => {
-          if (typeof window !== "undefined") {
-            localStorage.removeItem("apex_local_session");
-          }
-          try {
-            await supabase.auth.signOut();
-          } catch (_) {
-          }
-          setSession(null);
+  return /* @__PURE__ */ jsx(Ctx$1.Provider, {
+    value: {
+      session,
+      user: session?.user ?? null,
+      loading,
+      signOut: async () => {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("apex_local_session");
         }
+        try {
+          await supabase.auth.signOut();
+        } catch (_) {}
+        setSession(null);
       },
-      children
-    }
-  );
+    },
+    children,
+  });
 }
 const useAuth = () => useContext(Ctx$1);
 const Toaster = ({ ...props }) => {
-  return /* @__PURE__ */ jsx(
-    Toaster$1,
-    {
-      className: "toaster group",
-      toastOptions: {
-        classNames: {
-          toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground"
-        }
+  return /* @__PURE__ */ jsx(Toaster$1, {
+    className: "toaster group",
+    toastOptions: {
+      classNames: {
+        toast:
+          "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+        description: "group-[.toast]:text-muted-foreground",
+        actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+        cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
       },
-      ...props
-    }
-  );
+    },
+    ...props,
+  });
 };
 const THEME_SCHEMA_VERSION = 2;
 const THEME_SCHEMA_ID = "pitwall.theme";
@@ -337,11 +389,11 @@ const MIGRATIONS = {
   1: (input) => {
     const tokens = input?.theme ?? input;
     return {
-      ...typeof input === "object" && input !== null && "theme" in input ? input : {},
+      ...(typeof input === "object" && input !== null && "theme" in input ? input : {}),
       theme: tokens,
-      version: 2
+      version: 2,
     };
-  }
+  },
 };
 function migrateThemeFile(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -359,7 +411,7 @@ function migrateThemeFile(raw) {
   }
   if (from > THEME_SCHEMA_VERSION) {
     throw new Error(
-      `Theme uses schema v${from}, but this app only understands up to v${THEME_SCHEMA_VERSION}. Update the app to import it.`
+      `Theme uses schema v${from}, but this app only understands up to v${THEME_SCHEMA_VERSION}. Update the app to import it.`,
     );
   }
   let cur = obj;
@@ -370,16 +422,20 @@ function migrateThemeFile(raw) {
     cur = fn(cur);
     steps2.push(v + 1);
   }
-  const theme = cur && typeof cur === "object" && cur.theme && typeof cur.theme === "object" ? cur.theme : cur;
+  const theme =
+    cur && typeof cur === "object" && cur.theme && typeof cur.theme === "object" ? cur.theme : cur;
   return {
     file: {
       name: typeof cur?.name === "string" ? cur.name : void 0,
-      description: typeof cur?.description === "string" || cur?.description === null ? cur.description : void 0,
-      theme
+      description:
+        typeof cur?.description === "string" || cur?.description === null
+          ? cur.description
+          : void 0,
+      theme,
     },
     fromVersion: from,
     toVersion: THEME_SCHEMA_VERSION,
-    steps: steps2
+    steps: steps2,
   };
 }
 function buildThemeFile(input) {
@@ -388,7 +444,7 @@ function buildThemeFile(input) {
     version: THEME_SCHEMA_VERSION,
     name: input.name,
     description: input.description ?? null,
-    theme: input.theme
+    theme: input.theme,
   };
 }
 const THEME_GROUPS = [
@@ -400,8 +456,8 @@ const THEME_GROUPS = [
       { key: "panel-2", label: "Panel 2" },
       { key: "rail", label: "Rail" },
       { key: "muted", label: "Muted" },
-      { key: "accent", label: "Accent" }
-    ]
+      { key: "accent", label: "Accent" },
+    ],
   },
   {
     label: "Text & borders",
@@ -411,16 +467,16 @@ const THEME_GROUPS = [
       { key: "border", label: "Border" },
       { key: "border-strong", label: "Border strong" },
       { key: "grid-major", label: "Grid major" },
-      { key: "grid-minor", label: "Grid minor" }
-    ]
+      { key: "grid-minor", label: "Grid minor" },
+    ],
   },
   {
     label: "Brand",
     tokens: [
       { key: "primary", label: "Primary" },
       { key: "primary-foreground", label: "Primary text" },
-      { key: "destructive", label: "Destructive" }
-    ]
+      { key: "destructive", label: "Destructive" },
+    ],
   },
   {
     label: "Channel traces",
@@ -432,9 +488,9 @@ const THEME_GROUPS = [
       { key: "ch-gear", label: "Gear" },
       { key: "ch-steer", label: "Steering" },
       { key: "ch-glat", label: "Lat G" },
-      { key: "ch-glong", label: "Long G" }
-    ]
-  }
+      { key: "ch-glong", label: "Long G" },
+    ],
+  },
 ];
 const DARK_THEME = {
   background: "#05070A",
@@ -461,7 +517,7 @@ const DARK_THEME = {
   "ch-glat": "#FFB800",
   "ch-glong": "#3B82F6",
   "grid-major": "#1C2430",
-  "grid-minor": "#11161D"
+  "grid-minor": "#11161D",
 };
 const MODERN_FLAT_THEME = {
   background: "#111318",
@@ -486,7 +542,7 @@ const MODERN_FLAT_THEME = {
   "ch-glat": "#fb923c",
   "ch-glong": "#38bdf8",
   "grid-major": "#252a34",
-  "grid-minor": "#1a1f28"
+  "grid-minor": "#1a1f28",
 };
 const STUDIO_BLACK_THEME = {
   background: "#000000",
@@ -511,7 +567,7 @@ const STUDIO_BLACK_THEME = {
   "ch-glat": "#ff9500",
   "ch-glong": "#0a84ff",
   "grid-major": "#222228",
-  "grid-minor": "#141418"
+  "grid-minor": "#141418",
 };
 const LIGHT_THEME = {
   background: "#f5f6f8",
@@ -536,7 +592,7 @@ const LIGHT_THEME = {
   "ch-glat": "#c05000",
   "ch-glong": "#1d4ed8",
   "grid-major": "#c8ccd4",
-  "grid-minor": "#e0e4ec"
+  "grid-minor": "#e0e4ec",
 };
 const CARBON_THEME = {
   background: "#0c0c0f",
@@ -561,7 +617,7 @@ const CARBON_THEME = {
   "ch-glat": "#ff6b35",
   "ch-glong": "#2196f3",
   "grid-major": "#2a2a32",
-  "grid-minor": "#1a1a20"
+  "grid-minor": "#1a1a20",
 };
 const F1_THEME = {
   background: "#0d0d10",
@@ -586,7 +642,7 @@ const F1_THEME = {
   "ch-glat": "#0d6efd",
   "ch-glong": "#b026ff",
   "grid-major": "#2a2f38",
-  "grid-minor": "#1a1f26"
+  "grid-minor": "#1a1f26",
 };
 const INDYCAR_THEME = {
   background: "#0a0c10",
@@ -611,7 +667,7 @@ const INDYCAR_THEME = {
   "ch-glat": "#ff6b35",
   "ch-glong": "#448aff",
   "grid-major": "#252a36",
-  "grid-minor": "#181d28"
+  "grid-minor": "#181d28",
 };
 const RACECOMMAND_THEME = {
   background: "#000000",
@@ -636,7 +692,7 @@ const RACECOMMAND_THEME = {
   "ch-glat": "#FFB800",
   "ch-glong": "#3B82F6",
   "grid-major": "#1C2430",
-  "grid-minor": "#11161D"
+  "grid-minor": "#11161D",
 };
 const PRESETS = [
   { id: "motec", label: "A - MoTeC Dark", theme: DARK_THEME },
@@ -646,7 +702,7 @@ const PRESETS = [
   { id: "carbon", label: "E - Carbon UI", theme: CARBON_THEME },
   { id: "f1", label: "F - Modern F1", theme: F1_THEME },
   { id: "indycar", label: "G - IndyCar/NASCAR", theme: INDYCAR_THEME },
-  { id: "racecommand", label: "H - Proper Race Command", theme: RACECOMMAND_THEME }
+  { id: "racecommand", label: "H - Proper Race Command", theme: RACECOMMAND_THEME },
 ];
 function applyTheme(theme) {
   if (typeof document === "undefined") return;
@@ -676,58 +732,65 @@ const LAYOUT_PROFILES = [
     id: "motec",
     label: "MoTeC / Professional Dark",
     subtitle: "Classic Engineering",
-    description: "Classic engineering feel. Dense information layout, trusted by professionals. The reference standard.",
-    swatches: ["#0f1114", "#181b20", "#22d3ee", "#22c55e"]
+    description:
+      "Classic engineering feel. Dense information layout, trusted by professionals. The reference standard.",
+    swatches: ["#0f1114", "#181b20", "#22d3ee", "#22c55e"],
   },
   {
     id: "modern",
     label: "Modern Flat Dark",
     subtitle: "Clean & Minimal",
-    description: "Clean, minimal, contemporary. Great balance of clarity and simplicity with modern typography.",
-    swatches: ["#111318", "#191d24", "#60a5fa", "#a78bfa"]
+    description:
+      "Clean, minimal, contemporary. Great balance of clarity and simplicity with modern typography.",
+    swatches: ["#111318", "#191d24", "#60a5fa", "#a78bfa"],
   },
   {
     id: "studio",
     label: "Studio Black",
     subtitle: "High Contrast Performance",
-    description: "Maximum contrast, bold typography. Built for quick at-a-glance performance reading.",
-    swatches: ["#000000", "#0a0a0e", "#ff3b30", "#ff9500"]
+    description:
+      "Maximum contrast, bold typography. Built for quick at-a-glance performance reading.",
+    swatches: ["#000000", "#0a0a0e", "#ff3b30", "#ff9500"],
   },
   {
     id: "engineer",
     label: "Light Engineer",
     subtitle: "Professional Light Mode",
     description: "Professional light mode. Reduces eye strain during long analysis sessions.",
-    swatches: ["#f5f6f8", "#ffffff", "#0066cc", "#16a34a"]
+    swatches: ["#f5f6f8", "#ffffff", "#0066cc", "#16a34a"],
   },
   {
     id: "carbon",
     label: "Carbon UI",
     subtitle: "F1 / Motorsport Inspired",
-    description: "Carbon textures and red accents. Aggressive and performance focused. Built for race day.",
-    swatches: ["#0c0c0f", "#141418", "#e63322", "#ff6b35"]
+    description:
+      "Carbon textures and red accents. Aggressive and performance focused. Built for race day.",
+    swatches: ["#0c0c0f", "#141418", "#e63322", "#ff6b35"],
   },
   {
     id: "f1",
     label: "Modern F1",
     subtitle: "High Performance. Precision.",
-    description: "F1-inspired. Carbon black background, F1 red accents, DIN-style headings. Built for open-wheeler telemetry.",
-    swatches: ["#0d0d10", "#14171c", "#e10600", "#00e676"]
+    description:
+      "F1-inspired. Carbon black background, F1 red accents, DIN-style headings. Built for open-wheeler telemetry.",
+    swatches: ["#0d0d10", "#14171c", "#e10600", "#00e676"],
   },
   {
     id: "indycar",
     label: "IndyCar / NASCAR",
     subtitle: "Oval & Road Course",
-    description: "Dense race data: running order, 4-sector splits, fuel strategy, caution flags. Green live accents on deep dark.",
-    swatches: ["#0a0c10", "#111520", "#00e676", "#ff6b35"]
+    description:
+      "Dense race data: running order, 4-sector splits, fuel strategy, caution flags. Green live accents on deep dark.",
+    swatches: ["#0a0c10", "#111520", "#00e676", "#ff6b35"],
   },
   {
     id: "racecommand",
     label: "Proper Race Command",
     subtitle: "Pit Wall Commander",
-    description: "Full race command strategy deck. Standing positions tables, dynamic track relative maps, 4-corner tire gauges, and live electronics selectors.",
-    swatches: ["#05070a", "#0b0f14", "#00e676", "#3b82f6"]
-  }
+    description:
+      "Full race command strategy deck. Standing positions tables, dynamic track relative maps, 4-corner tire gauges, and live electronics selectors.",
+    swatches: ["#05070a", "#0b0f14", "#00e676", "#3b82f6"],
+  },
 ];
 const LS_KEY = "pitwall.layout";
 function applyLayout(profile) {
@@ -737,7 +800,12 @@ function applyLayout(profile) {
 function loadSavedLayout() {
   if (typeof localStorage === "undefined") return "motec";
   const saved = localStorage.getItem(LS_KEY);
-  if (saved && ["motec", "modern", "studio", "engineer", "carbon", "f1", "indycar", "racecommand"].includes(saved)) {
+  if (
+    saved &&
+    ["motec", "modern", "studio", "engineer", "carbon", "f1", "indycar", "racecommand"].includes(
+      saved,
+    )
+  ) {
     return saved;
   }
   return "motec";
@@ -748,15 +816,11 @@ function saveLayout(profile) {
 }
 const Ctx = createContext({
   theme: DARK_THEME,
-  setToken: () => {
-  },
-  setTheme: () => {
-  },
-  reset: () => {
-  },
+  setToken: () => {},
+  setTheme: () => {},
+  reset: () => {},
   layout: "motec",
-  setLayout: () => {
-  }
+  setLayout: () => {},
 });
 function ThemeProvider({ children }) {
   const { user } = useAuth();
@@ -782,12 +846,17 @@ function ThemeProvider({ children }) {
     if (hydratedFor.current === user.id) return;
     hydratedFor.current = user.id;
     if (user.id === "local-user-id") return;
-    supabase.from("user_preferences").select("theme").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (data?.theme) {
-        setThemeState(data.theme);
-        saveLocalTheme(data.theme);
-      }
-    });
+    supabase
+      .from("user_preferences")
+      .select("theme")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.theme) {
+          setThemeState(data.theme);
+          saveLocalTheme(data.theme);
+        }
+      });
   }, [user]);
   const persist2 = useCallback(
     (next) => {
@@ -795,18 +864,20 @@ function ThemeProvider({ children }) {
       if (!user || user.id === "local-user-id") return;
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        supabase.from("user_preferences").upsert(
-          {
-            user_id: user.id,
-            theme: next,
-            updated_at: (/* @__PURE__ */ new Date()).toISOString()
-          },
-          { onConflict: "user_id" }
-        ).then(() => {
-        });
+        supabase
+          .from("user_preferences")
+          .upsert(
+            {
+              user_id: user.id,
+              theme: next,
+              updated_at: /* @__PURE__ */ new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          )
+          .then(() => {});
       }, 500);
     },
-    [user]
+    [user],
   );
   const setToken = useCallback(
     (key, value) => {
@@ -816,27 +887,32 @@ function ThemeProvider({ children }) {
         return next;
       });
     },
-    [persist2]
+    [persist2],
   );
   const setTheme = useCallback(
     (next) => {
       setThemeState(next);
       persist2(next);
     },
-    [persist2]
+    [persist2],
   );
   const reset = useCallback(() => {
     setThemeState(DARK_THEME);
     saveLocalTheme(null);
     if (user && user.id !== "local-user-id") {
-      supabase.from("user_preferences").upsert(
-        { user_id: user.id, theme: null, updated_at: (/* @__PURE__ */ new Date()).toISOString() },
-        { onConflict: "user_id" }
-      ).then(() => {
-      });
+      supabase
+        .from("user_preferences")
+        .upsert(
+          { user_id: user.id, theme: null, updated_at: /* @__PURE__ */ new Date().toISOString() },
+          { onConflict: "user_id" },
+        )
+        .then(() => {});
     }
   }, [user]);
-  return /* @__PURE__ */ jsx(Ctx.Provider, { value: { theme, setToken, setTheme, reset, layout, setLayout }, children });
+  return /* @__PURE__ */ jsx(Ctx.Provider, {
+    value: { theme, setToken, setTheme, reset, layout, setLayout },
+    children,
+  });
 }
 const useTheme = () => useContext(Ctx);
 class BridgeDataClient {
@@ -862,9 +938,7 @@ class BridgeDataClient {
       if (this.reconnectCount >= this.maxReconnectAttempts) {
         this.emit({
           type: "error",
-          data: new Error(
-            `Bridge: max reconnect attempts (${this.maxReconnectAttempts}) reached`
-          )
+          data: new Error(`Bridge: max reconnect attempts (${this.maxReconnectAttempts}) reached`),
         });
         return;
       }
@@ -882,14 +956,19 @@ class BridgeDataClient {
               this.emit({ type: "license", data });
             } else {
               let normalized = data;
-              if (data && typeof data === "object" && "payload" in data && typeof data.payload === "object") {
+              if (
+                data &&
+                typeof data === "object" &&
+                "payload" in data &&
+                typeof data.payload === "object"
+              ) {
                 normalized = {
                   ...data.payload,
                   __meta: {
                     carId: data.carId,
                     teamId: data.teamId,
-                    driverId: data.driverId
-                  }
+                    driverId: data.driverId,
+                  },
                 };
               }
               this.emit({ type: "telemetry", data: normalized });
@@ -936,8 +1015,7 @@ class BridgeDataClient {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
     try {
       this.ws.send(JSON.stringify({ type: "perf", fps: Math.round(fps) }));
-    } catch {
-    }
+    } catch {}
   }
   /**
    * Subscribe to bridge events.
@@ -978,7 +1056,9 @@ function getBridgeUrl() {
   if (typeof window === "undefined") return "ws://localhost:3001";
   const configuredUrl = new URLSearchParams(window.location.search).get("bridge");
   if (configuredUrl) return configuredUrl;
-  const host = ["localhost", "127.0.0.1"].includes(window.location.hostname) ? window.location.hostname : "localhost";
+  const host = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? window.location.hostname
+    : "localhost";
   return `ws://${host}:3001`;
 }
 let singletonClient = null;
@@ -1025,7 +1105,7 @@ const DEFAULT_TELEMETRY = {
       estWearPct: 98,
       brakeTempC: 320,
       brakeLinePress: 0,
-      state: "ok"
+      state: "ok",
     },
     fr: {
       tempC: 94,
@@ -1034,7 +1114,7 @@ const DEFAULT_TELEMETRY = {
       estWearPct: 94,
       brakeTempC: 350,
       brakeLinePress: 0,
-      state: "hot"
+      state: "hot",
     },
     rl: {
       tempC: 84,
@@ -1043,7 +1123,7 @@ const DEFAULT_TELEMETRY = {
       estWearPct: 97,
       brakeTempC: 310,
       brakeLinePress: 0,
-      state: "ok"
+      state: "ok",
     },
     rr: {
       tempC: 88,
@@ -1052,8 +1132,8 @@ const DEFAULT_TELEMETRY = {
       estWearPct: 96,
       brakeTempC: 315,
       brakeLinePress: 0,
-      state: "ok"
-    }
+      state: "ok",
+    },
   },
   gLat: 1.8,
   gLon: -0.4,
@@ -1069,7 +1149,7 @@ const DEFAULT_TELEMETRY = {
   windVel: 5.2,
   windDir: 1.5,
   trackWetness: 0,
-  sof: 2150
+  sof: 2150,
 };
 const MODE_KEY = "pitwall.bridge.performance.mode";
 const SNAPSHOT_KEY = "pitwall.bridge.performance.snapshot";
@@ -1092,7 +1172,7 @@ function saveBridgePerformanceSnapshot(fps) {
     mode,
     lastFps: Math.round(fps),
     recommendedMode: recommendModeFromFps(fps),
-    sampledAt: (/* @__PURE__ */ new Date()).toISOString()
+    sampledAt: /* @__PURE__ */ new Date().toISOString(),
   };
   window.localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(payload));
 }
@@ -1145,7 +1225,7 @@ function useTelemetry() {
       frames += 1;
       const elapsed = now - last;
       if (elapsed >= 1e3) {
-        latestFps = frames * 1e3 / elapsed;
+        latestFps = (frames * 1e3) / elapsed;
         frames = 0;
         last = now;
       }
@@ -1157,8 +1237,7 @@ function useTelemetry() {
       try {
         client.reportFps(latestFps);
         saveBridgePerformanceSnapshot(latestFps);
-      } catch {
-      }
+      } catch {}
     }, 2e3);
     return () => {
       cancelAnimationFrame(raf);
@@ -1193,8 +1272,8 @@ function useTelemetry() {
             fl: jitterTire(prev.tires.fl),
             fr: jitterTire(prev.tires.fr),
             rl: jitterTire(prev.tires.rl),
-            rr: jitterTire(prev.tires.rr)
-          }
+            rr: jitterTire(prev.tires.rr),
+          },
         };
       });
     }, 1e3 / 60);
@@ -1210,7 +1289,7 @@ function jitterTire(t) {
   return {
     ...t,
     tempC,
-    state: tempC > 92 ? "hot" : tempC < 70 ? "cold" : "ok"
+    state: tempC > 92 ? "hot" : tempC < 70 ? "cold" : "ok",
   };
 }
 const WORKSPACES = {
@@ -1230,19 +1309,20 @@ const WORKSPACES = {
         unit: "m",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e101",
         name: "Thr/Brake/Coast",
         key: "throttle_brake_coast",
-        expression: "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
+        expression:
+          "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
         unit: "state",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e102",
@@ -1252,8 +1332,8 @@ const WORKSPACES = {
         unit: "bar",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e103",
@@ -1263,8 +1343,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e104",
@@ -1274,8 +1354,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e105",
@@ -1285,8 +1365,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e106",
@@ -1296,8 +1376,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e107",
@@ -1307,8 +1387,8 @@ const WORKSPACES = {
         unit: "kph",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e108",
@@ -1318,8 +1398,8 @@ const WORKSPACES = {
         unit: "kph",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e109",
@@ -1329,8 +1409,8 @@ const WORKSPACES = {
         unit: "deg",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e110",
@@ -1340,8 +1420,8 @@ const WORKSPACES = {
         unit: "deg/s",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e111",
@@ -1351,8 +1431,8 @@ const WORKSPACES = {
         unit: "mm",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e112",
@@ -1362,8 +1442,8 @@ const WORKSPACES = {
         unit: "mm",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e113",
@@ -1373,15 +1453,16 @@ const WORKSPACES = {
         unit: "%",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ]
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
+      },
+    ],
   },
   plus: {
     key: "plus",
     name: "iRacing Plus Workbook v1.3",
-    description: "Expanded professional offline analysis workbook. Dampers, Scatters, and Setup Diffs.",
+    description:
+      "Expanded professional offline analysis workbook. Dampers, Scatters, and Setup Diffs.",
     tier: "Plus",
     defaultChannels: [
       "Speed",
@@ -1393,7 +1474,7 @@ const WORKSPACES = {
       "LFshockDefl",
       "RFshockDefl",
       "LRshockDefl",
-      "RRshockDefl"
+      "RRshockDefl",
     ],
     activeTabs: [
       "cinema",
@@ -1409,7 +1490,7 @@ const WORKSPACES = {
       "apex",
       "waterfall",
       "slip",
-      "setupdiff"
+      "setupdiff",
     ],
     mathExpressions: [
       // Include all Lite formulas
@@ -1421,19 +1502,20 @@ const WORKSPACES = {
         unit: "m",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e101",
         name: "Thr/Brake/Coast",
         key: "throttle_brake_coast",
-        expression: "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
+        expression:
+          "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
         unit: "state",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e102",
@@ -1443,8 +1525,8 @@ const WORKSPACES = {
         unit: "bar",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e103",
@@ -1454,8 +1536,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e104",
@@ -1465,8 +1547,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e105",
@@ -1476,8 +1558,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e106",
@@ -1487,8 +1569,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e107",
@@ -1498,8 +1580,8 @@ const WORKSPACES = {
         unit: "kph",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e108",
@@ -1509,8 +1591,8 @@ const WORKSPACES = {
         unit: "kph",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e109",
@@ -1520,8 +1602,8 @@ const WORKSPACES = {
         unit: "deg",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e110",
@@ -1531,8 +1613,8 @@ const WORKSPACES = {
         unit: "deg/s",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e111",
@@ -1542,8 +1624,8 @@ const WORKSPACES = {
         unit: "mm",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e112",
@@ -1553,8 +1635,8 @@ const WORKSPACES = {
         unit: "mm",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e113",
@@ -1564,20 +1646,21 @@ const WORKSPACES = {
         unit: "%",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       // Plus specific formulas
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e120",
         name: "G Total (Vector)",
         key: "g_total",
-        expression: "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
+        expression:
+          "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
         unit: "G",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e121",
@@ -1587,8 +1670,8 @@ const WORKSPACES = {
         unit: "ratio",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e122",
@@ -1598,8 +1681,8 @@ const WORKSPACES = {
         unit: "%",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e123",
@@ -1609,8 +1692,8 @@ const WORKSPACES = {
         unit: "flag",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e124",
@@ -1620,8 +1703,8 @@ const WORKSPACES = {
         unit: "1/m",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e125",
@@ -1631,26 +1714,28 @@ const WORKSPACES = {
         unit: "deg-mps",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e126",
         name: "Corner State Machine",
         key: "corner_state",
-        expression: "choose(([Brake]>20)&&([Accel Longitudinal]<-0.3),3,choose(([Throttle]>30)&&(abs([Accel Lateral])>0.5),5,choose((abs([Accel Lateral])>0.5),1,0)))",
+        expression:
+          "choose(([Brake]>20)&&([Accel Longitudinal]<-0.3),3,choose(([Throttle]>30)&&(abs([Accel Lateral])>0.5),5,choose((abs([Accel Lateral])>0.5),1,0)))",
         unit: "state",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ]
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
+      },
+    ],
   },
   realtime: {
     key: "realtime",
     name: "iRacing Plus Real-Time Workbook v1.0",
-    description: "Full pro-tier workspace. Integrates high-frequency active math, 3D overlays, and spider trackers.",
+    description:
+      "Full pro-tier workspace. Integrates high-frequency active math, 3D overlays, and spider trackers.",
     tier: "Pro",
     defaultChannels: [
       "Speed",
@@ -1663,7 +1748,7 @@ const WORKSPACES = {
       "RFshockDefl",
       "LRshockDefl",
       "RRshockDefl",
-      "YawRate"
+      "YawRate",
     ],
     activeTabs: [
       "cinema",
@@ -1682,7 +1767,7 @@ const WORKSPACES = {
       "setupdiff",
       "replay3d",
       "piano",
-      "spider"
+      "spider",
     ],
     mathExpressions: [
       // Includes all Plus formulas + Real-time active math
@@ -1694,19 +1779,20 @@ const WORKSPACES = {
         unit: "m",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e101",
         name: "Thr/Brake/Coast",
         key: "throttle_brake_coast",
-        expression: "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
+        expression:
+          "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
         unit: "state",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e102",
@@ -1716,8 +1802,8 @@ const WORKSPACES = {
         unit: "bar",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e103",
@@ -1727,8 +1813,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e104",
@@ -1738,8 +1824,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e105",
@@ -1749,8 +1835,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e106",
@@ -1760,8 +1846,8 @@ const WORKSPACES = {
         unit: "C",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e107",
@@ -1771,8 +1857,8 @@ const WORKSPACES = {
         unit: "kph",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e108",
@@ -1782,8 +1868,8 @@ const WORKSPACES = {
         unit: "kph",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e109",
@@ -1793,8 +1879,8 @@ const WORKSPACES = {
         unit: "deg",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e110",
@@ -1804,8 +1890,8 @@ const WORKSPACES = {
         unit: "deg/s",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e111",
@@ -1815,8 +1901,8 @@ const WORKSPACES = {
         unit: "mm",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e112",
@@ -1826,8 +1912,8 @@ const WORKSPACES = {
         unit: "mm",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e113",
@@ -1837,19 +1923,20 @@ const WORKSPACES = {
         unit: "%",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e120",
         name: "G Total (Vector)",
         key: "g_total",
-        expression: "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
+        expression:
+          "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
         unit: "G",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e121",
@@ -1859,8 +1946,8 @@ const WORKSPACES = {
         unit: "ratio",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e122",
@@ -1870,8 +1957,8 @@ const WORKSPACES = {
         unit: "%",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e123",
@@ -1881,8 +1968,8 @@ const WORKSPACES = {
         unit: "flag",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e124",
@@ -1892,8 +1979,8 @@ const WORKSPACES = {
         unit: "1/m",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       // Real-time exclusive triggers
       {
@@ -1904,8 +1991,8 @@ const WORKSPACES = {
         unit: "flag",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e131",
@@ -1915,8 +2002,8 @@ const WORKSPACES = {
         unit: "flag",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
       },
       {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e132",
@@ -1926,11 +2013,11 @@ const WORKSPACES = {
         unit: "flag",
         enabled: true,
         scope: "both",
-        created_at: (/* @__PURE__ */ new Date()).toISOString(),
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      }
-    ]
-  }
+        created_at: /* @__PURE__ */ new Date().toISOString(),
+        updated_at: /* @__PURE__ */ new Date().toISOString(),
+      },
+    ],
+  },
 };
 const DEFAULT_CHANNELS = [
   "Speed",
@@ -1940,7 +2027,7 @@ const DEFAULT_CHANNELS = [
   "Gear",
   "SteeringWheelAngle",
   "LatAccel",
-  "LongAccel"
+  "LongAccel",
 ];
 const CHANNEL_COLOR = {
   Speed: "var(--ch-speed)",
@@ -1950,7 +2037,7 @@ const CHANNEL_COLOR = {
   Gear: "var(--ch-gear)",
   SteeringWheelAngle: "var(--ch-steer)",
   LatAccel: "var(--ch-glat)",
-  LongAccel: "var(--ch-glong)"
+  LongAccel: "var(--ch-glong)",
 };
 function colorForChannel(name) {
   return CHANNEL_COLOR[name] ?? "var(--ch-default)";
@@ -1972,7 +2059,8 @@ const useWorkbench = create()(
           }
           if (bestLap == null) bestLap = p.laps[0].lap;
         }
-        const startTick = bestLap != null ? p.laps.find((l) => l.lap === bestLap)?.startTick ?? 0 : 0;
+        const startTick =
+          bestLap != null ? (p.laps.find((l) => l.lap === bestLap)?.startTick ?? 0) : 0;
         const activeKey = get().activeWorkspace ?? "lite";
         const config = WORKSPACES[activeKey];
         set(() => ({
@@ -1981,15 +2069,18 @@ const useWorkbench = create()(
           selectedChannels: p ? config.defaultChannels.filter((c) => c in p.channels) : [],
           refLap: bestLap,
           cmpLap: null,
-          playing: false
+          playing: false,
         }));
       },
       cursorTick: 0,
       setCursorTick: (t) => set({ cursorTick: t }),
       selectedChannels: [],
-      toggleChannel: (name) => set((s) => ({
-        selectedChannels: s.selectedChannels.includes(name) ? s.selectedChannels.filter((n) => n !== name) : [...s.selectedChannels, name]
-      })),
+      toggleChannel: (name) =>
+        set((s) => ({
+          selectedChannels: s.selectedChannels.includes(name)
+            ? s.selectedChannels.filter((n) => n !== name)
+            : [...s.selectedChannels, name],
+        })),
       setChannels: (names) => set({ selectedChannels: names }),
       refLap: null,
       cmpLap: null,
@@ -2032,7 +2123,8 @@ const useWorkbench = create()(
       liveTrack: "",
       liveCar: "",
       liveConnected: false,
-      setLiveContext: (track, car, connected) => set({ liveTrack: track, liveCar: car, liveConnected: connected }),
+      setLiveContext: (track, car, connected) =>
+        set({ liveTrack: track, liveCar: car, liveConnected: connected }),
       pendingLocalBlob: null,
       setPendingLocalBlob: (blob) => set({ pendingLocalBlob: blob }),
       subscriptionPlan: null,
@@ -2044,10 +2136,12 @@ const useWorkbench = create()(
         const config = WORKSPACES[w];
         set((s) => ({
           activeWorkspace: w,
-          selectedChannels: s.parsed ? config.defaultChannels.filter((c) => c in s.parsed.channels) : config.defaultChannels,
-          mathExpressions: config.mathExpressions
+          selectedChannels: s.parsed
+            ? config.defaultChannels.filter((c) => c in s.parsed.channels)
+            : config.defaultChannels,
+          mathExpressions: config.mathExpressions,
         }));
-      }
+      },
     }),
     {
       name: "pitwall-workbench-storage",
@@ -2069,10 +2163,10 @@ const useWorkbench = create()(
         micDeviceId: state.micDeviceId,
         mathExpressions: state.mathExpressions,
         activeWorkspace: state.activeWorkspace,
-        activeGame: state.activeGame
-      })
-    }
-  )
+        activeGame: state.activeGame,
+      }),
+    },
+  ),
 );
 function LiveBridgeSync({ t }) {
   const setLiveContext = useWorkbench((s) => s.setLiveContext);
@@ -2082,88 +2176,175 @@ function LiveBridgeSync({ t }) {
   return null;
 }
 const upsertMyGearRatios = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  car: z.string().min(1).max(255),
-  ratios: z.record(z.string(), z.object({
-    ratio: z.number(),
-    samples: z.number()
-  }))
-}).parse(input)).handler(createSsrRpc("a9e884129245c896049675548db8c3263324534e7707c6a14a71b0ac924c5ec7"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        car: z.string().min(1).max(255),
+        ratios: z.record(
+          z.string(),
+          z.object({
+            ratio: z.number(),
+            samples: z.number(),
+          }),
+        ),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("a9e884129245c896049675548db8c3263324534e7707c6a14a71b0ac924c5ec7"));
 createServerFn({
-  method: "GET"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  car: z.string().min(1).max(255)
-}).parse(input)).handler(createSsrRpc("9e832443bf68dc1afd0906f77686b1ea8872ad09afcaa177d4f399a63b42e66a"));
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        car: z.string().min(1).max(255),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("9e832443bf68dc1afd0906f77686b1ea8872ad09afcaa177d4f399a63b42e66a"));
 const publishMyGearRatios = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  car: z.string().min(1).max(255),
-  name: z.string().max(120).optional(),
-  published: z.boolean()
-}).parse(input)).handler(createSsrRpc("27806ff807d7d8480171f4973109eb2bb2f01480e1fd2c4c7d3e9b351a157d43"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        car: z.string().min(1).max(255),
+        name: z.string().max(120).optional(),
+        published: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("27806ff807d7d8480171f4973109eb2bb2f01480e1fd2c4c7d3e9b351a157d43"));
 const listCommunityGearRatios = createServerFn({
-  method: "GET"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  car: z.string().min(1).max(255).optional()
-}).parse(input)).handler(createSsrRpc("a933f1c90db2b411b6f804ed4c984c6e101ca06daaf62450a1ddebca103ad19a"));
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        car: z.string().min(1).max(255).optional(),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("a933f1c90db2b411b6f804ed4c984c6e101ca06daaf62450a1ddebca103ad19a"));
 const ChannelLayoutSchema = z.object({
   visible: z.array(z.string().max(120)).max(300),
   modeByKey: z.record(z.string().max(120), z.enum(["raw", "trace"])).optional(),
-  mathExpressions: z.array(MathExpressionSchema).max(100).optional()
+  mathExpressions: z.array(MathExpressionSchema).max(100).optional(),
 });
 const upsertMyChannelLayout = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  name: z.string().min(1).max(120),
-  layout: ChannelLayoutSchema
-}).parse(input)).handler(createSsrRpc("31bb52f01c1ca777a07f8b7d28b2d3eef0780ba57d6cb939fb6db52d68d3d10b"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().min(1).max(120),
+        layout: ChannelLayoutSchema,
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("31bb52f01c1ca777a07f8b7d28b2d3eef0780ba57d6cb939fb6db52d68d3d10b"));
 createServerFn({
-  method: "GET"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  name: z.string().min(1).max(120).default("default")
-}).parse(input)).handler(createSsrRpc("16e5998c5e349d45bf571ca307d98918f10fe195c5b6005d6285c65d7e7dfa88"));
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().min(1).max(120).default("default"),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("16e5998c5e349d45bf571ca307d98918f10fe195c5b6005d6285c65d7e7dfa88"));
 const publishMyChannelLayout = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  name: z.string().min(1).max(120),
-  published: z.boolean()
-}).parse(input)).handler(createSsrRpc("a0267f99ea641dee7a11ee872b71ff1a19869f78cae83bc19cef292565f399f7"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().min(1).max(120),
+        published: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("a0267f99ea641dee7a11ee872b71ff1a19869f78cae83bc19cef292565f399f7"));
 const listCommunityChannelLayouts = createServerFn({
-  method: "GET"
-}).middleware([requireSupabaseAuth]).handler(createSsrRpc("21b7d4b9cd49310bbcedb32d65588f95c68176ba57a09f7d1beaef4723ebb413"));
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .handler(createSsrRpc("21b7d4b9cd49310bbcedb32d65588f95c68176ba57a09f7d1beaef4723ebb413"));
 createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  car: z.string().min(1).max(255),
-  car_class: z.string().min(1).max(64),
-  confidence: z.number().min(0).max(1).optional(),
-  published: z.boolean().optional()
-}).parse(input)).handler(createSsrRpc("86e46adc000ddd68d04e26f71b110afe4b4522c393e8871abd429fcbd9f4e008"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        car: z.string().min(1).max(255),
+        car_class: z.string().min(1).max(64),
+        confidence: z.number().min(0).max(1).optional(),
+        published: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("86e46adc000ddd68d04e26f71b110afe4b4522c393e8871abd429fcbd9f4e008"));
 createServerFn({
-  method: "GET"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  car: z.string().min(1).max(255).optional()
-}).parse(input)).handler(createSsrRpc("68ae1d118973fcae6b72b9ffb357a8b7cf6c764622416c26643e0fa0ac5e4749"));
+  method: "GET",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        car: z.string().min(1).max(255).optional(),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("68ae1d118973fcae6b72b9ffb357a8b7cf6c764622416c26643e0fa0ac5e4749"));
 const VoteKind = z.enum(["gear_ratios", "channel_layout", "car_class"]);
 const voteCommunityItem = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  target_id: z.string().uuid(),
-  kind: VoteKind
-}).parse(input)).handler(createSsrRpc("7a7081d7243c130f1807d297517e861177ea1df81e921aee7d538e61ccc05ea0"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        target_id: z.string().uuid(),
+        kind: VoteKind,
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("7a7081d7243c130f1807d297517e861177ea1df81e921aee7d538e61ccc05ea0"));
 const syncDesktopLaps = createServerFn({
-  method: "POST"
-}).middleware([requireSupabaseAuth]).inputValidator((input) => z.object({
-  laps: z.array(z.object({
-    ts: z.number(),
-    car: z.string().max(255).optional().nullable(),
-    track: z.string().max(255).optional().nullable(),
-    lapTimeS: z.number().positive(),
-    fuel: z.number().optional().nullable(),
-    sof: z.number().optional().nullable()
-  })).min(1).max(500)
-}).parse(input)).handler(createSsrRpc("abbba3ff862cf55481069f2003803c513de3794ce64b16ed9b1201afed0c3569"));
+  method: "POST",
+})
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        laps: z
+          .array(
+            z.object({
+              ts: z.number(),
+              car: z.string().max(255).optional().nullable(),
+              track: z.string().max(255).optional().nullable(),
+              lapTimeS: z.number().positive(),
+              fuel: z.number().optional().nullable(),
+              sof: z.number().optional().nullable(),
+            }),
+          )
+          .min(1)
+          .max(500),
+      })
+      .parse(input),
+  )
+  .handler(createSsrRpc("abbba3ff862cf55481069f2003803c513de3794ce64b16ed9b1201afed0c3569"));
 const BRIDGE_BASE = "http://localhost:3001";
 const SYNCED_KEY = "pitwall.lapsync.synced.v1";
 function loadSynced() {
@@ -2176,8 +2357,7 @@ function loadSynced() {
 function saveSynced(s) {
   try {
     localStorage.setItem(SYNCED_KEY, JSON.stringify(Array.from(s).slice(-2e3)));
-  } catch {
-  }
+  } catch {}
 }
 function DesktopLapSync() {
   const sync = useServerFn(syncDesktopLaps);
@@ -2192,7 +2372,7 @@ function DesktopLapSync() {
         const body = await res.json();
         const synced = loadSynced();
         const fresh = body.laps.filter(
-          (l) => l.ts && !synced.has(l.ts) && l.lapTimeS && l.lapTimeS > 0 && l.car && l.track
+          (l) => l.ts && !synced.has(l.ts) && l.lapTimeS && l.lapTimeS > 0 && l.car && l.track,
         );
         if (fresh.length === 0) {
           setStatus(`cached ${body.laps.length} · synced ${synced.size}`);
@@ -2208,9 +2388,9 @@ function DesktopLapSync() {
               track: l.track ?? null,
               lapTimeS: l.lapTimeS,
               fuel: l.fuel ?? null,
-              sof: l.sof ?? null
-            }))
-          }
+              sof: l.sof ?? null,
+            })),
+          },
         });
         if ("accepted" in out) {
           for (const ts of out.accepted) synced.add(ts);
@@ -2218,9 +2398,8 @@ function DesktopLapSync() {
           fetch(`${BRIDGE_BASE}/api/laps/mark-synced`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ timestamps: out.accepted })
-          }).catch(() => {
-          });
+            body: JSON.stringify({ timestamps: out.accepted }),
+          }).catch(() => {});
           setStatus(`synced ${out.inserted} · total ${synced.size}`);
         }
       } catch {
@@ -2234,13 +2413,29 @@ function DesktopLapSync() {
       clearInterval(id);
     };
   }, [sync]);
-  return /* @__PURE__ */ jsxs("div", { className: "rounded-sm border border-border bg-background px-2 py-1.5 text-[10px]", children: [
-    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-      /* @__PURE__ */ jsx("span", { className: "uppercase tracking-[0.18em] text-muted-foreground", children: "Desktop Lap Sync" }),
-      /* @__PURE__ */ jsx("span", { className: "text-muted-foreground tabular-nums", children: status })
-    ] }),
-    total > 0 && /* @__PURE__ */ jsx("div", { className: "mt-0.5 text-[9px] text-muted-foreground", children: "Local laps from ~/.pitwall/laps.jsonl are pushed to Cloud every 60s." })
-  ] });
+  return /* @__PURE__ */ jsxs("div", {
+    className: "rounded-sm border border-border bg-background px-2 py-1.5 text-[10px]",
+    children: [
+      /* @__PURE__ */ jsxs("div", {
+        className: "flex items-center justify-between",
+        children: [
+          /* @__PURE__ */ jsx("span", {
+            className: "uppercase tracking-[0.18em] text-muted-foreground",
+            children: "Desktop Lap Sync",
+          }),
+          /* @__PURE__ */ jsx("span", {
+            className: "text-muted-foreground tabular-nums",
+            children: status,
+          }),
+        ],
+      }),
+      total > 0 &&
+        /* @__PURE__ */ jsx("div", {
+          className: "mt-0.5 text-[9px] text-muted-foreground",
+          children: "Local laps from ~/.pitwall/laps.jsonl are pushed to Cloud every 60s.",
+        }),
+    ],
+  });
 }
 const HELP_SEEN_KEY = "pit-wall:help-seen-v1";
 const steps = [
@@ -2250,49 +2445,76 @@ const steps = [
     label: "Welcome",
     title: "Welcome to Pit Wall",
     subtitle: "Your complete iRacing telemetry companion",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs("p", { className: "text-muted-foreground leading-relaxed", children: [
-        "Pit Wall is a ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "three-in-one" }),
-        " iRacing companion built for serious drivers. It combines a live in-session dashboard, a deep lap analysis workbench, and an AI-powered race engineer into one seamless tool."
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "grid grid-cols-1 gap-3 sm:grid-cols-3", children: [
-        {
-          icon: /* @__PURE__ */ jsx(Wifi, { className: "h-4 w-4 text-racing-cyan" }),
-          label: "Live Bridge",
-          desc: "Real-time telemetry while you're on track"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(LineChart, { className: "h-4 w-4 text-racing-green" }),
-          label: "Lap Workbench",
-          desc: "Deep analysis of saved .ibt / .pwlap files"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(Brain, { className: "h-4 w-4 text-racing-orange" }),
-          label: "AI Coach",
-          desc: "Radio calls and setup advice after every lap"
-        }
-      ].map((item) => /* @__PURE__ */ jsxs(
-        "div",
-        {
-          className: "rounded-lg border border-border bg-rail p-3 space-y-1.5",
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-muted-foreground leading-relaxed",
           children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-              item.icon,
-              /* @__PURE__ */ jsx("span", { className: "text-xs font-semibold uppercase tracking-wider", children: item.label })
-            ] }),
-            /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground", children: item.desc })
-          ]
-        },
-        item.label
-      )) }),
-      /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground border border-border/50 rounded-md px-3 py-2 bg-rail/50", children: [
-        "💡 This guide takes about 2 minutes. You can re-open it anytime with the",
-        " ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "?" }),
-        " button in the top-right corner."
-      ] })
-    ] })
+            "Pit Wall is a ",
+            /* @__PURE__ */ jsx("strong", {
+              className: "text-foreground",
+              children: "three-in-one",
+            }),
+            " iRacing companion built for serious drivers. It combines a live in-session dashboard, a deep lap analysis workbench, and an AI-powered race engineer into one seamless tool.",
+          ],
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "grid grid-cols-1 gap-3 sm:grid-cols-3",
+          children: [
+            {
+              icon: /* @__PURE__ */ jsx(Wifi, { className: "h-4 w-4 text-racing-cyan" }),
+              label: "Live Bridge",
+              desc: "Real-time telemetry while you're on track",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(LineChart, { className: "h-4 w-4 text-racing-green" }),
+              label: "Lap Workbench",
+              desc: "Deep analysis of saved .ibt / .pwlap files",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(Brain, { className: "h-4 w-4 text-racing-orange" }),
+              label: "AI Coach",
+              desc: "Radio calls and setup advice after every lap",
+            },
+          ].map((item) =>
+            /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "rounded-lg border border-border bg-rail p-3 space-y-1.5",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-center gap-2",
+                    children: [
+                      item.icon,
+                      /* @__PURE__ */ jsx("span", {
+                        className: "text-xs font-semibold uppercase tracking-wider",
+                        children: item.label,
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsx("p", {
+                    className: "text-xs text-muted-foreground",
+                    children: item.desc,
+                  }),
+                ],
+              },
+              item.label,
+            ),
+          ),
+        }),
+        /* @__PURE__ */ jsxs("p", {
+          className:
+            "text-xs text-muted-foreground border border-border/50 rounded-md px-3 py-2 bg-rail/50",
+          children: [
+            "💡 This guide takes about 2 minutes. You can re-open it anytime with the",
+            " ",
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "?" }),
+            " button in the top-right corner.",
+          ],
+        }),
+      ],
+    }),
   },
   {
     id: "bridge",
@@ -2300,52 +2522,75 @@ const steps = [
     label: "Live Bridge",
     title: "Step 1 — Connect the Live Bridge",
     subtitle: "Launch the telemetry service with one click",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs("p", { className: "text-muted-foreground leading-relaxed", children: [
-        "iRacing exposes live telemetry via a Windows Shared Memory API. The",
-        " ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Pit Wall Bridge" }),
-        " is a small Node.js app that reads that memory and broadcasts it over WebSocket to your browser. You can launch it with one click!"
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "space-y-2", children: [
-        {
-          n: 1,
-          icon: /* @__PURE__ */ jsx(Zap, { className: "h-3.5 w-3.5 text-racing-orange" }),
-          title: "Run Local Bridge",
-          desc: 'Click the "Run Local Bridge" button on the live page. The app automatically spawns the background service.'
-        },
-        {
-          n: 2,
-          icon: /* @__PURE__ */ jsx(Wifi, { className: "h-3.5 w-3.5 text-primary" }),
-          title: "Establish Connection",
-          desc: "The bridge status in the dashboard will change from stopped to active instantly."
-        },
-        {
-          n: 3,
-          icon: /* @__PURE__ */ jsx(Gauge, { className: "h-3.5 w-3.5 text-racing-green" }),
-          title: "Stream Live",
-          desc: "Launch iRacing, get in a car, and telemetry will stream immediately."
-        }
-      ].map((s) => /* @__PURE__ */ jsxs(
-        "div",
-        {
-          className: "flex items-start gap-3 rounded-md border border-border bg-rail p-3",
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-muted-foreground leading-relaxed",
           children: [
-            /* @__PURE__ */ jsx("span", { className: "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-mono text-primary-foreground", children: s.n }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1.5 text-xs font-semibold", children: [
-                s.icon,
-                s.title
-              ] }),
-              /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: s.desc })
-            ] })
-          ]
-        },
-        s.n
-      )) })
-    ] }),
+            "iRacing exposes live telemetry via a Windows Shared Memory API. The",
+            " ",
+            /* @__PURE__ */ jsx("strong", {
+              className: "text-foreground",
+              children: "Pit Wall Bridge",
+            }),
+            " is a small Node.js app that reads that memory and broadcasts it over WebSocket to your browser. You can launch it with one click!",
+          ],
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "space-y-2",
+          children: [
+            {
+              n: 1,
+              icon: /* @__PURE__ */ jsx(Zap, { className: "h-3.5 w-3.5 text-racing-orange" }),
+              title: "Run Local Bridge",
+              desc: 'Click the "Run Local Bridge" button on the live page. The app automatically spawns the background service.',
+            },
+            {
+              n: 2,
+              icon: /* @__PURE__ */ jsx(Wifi, { className: "h-3.5 w-3.5 text-primary" }),
+              title: "Establish Connection",
+              desc: "The bridge status in the dashboard will change from stopped to active instantly.",
+            },
+            {
+              n: 3,
+              icon: /* @__PURE__ */ jsx(Gauge, { className: "h-3.5 w-3.5 text-racing-green" }),
+              title: "Stream Live",
+              desc: "Launch iRacing, get in a car, and telemetry will stream immediately.",
+            },
+          ].map((s) =>
+            /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "flex items-start gap-3 rounded-md border border-border bg-rail p-3",
+                children: [
+                  /* @__PURE__ */ jsx("span", {
+                    className:
+                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-mono text-primary-foreground",
+                    children: s.n,
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    children: [
+                      /* @__PURE__ */ jsxs("div", {
+                        className: "flex items-center gap-1.5 text-xs font-semibold",
+                        children: [s.icon, s.title],
+                      }),
+                      /* @__PURE__ */ jsx("p", {
+                        className: "text-xs text-muted-foreground mt-0.5",
+                        children: s.desc,
+                      }),
+                    ],
+                  }),
+                ],
+              },
+              s.n,
+            ),
+          ),
+        }),
+      ],
+    }),
     ctaLabel: "Open Live Dashboard",
-    ctaTo: "/live"
+    ctaTo: "/live",
   },
   {
     id: "live",
@@ -2353,33 +2598,63 @@ const steps = [
     label: "Live Dashboard",
     title: "Step 2 — The Live Dashboard",
     subtitle: "Real-time data while you're driving",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs("p", { className: "text-muted-foreground leading-relaxed", children: [
-        "Once the bridge is running and you're on track, the",
-        " ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "/live" }),
-        " dashboard streams 60Hz telemetry from iRacing directly to your browser. No API keys, no cloud, no latency."
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "grid grid-cols-2 gap-2 text-xs", children: [
-        { label: "Delta to PB", desc: "Green = gaining, Red = losing time" },
-        { label: "Lap Times", desc: "Current + personal best with sector splits" },
-        { label: "Tire Temps", desc: "Four corners, colour-coded by temperature" },
-        { label: "G-Force", desc: "Live lateral & longitudinal G display" },
-        { label: "Fuel Calculator", desc: "Laps remaining based on burn rate" },
-        { label: "AI Radio", desc: "Coach speaks after every completed lap" }
-      ].map((f) => /* @__PURE__ */ jsxs("div", { className: "rounded border border-border bg-rail px-2.5 py-2", children: [
-        /* @__PURE__ */ jsx("div", { className: "font-semibold text-foreground", children: f.label }),
-        /* @__PURE__ */ jsx("div", { className: "text-muted-foreground mt-0.5", children: f.desc })
-      ] }, f.label)) }),
-      /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Recording:" }),
-        " Hit the red dot button to record a session as a ",
-        /* @__PURE__ */ jsx("code", { className: "text-xs bg-rail px-1 rounded", children: ".pwlap" }),
-        " file. When you save it, it opens instantly in the Workbench — no upload wait time."
-      ] })
-    ] }),
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-muted-foreground leading-relaxed",
+          children: [
+            "Once the bridge is running and you're on track, the",
+            " ",
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "/live" }),
+            " dashboard streams 60Hz telemetry from iRacing directly to your browser. No API keys, no cloud, no latency.",
+          ],
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "grid grid-cols-2 gap-2 text-xs",
+          children: [
+            { label: "Delta to PB", desc: "Green = gaining, Red = losing time" },
+            { label: "Lap Times", desc: "Current + personal best with sector splits" },
+            { label: "Tire Temps", desc: "Four corners, colour-coded by temperature" },
+            { label: "G-Force", desc: "Live lateral & longitudinal G display" },
+            { label: "Fuel Calculator", desc: "Laps remaining based on burn rate" },
+            { label: "AI Radio", desc: "Coach speaks after every completed lap" },
+          ].map((f) =>
+            /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "rounded border border-border bg-rail px-2.5 py-2",
+                children: [
+                  /* @__PURE__ */ jsx("div", {
+                    className: "font-semibold text-foreground",
+                    children: f.label,
+                  }),
+                  /* @__PURE__ */ jsx("div", {
+                    className: "text-muted-foreground mt-0.5",
+                    children: f.desc,
+                  }),
+                ],
+              },
+              f.label,
+            ),
+          ),
+        }),
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-xs text-muted-foreground",
+          children: [
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Recording:" }),
+            " Hit the red dot button to record a session as a ",
+            /* @__PURE__ */ jsx("code", {
+              className: "text-xs bg-rail px-1 rounded",
+              children: ".pwlap",
+            }),
+            " file. When you save it, it opens instantly in the Workbench — no upload wait time.",
+          ],
+        }),
+      ],
+    }),
     ctaLabel: "Open Live Dashboard",
-    ctaTo: "/live"
+    ctaTo: "/live",
   },
   {
     id: "workbench",
@@ -2387,64 +2662,90 @@ const steps = [
     label: "Lap Workbench",
     title: "Step 3 — The Lap Workbench",
     subtitle: "MoTeC-style deep analysis of every lap",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs("p", { className: "text-muted-foreground leading-relaxed", children: [
-        "Load any ",
-        /* @__PURE__ */ jsx("code", { className: "text-xs bg-rail px-1 rounded", children: ".ibt" }),
-        " or",
-        " ",
-        /* @__PURE__ */ jsx("code", { className: "text-xs bg-rail px-1 rounded", children: ".pwlap" }),
-        " file into the",
-        " ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Workbench" }),
-        " for a full MoTeC-style breakdown. No subscription required — it all runs locally in your browser."
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "space-y-2 text-xs", children: [
-        {
-          icon: /* @__PURE__ */ jsx(LineChart, { className: "h-3 w-3 text-primary" }),
-          label: "Stacked Traces",
-          desc: "Overlay throttle, brake, steer, speed and any other channel across laps"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(Zap, { className: "h-3 w-3 text-racing-orange" }),
-          label: "Sector Analysis",
-          desc: "Identify exactly which corner is costing you the most time"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(Brain, { className: "h-3 w-3 text-racing-cyan" }),
-          label: "AI Coach Report",
-          desc: "GPT-powered post-session coaching based on your telemetry profile"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(FolderOpen, { className: "h-3 w-3 text-racing-green" }),
-          label: "Session Library",
-          desc: "All your sessions in one place — filter by track, car, or date"
-        }
-      ].map((f) => /* @__PURE__ */ jsxs(
-        "div",
-        {
-          className: "flex items-start gap-2 rounded border border-border bg-rail px-2.5 py-2",
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-muted-foreground leading-relaxed",
           children: [
-            /* @__PURE__ */ jsx("span", { className: "mt-0.5 shrink-0", children: f.icon }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("span", { className: "font-semibold text-foreground", children: f.label }),
-              /* @__PURE__ */ jsxs("span", { className: "text-muted-foreground", children: [
-                " — ",
-                f.desc
-              ] })
-            ] })
-          ]
-        },
-        f.label
-      )) }),
-      /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground", children: [
-        "🔑 ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Tip:" }),
-        " Don't have an iRacing .ibt file? Use the Lab to upload one directly from disk without needing to log in."
-      ] })
-    ] }),
+            "Load any ",
+            /* @__PURE__ */ jsx("code", {
+              className: "text-xs bg-rail px-1 rounded",
+              children: ".ibt",
+            }),
+            " or",
+            " ",
+            /* @__PURE__ */ jsx("code", {
+              className: "text-xs bg-rail px-1 rounded",
+              children: ".pwlap",
+            }),
+            " file into the",
+            " ",
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Workbench" }),
+            " for a full MoTeC-style breakdown. No subscription required — it all runs locally in your browser.",
+          ],
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "space-y-2 text-xs",
+          children: [
+            {
+              icon: /* @__PURE__ */ jsx(LineChart, { className: "h-3 w-3 text-primary" }),
+              label: "Stacked Traces",
+              desc: "Overlay throttle, brake, steer, speed and any other channel across laps",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(Zap, { className: "h-3 w-3 text-racing-orange" }),
+              label: "Sector Analysis",
+              desc: "Identify exactly which corner is costing you the most time",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(Brain, { className: "h-3 w-3 text-racing-cyan" }),
+              label: "AI Coach Report",
+              desc: "GPT-powered post-session coaching based on your telemetry profile",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(FolderOpen, { className: "h-3 w-3 text-racing-green" }),
+              label: "Session Library",
+              desc: "All your sessions in one place — filter by track, car, or date",
+            },
+          ].map((f) =>
+            /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className:
+                  "flex items-start gap-2 rounded border border-border bg-rail px-2.5 py-2",
+                children: [
+                  /* @__PURE__ */ jsx("span", { className: "mt-0.5 shrink-0", children: f.icon }),
+                  /* @__PURE__ */ jsxs("div", {
+                    children: [
+                      /* @__PURE__ */ jsx("span", {
+                        className: "font-semibold text-foreground",
+                        children: f.label,
+                      }),
+                      /* @__PURE__ */ jsxs("span", {
+                        className: "text-muted-foreground",
+                        children: [" — ", f.desc],
+                      }),
+                    ],
+                  }),
+                ],
+              },
+              f.label,
+            ),
+          ),
+        }),
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-xs text-muted-foreground",
+          children: [
+            "🔑 ",
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Tip:" }),
+            " Don't have an iRacing .ibt file? Use the Lab to upload one directly from disk without needing to log in.",
+          ],
+        }),
+      ],
+    }),
     ctaLabel: "Open Lab",
-    ctaTo: "/lab/lapfile"
+    ctaTo: "/lab/lapfile",
   },
   {
     id: "sessions",
@@ -2452,32 +2753,65 @@ const steps = [
     label: "Session Library",
     title: "Step 4 — Your Session Library",
     subtitle: "All your sessions in one place",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs("p", { className: "text-muted-foreground leading-relaxed", children: [
-        "Every session you record on track or upload from disk gets saved to your",
-        " ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Session Library" }),
-        ". Sign in with your account to sync data to the cloud, or — if you've installed MongoDB locally — everything stores on your own machine."
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "grid grid-cols-2 gap-2 text-xs", children: [
-        { label: "Track filtering", desc: "Jump straight to Silverstone, Monza or any track" },
-        { label: "Car filtering", desc: "Compare performance across different car classes" },
-        { label: "Best lap history", desc: "See your all-time PB and trend over time" },
-        { label: "Shareable links", desc: "Share a specific lap to a link for teammates" }
-      ].map((f) => /* @__PURE__ */ jsxs("div", { className: "rounded border border-border bg-rail px-2.5 py-2", children: [
-        /* @__PURE__ */ jsx("div", { className: "font-semibold text-foreground", children: f.label }),
-        /* @__PURE__ */ jsx("div", { className: "text-muted-foreground mt-0.5", children: f.desc })
-      ] }, f.label)) }),
-      /* @__PURE__ */ jsxs("div", { className: "flex items-start gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-400", children: [
-        /* @__PURE__ */ jsx(Database, { className: "h-3.5 w-3.5 mt-0.5 shrink-0" }),
-        /* @__PURE__ */ jsxs("span", { children: [
-          /* @__PURE__ */ jsx("strong", { children: "Local-First Active:" }),
-          ` Select the "Continue as Local Developer" option. Telemetry records write instantly to your local MongoDB, and file binaries are cached locally in your browser's IndexedDB.`
-        ] })
-      ] })
-    ] }),
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-muted-foreground leading-relaxed",
+          children: [
+            "Every session you record on track or upload from disk gets saved to your",
+            " ",
+            /* @__PURE__ */ jsx("strong", {
+              className: "text-foreground",
+              children: "Session Library",
+            }),
+            ". Sign in with your account to sync data to the cloud, or — if you've installed MongoDB locally — everything stores on your own machine.",
+          ],
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "grid grid-cols-2 gap-2 text-xs",
+          children: [
+            { label: "Track filtering", desc: "Jump straight to Silverstone, Monza or any track" },
+            { label: "Car filtering", desc: "Compare performance across different car classes" },
+            { label: "Best lap history", desc: "See your all-time PB and trend over time" },
+            { label: "Shareable links", desc: "Share a specific lap to a link for teammates" },
+          ].map((f) =>
+            /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: "rounded border border-border bg-rail px-2.5 py-2",
+                children: [
+                  /* @__PURE__ */ jsx("div", {
+                    className: "font-semibold text-foreground",
+                    children: f.label,
+                  }),
+                  /* @__PURE__ */ jsx("div", {
+                    className: "text-muted-foreground mt-0.5",
+                    children: f.desc,
+                  }),
+                ],
+              },
+              f.label,
+            ),
+          ),
+        }),
+        /* @__PURE__ */ jsxs("div", {
+          className:
+            "flex items-start gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-400",
+          children: [
+            /* @__PURE__ */ jsx(Database, { className: "h-3.5 w-3.5 mt-0.5 shrink-0" }),
+            /* @__PURE__ */ jsxs("span", {
+              children: [
+                /* @__PURE__ */ jsx("strong", { children: "Local-First Active:" }),
+                ` Select the "Continue as Local Developer" option. Telemetry records write instantly to your local MongoDB, and file binaries are cached locally in your browser's IndexedDB.`,
+              ],
+            }),
+          ],
+        }),
+      ],
+    }),
     ctaLabel: "View Sessions",
-    ctaTo: "/sessions"
+    ctaTo: "/sessions",
   },
   {
     id: "ai",
@@ -2485,58 +2819,99 @@ const steps = [
     label: "AI Coach",
     title: "Step 5 — The AI Race Engineer",
     subtitle: "GPT-powered coaching after every lap",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsxs("p", { className: "text-muted-foreground leading-relaxed", children: [
-        "The ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "AI Coach" }),
-        " listens to each completed lap and gives you a radio call — just like a real race engineer. It decides the",
-        " ",
-        /* @__PURE__ */ jsx("em", { className: "text-foreground", children: "tone" }),
-        " based on your performance:",
-        " ",
-        /* @__PURE__ */ jsx("span", { className: "text-racing-green font-semibold", children: "PUSH" }),
-        ",",
-        " ",
-        /* @__PURE__ */ jsx("span", { className: "text-racing-orange font-semibold", children: "HOLD" }),
-        ", or",
-        " ",
-        /* @__PURE__ */ jsx("span", { className: "text-red-400 font-semibold", children: "WARN" }),
-        "."
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "space-y-2 text-xs", children: [
-        {
-          tone: "PUSH",
-          color: "text-racing-green border-racing-green/30 bg-racing-green/5",
-          desc: "You're in the zone, personal best incoming. Keep the pressure on."
-        },
-        {
-          tone: "HOLD",
-          color: "text-racing-orange border-racing-orange/30 bg-racing-orange/5",
-          desc: "Consistent but not setting records. Focus on a specific sector."
-        },
-        {
-          tone: "WARN",
-          color: "text-red-400 border-red-400/30 bg-red-400/5",
-          desc: "Tire temps critical, fuel low, or braking instability detected."
-        }
-      ].map((t) => /* @__PURE__ */ jsxs("div", { className: `rounded border px-3 py-2 ${t.color}`, children: [
-        /* @__PURE__ */ jsx("span", { className: "font-bold font-mono", children: t.tone }),
-        /* @__PURE__ */ jsxs("span", { className: "text-muted-foreground", children: [
-          " — ",
-          t.desc
-        ] })
-      ] }, t.tone)) }),
-      /* @__PURE__ */ jsxs("div", { className: "text-xs text-muted-foreground space-y-1", children: [
-        /* @__PURE__ */ jsxs("p", { children: [
-          "⚙️ ",
-          /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "Settings → AI Provider" }),
-          " to switch between cloud GPT-4o and a local LLM (Ollama, LM Studio, etc.)."
-        ] }),
-        /* @__PURE__ */ jsx("p", { children: "🔇 Auto-speak mode reads the call out loud via TTS — toggle it per-session on the live dashboard." })
-      ] })
-    ] }),
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-muted-foreground leading-relaxed",
+          children: [
+            "The ",
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "AI Coach" }),
+            " listens to each completed lap and gives you a radio call — just like a real race engineer. It decides the",
+            " ",
+            /* @__PURE__ */ jsx("em", { className: "text-foreground", children: "tone" }),
+            " based on your performance:",
+            " ",
+            /* @__PURE__ */ jsx("span", {
+              className: "text-racing-green font-semibold",
+              children: "PUSH",
+            }),
+            ",",
+            " ",
+            /* @__PURE__ */ jsx("span", {
+              className: "text-racing-orange font-semibold",
+              children: "HOLD",
+            }),
+            ", or",
+            " ",
+            /* @__PURE__ */ jsx("span", {
+              className: "text-red-400 font-semibold",
+              children: "WARN",
+            }),
+            ".",
+          ],
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "space-y-2 text-xs",
+          children: [
+            {
+              tone: "PUSH",
+              color: "text-racing-green border-racing-green/30 bg-racing-green/5",
+              desc: "You're in the zone, personal best incoming. Keep the pressure on.",
+            },
+            {
+              tone: "HOLD",
+              color: "text-racing-orange border-racing-orange/30 bg-racing-orange/5",
+              desc: "Consistent but not setting records. Focus on a specific sector.",
+            },
+            {
+              tone: "WARN",
+              color: "text-red-400 border-red-400/30 bg-red-400/5",
+              desc: "Tire temps critical, fuel low, or braking instability detected.",
+            },
+          ].map((t) =>
+            /* @__PURE__ */ jsxs(
+              "div",
+              {
+                className: `rounded border px-3 py-2 ${t.color}`,
+                children: [
+                  /* @__PURE__ */ jsx("span", {
+                    className: "font-bold font-mono",
+                    children: t.tone,
+                  }),
+                  /* @__PURE__ */ jsxs("span", {
+                    className: "text-muted-foreground",
+                    children: [" — ", t.desc],
+                  }),
+                ],
+              },
+              t.tone,
+            ),
+          ),
+        }),
+        /* @__PURE__ */ jsxs("div", {
+          className: "text-xs text-muted-foreground space-y-1",
+          children: [
+            /* @__PURE__ */ jsxs("p", {
+              children: [
+                "⚙️ ",
+                /* @__PURE__ */ jsx("strong", {
+                  className: "text-foreground",
+                  children: "Settings → AI Provider",
+                }),
+                " to switch between cloud GPT-4o and a local LLM (Ollama, LM Studio, etc.).",
+              ],
+            }),
+            /* @__PURE__ */ jsx("p", {
+              children:
+                "🔇 Auto-speak mode reads the call out loud via TTS — toggle it per-session on the live dashboard.",
+            }),
+          ],
+        }),
+      ],
+    }),
     ctaLabel: "Open Live Dashboard",
-    ctaTo: "/live"
+    ctaTo: "/live",
   },
   {
     id: "done",
@@ -2544,58 +2919,83 @@ const steps = [
     label: "You're ready",
     title: "You're all set!",
     subtitle: "Here's where to go next",
-    content: /* @__PURE__ */ jsxs("div", { className: "space-y-4", children: [
-      /* @__PURE__ */ jsx("p", { className: "text-muted-foreground leading-relaxed", children: "Pit Wall is ready to use. Pick the path that suits you right now:" }),
-      /* @__PURE__ */ jsx("div", { className: "space-y-2", children: [
-        {
-          icon: /* @__PURE__ */ jsx(Wifi, { className: "h-4 w-4 text-racing-cyan" }),
-          label: "I want live telemetry while driving",
-          to: "/live",
-          btn: "Open Live Dashboard"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(LineChart, { className: "h-4 w-4 text-racing-green" }),
-          label: "I have a .ibt file I want to analyse",
-          to: "/lab/lapfile",
-          btn: "Open the Lab"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(FolderOpen, { className: "h-4 w-4 text-primary" }),
-          label: "I want to browse saved sessions",
-          to: "/sessions",
-          btn: "Session Library"
-        },
-        {
-          icon: /* @__PURE__ */ jsx(Settings, { className: "h-4 w-4 text-muted-foreground" }),
-          label: "I want to configure AI and local DB",
-          to: "/settings",
-          btn: "Settings"
-        }
-      ].map((item) => /* @__PURE__ */ jsxs(
-        Link,
-        {
-          to: item.to,
-          className: "flex items-center justify-between rounded-lg border border-border bg-rail px-4 py-3 text-sm hover:bg-accent transition-colors group",
+    content: /* @__PURE__ */ jsxs("div", {
+      className: "space-y-4",
+      children: [
+        /* @__PURE__ */ jsx("p", {
+          className: "text-muted-foreground leading-relaxed",
+          children: "Pit Wall is ready to use. Pick the path that suits you right now:",
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "space-y-2",
           children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-              item.icon,
-              /* @__PURE__ */ jsx("span", { className: "text-foreground", children: item.label })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors", children: [
-              item.btn,
-              /* @__PURE__ */ jsx(ChevronRight, { className: "h-3.5 w-3.5" })
-            ] })
-          ]
-        },
-        item.to
-      )) }),
-      /* @__PURE__ */ jsxs("p", { className: "text-xs text-center text-muted-foreground", children: [
-        "Remember: hit the ",
-        /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "?" }),
-        " button in the top-right corner anytime to re-open this guide."
-      ] })
-    ] })
-  }
+            {
+              icon: /* @__PURE__ */ jsx(Wifi, { className: "h-4 w-4 text-racing-cyan" }),
+              label: "I want live telemetry while driving",
+              to: "/live",
+              btn: "Open Live Dashboard",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(LineChart, { className: "h-4 w-4 text-racing-green" }),
+              label: "I have a .ibt file I want to analyse",
+              to: "/lab/lapfile",
+              btn: "Open the Lab",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(FolderOpen, { className: "h-4 w-4 text-primary" }),
+              label: "I want to browse saved sessions",
+              to: "/sessions",
+              btn: "Session Library",
+            },
+            {
+              icon: /* @__PURE__ */ jsx(Settings, { className: "h-4 w-4 text-muted-foreground" }),
+              label: "I want to configure AI and local DB",
+              to: "/settings",
+              btn: "Settings",
+            },
+          ].map((item) =>
+            /* @__PURE__ */ jsxs(
+              Link,
+              {
+                to: item.to,
+                className:
+                  "flex items-center justify-between rounded-lg border border-border bg-rail px-4 py-3 text-sm hover:bg-accent transition-colors group",
+                children: [
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-center gap-3",
+                    children: [
+                      item.icon,
+                      /* @__PURE__ */ jsx("span", {
+                        className: "text-foreground",
+                        children: item.label,
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className:
+                      "flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors",
+                    children: [
+                      item.btn,
+                      /* @__PURE__ */ jsx(ChevronRight, { className: "h-3.5 w-3.5" }),
+                    ],
+                  }),
+                ],
+              },
+              item.to,
+            ),
+          ),
+        }),
+        /* @__PURE__ */ jsxs("p", {
+          className: "text-xs text-center text-muted-foreground",
+          children: [
+            "Remember: hit the ",
+            /* @__PURE__ */ jsx("strong", { className: "text-foreground", children: "?" }),
+            " button in the top-right corner anytime to re-open this guide.",
+          ],
+        }),
+      ],
+    }),
+  },
 ];
 function HelpSystem() {
   const [open, setOpen] = useState(false);
@@ -2615,193 +3015,238 @@ function HelpSystem() {
   const current = steps[step];
   const isFirst = step === 0;
   const isLast = step === steps.length - 1;
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    /* @__PURE__ */ jsx(
-      "button",
-      {
+  return /* @__PURE__ */ jsxs(Fragment, {
+    children: [
+      /* @__PURE__ */ jsx("button", {
         id: "help-trigger",
         onClick: () => {
           setStep(0);
           setOpen(true);
         },
-        className: "fixed bottom-4 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-panel border border-border text-muted-foreground shadow-lg hover:text-primary hover:border-primary/50 transition-all hover:scale-110",
+        className:
+          "fixed bottom-4 right-4 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-panel border border-border text-muted-foreground shadow-lg hover:text-primary hover:border-primary/50 transition-all hover:scale-110",
         "aria-label": "Open help guide",
         title: "Help & Getting Started",
-        children: /* @__PURE__ */ jsx(HelpCircle, { className: "h-4 w-4" })
-      }
-    ),
-    open && /* @__PURE__ */ jsx(
-      "div",
-      {
-        className: "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200",
-        onClick: (e) => {
-          if (e.target === e.currentTarget) close();
-        },
-        children: /* @__PURE__ */ jsxs("div", { className: "relative w-full max-w-2xl rounded-xl border border-border bg-background shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-4 duration-300", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-6 py-4 border-b border-border shrink-0", children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-              /* @__PURE__ */ jsx("div", { className: "flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary", children: current.icon }),
-              /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx("div", { className: "text-sm font-semibold text-foreground", children: current.title }),
-                /* @__PURE__ */ jsx("div", { className: "text-xs text-muted-foreground", children: current.subtitle })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsx(
-              "button",
-              {
-                onClick: close,
-                className: "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-rail transition-colors",
-                "aria-label": "Close help",
-                children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" })
-              }
-            )
-          ] }),
-          /* @__PURE__ */ jsx("div", { className: "flex h-1 w-full shrink-0", children: steps.map((s, i) => /* @__PURE__ */ jsx(
-            "button",
-            {
-              onClick: () => setStep(i),
-              className: `flex-1 transition-colors ${i <= step ? "bg-primary" : "bg-rail"} ${i === 0 ? "" : "ml-px"}`,
-              "aria-label": `Go to step: ${s.label}`
-            },
-            s.id
-          )) }),
-          /* @__PURE__ */ jsx("div", { className: "flex items-center gap-1.5 px-6 pt-4 pb-1 shrink-0 overflow-x-auto", children: steps.map((s, i) => /* @__PURE__ */ jsxs(
-            "button",
-            {
-              onClick: () => setStep(i),
-              className: `flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all whitespace-nowrap ${i === step ? "bg-primary/10 text-primary border border-primary/30" : i < step ? "text-muted-foreground/80" : "text-muted-foreground/40"}`,
-              children: [
-                i < step ? /* @__PURE__ */ jsx(CheckCircle2, { className: "h-2.5 w-2.5" }) : i === step ? /* @__PURE__ */ jsx(Circle, { className: "h-2.5 w-2.5 fill-primary text-primary" }) : /* @__PURE__ */ jsx(Circle, { className: "h-2.5 w-2.5" }),
-                s.label
-              ]
-            },
-            s.id
-          )) }),
-          /* @__PURE__ */ jsx("div", { className: "flex-1 overflow-y-auto px-6 py-4", children: current.content }),
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between px-6 py-4 border-t border-border shrink-0", children: [
-            /* @__PURE__ */ jsxs(
-              "button",
-              {
-                onClick: () => setStep((s) => Math.max(0, s - 1)),
-                disabled: isFirst,
-                className: "flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
+        children: /* @__PURE__ */ jsx(HelpCircle, { className: "h-4 w-4" }),
+      }),
+      open &&
+        /* @__PURE__ */ jsx("div", {
+          className:
+            "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200",
+          onClick: (e) => {
+            if (e.target === e.currentTarget) close();
+          },
+          children: /* @__PURE__ */ jsxs("div", {
+            className:
+              "relative w-full max-w-2xl rounded-xl border border-border bg-background shadow-2xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-4 duration-300",
+            children: [
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "flex items-center justify-between px-6 py-4 border-b border-border shrink-0",
                 children: [
-                  /* @__PURE__ */ jsx(ArrowLeft, { className: "h-4 w-4" }),
-                  "Back"
-                ]
-              }
-            ),
-            /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-              current.ctaLabel && current.ctaTo && (current.ctaTo.startsWith("/downloads/") || current.ctaTo.includes(".") ? /* @__PURE__ */ jsxs(
-                "a",
-                {
-                  href: current.ctaTo,
-                  download: true,
-                  onClick: close,
-                  className: "flex items-center gap-1.5 rounded-md border border-border bg-rail px-3 py-1.5 text-xs hover:bg-accent transition-colors",
-                  children: [
-                    current.ctaLabel,
-                    /* @__PURE__ */ jsx(ArrowRight, { className: "h-3 w-3" })
-                  ]
-                }
-              ) : /* @__PURE__ */ jsxs(
-                Link,
-                {
-                  to: current.ctaTo,
-                  onClick: close,
-                  className: "flex items-center gap-1.5 rounded-md border border-border bg-rail px-3 py-1.5 text-xs hover:bg-accent transition-colors",
-                  children: [
-                    current.ctaLabel,
-                    /* @__PURE__ */ jsx(ArrowRight, { className: "h-3 w-3" })
-                  ]
-                }
-              )),
-              isLast ? /* @__PURE__ */ jsxs(
-                "button",
-                {
-                  onClick: close,
-                  className: "flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity",
-                  children: [
-                    /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3.5 w-3.5" }),
-                    "Let's go!"
-                  ]
-                }
-              ) : /* @__PURE__ */ jsxs(
-                "button",
-                {
-                  onClick: () => setStep((s) => Math.min(steps.length - 1, s + 1)),
-                  className: "flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity",
-                  children: [
-                    "Next",
-                    /* @__PURE__ */ jsx(ArrowRight, { className: "h-3.5 w-3.5" })
-                  ]
-                }
-              )
-            ] })
-          ] })
-        ] })
-      }
-    )
-  ] });
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-center gap-3",
+                    children: [
+                      /* @__PURE__ */ jsx("div", {
+                        className:
+                          "flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary",
+                        children: current.icon,
+                      }),
+                      /* @__PURE__ */ jsxs("div", {
+                        children: [
+                          /* @__PURE__ */ jsx("div", {
+                            className: "text-sm font-semibold text-foreground",
+                            children: current.title,
+                          }),
+                          /* @__PURE__ */ jsx("div", {
+                            className: "text-xs text-muted-foreground",
+                            children: current.subtitle,
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  /* @__PURE__ */ jsx("button", {
+                    onClick: close,
+                    className:
+                      "flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-rail transition-colors",
+                    "aria-label": "Close help",
+                    children: /* @__PURE__ */ jsx(X, { className: "h-4 w-4" }),
+                  }),
+                ],
+              }),
+              /* @__PURE__ */ jsx("div", {
+                className: "flex h-1 w-full shrink-0",
+                children: steps.map((s, i) =>
+                  /* @__PURE__ */ jsx(
+                    "button",
+                    {
+                      onClick: () => setStep(i),
+                      className: `flex-1 transition-colors ${i <= step ? "bg-primary" : "bg-rail"} ${i === 0 ? "" : "ml-px"}`,
+                      "aria-label": `Go to step: ${s.label}`,
+                    },
+                    s.id,
+                  ),
+                ),
+              }),
+              /* @__PURE__ */ jsx("div", {
+                className: "flex items-center gap-1.5 px-6 pt-4 pb-1 shrink-0 overflow-x-auto",
+                children: steps.map((s, i) =>
+                  /* @__PURE__ */ jsxs(
+                    "button",
+                    {
+                      onClick: () => setStep(i),
+                      className: `flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all whitespace-nowrap ${i === step ? "bg-primary/10 text-primary border border-primary/30" : i < step ? "text-muted-foreground/80" : "text-muted-foreground/40"}`,
+                      children: [
+                        i < step
+                          ? /* @__PURE__ */ jsx(CheckCircle2, { className: "h-2.5 w-2.5" })
+                          : i === step
+                            ? /* @__PURE__ */ jsx(Circle, {
+                                className: "h-2.5 w-2.5 fill-primary text-primary",
+                              })
+                            : /* @__PURE__ */ jsx(Circle, { className: "h-2.5 w-2.5" }),
+                        s.label,
+                      ],
+                    },
+                    s.id,
+                  ),
+                ),
+              }),
+              /* @__PURE__ */ jsx("div", {
+                className: "flex-1 overflow-y-auto px-6 py-4",
+                children: current.content,
+              }),
+              /* @__PURE__ */ jsxs("div", {
+                className:
+                  "flex items-center justify-between px-6 py-4 border-t border-border shrink-0",
+                children: [
+                  /* @__PURE__ */ jsxs("button", {
+                    onClick: () => setStep((s) => Math.max(0, s - 1)),
+                    disabled: isFirst,
+                    className:
+                      "flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
+                    children: [/* @__PURE__ */ jsx(ArrowLeft, { className: "h-4 w-4" }), "Back"],
+                  }),
+                  /* @__PURE__ */ jsxs("div", {
+                    className: "flex items-center gap-2",
+                    children: [
+                      current.ctaLabel &&
+                        current.ctaTo &&
+                        (current.ctaTo.startsWith("/downloads/") || current.ctaTo.includes(".")
+                          ? /* @__PURE__ */ jsxs("a", {
+                              href: current.ctaTo,
+                              download: true,
+                              onClick: close,
+                              className:
+                                "flex items-center gap-1.5 rounded-md border border-border bg-rail px-3 py-1.5 text-xs hover:bg-accent transition-colors",
+                              children: [
+                                current.ctaLabel,
+                                /* @__PURE__ */ jsx(ArrowRight, { className: "h-3 w-3" }),
+                              ],
+                            })
+                          : /* @__PURE__ */ jsxs(Link, {
+                              to: current.ctaTo,
+                              onClick: close,
+                              className:
+                                "flex items-center gap-1.5 rounded-md border border-border bg-rail px-3 py-1.5 text-xs hover:bg-accent transition-colors",
+                              children: [
+                                current.ctaLabel,
+                                /* @__PURE__ */ jsx(ArrowRight, { className: "h-3 w-3" }),
+                              ],
+                            })),
+                      isLast
+                        ? /* @__PURE__ */ jsxs("button", {
+                            onClick: close,
+                            className:
+                              "flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity",
+                            children: [
+                              /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3.5 w-3.5" }),
+                              "Let's go!",
+                            ],
+                          })
+                        : /* @__PURE__ */ jsxs("button", {
+                            onClick: () => setStep((s) => Math.min(steps.length - 1, s + 1)),
+                            className:
+                              "flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity",
+                            children: [
+                              "Next",
+                              /* @__PURE__ */ jsx(ArrowRight, { className: "h-3.5 w-3.5" }),
+                            ],
+                          }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        }),
+    ],
+  });
 }
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 const Dialog = DialogPrimitive.Root;
 const DialogPortal = DialogPrimitive.Portal;
-const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  DialogPrimitive.Overlay,
-  {
+const DialogOverlay = React.forwardRef(({ className, ...props }, ref) =>
+  /* @__PURE__ */ jsx(DialogPrimitive.Overlay, {
     ref,
     className: cn(
       "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
+      className,
     ),
-    ...props
-  }
-));
+    ...props,
+  }),
+);
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
-const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(DialogPortal, { children: [
-  /* @__PURE__ */ jsx(DialogOverlay, {}),
-  /* @__PURE__ */ jsxs(
-    DialogPrimitive.Content,
-    {
-      ref,
-      className: cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
-        className
-      ),
-      ...props,
-      children: [
-        children,
-        /* @__PURE__ */ jsxs(DialogPrimitive.Close, { className: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground", children: [
-          /* @__PURE__ */ jsx(X, { className: "h-4 w-4" }),
-          /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Close" })
-        ] })
-      ]
-    }
-  )
-] }));
+const DialogContent = React.forwardRef(({ className, children, ...props }, ref) =>
+  /* @__PURE__ */ jsxs(DialogPortal, {
+    children: [
+      /* @__PURE__ */ jsx(DialogOverlay, {}),
+      /* @__PURE__ */ jsxs(DialogPrimitive.Content, {
+        ref,
+        className: cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
+          className,
+        ),
+        ...props,
+        children: [
+          children,
+          /* @__PURE__ */ jsxs(DialogPrimitive.Close, {
+            className:
+              "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground",
+            children: [
+              /* @__PURE__ */ jsx(X, { className: "h-4 w-4" }),
+              /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Close" }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  }),
+);
 DialogContent.displayName = DialogPrimitive.Content.displayName;
-const DialogHeader = ({ className, ...props }) => /* @__PURE__ */ jsx("div", { className: cn("flex flex-col space-y-1.5 text-center sm:text-left", className), ...props });
+const DialogHeader = ({ className, ...props }) =>
+  /* @__PURE__ */ jsx("div", {
+    className: cn("flex flex-col space-y-1.5 text-center sm:text-left", className),
+    ...props,
+  });
 DialogHeader.displayName = "DialogHeader";
-const DialogTitle = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  DialogPrimitive.Title,
-  {
+const DialogTitle = React.forwardRef(({ className, ...props }, ref) =>
+  /* @__PURE__ */ jsx(DialogPrimitive.Title, {
     ref,
     className: cn("text-lg font-semibold leading-none tracking-tight", className),
-    ...props
-  }
-));
+    ...props,
+  }),
+);
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
-const DialogDescription = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  DialogPrimitive.Description,
-  {
+const DialogDescription = React.forwardRef(({ className, ...props }, ref) =>
+  /* @__PURE__ */ jsx(DialogPrimitive.Description, {
     ref,
     className: cn("text-sm text-muted-foreground", className),
-    ...props
-  }
-));
+    ...props,
+  }),
+);
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
 function isTypingTarget(el) {
   if (!(el instanceof HTMLElement)) return false;
@@ -2881,71 +3326,95 @@ function KeyboardShortcuts() {
       if (gTimer.current) clearTimeout(gTimer.current);
     };
   }, [goBackOrHome, open, router2]);
-  return /* @__PURE__ */ jsx(Dialog, { open, onOpenChange: setOpen, children: /* @__PURE__ */ jsxs(DialogContent, { className: "max-w-md font-mono text-sm bg-panel border border-border text-foreground", children: [
-    /* @__PURE__ */ jsxs(DialogHeader, { children: [
-      /* @__PURE__ */ jsx(DialogTitle, { className: "font-mono text-xs uppercase tracking-wider text-primary", children: "Workstation Shortcuts" }),
-      /* @__PURE__ */ jsx(DialogDescription, { className: "text-xs text-muted-foreground", children: "Fast keyboard-first controls. Disabled while typing in text inputs." })
-    ] }),
-    /* @__PURE__ */ jsxs("ul", { className: "space-y-2 text-[11px] uppercase", children: [
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "1"], desc: "Launcher Landing Page" }),
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "2"], desc: "Live Telemetry Command" }),
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "3"], desc: "Analysis Workbench" }),
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "4"], desc: "AI Engineer Terminal" }),
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", ","], desc: "System Settings dialog" }),
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["Esc"], desc: "Go back / Exit panel" }),
-      /* @__PURE__ */ jsx(Shortcut, { keys: ["?"], desc: "Open this helper card" })
-    ] })
-  ] }) });
+  return /* @__PURE__ */ jsx(Dialog, {
+    open,
+    onOpenChange: setOpen,
+    children: /* @__PURE__ */ jsxs(DialogContent, {
+      className: "max-w-md font-mono text-sm bg-panel border border-border text-foreground",
+      children: [
+        /* @__PURE__ */ jsxs(DialogHeader, {
+          children: [
+            /* @__PURE__ */ jsx(DialogTitle, {
+              className: "font-mono text-xs uppercase tracking-wider text-primary",
+              children: "Workstation Shortcuts",
+            }),
+            /* @__PURE__ */ jsx(DialogDescription, {
+              className: "text-xs text-muted-foreground",
+              children: "Fast keyboard-first controls. Disabled while typing in text inputs.",
+            }),
+          ],
+        }),
+        /* @__PURE__ */ jsxs("ul", {
+          className: "space-y-2 text-[11px] uppercase",
+          children: [
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "1"], desc: "Launcher Landing Page" }),
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "2"], desc: "Live Telemetry Command" }),
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "3"], desc: "Analysis Workbench" }),
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", "4"], desc: "AI Engineer Terminal" }),
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["Ctrl", ","], desc: "System Settings dialog" }),
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["Esc"], desc: "Go back / Exit panel" }),
+            /* @__PURE__ */ jsx(Shortcut, { keys: ["?"], desc: "Open this helper card" }),
+          ],
+        }),
+      ],
+    }),
+  });
 }
 function Shortcut({ keys, desc }) {
-  return /* @__PURE__ */ jsxs("li", { className: "flex items-center justify-between gap-4", children: [
-    /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: desc }),
-    /* @__PURE__ */ jsx("span", { className: "flex shrink-0 gap-1", children: keys.map((k) => /* @__PURE__ */ jsx(
-      "kbd",
-      {
-        className: "rounded border border-border bg-rail px-1.5 py-0.5 text-[10px] uppercase text-foreground",
-        children: k
-      },
-      k
-    )) })
-  ] });
+  return /* @__PURE__ */ jsxs("li", {
+    className: "flex items-center justify-between gap-4",
+    children: [
+      /* @__PURE__ */ jsx("span", { className: "text-muted-foreground", children: desc }),
+      /* @__PURE__ */ jsx("span", {
+        className: "flex shrink-0 gap-1",
+        children: keys.map((k) =>
+          /* @__PURE__ */ jsx(
+            "kbd",
+            {
+              className:
+                "rounded border border-border bg-rail px-1.5 py-0.5 text-[10px] uppercase text-foreground",
+              children: k,
+            },
+            k,
+          ),
+        ),
+      }),
+    ],
+  });
 }
 const Tabs = TabsPrimitive.Root;
-const TabsList = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  TabsPrimitive.List,
-  {
+const TabsList = React.forwardRef(({ className, ...props }, ref) =>
+  /* @__PURE__ */ jsx(TabsPrimitive.List, {
     ref,
     className: cn(
       "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
-      className
+      className,
     ),
-    ...props
-  }
-));
+    ...props,
+  }),
+);
 TabsList.displayName = TabsPrimitive.List.displayName;
-const TabsTrigger = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  TabsPrimitive.Trigger,
-  {
+const TabsTrigger = React.forwardRef(({ className, ...props }, ref) =>
+  /* @__PURE__ */ jsx(TabsPrimitive.Trigger, {
     ref,
     className: cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
-      className
+      className,
     ),
-    ...props
-  }
-));
+    ...props,
+  }),
+);
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
-const TabsContent = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
-  TabsPrimitive.Content,
-  {
+const TabsContent = React.forwardRef(({ className, ...props }, ref) =>
+  /* @__PURE__ */ jsx(TabsPrimitive.Content, {
     ref,
     className: cn(
       "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className
+      className,
     ),
-    ...props
-  }
-));
+    ...props,
+  }),
+);
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -2954,47 +3423,45 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline"
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9"
-      }
+        icon: "h-9 w-9",
+      },
     },
     defaultVariants: {
       variant: "default",
-      size: "default"
-    }
-  }
+      size: "default",
+    },
+  },
 );
-const Button = React.forwardRef(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return /* @__PURE__ */ jsx(Comp, { className: cn(buttonVariants({ variant, size, className })), ref, ...props });
-  }
-);
+const Button = React.forwardRef(({ className, variant, size, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : "button";
+  return /* @__PURE__ */ jsx(Comp, {
+    className: cn(buttonVariants({ variant, size, className })),
+    ref,
+    ...props,
+  });
+});
 Button.displayName = "Button";
-const Input = React.forwardRef(
-  ({ className, type, ...props }, ref) => {
-    return /* @__PURE__ */ jsx(
-      "input",
-      {
-        type,
-        className: cn(
-          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          className
-        ),
-        ref,
-        ...props
-      }
-    );
-  }
-);
+const Input = React.forwardRef(({ className, type, ...props }, ref) => {
+  return /* @__PURE__ */ jsx("input", {
+    type,
+    className: cn(
+      "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+      className,
+    ),
+    ref,
+    ...props,
+  });
+});
 Input.displayName = "Input";
 function localAdvisorFallback(payload) {
   const tips = [];
@@ -3010,7 +3477,7 @@ function localAdvisorFallback(payload) {
         priority: "high",
         area: "Trail braking",
         tip: "Push peak brake pressure up — work toward 90-100% in the threshold phase, then bleed off as you turn in.",
-        reason: `Average peak brake across recent laps is only ${avgBrake.toFixed(0)}%, leaving stopping power on the table.`
+        reason: `Average peak brake across recent laps is only ${avgBrake.toFixed(0)}%, leaving stopping power on the table.`,
       });
     }
     if (avgThr < 97) {
@@ -3018,7 +3485,7 @@ function localAdvisorFallback(payload) {
         priority: "medium",
         area: "Throttle application",
         tip: "Commit fully to throttle once the wheel starts unwinding — don't roll on past 90%.",
-        reason: `Peak throttle averages ${avgThr.toFixed(0)}% — partial-load cruising costs straight-line speed.`
+        reason: `Peak throttle averages ${avgThr.toFixed(0)}% — partial-load cruising costs straight-line speed.`,
       });
     }
     if (spread > 0.6) {
@@ -3026,35 +3493,48 @@ function localAdvisorFallback(payload) {
         priority: "high",
         area: "Consistency",
         tip: "Lock in a repeatable reference for braking points before chasing more speed.",
-        reason: `Lap-time spread across the last ${laps.length} laps is ${spread.toFixed(2)}s — too noisy to extract setup signal.`
+        reason: `Lap-time spread across the last ${laps.length} laps is ${spread.toFixed(2)}s — too noisy to extract setup signal.`,
       });
     }
     tips.push({
       priority: "low",
       area: "Mid-corner balance",
       tip: "Hold steady minimum speed through the apex — measured at the limit it's faster than V-shaped lines.",
-      reason: `Peak lateral g averages ${avgLat.toFixed(2)} — try to sustain that for longer rather than spiking it briefly.`
+      reason: `Peak lateral g averages ${avgLat.toFixed(2)} — try to sustain that for longer rather than spiking it briefly.`,
     });
   } else {
     const sym = payload.symptoms ?? [];
     const oval = payload.trackType === "oval";
-    const sec = (road, ovalSec) => oval ? ovalSec : road;
-    if (sym.includes("understeer_entry") || sym.includes("understeer_apex") || sym.includes("understeer_exit")) {
+    const sec = (road, ovalSec) => (oval ? ovalSec : road);
+    if (
+      sym.includes("understeer_entry") ||
+      sym.includes("understeer_apex") ||
+      sym.includes("understeer_exit")
+    ) {
       tips.push({
         priority: "high",
         area: "Understeer — top-of-chart fix",
-        tip: oval ? "Soften front ARB by 1 click (or stiffen rear ARB by 1)." : "Soften front ARB by 1 click (or stiffen rear ARB by 1).",
-        reason: "Driver reports understeer — start with the highest-impact lever from the flowchart.",
-        citation: sec("Road — General Understeer #1 (ARB)", "Oval — Push #1 (ARB)")
+        tip: oval
+          ? "Soften front ARB by 1 click (or stiffen rear ARB by 1)."
+          : "Soften front ARB by 1 click (or stiffen rear ARB by 1).",
+        reason:
+          "Driver reports understeer — start with the highest-impact lever from the flowchart.",
+        citation: sec("Road — General Understeer #1 (ARB)", "Oval — Push #1 (ARB)"),
       });
     }
-    if (sym.includes("oversteer_entry") || sym.includes("oversteer_apex") || sym.includes("oversteer_exit") || sym.includes("snap_oversteer")) {
+    if (
+      sym.includes("oversteer_entry") ||
+      sym.includes("oversteer_apex") ||
+      sym.includes("oversteer_exit") ||
+      sym.includes("snap_oversteer")
+    ) {
       tips.push({
         priority: "high",
         area: "Oversteer — top-of-chart fix",
         tip: "Stiffen front ARB by 1 click (or soften rear ARB by 1).",
-        reason: "Driver reports oversteer — apply the highest-impact lever from the flowchart first.",
-        citation: sec("Road — General Oversteer #1 (ARB)", "Oval — Loose #1 (ARB)")
+        reason:
+          "Driver reports oversteer — apply the highest-impact lever from the flowchart first.",
+        citation: sec("Road — General Oversteer #1 (ARB)", "Oval — Loose #1 (ARB)"),
       });
     }
     if (sym.includes("brake_lockup_front")) {
@@ -3063,7 +3543,7 @@ function localAdvisorFallback(payload) {
         area: "Brake bias",
         tip: `Move brake bias rearward by 0.5-1.0% (currently ${payload.setup.brakeBias.toFixed(1)}%).`,
         reason: "Fronts locking under braking — shift load to the rears.",
-        citation: "eBook: Front-vs-Rear Temp Imbalance / Brake Bias"
+        citation: "eBook: Front-vs-Rear Temp Imbalance / Brake Bias",
       });
     }
     if (sym.includes("brake_lockup_rear")) {
@@ -3072,7 +3552,7 @@ function localAdvisorFallback(payload) {
         area: "Brake bias",
         tip: `Move brake bias forward by 0.5-1.0% (currently ${payload.setup.brakeBias.toFixed(1)}%).`,
         reason: "Rears locking under braking — shift load to the fronts.",
-        citation: "eBook: Front-vs-Rear Temp Imbalance / Brake Bias"
+        citation: "eBook: Front-vs-Rear Temp Imbalance / Brake Bias",
       });
     }
     if (sym.includes("poor_traction_exit")) {
@@ -3081,7 +3561,7 @@ function localAdvisorFallback(payload) {
         area: "Diff / rear compression",
         tip: "Reduce diff power-lock by 1 click, OR soften rear compression by 1 click.",
         reason: "Poor exit traction — let the rear axle settle and find grip on power.",
-        citation: "eBook: Diff Rules + Damper Rules"
+        citation: "eBook: Diff Rules + Damper Rules",
       });
     }
     if (sym.includes("bouncy_over_curbs")) {
@@ -3090,18 +3570,25 @@ function localAdvisorFallback(payload) {
         area: "Fast dampers",
         tip: "Soften fast compression 1 click to soak the curb, then add 1 click of fast rebound if it bounces back.",
         reason: "Driver reports kerb-bounce — this is a fast-damper issue, not a balance one.",
-        citation: "eBook: Damper Rules (fast bump/rebound)"
+        citation: "eBook: Damper Rules (fast bump/rebound)",
       });
     }
-    const frontHot = sym.includes("tyres_overheating_front") || payload.tires.fl.tempC + payload.tires.fr.tempC > payload.tires.rl.tempC + payload.tires.rr.tempC + 10;
-    const rearHot = !frontHot && (sym.includes("tyres_overheating_rear") || payload.tires.rl.tempC + payload.tires.rr.tempC > payload.tires.fl.tempC + payload.tires.fr.tempC + 10);
+    const frontHot =
+      sym.includes("tyres_overheating_front") ||
+      payload.tires.fl.tempC + payload.tires.fr.tempC >
+        payload.tires.rl.tempC + payload.tires.rr.tempC + 10;
+    const rearHot =
+      !frontHot &&
+      (sym.includes("tyres_overheating_rear") ||
+        payload.tires.rl.tempC + payload.tires.rr.tempC >
+          payload.tires.fl.tempC + payload.tires.fr.tempC + 10);
     if (frontHot && !tips.some((x) => x.area === "Brake bias")) {
       tips.push({
         priority: "high",
         area: "Brake bias",
         tip: `Move brake bias rearward by 0.5-1.0% (currently ${payload.setup.brakeBias.toFixed(1)}%).`,
         reason: `Front tyres ${Math.round((payload.tires.fl.tempC + payload.tires.fr.tempC) / 2)}°C vs rears ${Math.round((payload.tires.rl.tempC + payload.tires.rr.tempC) / 2)}°C — fronts are doing more work.`,
-        citation: "eBook: Front-vs-Rear Temp Imbalance"
+        citation: "eBook: Front-vs-Rear Temp Imbalance",
       });
     }
     if (rearHot && !tips.some((x) => x.area === "Brake bias")) {
@@ -3110,17 +3597,22 @@ function localAdvisorFallback(payload) {
         area: "Brake bias",
         tip: `Move brake bias forward by 0.5-1.0% (currently ${payload.setup.brakeBias.toFixed(1)}%).`,
         reason: `Rears ${Math.round((payload.tires.rl.tempC + payload.tires.rr.tempC) / 2)}°C vs fronts ${Math.round((payload.tires.fl.tempC + payload.tires.fr.tempC) / 2)}°C — rears overworked.`,
-        citation: "eBook: Front-vs-Rear Temp Imbalance"
+        citation: "eBook: Front-vs-Rear Temp Imbalance",
       });
     }
-    const avgPress = (payload.tires.fl.pressureBar + payload.tires.fr.pressureBar + payload.tires.rl.pressureBar + payload.tires.rr.pressureBar) / 4;
+    const avgPress =
+      (payload.tires.fl.pressureBar +
+        payload.tires.fr.pressureBar +
+        payload.tires.rl.pressureBar +
+        payload.tires.rr.pressureBar) /
+      4;
     if (avgPress > 1.95) {
       tips.push({
         priority: "medium",
         area: "Tyre pressures",
         tip: "Drop cold pressures by ~0.05 bar all round to reduce hot pressure.",
         reason: `Average hot pressure ${avgPress.toFixed(2)} bar — above the typical working window.`,
-        citation: "eBook: Tyre Pressures"
+        citation: "eBook: Tyre Pressures",
       });
     } else if (avgPress < 1.75) {
       tips.push({
@@ -3128,7 +3620,7 @@ function localAdvisorFallback(payload) {
         area: "Tyre pressures",
         tip: "Raise cold pressures by ~0.05 bar all round to bring hot pressure into window.",
         reason: `Average hot pressure ${avgPress.toFixed(2)} bar — sluggish response, vague steering.`,
-        citation: "eBook: Tyre Pressures"
+        citation: "eBook: Tyre Pressures",
       });
     }
     if (avgLat > 2 && spread > 0.4) {
@@ -3137,30 +3629,37 @@ function localAdvisorFallback(payload) {
         area: "Anti-roll balance",
         tip: "Soften the end of the car the driver is fighting — start with one click and re-evaluate.",
         reason: `High lateral load (${avgLat.toFixed(2)}g) combined with ${spread.toFixed(2)}s lap spread suggests balance is on edge.`,
-        citation: oval ? "Oval — Push/Loose #1 (ARB)" : "Road — Understeer/Oversteer #1 (ARB)"
+        citation: oval ? "Oval — Push/Loose #1 (ARB)" : "Road — Understeer/Oversteer #1 (ARB)",
       });
     }
     tips.push({
       priority: "low",
       area: "Diff mapping",
       tip: `Current diff map ${payload.setup.diffMap} — try ±1 click to bias rotation vs traction depending on driver complaint.`,
-      reason: "Small diff changes are the cheapest balance lever once tyres and bias are dialled in.",
-      citation: "eBook: Diff Rules"
+      reason:
+        "Small diff changes are the cheapest balance lever once tyres and bias are dialled in.",
+      citation: "eBook: Diff Rules",
     });
   }
   while (tips.length < 3) {
     tips.push({
       priority: "low",
       area: payload.mode === "style" ? "Reference laps" : "Baseline check",
-      tip: payload.mode === "style" ? "Bank 5 clean reference laps before changing anything else." : "Reset to baseline setup, then change one parameter at a time.",
-      reason: "Insufficient signal yet — establish a stable baseline before iterating."
+      tip:
+        payload.mode === "style"
+          ? "Bank 5 clean reference laps before changing anything else."
+          : "Reset to baseline setup, then change one parameter at a time.",
+      reason: "Insufficient signal yet — establish a stable baseline before iterating.",
     });
   }
   return {
     mode: payload.mode,
-    headline: payload.mode === "style" ? "Driving-style read from your last laps" : "Setup read from your last laps",
+    headline:
+      payload.mode === "style"
+        ? "Driving-style read from your last laps"
+        : "Setup read from your last laps",
     summary: `Based on ${laps.length} recent laps at ${payload.track} in ${payload.car}. Local analysis (AI unavailable).`,
-    tips: tips.slice(0, 6)
+    tips: tips.slice(0, 6),
   };
 }
 function localCoachFallbackConcise(payload, detailed) {
@@ -3175,9 +3674,14 @@ function localCoachFallbackConcise(payload, detailed) {
       tips.push({
         priority: z2.gainS > 0.15 ? "high" : "medium",
         location: `${Math.round(z2.startPct)}–${Math.round(z2.endPct)}% lap`,
-        tip: dExit > dApex ? "Get back to throttle earlier — your best lap unwinds the wheel and accelerates sooner here." : dApex > 0.5 ? "Carry more minimum speed — release the brake a touch earlier and trail less." : "Move the brake point a few metres later and shorten the threshold phase.",
+        tip:
+          dExit > dApex
+            ? "Get back to throttle earlier — your best lap unwinds the wheel and accelerates sooner here."
+            : dApex > 0.5
+              ? "Carry more minimum speed — release the brake a touch earlier and trail less."
+              : "Move the brake point a few metres later and shorten the threshold phase.",
         reason: `Best lap was ${z2.gainS.toFixed(2)}s faster through this zone (apex Δ ${dApex.toFixed(1)} m/s, exit Δ ${dExit.toFixed(1)} m/s).`,
-        estGainS: Number(z2.gainS?.toFixed(2) ?? 0)
+        estGainS: Number(z2.gainS?.toFixed(2) ?? 0),
       });
     }
   }
@@ -3188,7 +3692,7 @@ function localCoachFallbackConcise(payload, detailed) {
       location: "All braking zones",
       tip: "Smooth the initial bite — apply pressure in one progressive squeeze instead of pumping.",
       reason: `Brake linearity R² is ${br.r2.toFixed(2)} (low), suggesting lockup or modulation rather than a clean threshold.`,
-      estGainS: 0.1
+      estGainS: 0.1,
     });
   }
   const sl = phys.slip;
@@ -3196,9 +3700,12 @@ function localCoachFallbackConcise(payload, detailed) {
     tips.push({
       priority: "medium",
       location: "Mid-corner balance",
-      tip: sl.balance === "loose" ? "Add a click of rear wing or soften front anti-roll — back end is stepping out under load." : "Soften rear or shift bias rearward — front is pushing through the mid-corner.",
+      tip:
+        sl.balance === "loose"
+          ? "Add a click of rear wing or soften front anti-roll — back end is stepping out under load."
+          : "Soften rear or shift bias rearward — front is pushing through the mid-corner.",
       reason: `Body slip β ${sl.peakBetaDeg?.toFixed?.(1) ?? "?"}° at high lateral g — balance reads ${sl.balance}.`,
-      estGainS: 0.15
+      estGainS: 0.15,
     });
   }
   const gg = phys.gg;
@@ -3208,7 +3715,7 @@ function localCoachFallbackConcise(payload, detailed) {
       location: "Trail-braking phase",
       tip: "Use more of the friction circle — overlap brake and steering longer to keep combined-g closer to the lateral peak.",
       reason: `Peak lateral ${gg.peakLatG.toFixed(2)}g but combined only ${gg.combinedG.toFixed(2)}g — grip left on the table when transitioning.`,
-      estGainS: 0.1
+      estGainS: 0.1,
     });
   }
   const filler = [
@@ -3216,23 +3723,26 @@ function localCoachFallbackConcise(payload, detailed) {
       priority: "low",
       location: "Corner exits",
       tip: "Unwind the wheel before flooring the throttle — open the steering as the car rotates, then commit.",
-      reason: "Generic best practice: any unwind-while-loading-throttle window costs exit speed down the next straight.",
-      estGainS: 0.05
+      reason:
+        "Generic best practice: any unwind-while-loading-throttle window costs exit speed down the next straight.",
+      estGainS: 0.05,
     },
     {
       priority: "low",
       location: "Braking points",
       tip: "Walk brake markers 2–3 m later one zone at a time until you start missing the apex, then back off one step.",
-      reason: "Iterative brake-point pruning is the cheapest lap-time you can find without changing setup.",
-      estGainS: 0.1
+      reason:
+        "Iterative brake-point pruning is the cheapest lap-time you can find without changing setup.",
+      estGainS: 0.1,
     },
     {
       priority: "low",
       location: "Tyre + fuel management",
       tip: "Hold a steady minimum corner speed across consecutive laps — consistency unlocks setup signal.",
-      reason: "Run-to-run variation hides real gains; consistent inputs surface the actual limit of the car.",
-      estGainS: 0.05
-    }
+      reason:
+        "Run-to-run variation hides real gains; consistent inputs surface the actual limit of the car.",
+      estGainS: 0.05,
+    },
   ];
   for (const f of filler) {
     if (tips.length >= 3) break;
@@ -3241,34 +3751,37 @@ function localCoachFallbackConcise(payload, detailed) {
   if (detailed) {
     return {
       headline: "Local analysis (AI fallback) — measured time on the table",
-      overview: "AI gateway returned no structured response, so this breakdown is built directly from your physics + counterfactual zones.",
+      overview:
+        "AI gateway returned no structured response, so this breakdown is built directly from your physics + counterfactual zones.",
       corners: tips.slice(0, 4).map((t, i) => ({
         label: `Zone ${i + 1}`,
         locationPct: 10 + i * 20,
         entry: t.tip,
         mid: t.reason,
         exit: "Refer to the trace + g-g view for the exact release point.",
-        estGainS: t.estGainS
-      }))
+        estGainS: t.estGainS,
+      })),
     };
   }
   return {
     headline: "Local analysis (AI fallback) — here's what the numbers say",
-    tips: tips.slice(0, 6)
+    tips: tips.slice(0, 6),
   };
 }
 function localLiveCoachFallback(summary) {
   const headlineMap = {
     push: "Time on the table — go get it.",
     hold: "That's the lap — same again.",
-    warn: "Ease off — bank it."
+    warn: "Ease off — bank it.",
   };
-  const focus = summary.sectorOpportunities?.[0] ? `Sector ${summary.sectorOpportunities[0].sector}` : void 0;
+  const focus = summary.sectorOpportunities?.[0]
+    ? `Sector ${summary.sectorOpportunities[0].sector}`
+    : void 0;
   return {
     tone: summary.tone,
     headline: headlineMap[summary.tone],
     detail: summary.beats.join(" "),
-    focus
+    focus,
   };
 }
 const SETUP_BIBLE = `
@@ -3418,31 +3931,37 @@ const ADVISOR_SCHEMA = {
             priority: { type: "string", enum: ["high", "medium", "low"] },
             area: {
               type: "string",
-              description: "e.g. 'Trail braking', 'Brake bias', 'Front pressures'."
+              description: "e.g. 'Trail braking', 'Brake bias', 'Front pressures'.",
             },
             tip: { type: "string", description: "Concrete action the driver should take." },
             reason: { type: "string", description: "Data-grounded reason this will help." },
             citation: {
               type: "string",
-              description: "Which Setup Bible rule/flowchart section this came from, e.g. 'Road — General Understeer #1 (ARB)' or 'eBook: Tyre Pressures'. Required for setup mode."
-            }
+              description:
+                "Which Setup Bible rule/flowchart section this came from, e.g. 'Road — General Understeer #1 (ARB)' or 'eBook: Tyre Pressures'. Required for setup mode.",
+            },
           },
           required: ["priority", "area", "tip", "reason"],
-          additionalProperties: false
-        }
-      }
+          additionalProperties: false,
+        },
+      },
     },
     required: ["headline", "summary", "tips"],
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 function getAdvisorSystemPrompt(payload) {
   if (payload.mode === "style") {
     return `You are a senior driver coach. Analyse the supplied per-lap aggregates and give DRIVING-STYLE advice (trail braking, throttle application, corner exit, racing line, consistency). Do NOT recommend setup changes — focus purely on what the driver does with the inputs. Be specific, reference the numbers, never refuse. Always call the function with 3-6 tips. The "citation" field is OPTIONAL for driving-style tips.`;
   }
-  const scope = payload.trackType === "oval" ? `This is an OVAL (predominantly ${payload.cornerBias === "right" ? "right-hand" : "left-hand"} corners). Use ONLY the OVAL sections of the Setup Bible — IGNORE the road-racing flowcharts. Inside = ${payload.cornerBias === "right" ? "RIGHT" : "LEFT"}, outside = ${payload.cornerBias === "right" ? "LEFT" : "RIGHT"}.` : `This is a ROAD course (${payload.cornerBias === "mixed" ? "mixed left + right corners" : payload.cornerBias === "right" ? "right-hand bias" : "left-hand bias"}). Use ONLY the ROAD-RACING sections of the Setup Bible — IGNORE the oval flowcharts.`;
-  const wiz = payload.symptoms?.length ? `
-DRIVER-REPORTED SYMPTOMS (treat as ground truth, prioritise these over data inference): ${payload.symptoms.join(", ")}.` : "";
+  const scope =
+    payload.trackType === "oval"
+      ? `This is an OVAL (predominantly ${payload.cornerBias === "right" ? "right-hand" : "left-hand"} corners). Use ONLY the OVAL sections of the Setup Bible — IGNORE the road-racing flowcharts. Inside = ${payload.cornerBias === "right" ? "RIGHT" : "LEFT"}, outside = ${payload.cornerBias === "right" ? "LEFT" : "RIGHT"}.`
+      : `This is a ROAD course (${payload.cornerBias === "mixed" ? "mixed left + right corners" : payload.cornerBias === "right" ? "right-hand bias" : "left-hand bias"}). Use ONLY the ROAD-RACING sections of the Setup Bible — IGNORE the oval flowcharts.`;
+  const wiz = payload.symptoms?.length
+    ? `
+DRIVER-REPORTED SYMPTOMS (treat as ground truth, prioritise these over data inference): ${payload.symptoms.join(", ")}.`
+    : "";
   return `You are a senior race engineer. Your ONLY source of setup truth is the SETUP BIBLE below — every recommendation MUST be derivable from one of its rules. Do not invent rules that contradict it. Do NOT coach driving inputs.
 
 ${scope}${wiz}
@@ -3462,13 +3981,18 @@ ${SETUP_BIBLE}
 ===================================================`;
 }
 function buildAdvisorUserMessage(data) {
-  const extrasLine = data.extrasSnapshot && data.extrasSnapshot.maxBrakeLinePressTotal > 0 ? `
+  const extrasLine =
+    data.extrasSnapshot && data.extrasSnapshot.maxBrakeLinePressTotal > 0
+      ? `
 BRIDGE EXTRAS (peak-per-lap from iRacing shared memory):
   - Yaw rate peak: ${data.extrasSnapshot.peakYawRateRads.toFixed(3)} rad/s
   - Shock deflection FL peak: ${data.extrasSnapshot.peakShockFL.toFixed(4)} m
-  - Brake line pressure total max: ${data.extrasSnapshot.maxBrakeLinePressTotal.toFixed(2)}` : "";
-  const wsLine = data.wsCtx ? `
-${data.wsCtx}` : "";
+  - Brake line pressure total max: ${data.extrasSnapshot.maxBrakeLinePressTotal.toFixed(2)}`
+      : "";
+  const wsLine = data.wsCtx
+    ? `
+${data.wsCtx}`
+    : "";
   return `MODE: ${data.mode.toUpperCase()}
 TRACK: ${data.track} (${data.trackType}, bias=${data.cornerBias})
 CAR: ${data.car}
@@ -3519,34 +4043,35 @@ const COACH_SCHEMA_CONCISE = {
             priority: { type: "string", enum: ["high", "medium", "low"] },
             location: {
               type: "string",
-              description: "Where on the lap, e.g. 'T4 entry, ~35% lap'."
+              description: "Where on the lap, e.g. 'T4 entry, ~35% lap'.",
             },
             tip: { type: "string", description: "Concrete action the driver should take." },
             reason: { type: "string", description: "Data-grounded reason this will help." },
             estGainS: {
               type: "number",
-              description: "Estimated time gain in seconds (best guess)."
-            }
+              description: "Estimated time gain in seconds (best guess).",
+            },
           },
           required: ["priority", "location", "tip", "reason", "estGainS"],
-          additionalProperties: false
-        }
-      }
+          additionalProperties: false,
+        },
+      },
     },
     required: ["headline", "tips"],
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 const COACH_SCHEMA_DETAILED = {
   name: "coach_detailed",
-  description: "Return a per-corner breakdown of the lap with entry/mid/exit notes. NEVER return fewer than 2 corners.",
+  description:
+    "Return a per-corner breakdown of the lap with entry/mid/exit notes. NEVER return fewer than 2 corners.",
   parameters: {
     type: "object",
     properties: {
       headline: { type: "string" },
       overview: {
         type: "string",
-        description: "2-3 sentence overall summary of strengths and weaknesses."
+        description: "2-3 sentence overall summary of strengths and weaknesses.",
       },
       corners: {
         type: "array",
@@ -3557,30 +4082,37 @@ const COACH_SCHEMA_DETAILED = {
           properties: {
             label: {
               type: "string",
-              description: "Corner label, e.g. 'T4' or 'Sector 2 hairpin'."
+              description: "Corner label, e.g. 'T4' or 'Sector 2 hairpin'.",
             },
             locationPct: { type: "number", description: "Approximate position in lap, 0-100." },
             entry: { type: "string" },
             mid: { type: "string" },
             exit: { type: "string" },
-            estGainS: { type: "number" }
+            estGainS: { type: "number" },
           },
           required: ["label", "locationPct", "entry", "mid", "exit", "estGainS"],
-          additionalProperties: false
-        }
-      }
+          additionalProperties: false,
+        },
+      },
     },
     required: ["headline", "overview", "corners"],
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 function buildCoachUserMessage(detailed, payload) {
-  const wsSection = payload?.activeWorkspace || payload?.enabledMathChannels?.length ? [
-    `
+  const wsSection =
+    payload?.activeWorkspace || payload?.enabledMathChannels?.length
+      ? [
+          `
 WORKSPACE: ${payload.activeWorkspace ?? "lite"}`,
-    payload?.enabledMathChannels?.length ? `DERIVED MATH CHANNELS AVAILABLE:
-${payload.enabledMathChannels.map((m) => `  - ${m.name} (${m.unit}): ${m.expression}`).join("\n")}` : ""
-  ].filter(Boolean).join("\n") : "";
+          payload?.enabledMathChannels?.length
+            ? `DERIVED MATH CHANNELS AVAILABLE:
+${payload.enabledMathChannels.map((m) => `  - ${m.name} (${m.unit}): ${m.expression}`).join("\n")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : "";
   const { activeWorkspace: _aw, enabledMathChannels: _em, ...corePayload } = payload ?? {};
   return `Analyze this telemetry and give ${detailed ? "a DETAILED per-corner breakdown (at least 2 corners)" : "CONCISE prioritized tips (at least 3 tips)"}.
 You MUST call the function. Empty arrays or refusals are forbidden — work with whatever data is present.${wsSection}
@@ -3608,11 +4140,11 @@ const LIVE_COACH_SCHEMA = {
       tone: { type: "string", enum: ["push", "hold", "warn"] },
       headline: { type: "string" },
       detail: { type: "string" },
-      focus: { type: "string" }
+      focus: { type: "string" },
     },
     required: ["tone", "headline", "detail"],
-    additionalProperties: false
-  }
+    additionalProperties: false,
+  },
 };
 function buildLiveCoachUserMessage(data) {
   return `CONTEXT:
@@ -3627,16 +4159,21 @@ function buildWorkspaceContext() {
   const { activeWorkspace, mathExpressions } = useWorkbench.getState();
   const ws = WORKSPACES[activeWorkspace];
   if (!ws) return "";
-  const enabledMath = mathExpressions.filter((m) => m.enabled).map((m) => `${m.name} (${m.unit}): ${m.expression}`).join("\n  - ");
+  const enabledMath = mathExpressions
+    .filter((m) => m.enabled)
+    .map((m) => `${m.name} (${m.unit}): ${m.expression}`)
+    .join("\n  - ");
   return [
     `
 
 --- ACTIVE WORKSPACE CONTEXT ---`,
     `Workspace Tier: ${ws.name} (${ws.tier})`,
     `Default Channels: ${ws.defaultChannels.join(", ")}`,
-    enabledMath ? `Enabled Math Channels (derived, pre-computed per sample):
-  - ${enabledMath}` : `No additional math channels active.`,
-    `--- END WORKSPACE CONTEXT ---`
+    enabledMath
+      ? `Enabled Math Channels (derived, pre-computed per sample):
+  - ${enabledMath}`
+      : `No additional math channels active.`,
+    `--- END WORKSPACE CONTEXT ---`,
   ].join("\n");
 }
 function resolveLLMUrl(baseUrl) {
@@ -3667,16 +4204,16 @@ async function callLocalOpenAI(system, user, schema) {
     model: llmModelId || "local-model",
     messages: [
       { role: "system", content: system },
-      { role: "user", content: user }
+      { role: "user", content: user },
     ],
     temperature: 0.2,
     tools: [{ type: "function", function: schema }],
-    tool_choice: { type: "function", function: { name: schema.name } }
+    tool_choice: { type: "function", function: { name: schema.name } },
   };
   const resp = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   if (!resp.ok) {
     throw new Error(`Local LLM Error: ${resp.status} ${resp.statusText}`);
@@ -3706,7 +4243,7 @@ async function dispatchAdvisorCall(data) {
     }
     return {
       result: { mode: data.mode, ...resultObj },
-      fallback: "local-llm"
+      fallback: "local-llm",
     };
   } catch (err) {
     console.error("[Local LLM] Advisor failure:", err);
@@ -3726,14 +4263,14 @@ async function dispatchAnalyzeTelemetry(data) {
     return {
       result: resultObj,
       detailed: data.detailed,
-      fallback: "local-llm"
+      fallback: "local-llm",
     };
   } catch (err) {
     console.error("[Local LLM] Coach failure:", err);
     return {
       result: localCoachFallbackConcise(data.payload, data.detailed),
       detailed: data.detailed,
-      fallback: "local"
+      fallback: "local",
     };
   }
 }
@@ -3743,13 +4280,15 @@ async function dispatchLiveCoach(data) {
   const extrasCtx = data.context?.extras;
   const enrichedContext = {
     ...data.context,
-    ...extrasCtx && extrasCtx.peakYawRateRads > 0 ? {
-      extras: {
-        peakYawRateRads: extrasCtx.peakYawRateRads,
-        peakShockFL: extrasCtx.peakShockFL,
-        maxBrakeLinePressTotal: extrasCtx.maxBrakeLinePressTotal
-      }
-    } : {}
+    ...(extrasCtx && extrasCtx.peakYawRateRads > 0
+      ? {
+          extras: {
+            peakYawRateRads: extrasCtx.peakYawRateRads,
+            peakShockFL: extrasCtx.peakShockFL,
+            maxBrakeLinePressTotal: extrasCtx.maxBrakeLinePressTotal,
+          },
+        }
+      : {}),
   };
   const enrichedData = { ...data, context: enrichedContext };
   try {
@@ -3769,7 +4308,7 @@ async function testLLMConnection(baseUrl, modelId, apiKey) {
       model: modelId || "local-model",
       messages: [{ role: "user", content: "Respond with exactly the word: 'Connected'." }],
       max_tokens: 5,
-      temperature: 0
+      temperature: 0,
     };
     const headers = { "Content-Type": "application/json" };
     if (apiKey) {
@@ -3781,13 +4320,13 @@ async function testLLMConnection(baseUrl, modelId, apiKey) {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
-      signal: controller.signal
+      signal: controller.signal,
     });
     clearTimeout(timeoutId);
     if (!resp.ok) {
       return {
         success: false,
-        message: `HTTP Error ${resp.status}: ${resp.statusText}. Checked url: ${url}. Make sure CORS is enabled and the URL is correct.`
+        message: `HTTP Error ${resp.status}: ${resp.statusText}. Checked url: ${url}. Make sure CORS is enabled and the URL is correct.`,
       };
     }
     const data = await resp.json();
@@ -3795,19 +4334,20 @@ async function testLLMConnection(baseUrl, modelId, apiKey) {
     if (reply) {
       return {
         success: true,
-        message: `Connected successfully! Model replied: "${reply}"`
+        message: `Connected successfully! Model replied: "${reply}"`,
       };
     } else {
       return {
         success: true,
-        message: "Connected to endpoint, but received an empty response content."
+        message: "Connected to endpoint, but received an empty response content.",
       };
     }
   } catch (err) {
     if (err.name === "AbortError") {
       return {
         success: false,
-        message: "Connection timed out after 10 seconds. Check if the model is currently loading or if the server is frozen."
+        message:
+          "Connection timed out after 10 seconds. Check if the model is currently loading or if the server is frozen.",
       };
     }
     let errorMsg = err instanceof Error ? err.message : String(err);
@@ -3819,7 +4359,7 @@ async function testLLMConnection(baseUrl, modelId, apiKey) {
     }
     return {
       success: false,
-      message: errorMsg
+      message: errorMsg,
     };
   }
 }
@@ -3829,29 +4369,29 @@ const LLM_PROVIDERS = [
     name: "LM Studio",
     icon: Laptop,
     url: "http://localhost:1234/api/v1",
-    desc: "lmstudio-native."
+    desc: "lmstudio-native.",
   },
   {
     id: "ollama",
     name: "Ollama",
     icon: Cpu,
     url: "http://localhost:11434/v1",
-    desc: "Local inference via Ollama."
+    desc: "Local inference via Ollama.",
   },
   {
     id: "huggingface",
     name: "HuggingFace TGI",
     icon: Server,
     url: "http://localhost:8080/v1",
-    desc: "Local TGI container backend."
+    desc: "Local TGI container backend.",
   },
   {
     id: "lemonade",
     name: "LlamaEdge / Lemonade",
     icon: Laptop,
     url: "http://localhost:8080/v1",
-    desc: "Wasm edge inference."
-  }
+    desc: "Wasm edge inference.",
+  },
 ];
 function GlobalSettingsDialog() {
   const { pathname } = useLocation();
@@ -3861,9 +4401,7 @@ function GlobalSettingsDialog() {
   const [cloudUri, setCloudUri] = useState("");
   const [dbTesting, setDbTesting] = useState(false);
   const [dbStatus, setDbStatus] = useState("unchecked");
-  const [dbTestResult, setDbTestResult] = useState(
-    null
-  );
+  const [dbTestResult, setDbTestResult] = useState(null);
   const [savingDb, setSavingDb] = useState(false);
   const [idbUsage, setIdbUsage] = useState("Calculating...");
   const [hwid, setHwid] = useState("");
@@ -3880,12 +4418,10 @@ function GlobalSettingsDialog() {
     setLlmProvider,
     setLlmBaseUrl,
     setLlmModelId,
-    setLlmApiKey
+    setLlmApiKey,
   } = useWorkbench();
   const [aiTesting, setAiTesting] = useState(false);
-  const [aiTestResult, setAiTestResult] = useState(
-    null
-  );
+  const [aiTestResult, setAiTestResult] = useState(null);
   const [copiedDocker, setCopiedDocker] = useState(false);
   const [copiedWinget, setCopiedWinget] = useState(false);
   const loadDbSettings = useCallback(async () => {
@@ -3910,7 +4446,7 @@ function GlobalSettingsDialog() {
     } catch (e) {
       setDbTestResult({
         success: false,
-        message: `Connection failed: ${e.message || String(e)}`
+        message: `Connection failed: ${e.message || String(e)}`,
       });
       setDbStatus("failed");
     } finally {
@@ -3938,7 +4474,9 @@ function GlobalSettingsDialog() {
       try {
         const estimate = await navigator.storage.estimate();
         const used = estimate.usage ? (estimate.usage / (1024 * 1024)).toFixed(1) : "0";
-        const total = estimate.quota ? (estimate.quota / (1024 * 1024 * 1024)).toFixed(1) : "unknown";
+        const total = estimate.quota
+          ? (estimate.quota / (1024 * 1024 * 1024)).toFixed(1)
+          : "unknown";
         setIdbUsage(`${used} MB used of ${total} GB quota`);
       } catch {
         setIdbUsage("Available");
@@ -3948,9 +4486,11 @@ function GlobalSettingsDialog() {
     }
   };
   const clearIndexedDb = async () => {
-    if (!confirm(
-      "Are you sure you want to clear your local IndexedDB file cache? This will delete downloaded telemetry files from this browser. Telemetry session records in MongoDB will remain."
-    )) {
+    if (
+      !confirm(
+        "Are you sure you want to clear your local IndexedDB file cache? This will delete downloaded telemetry files from this browser. Telemetry session records in MongoDB will remain.",
+      )
+    ) {
       return;
     }
     try {
@@ -3990,13 +4530,13 @@ function GlobalSettingsDialog() {
       const res = await testLLMConnection(
         llmBaseUrl || activeProviderInfo?.url || "",
         llmModelId,
-        llmApiKey
+        llmApiKey,
       );
       setAiTestResult(res);
     } catch (e) {
       setAiTestResult({
         success: false,
-        message: e instanceof Error ? e.message : "An unexpected error occurred."
+        message: e instanceof Error ? e.message : "An unexpected error occurred.",
       });
     } finally {
       setAiTesting(false);
@@ -4048,7 +4588,7 @@ function GlobalSettingsDialog() {
       const res = await fetch(`${httpUrl}/api/license`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: licenseKeyInput.trim() })
+        body: JSON.stringify({ key: licenseKeyInput.trim() }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -4074,7 +4614,12 @@ function GlobalSettingsDialog() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       const activeEl = document.activeElement;
-      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.getAttribute("contenteditable") === "true")) {
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === ",") {
@@ -4093,559 +4638,969 @@ function GlobalSettingsDialog() {
       fetchLicenseData();
     }
   }, [open, loadDbSettings, fetchLicenseData]);
-  if (pathname === "/" || pathname === "/auth" || pathname === "/settings" || pathname === "/settings/") {
+  if (
+    pathname === "/" ||
+    pathname === "/auth" ||
+    pathname === "/settings" ||
+    pathname === "/settings/"
+  ) {
     return null;
   }
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    /* @__PURE__ */ jsx(
-      "button",
-      {
+  return /* @__PURE__ */ jsxs(Fragment, {
+    children: [
+      /* @__PURE__ */ jsx("button", {
         id: "global-settings-trigger",
         onClick: () => {
           setOpen(true);
         },
-        className: "fixed bottom-4 right-16 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-panel border border-border text-muted-foreground shadow-lg hover:text-primary hover:border-primary/50 transition-all hover:scale-110 group cursor-pointer",
+        className:
+          "fixed bottom-4 right-16 z-40 flex h-9 w-9 items-center justify-center rounded-full bg-panel border border-border text-muted-foreground shadow-lg hover:text-primary hover:border-primary/50 transition-all hover:scale-110 group cursor-pointer",
         "aria-label": "Open settings panel",
         title: "Settings (Ctrl + ,)",
-        children: /* @__PURE__ */ jsx(Settings, { className: "h-4 w-4 transition-transform duration-500 group-hover:rotate-90" })
-      }
-    ),
-    /* @__PURE__ */ jsx(Dialog, { open, onOpenChange: setOpen, children: /* @__PURE__ */ jsxs(DialogContent, { className: "max-w-2xl h-[90vh] sm:h-[650px] flex flex-col p-0 overflow-hidden bg-background text-foreground border border-border rounded-xl", children: [
-      /* @__PURE__ */ jsxs(DialogHeader, { className: "px-6 pt-5 pb-3 border-b border-border/60 shrink-0", children: [
-        /* @__PURE__ */ jsxs(DialogTitle, { className: "font-mono text-sm tracking-wider flex items-center gap-2", children: [
-          /* @__PURE__ */ jsx(Settings, { className: "h-4 w-4 text-primary animate-pulse" }),
-          "SYSTEM SETTINGS & WORKSPACE"
-        ] }),
-        /* @__PURE__ */ jsx(DialogDescription, { className: "text-xs", children: "Configure local services, databases, cloud synchronization, and AI engine preferences." })
-      ] }),
-      /* @__PURE__ */ jsxs(
-        Tabs,
-        {
-          value: activeTab,
-          onValueChange: setActiveTab,
-          className: "flex-1 flex flex-col min-h-0",
+        children: /* @__PURE__ */ jsx(Settings, {
+          className: "h-4 w-4 transition-transform duration-500 group-hover:rotate-90",
+        }),
+      }),
+      /* @__PURE__ */ jsx(Dialog, {
+        open,
+        onOpenChange: setOpen,
+        children: /* @__PURE__ */ jsxs(DialogContent, {
+          className:
+            "max-w-2xl h-[90vh] sm:h-[650px] flex flex-col p-0 overflow-hidden bg-background text-foreground border border-border rounded-xl",
           children: [
-            /* @__PURE__ */ jsxs(TabsList, { className: "grid grid-cols-5 bg-panel border-b border-border/60 p-1 shrink-0 rounded-none h-11", children: [
-              /* @__PURE__ */ jsxs(
-                TabsTrigger,
-                {
+            /* @__PURE__ */ jsxs(DialogHeader, {
+              className: "px-6 pt-5 pb-3 border-b border-border/60 shrink-0",
+              children: [
+                /* @__PURE__ */ jsxs(DialogTitle, {
+                  className: "font-mono text-sm tracking-wider flex items-center gap-2",
+                  children: [
+                    /* @__PURE__ */ jsx(Settings, {
+                      className: "h-4 w-4 text-primary animate-pulse",
+                    }),
+                    "SYSTEM SETTINGS & WORKSPACE",
+                  ],
+                }),
+                /* @__PURE__ */ jsx(DialogDescription, {
+                  className: "text-xs",
+                  children:
+                    "Configure local services, databases, cloud synchronization, and AI engine preferences.",
+                }),
+              ],
+            }),
+            /* @__PURE__ */ jsxs(Tabs, {
+              value: activeTab,
+              onValueChange: setActiveTab,
+              className: "flex-1 flex flex-col min-h-0",
+              children: [
+                /* @__PURE__ */ jsxs(TabsList, {
+                  className:
+                    "grid grid-cols-5 bg-panel border-b border-border/60 p-1 shrink-0 rounded-none h-11",
+                  children: [
+                    /* @__PURE__ */ jsxs(TabsTrigger, {
+                      value: "db",
+                      className:
+                        "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
+                      children: [
+                        /* @__PURE__ */ jsx(Database, { className: "h-3.5 w-3.5" }),
+                        "Local DB",
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs(TabsTrigger, {
+                      value: "ai",
+                      className:
+                        "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
+                      children: [
+                        /* @__PURE__ */ jsx(Cpu, { className: "h-3.5 w-3.5" }),
+                        "AI Engine",
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs(TabsTrigger, {
+                      value: "licensing",
+                      className:
+                        "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
+                      children: [/* @__PURE__ */ jsx(Key, { className: "h-3.5 w-3.5" }), "License"],
+                    }),
+                    /* @__PURE__ */ jsxs(TabsTrigger, {
+                      value: "shortcuts",
+                      className:
+                        "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
+                      children: [
+                        /* @__PURE__ */ jsx(Keyboard, { className: "h-3.5 w-3.5" }),
+                        "Shortcuts",
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs(TabsContent, {
                   value: "db",
-                  className: "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
+                  className:
+                    "flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0 focus:outline-none",
                   children: [
-                    /* @__PURE__ */ jsx(Database, { className: "h-3.5 w-3.5" }),
-                    "Local DB"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ jsxs(
-                TabsTrigger,
-                {
-                  value: "ai",
-                  className: "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
-                  children: [
-                    /* @__PURE__ */ jsx(Cpu, { className: "h-3.5 w-3.5" }),
-                    "AI Engine"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ jsxs(
-                TabsTrigger,
-                {
-                  value: "licensing",
-                  className: "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
-                  children: [
-                    /* @__PURE__ */ jsx(Key, { className: "h-3.5 w-3.5" }),
-                    "License"
-                  ]
-                }
-              ),
-              /* @__PURE__ */ jsxs(
-                TabsTrigger,
-                {
-                  value: "shortcuts",
-                  className: "gap-1.5 font-mono text-[10px] uppercase tracking-wider h-full cursor-pointer",
-                  children: [
-                    /* @__PURE__ */ jsx(Keyboard, { className: "h-3.5 w-3.5" }),
-                    "Shortcuts"
-                  ]
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxs(
-              TabsContent,
-              {
-                value: "db",
-                className: "flex-1 overflow-y-auto px-6 py-5 space-y-5 min-h-0 focus:outline-none",
-                children: [
-                  /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-border bg-panel p-4 space-y-3", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-border/40 pb-2", children: [
-                      /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono uppercase tracking-wider text-muted-foreground", children: "MongoDB Server Status" }),
-                      dbTesting ? /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-mono tracking-wider", children: [
-                        /* @__PURE__ */ jsx(RefreshCw, { className: "h-3 w-3 animate-spin" }),
-                        " Testing..."
-                      ] }) : dbStatus === "connected" ? /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-mono tracking-wider font-semibold", children: [
-                        /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3.5 w-3.5" }),
-                        " Connected"
-                      ] }) : /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1.5 text-[10px] text-rose-400 uppercase font-mono tracking-wider font-semibold", children: [
-                        /* @__PURE__ */ jsx(AlertCircle, { className: "h-3.5 w-3.5" }),
-                        " Disconnected"
-                      ] })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                      /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono uppercase tracking-wider text-muted-foreground", children: "Local Cache Size" }),
-                      /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-muted-foreground", children: idbUsage })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
-                    /* @__PURE__ */ jsx("h3", { className: "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1", children: "Local MongoDB Community Server Connection" }),
-                    /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-                      /* @__PURE__ */ jsx("label", { className: "text-[10px] uppercase tracking-wider text-muted-foreground block", children: "Connection String URI" }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
-                        /* @__PURE__ */ jsx(
-                          Input,
-                          {
-                            type: "text",
-                            value: localUri,
-                            onChange: (e) => setLocalUri(e.target.value),
-                            placeholder: "mongodb://127.0.0.1:27017/",
-                            className: "font-mono text-xs flex-1"
-                          }
-                        ),
-                        /* @__PURE__ */ jsx(
-                          Button,
-                          {
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "rounded-lg border border-border bg-panel p-4 space-y-3",
+                      children: [
+                        /* @__PURE__ */ jsxs("div", {
+                          className:
+                            "flex items-center justify-between border-b border-border/40 pb-2",
+                          children: [
+                            /* @__PURE__ */ jsx("span", {
+                              className:
+                                "text-[10px] font-mono uppercase tracking-wider text-muted-foreground",
+                              children: "MongoDB Server Status",
+                            }),
+                            dbTesting
+                              ? /* @__PURE__ */ jsxs("span", {
+                                  className:
+                                    "flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-mono tracking-wider",
+                                  children: [
+                                    /* @__PURE__ */ jsx(RefreshCw, {
+                                      className: "h-3 w-3 animate-spin",
+                                    }),
+                                    " Testing...",
+                                  ],
+                                })
+                              : dbStatus === "connected"
+                                ? /* @__PURE__ */ jsxs("span", {
+                                    className:
+                                      "flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-mono tracking-wider font-semibold",
+                                    children: [
+                                      /* @__PURE__ */ jsx(CheckCircle2, {
+                                        className: "h-3.5 w-3.5",
+                                      }),
+                                      " Connected",
+                                    ],
+                                  })
+                                : /* @__PURE__ */ jsxs("span", {
+                                    className:
+                                      "flex items-center gap-1.5 text-[10px] text-rose-400 uppercase font-mono tracking-wider font-semibold",
+                                    children: [
+                                      /* @__PURE__ */ jsx(AlertCircle, {
+                                        className: "h-3.5 w-3.5",
+                                      }),
+                                      " Disconnected",
+                                    ],
+                                  }),
+                          ],
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "flex items-center justify-between",
+                          children: [
+                            /* @__PURE__ */ jsx("span", {
+                              className:
+                                "text-[10px] font-mono uppercase tracking-wider text-muted-foreground",
+                              children: "Local Cache Size",
+                            }),
+                            /* @__PURE__ */ jsx("span", {
+                              className: "text-xs font-mono text-muted-foreground",
+                              children: idbUsage,
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "space-y-3",
+                      children: [
+                        /* @__PURE__ */ jsx("h3", {
+                          className:
+                            "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1",
+                          children: "Local MongoDB Community Server Connection",
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "space-y-2",
+                          children: [
+                            /* @__PURE__ */ jsx("label", {
+                              className:
+                                "text-[10px] uppercase tracking-wider text-muted-foreground block",
+                              children: "Connection String URI",
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "flex gap-2",
+                              children: [
+                                /* @__PURE__ */ jsx(Input, {
+                                  type: "text",
+                                  value: localUri,
+                                  onChange: (e) => setLocalUri(e.target.value),
+                                  placeholder: "mongodb://127.0.0.1:27017/",
+                                  className: "font-mono text-xs flex-1",
+                                }),
+                                /* @__PURE__ */ jsx(Button, {
+                                  type: "button",
+                                  onClick: handleSaveDbConfig,
+                                  disabled: savingDb,
+                                  size: "sm",
+                                  className: "font-mono text-xs",
+                                  children: savingDb ? "Saving..." : "Save",
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsxs("p", {
+                              className: "text-[10px] text-muted-foreground",
+                              children: [
+                                "Default connection URI for standard installation is",
+                                " ",
+                                /* @__PURE__ */ jsx("code", {
+                                  className: "font-mono bg-rail px-1 rounded text-primary",
+                                  children: "mongodb://127.0.0.1:27017/",
+                                }),
+                                ".",
+                              ],
+                            }),
+                          ],
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className: "flex gap-2 pt-1",
+                          children: /* @__PURE__ */ jsxs(Button, {
                             type: "button",
-                            onClick: handleSaveDbConfig,
-                            disabled: savingDb,
+                            variant: "outline",
                             size: "sm",
-                            className: "font-mono text-xs",
-                            children: savingDb ? "Saving..." : "Save"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ jsxs("p", { className: "text-[10px] text-muted-foreground", children: [
-                        "Default connection URI for standard installation is",
-                        " ",
-                        /* @__PURE__ */ jsx("code", { className: "font-mono bg-rail px-1 rounded text-primary", children: "mongodb://127.0.0.1:27017/" }),
-                        "."
-                      ] })
-                    ] }),
-                    /* @__PURE__ */ jsx("div", { className: "flex gap-2 pt-1", children: /* @__PURE__ */ jsxs(
-                      Button,
-                      {
-                        type: "button",
-                        variant: "outline",
-                        size: "sm",
-                        onClick: checkConnection,
-                        disabled: dbTesting,
-                        className: "w-full font-mono text-[10px] uppercase tracking-wider gap-1.5",
-                        children: [
-                          /* @__PURE__ */ jsx(RefreshCw, { className: `h-3 w-3 ${dbTesting ? "animate-spin" : ""}` }),
-                          "Test Connection"
-                        ]
-                      }
-                    ) }),
-                    dbTestResult && /* @__PURE__ */ jsxs(
-                      "div",
-                      {
-                        className: `rounded-lg p-3 border text-xs whitespace-pre-line leading-relaxed font-sans ${dbTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`,
-                        children: [
-                          /* @__PURE__ */ jsx("div", { className: "font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono", children: dbTestResult.success ? "✓ MongoDB Connection Successful" : "✗ Connection Failed" }),
-                          /* @__PURE__ */ jsx("div", { className: "font-mono text-[10px]", children: dbTestResult.message })
-                        ]
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "space-y-3 pt-2", children: [
-                    /* @__PURE__ */ jsx("h3", { className: "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1", children: "MongoDB Community Server Setup Guide" }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground leading-relaxed", children: "If you do not have a MongoDB Community Server running locally, select one of the methods below to set it up:" }),
-                    /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-border bg-rail p-3 space-y-1.5", children: [
-                        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                          /* @__PURE__ */ jsxs("span", { className: "text-[11px] font-mono font-semibold flex items-center gap-1.5 text-foreground", children: [
-                            /* @__PURE__ */ jsx(Terminal, { className: "h-3.5 w-3.5 text-primary" }),
-                            "Method A: Windows Package Manager (Winget)"
-                          ] }),
-                          /* @__PURE__ */ jsx(
-                            "button",
-                            {
-                              onClick: () => copyToClipboard("winget install MongoDB.Community.Server", "winget"),
-                              className: "text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer",
-                              title: "Copy command",
-                              children: copiedWinget ? /* @__PURE__ */ jsx(Check, { className: "h-3 w-3 text-emerald-400" }) : /* @__PURE__ */ jsx(Copy, { className: "h-3 w-3" })
-                            }
-                          )
-                        ] }),
-                        /* @__PURE__ */ jsx("code", { className: "block text-[10px] bg-background/50 p-2 rounded font-mono text-foreground", children: "winget install MongoDB.Community.Server" })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-border bg-rail p-3 space-y-1.5", children: [
-                        /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                          /* @__PURE__ */ jsxs("span", { className: "text-[11px] font-mono font-semibold flex items-center gap-1.5 text-foreground", children: [
-                            /* @__PURE__ */ jsx(Terminal, { className: "h-3.5 w-3.5 text-primary" }),
-                            "Method B: Docker Container"
-                          ] }),
-                          /* @__PURE__ */ jsx(
-                            "button",
-                            {
-                              onClick: () => copyToClipboard(
-                                "docker run -d -p 27017:27017 --name iracing-mongo mongo:latest",
-                                "docker"
-                              ),
-                              className: "text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer",
-                              title: "Copy command",
-                              children: copiedDocker ? /* @__PURE__ */ jsx(Check, { className: "h-3 w-3 text-emerald-400" }) : /* @__PURE__ */ jsx(Copy, { className: "h-3 w-3" })
-                            }
-                          )
-                        ] }),
-                        /* @__PURE__ */ jsx("code", { className: "block text-[10px] bg-background/50 p-2 rounded font-mono text-foreground leading-normal", children: "docker run -d -p 27017:27017 --name iracing-mongo mongo:latest" })
-                      ] })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "pt-3 border-t border-border/40 flex items-center justify-between gap-4", children: [
-                    /* @__PURE__ */ jsxs("div", { children: [
-                      /* @__PURE__ */ jsx("h4", { className: "text-xs font-semibold text-foreground", children: "Browser File Cache" }),
-                      /* @__PURE__ */ jsx("p", { className: "text-[11px] text-muted-foreground leading-snug", children: "Telemetry binary files are saved locally in browser IndexedDB." })
-                    ] }),
-                    /* @__PURE__ */ jsxs(
-                      Button,
-                      {
-                        type: "button",
-                        variant: "destructive",
-                        size: "sm",
-                        onClick: clearIndexedDb,
-                        className: "font-mono text-[10px] uppercase tracking-wider gap-1.5 shrink-0",
-                        children: [
-                          /* @__PURE__ */ jsx(Trash2, { className: "h-3.5 w-3.5" }),
-                          "Clear File Cache"
-                        ]
-                      }
-                    )
-                  ] })
-                ]
-              }
-            ),
-            /* @__PURE__ */ jsxs(
-              TabsContent,
-              {
-                value: "ai",
-                className: "flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none",
-                children: [
-                  /* @__PURE__ */ jsxs("div", { children: [
-                    /* @__PURE__ */ jsx("div", { className: "mb-2.5 text-[10px] uppercase tracking-wider text-muted-foreground", children: "AI Provider Software" }),
-                    /* @__PURE__ */ jsx("div", { className: "grid gap-2 grid-cols-1 sm:grid-cols-2", children: LLM_PROVIDERS.map((p) => /* @__PURE__ */ jsxs(
-                      "label",
-                      {
-                        className: `flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 hover:bg-accent/40 transition-colors ${llmProvider === p.id ? "border-primary bg-primary/5" : "border-border bg-panel"}`,
-                        children: [
-                          /* @__PURE__ */ jsx(
-                            "input",
-                            {
-                              type: "radio",
-                              name: "llmProvider",
-                              checked: llmProvider === p.id,
-                              onChange: () => applyAiDefaults(p.id),
-                              className: "mt-1 shrink-0 cursor-pointer"
-                            }
-                          ),
-                          /* @__PURE__ */ jsxs("div", { className: "min-w-0", children: [
-                            /* @__PURE__ */ jsxs("div", { className: "text-xs font-medium flex items-center gap-1.5 text-foreground", children: [
-                              /* @__PURE__ */ jsx(p.icon, { className: "h-3.5 w-3.5 shrink-0 text-primary" }),
-                              p.name
-                            ] }),
-                            /* @__PURE__ */ jsx("div", { className: "text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2", children: p.desc })
-                          ] })
-                        ]
-                      },
-                      p.id
-                    )) })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-                        /* @__PURE__ */ jsx("label", { className: "text-[10px] uppercase tracking-wider text-muted-foreground block", children: "Base URL (OpenAI Compatible)" }),
-                        /* @__PURE__ */ jsx(
-                          Input,
-                          {
-                            type: "text",
-                            value: llmBaseUrl,
-                            onChange: (e) => {
-                              setLlmBaseUrl(e.target.value);
-                              setAiTestResult(null);
-                            },
-                            placeholder: activeProviderInfo?.url || "http://localhost:1234/v1",
-                            className: "font-mono text-xs"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-                        /* @__PURE__ */ jsx("label", { className: "text-[10px] uppercase tracking-wider text-muted-foreground block", children: "Model ID" }),
-                        /* @__PURE__ */ jsx(
-                          Input,
-                          {
-                            type: "text",
-                            value: llmModelId,
-                            onChange: (e) => {
-                              setLlmModelId(e.target.value);
-                              setAiTestResult(null);
-                            },
-                            placeholder: "e.g. liquid/lfm2.5-1.2b, llama-3-8b-instruct",
-                            className: "font-mono text-xs"
-                          }
-                        )
-                      ] })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "space-y-1.5", children: [
-                      /* @__PURE__ */ jsx("label", { className: "text-[10px] uppercase tracking-wider text-muted-foreground block", children: "API Token / Permission Key (Optional)" }),
-                      /* @__PURE__ */ jsx(
-                        Input,
-                        {
-                          type: "password",
-                          value: llmApiKey,
-                          onChange: (e) => {
-                            setLlmApiKey(e.target.value);
-                            setAiTestResult(null);
-                          },
-                          placeholder: "Enter LM Studio token or Bearer key if required",
-                          className: "font-mono text-xs"
-                        }
-                      ),
-                      /* @__PURE__ */ jsx("p", { className: "text-[9px] text-muted-foreground mt-1", children: "Required if your local server uses token authentication (e.g. LM Studio 0.4.0+)." })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "pt-2", children: [
-                      /* @__PURE__ */ jsxs(
-                        Button,
-                        {
+                            onClick: checkConnection,
+                            disabled: dbTesting,
+                            className:
+                              "w-full font-mono text-[10px] uppercase tracking-wider gap-1.5",
+                            children: [
+                              /* @__PURE__ */ jsx(RefreshCw, {
+                                className: `h-3 w-3 ${dbTesting ? "animate-spin" : ""}`,
+                              }),
+                              "Test Connection",
+                            ],
+                          }),
+                        }),
+                        dbTestResult &&
+                          /* @__PURE__ */ jsxs("div", {
+                            className: `rounded-lg p-3 border text-xs whitespace-pre-line leading-relaxed font-sans ${dbTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`,
+                            children: [
+                              /* @__PURE__ */ jsx("div", {
+                                className:
+                                  "font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono",
+                                children: dbTestResult.success
+                                  ? "✓ MongoDB Connection Successful"
+                                  : "✗ Connection Failed",
+                              }),
+                              /* @__PURE__ */ jsx("div", {
+                                className: "font-mono text-[10px]",
+                                children: dbTestResult.message,
+                              }),
+                            ],
+                          }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "space-y-3 pt-2",
+                      children: [
+                        /* @__PURE__ */ jsx("h3", {
+                          className:
+                            "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1",
+                          children: "MongoDB Community Server Setup Guide",
+                        }),
+                        /* @__PURE__ */ jsx("p", {
+                          className: "text-xs text-muted-foreground leading-relaxed",
+                          children:
+                            "If you do not have a MongoDB Community Server running locally, select one of the methods below to set it up:",
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "space-y-3",
+                          children: [
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "rounded-lg border border-border bg-rail p-3 space-y-1.5",
+                              children: [
+                                /* @__PURE__ */ jsxs("div", {
+                                  className: "flex items-center justify-between",
+                                  children: [
+                                    /* @__PURE__ */ jsxs("span", {
+                                      className:
+                                        "text-[11px] font-mono font-semibold flex items-center gap-1.5 text-foreground",
+                                      children: [
+                                        /* @__PURE__ */ jsx(Terminal, {
+                                          className: "h-3.5 w-3.5 text-primary",
+                                        }),
+                                        "Method A: Windows Package Manager (Winget)",
+                                      ],
+                                    }),
+                                    /* @__PURE__ */ jsx("button", {
+                                      onClick: () =>
+                                        copyToClipboard(
+                                          "winget install MongoDB.Community.Server",
+                                          "winget",
+                                        ),
+                                      className:
+                                        "text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer",
+                                      title: "Copy command",
+                                      children: copiedWinget
+                                        ? /* @__PURE__ */ jsx(Check, {
+                                            className: "h-3 w-3 text-emerald-400",
+                                          })
+                                        : /* @__PURE__ */ jsx(Copy, { className: "h-3 w-3" }),
+                                    }),
+                                  ],
+                                }),
+                                /* @__PURE__ */ jsx("code", {
+                                  className:
+                                    "block text-[10px] bg-background/50 p-2 rounded font-mono text-foreground",
+                                  children: "winget install MongoDB.Community.Server",
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "rounded-lg border border-border bg-rail p-3 space-y-1.5",
+                              children: [
+                                /* @__PURE__ */ jsxs("div", {
+                                  className: "flex items-center justify-between",
+                                  children: [
+                                    /* @__PURE__ */ jsxs("span", {
+                                      className:
+                                        "text-[11px] font-mono font-semibold flex items-center gap-1.5 text-foreground",
+                                      children: [
+                                        /* @__PURE__ */ jsx(Terminal, {
+                                          className: "h-3.5 w-3.5 text-primary",
+                                        }),
+                                        "Method B: Docker Container",
+                                      ],
+                                    }),
+                                    /* @__PURE__ */ jsx("button", {
+                                      onClick: () =>
+                                        copyToClipboard(
+                                          "docker run -d -p 27017:27017 --name iracing-mongo mongo:latest",
+                                          "docker",
+                                        ),
+                                      className:
+                                        "text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer",
+                                      title: "Copy command",
+                                      children: copiedDocker
+                                        ? /* @__PURE__ */ jsx(Check, {
+                                            className: "h-3 w-3 text-emerald-400",
+                                          })
+                                        : /* @__PURE__ */ jsx(Copy, { className: "h-3 w-3" }),
+                                    }),
+                                  ],
+                                }),
+                                /* @__PURE__ */ jsx("code", {
+                                  className:
+                                    "block text-[10px] bg-background/50 p-2 rounded font-mono text-foreground leading-normal",
+                                  children:
+                                    "docker run -d -p 27017:27017 --name iracing-mongo mongo:latest",
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className:
+                        "pt-3 border-t border-border/40 flex items-center justify-between gap-4",
+                      children: [
+                        /* @__PURE__ */ jsxs("div", {
+                          children: [
+                            /* @__PURE__ */ jsx("h4", {
+                              className: "text-xs font-semibold text-foreground",
+                              children: "Browser File Cache",
+                            }),
+                            /* @__PURE__ */ jsx("p", {
+                              className: "text-[11px] text-muted-foreground leading-snug",
+                              children:
+                                "Telemetry binary files are saved locally in browser IndexedDB.",
+                            }),
+                          ],
+                        }),
+                        /* @__PURE__ */ jsxs(Button, {
                           type: "button",
-                          variant: "secondary",
+                          variant: "destructive",
                           size: "sm",
-                          onClick: runAiTest,
-                          disabled: aiTesting,
-                          className: "w-full font-mono text-[10px] uppercase tracking-wider gap-1.5",
+                          onClick: clearIndexedDb,
+                          className:
+                            "font-mono text-[10px] uppercase tracking-wider gap-1.5 shrink-0",
                           children: [
-                            /* @__PURE__ */ jsx(RefreshCw, { className: `h-3 w-3 ${aiTesting ? "animate-spin" : ""}` }),
-                            aiTesting ? "Testing Connection..." : "Test Local Host Software Connection"
-                          ]
-                        }
-                      ),
-                      aiTestResult && /* @__PURE__ */ jsxs(
-                        "div",
-                        {
-                          className: `mt-3 rounded-lg p-3 border text-xs ${aiTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`,
+                            /* @__PURE__ */ jsx(Trash2, { className: "h-3.5 w-3.5" }),
+                            "Clear File Cache",
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs(TabsContent, {
+                  value: "ai",
+                  className: "flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      children: [
+                        /* @__PURE__ */ jsx("div", {
+                          className:
+                            "mb-2.5 text-[10px] uppercase tracking-wider text-muted-foreground",
+                          children: "AI Provider Software",
+                        }),
+                        /* @__PURE__ */ jsx("div", {
+                          className: "grid gap-2 grid-cols-1 sm:grid-cols-2",
+                          children: LLM_PROVIDERS.map((p) =>
+                            /* @__PURE__ */ jsxs(
+                              "label",
+                              {
+                                className: `flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 hover:bg-accent/40 transition-colors ${llmProvider === p.id ? "border-primary bg-primary/5" : "border-border bg-panel"}`,
+                                children: [
+                                  /* @__PURE__ */ jsx("input", {
+                                    type: "radio",
+                                    name: "llmProvider",
+                                    checked: llmProvider === p.id,
+                                    onChange: () => applyAiDefaults(p.id),
+                                    className: "mt-1 shrink-0 cursor-pointer",
+                                  }),
+                                  /* @__PURE__ */ jsxs("div", {
+                                    className: "min-w-0",
+                                    children: [
+                                      /* @__PURE__ */ jsxs("div", {
+                                        className:
+                                          "text-xs font-medium flex items-center gap-1.5 text-foreground",
+                                        children: [
+                                          /* @__PURE__ */ jsx(p.icon, {
+                                            className: "h-3.5 w-3.5 shrink-0 text-primary",
+                                          }),
+                                          p.name,
+                                        ],
+                                      }),
+                                      /* @__PURE__ */ jsx("div", {
+                                        className:
+                                          "text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2",
+                                        children: p.desc,
+                                      }),
+                                    ],
+                                  }),
+                                ],
+                              },
+                              p.id,
+                            ),
+                          ),
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className:
+                        "space-y-4 border-t border-border/40 pt-4 animate-in fade-in slide-in-from-top-2",
+                      children: [
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "grid gap-3 sm:grid-cols-2",
                           children: [
-                            /* @__PURE__ */ jsx("div", { className: "font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono", children: aiTestResult.success ? "✓ AI Connection Successful" : "✗ Connection Failed" }),
-                            /* @__PURE__ */ jsx("div", { className: "whitespace-pre-line leading-relaxed font-mono text-[10px]", children: aiTestResult.message })
-                          ]
-                        }
-                      )
-                    ] })
-                  ] })
-                ]
-              }
-            ),
-            /* @__PURE__ */ jsxs(
-              TabsContent,
-              {
-                value: "licensing",
-                className: "flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none",
-                children: [
-                  /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2", children: [
-                    /* @__PURE__ */ jsxs("h3", { className: "text-xs font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1.5", children: [
-                      /* @__PURE__ */ jsx(Key, { className: "h-4 w-4" }),
-                      "Hardware-Locked Licensing"
-                    ] }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground leading-relaxed", children: "Unlock advanced offline analysis sheets and high-frequency real-time widgets. Your license key is cryptographically signed and locked to this PC's hardware." }),
-                    /* @__PURE__ */ jsxs("p", { className: "text-xs text-muted-foreground leading-relaxed", children: [
-                      /* @__PURE__ */ jsx("strong", { children: "Accessory devices:" }),
-                      " Any auxiliary dash readouts (phones, tablets, second PCs) connected to this PC's local IP address will automatically inherit this license!"
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-border bg-panel p-4 space-y-3", children: [
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-border/40 pb-2", children: [
-                      /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono uppercase tracking-wider text-muted-foreground", children: "Activation Status" }),
-                      licenseChecking ? /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-mono tracking-wider", children: [
-                        /* @__PURE__ */ jsx(RefreshCw, { className: "h-3 w-3 animate-spin" }),
-                        " Verifying..."
-                      ] }) : licenseState && licenseState.valid ? /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-mono tracking-wider font-semibold", children: [
-                        /* @__PURE__ */ jsx(CheckCircle2, { className: "h-3.5 w-3.5" }),
-                        " Activated (",
-                        licenseState.tier.toUpperCase(),
-                        ")"
-                      ] }) : /* @__PURE__ */ jsxs("span", { className: "flex items-center gap-1.5 text-[10px] text-rose-400 uppercase font-mono tracking-wider font-semibold", children: [
-                        /* @__PURE__ */ jsx(AlertCircle, { className: "h-3.5 w-3.5" }),
-                        " Lite Tier (Free)"
-                      ] })
-                    ] }),
-                    /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-border/40 pb-2", children: [
-                      /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono uppercase tracking-wider text-muted-foreground", children: "Hardware ID (HWID)" }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2", children: [
-                        /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-foreground font-semibold bg-rail px-2 py-0.5 rounded border border-border select-all", children: hwid || "Loading..." }),
-                        /* @__PURE__ */ jsx(
-                          "button",
-                          {
-                            onClick: () => hwid && copyHWIDToClipboard(),
-                            className: "text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer",
-                            title: "Copy HWID",
-                            children: copiedHwid ? /* @__PURE__ */ jsx(Check, { className: "h-3 w-3 text-emerald-400" }) : /* @__PURE__ */ jsx(Copy, { className: "h-3 w-3" })
-                          }
-                        )
-                      ] })
-                    ] }),
-                    licenseState && licenseState.valid && /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                      /* @__PURE__ */ jsx("span", { className: "text-[10px] font-mono uppercase tracking-wider text-muted-foreground", children: "Expiration Date" }),
-                      /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-foreground font-semibold", children: licenseState.expires === "never" ? "Lifetime / No Expiration" : licenseState.expires })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
-                    /* @__PURE__ */ jsx("h3", { className: "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1", children: "Activate License Key" }),
-                    /* @__PURE__ */ jsxs("div", { className: "space-y-2", children: [
-                      /* @__PURE__ */ jsx("label", { className: "text-[10px] uppercase tracking-wider text-muted-foreground block", children: "Paste Key Payload" }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
-                        /* @__PURE__ */ jsx(
-                          Input,
-                          {
-                            type: "password",
-                            value: licenseKeyInput,
-                            onChange: (e) => setLicenseKeyInput(e.target.value),
-                            placeholder: "Paste your base64.signature license key here...",
-                            className: "font-mono text-xs flex-1"
-                          }
-                        ),
-                        /* @__PURE__ */ jsx(
-                          Button,
-                          {
-                            type: "button",
-                            onClick: handleActivateLicense,
-                            disabled: activatingLicense || !licenseKeyInput,
-                            size: "sm",
-                            className: "font-mono text-xs uppercase",
-                            children: activatingLicense ? "Activating..." : "Activate"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ jsx("p", { className: "text-[10px] text-muted-foreground leading-normal", children: "Paste the license key received for your HWID and click Activate. This will save the credentials locally in the bridge workspace." })
-                    ] })
-                  ] })
-                ]
-              }
-            ),
-            /* @__PURE__ */ jsxs(
-              TabsContent,
-              {
-                value: "shortcuts",
-                className: "flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none",
-                children: [
-                  /* @__PURE__ */ jsxs("div", { className: "space-y-3", children: [
-                    /* @__PURE__ */ jsx("h3", { className: "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1", children: "Global Keyboard Shortcuts" }),
-                    /* @__PURE__ */ jsx("p", { className: "text-xs text-muted-foreground leading-relaxed", children: "These shortcuts are active globally across all workspaces. They are disabled while editing a form or input field." }),
-                    /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-border bg-rail p-4 space-y-3", children: [
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-border/40 pb-2", children: [
-                        /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-foreground font-medium", children: "Toggle Shortcuts Help" }),
-                        /* @__PURE__ */ jsx("span", { className: "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold", children: "?" })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-border/40 pb-2", children: [
-                        /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-foreground font-medium", children: "Toggle Settings Panel" }),
-                        /* @__PURE__ */ jsxs("div", { className: "flex gap-1.5 items-center", children: [
-                          /* @__PURE__ */ jsx("span", { className: "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold", children: "Ctrl" }),
-                          /* @__PURE__ */ jsx("span", { className: "text-xs text-muted-foreground font-mono", children: "+" }),
-                          /* @__PURE__ */ jsx("span", { className: "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold", children: "," })
-                        ] })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between border-b border-border/40 pb-2", children: [
-                        /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-foreground font-medium", children: "Go Home (Dashboard)" }),
-                        /* @__PURE__ */ jsxs("div", { className: "flex gap-1 items-center", children: [
-                          /* @__PURE__ */ jsx("span", { className: "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold", children: "g" }),
-                          /* @__PURE__ */ jsx("span", { className: "text-xs text-muted-foreground text-[10px] font-mono", children: "then" }),
-                          /* @__PURE__ */ jsx("span", { className: "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold", children: "h" })
-                        ] })
-                      ] }),
-                      /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-between", children: [
-                        /* @__PURE__ */ jsx("span", { className: "text-xs font-mono text-foreground font-medium", children: "Go Back (or Home)" }),
-                        /* @__PURE__ */ jsx("span", { className: "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold", children: "Esc" })
-                      ] })
-                    ] })
-                  ] }),
-                  /* @__PURE__ */ jsxs("div", { className: "rounded-lg border border-border bg-panel p-3.5 text-xs text-muted-foreground", children: [
-                    /* @__PURE__ */ jsx("h4", { className: "font-semibold text-foreground mb-1", children: "💡 Quick Tip" }),
-                    "Pressing ",
-                    /* @__PURE__ */ jsx("kbd", { className: "font-mono text-primary font-bold", children: "Esc" }),
-                    " inside settings dialogs or guides will immediately close them."
-                  ] })
-                ]
-              }
-            )
-          ]
-        }
-      ),
-      /* @__PURE__ */ jsxs("div", { className: "hairline-t flex items-center justify-between px-6 py-4 bg-panel shrink-0 border-t border-border/60", children: [
-        activeTab === "ai" ? /* @__PURE__ */ jsxs(
-          Button,
-          {
-            variant: "outline",
-            size: "sm",
-            onClick: () => applyAiDefaults("cloud"),
-            className: "gap-1.5 font-mono text-xs",
-            children: [
-              /* @__PURE__ */ jsx(RotateCcw, { className: "h-3.5 w-3.5" }),
-              "Reset AI"
-            ]
-          }
-        ) : /* @__PURE__ */ jsx("div", {}),
-        /* @__PURE__ */ jsx(
-          Button,
-          {
-            size: "sm",
-            onClick: () => setOpen(false),
-            className: "font-mono text-xs cursor-pointer",
-            children: "Done"
-          }
-        )
-      ] })
-    ] }) })
-  ] });
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "space-y-1.5",
+                              children: [
+                                /* @__PURE__ */ jsx("label", {
+                                  className:
+                                    "text-[10px] uppercase tracking-wider text-muted-foreground block",
+                                  children: "Base URL (OpenAI Compatible)",
+                                }),
+                                /* @__PURE__ */ jsx(Input, {
+                                  type: "text",
+                                  value: llmBaseUrl,
+                                  onChange: (e) => {
+                                    setLlmBaseUrl(e.target.value);
+                                    setAiTestResult(null);
+                                  },
+                                  placeholder:
+                                    activeProviderInfo?.url || "http://localhost:1234/v1",
+                                  className: "font-mono text-xs",
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "space-y-1.5",
+                              children: [
+                                /* @__PURE__ */ jsx("label", {
+                                  className:
+                                    "text-[10px] uppercase tracking-wider text-muted-foreground block",
+                                  children: "Model ID",
+                                }),
+                                /* @__PURE__ */ jsx(Input, {
+                                  type: "text",
+                                  value: llmModelId,
+                                  onChange: (e) => {
+                                    setLlmModelId(e.target.value);
+                                    setAiTestResult(null);
+                                  },
+                                  placeholder: "e.g. liquid/lfm2.5-1.2b, llama-3-8b-instruct",
+                                  className: "font-mono text-xs",
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "space-y-1.5",
+                          children: [
+                            /* @__PURE__ */ jsx("label", {
+                              className:
+                                "text-[10px] uppercase tracking-wider text-muted-foreground block",
+                              children: "API Token / Permission Key (Optional)",
+                            }),
+                            /* @__PURE__ */ jsx(Input, {
+                              type: "password",
+                              value: llmApiKey,
+                              onChange: (e) => {
+                                setLlmApiKey(e.target.value);
+                                setAiTestResult(null);
+                              },
+                              placeholder: "Enter LM Studio token or Bearer key if required",
+                              className: "font-mono text-xs",
+                            }),
+                            /* @__PURE__ */ jsx("p", {
+                              className: "text-[9px] text-muted-foreground mt-1",
+                              children:
+                                "Required if your local server uses token authentication (e.g. LM Studio 0.4.0+).",
+                            }),
+                          ],
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "pt-2",
+                          children: [
+                            /* @__PURE__ */ jsxs(Button, {
+                              type: "button",
+                              variant: "secondary",
+                              size: "sm",
+                              onClick: runAiTest,
+                              disabled: aiTesting,
+                              className:
+                                "w-full font-mono text-[10px] uppercase tracking-wider gap-1.5",
+                              children: [
+                                /* @__PURE__ */ jsx(RefreshCw, {
+                                  className: `h-3 w-3 ${aiTesting ? "animate-spin" : ""}`,
+                                }),
+                                aiTesting
+                                  ? "Testing Connection..."
+                                  : "Test Local Host Software Connection",
+                              ],
+                            }),
+                            aiTestResult &&
+                              /* @__PURE__ */ jsxs("div", {
+                                className: `mt-3 rounded-lg p-3 border text-xs ${aiTestResult.success ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400" : "border-rose-500/30 bg-rose-500/5 text-rose-400"}`,
+                                children: [
+                                  /* @__PURE__ */ jsx("div", {
+                                    className:
+                                      "font-semibold uppercase tracking-wider text-[10px] mb-1 font-mono",
+                                    children: aiTestResult.success
+                                      ? "✓ AI Connection Successful"
+                                      : "✗ Connection Failed",
+                                  }),
+                                  /* @__PURE__ */ jsx("div", {
+                                    className:
+                                      "whitespace-pre-line leading-relaxed font-mono text-[10px]",
+                                    children: aiTestResult.message,
+                                  }),
+                                ],
+                              }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs(TabsContent, {
+                  value: "licensing",
+                  className: "flex-1 overflow-y-auto px-6 py-5 space-y-5 focus:outline-none",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2",
+                      children: [
+                        /* @__PURE__ */ jsxs("h3", {
+                          className:
+                            "text-xs font-mono uppercase tracking-wider text-primary font-semibold flex items-center gap-1.5",
+                          children: [
+                            /* @__PURE__ */ jsx(Key, { className: "h-4 w-4" }),
+                            "Hardware-Locked Licensing",
+                          ],
+                        }),
+                        /* @__PURE__ */ jsx("p", {
+                          className: "text-xs text-muted-foreground leading-relaxed",
+                          children:
+                            "Unlock advanced offline analysis sheets and high-frequency real-time widgets. Your license key is cryptographically signed and locked to this PC's hardware.",
+                        }),
+                        /* @__PURE__ */ jsxs("p", {
+                          className: "text-xs text-muted-foreground leading-relaxed",
+                          children: [
+                            /* @__PURE__ */ jsx("strong", { children: "Accessory devices:" }),
+                            " Any auxiliary dash readouts (phones, tablets, second PCs) connected to this PC's local IP address will automatically inherit this license!",
+                          ],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "rounded-lg border border-border bg-panel p-4 space-y-3",
+                      children: [
+                        /* @__PURE__ */ jsxs("div", {
+                          className:
+                            "flex items-center justify-between border-b border-border/40 pb-2",
+                          children: [
+                            /* @__PURE__ */ jsx("span", {
+                              className:
+                                "text-[10px] font-mono uppercase tracking-wider text-muted-foreground",
+                              children: "Activation Status",
+                            }),
+                            licenseChecking
+                              ? /* @__PURE__ */ jsxs("span", {
+                                  className:
+                                    "flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase font-mono tracking-wider",
+                                  children: [
+                                    /* @__PURE__ */ jsx(RefreshCw, {
+                                      className: "h-3 w-3 animate-spin",
+                                    }),
+                                    " Verifying...",
+                                  ],
+                                })
+                              : licenseState && licenseState.valid
+                                ? /* @__PURE__ */ jsxs("span", {
+                                    className:
+                                      "flex items-center gap-1.5 text-[10px] text-emerald-400 uppercase font-mono tracking-wider font-semibold",
+                                    children: [
+                                      /* @__PURE__ */ jsx(CheckCircle2, {
+                                        className: "h-3.5 w-3.5",
+                                      }),
+                                      " Activated (",
+                                      licenseState.tier.toUpperCase(),
+                                      ")",
+                                    ],
+                                  })
+                                : /* @__PURE__ */ jsxs("span", {
+                                    className:
+                                      "flex items-center gap-1.5 text-[10px] text-rose-400 uppercase font-mono tracking-wider font-semibold",
+                                    children: [
+                                      /* @__PURE__ */ jsx(AlertCircle, {
+                                        className: "h-3.5 w-3.5",
+                                      }),
+                                      " Lite Tier (Free)",
+                                    ],
+                                  }),
+                          ],
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className:
+                            "flex items-center justify-between border-b border-border/40 pb-2",
+                          children: [
+                            /* @__PURE__ */ jsx("span", {
+                              className:
+                                "text-[10px] font-mono uppercase tracking-wider text-muted-foreground",
+                              children: "Hardware ID (HWID)",
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "flex items-center gap-2",
+                              children: [
+                                /* @__PURE__ */ jsx("span", {
+                                  className:
+                                    "text-xs font-mono text-foreground font-semibold bg-rail px-2 py-0.5 rounded border border-border select-all",
+                                  children: hwid || "Loading...",
+                                }),
+                                /* @__PURE__ */ jsx("button", {
+                                  onClick: () => hwid && copyHWIDToClipboard(),
+                                  className:
+                                    "text-muted-foreground hover:text-foreground p-1 transition-colors cursor-pointer",
+                                  title: "Copy HWID",
+                                  children: copiedHwid
+                                    ? /* @__PURE__ */ jsx(Check, {
+                                        className: "h-3 w-3 text-emerald-400",
+                                      })
+                                    : /* @__PURE__ */ jsx(Copy, { className: "h-3 w-3" }),
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
+                        licenseState &&
+                          licenseState.valid &&
+                          /* @__PURE__ */ jsxs("div", {
+                            className: "flex items-center justify-between",
+                            children: [
+                              /* @__PURE__ */ jsx("span", {
+                                className:
+                                  "text-[10px] font-mono uppercase tracking-wider text-muted-foreground",
+                                children: "Expiration Date",
+                              }),
+                              /* @__PURE__ */ jsx("span", {
+                                className: "text-xs font-mono text-foreground font-semibold",
+                                children:
+                                  licenseState.expires === "never"
+                                    ? "Lifetime / No Expiration"
+                                    : licenseState.expires,
+                              }),
+                            ],
+                          }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "space-y-3",
+                      children: [
+                        /* @__PURE__ */ jsx("h3", {
+                          className:
+                            "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1",
+                          children: "Activate License Key",
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "space-y-2",
+                          children: [
+                            /* @__PURE__ */ jsx("label", {
+                              className:
+                                "text-[10px] uppercase tracking-wider text-muted-foreground block",
+                              children: "Paste Key Payload",
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "flex gap-2",
+                              children: [
+                                /* @__PURE__ */ jsx(Input, {
+                                  type: "password",
+                                  value: licenseKeyInput,
+                                  onChange: (e) => setLicenseKeyInput(e.target.value),
+                                  placeholder: "Paste your base64.signature license key here...",
+                                  className: "font-mono text-xs flex-1",
+                                }),
+                                /* @__PURE__ */ jsx(Button, {
+                                  type: "button",
+                                  onClick: handleActivateLicense,
+                                  disabled: activatingLicense || !licenseKeyInput,
+                                  size: "sm",
+                                  className: "font-mono text-xs uppercase",
+                                  children: activatingLicense ? "Activating..." : "Activate",
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsx("p", {
+                              className: "text-[10px] text-muted-foreground leading-normal",
+                              children:
+                                "Paste the license key received for your HWID and click Activate. This will save the credentials locally in the bridge workspace.",
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+                /* @__PURE__ */ jsxs(TabsContent, {
+                  value: "shortcuts",
+                  className: "flex-1 overflow-y-auto px-6 py-5 space-y-4 focus:outline-none",
+                  children: [
+                    /* @__PURE__ */ jsxs("div", {
+                      className: "space-y-3",
+                      children: [
+                        /* @__PURE__ */ jsx("h3", {
+                          className:
+                            "text-xs font-mono uppercase tracking-wider text-muted-foreground border-b border-border/40 pb-1",
+                          children: "Global Keyboard Shortcuts",
+                        }),
+                        /* @__PURE__ */ jsx("p", {
+                          className: "text-xs text-muted-foreground leading-relaxed",
+                          children:
+                            "These shortcuts are active globally across all workspaces. They are disabled while editing a form or input field.",
+                        }),
+                        /* @__PURE__ */ jsxs("div", {
+                          className: "rounded-lg border border-border bg-rail p-4 space-y-3",
+                          children: [
+                            /* @__PURE__ */ jsxs("div", {
+                              className:
+                                "flex items-center justify-between border-b border-border/40 pb-2",
+                              children: [
+                                /* @__PURE__ */ jsx("span", {
+                                  className: "text-xs font-mono text-foreground font-medium",
+                                  children: "Toggle Shortcuts Help",
+                                }),
+                                /* @__PURE__ */ jsx("span", {
+                                  className:
+                                    "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold",
+                                  children: "?",
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className:
+                                "flex items-center justify-between border-b border-border/40 pb-2",
+                              children: [
+                                /* @__PURE__ */ jsx("span", {
+                                  className: "text-xs font-mono text-foreground font-medium",
+                                  children: "Toggle Settings Panel",
+                                }),
+                                /* @__PURE__ */ jsxs("div", {
+                                  className: "flex gap-1.5 items-center",
+                                  children: [
+                                    /* @__PURE__ */ jsx("span", {
+                                      className:
+                                        "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold",
+                                      children: "Ctrl",
+                                    }),
+                                    /* @__PURE__ */ jsx("span", {
+                                      className: "text-xs text-muted-foreground font-mono",
+                                      children: "+",
+                                    }),
+                                    /* @__PURE__ */ jsx("span", {
+                                      className:
+                                        "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold",
+                                      children: ",",
+                                    }),
+                                  ],
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className:
+                                "flex items-center justify-between border-b border-border/40 pb-2",
+                              children: [
+                                /* @__PURE__ */ jsx("span", {
+                                  className: "text-xs font-mono text-foreground font-medium",
+                                  children: "Go Home (Dashboard)",
+                                }),
+                                /* @__PURE__ */ jsxs("div", {
+                                  className: "flex gap-1 items-center",
+                                  children: [
+                                    /* @__PURE__ */ jsx("span", {
+                                      className:
+                                        "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold",
+                                      children: "g",
+                                    }),
+                                    /* @__PURE__ */ jsx("span", {
+                                      className:
+                                        "text-xs text-muted-foreground text-[10px] font-mono",
+                                      children: "then",
+                                    }),
+                                    /* @__PURE__ */ jsx("span", {
+                                      className:
+                                        "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold",
+                                      children: "h",
+                                    }),
+                                  ],
+                                }),
+                              ],
+                            }),
+                            /* @__PURE__ */ jsxs("div", {
+                              className: "flex items-center justify-between",
+                              children: [
+                                /* @__PURE__ */ jsx("span", {
+                                  className: "text-xs font-mono text-foreground font-medium",
+                                  children: "Go Back (or Home)",
+                                }),
+                                /* @__PURE__ */ jsx("span", {
+                                  className:
+                                    "rounded border border-border bg-background px-2 py-0.5 text-[10px] font-mono font-semibold uppercase text-primary font-bold",
+                                  children: "Esc",
+                                }),
+                              ],
+                            }),
+                          ],
+                        }),
+                      ],
+                    }),
+                    /* @__PURE__ */ jsxs("div", {
+                      className:
+                        "rounded-lg border border-border bg-panel p-3.5 text-xs text-muted-foreground",
+                      children: [
+                        /* @__PURE__ */ jsx("h4", {
+                          className: "font-semibold text-foreground mb-1",
+                          children: "💡 Quick Tip",
+                        }),
+                        "Pressing ",
+                        /* @__PURE__ */ jsx("kbd", {
+                          className: "font-mono text-primary font-bold",
+                          children: "Esc",
+                        }),
+                        " inside settings dialogs or guides will immediately close them.",
+                      ],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            /* @__PURE__ */ jsxs("div", {
+              className:
+                "hairline-t flex items-center justify-between px-6 py-4 bg-panel shrink-0 border-t border-border/60",
+              children: [
+                activeTab === "ai"
+                  ? /* @__PURE__ */ jsxs(Button, {
+                      variant: "outline",
+                      size: "sm",
+                      onClick: () => applyAiDefaults("cloud"),
+                      className: "gap-1.5 font-mono text-xs",
+                      children: [
+                        /* @__PURE__ */ jsx(RotateCcw, { className: "h-3.5 w-3.5" }),
+                        "Reset AI",
+                      ],
+                    })
+                  : /* @__PURE__ */ jsx("div", {}),
+                /* @__PURE__ */ jsx(Button, {
+                  size: "sm",
+                  onClick: () => setOpen(false),
+                  className: "font-mono text-xs cursor-pointer",
+                  children: "Done",
+                }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    ],
+  });
 }
 function NotFoundComponent() {
-  return /* @__PURE__ */ jsx("div", { className: "flex min-h-screen items-center justify-center bg-background px-4", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md text-center", children: [
-    /* @__PURE__ */ jsx("h1", { className: "text-7xl font-bold text-foreground", children: "404" }),
-    /* @__PURE__ */ jsx("h2", { className: "mt-4 text-xl font-semibold text-foreground", children: "Page not found" }),
-    /* @__PURE__ */ jsx("p", { className: "mt-2 text-sm text-muted-foreground", children: "The page you're looking for doesn't exist or has been moved." }),
-    /* @__PURE__ */ jsx("div", { className: "mt-6", children: /* @__PURE__ */ jsx(
-      Link,
-      {
-        to: "/",
-        className: "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
-        children: "Go home"
-      }
-    ) })
-  ] }) });
+  return /* @__PURE__ */ jsx("div", {
+    className: "flex min-h-screen items-center justify-center bg-background px-4",
+    children: /* @__PURE__ */ jsxs("div", {
+      className: "max-w-md text-center",
+      children: [
+        /* @__PURE__ */ jsx("h1", {
+          className: "text-7xl font-bold text-foreground",
+          children: "404",
+        }),
+        /* @__PURE__ */ jsx("h2", {
+          className: "mt-4 text-xl font-semibold text-foreground",
+          children: "Page not found",
+        }),
+        /* @__PURE__ */ jsx("p", {
+          className: "mt-2 text-sm text-muted-foreground",
+          children: "The page you're looking for doesn't exist or has been moved.",
+        }),
+        /* @__PURE__ */ jsx("div", {
+          className: "mt-6",
+          children: /* @__PURE__ */ jsx(Link, {
+            to: "/",
+            className:
+              "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
+            children: "Go home",
+          }),
+        }),
+      ],
+    }),
+  });
 }
 function ErrorComponent({ error, reset }) {
   console.error(error);
   const router2 = useRouter();
-  return /* @__PURE__ */ jsx("div", { className: "flex min-h-screen items-center justify-center bg-background px-4", children: /* @__PURE__ */ jsxs("div", { className: "max-w-md text-center", children: [
-    /* @__PURE__ */ jsx("h1", { className: "text-xl font-semibold tracking-tight text-foreground", children: "This page didn't load" }),
-    /* @__PURE__ */ jsx("p", { className: "mt-2 text-sm text-muted-foreground", children: "Something went wrong on our end. You can try refreshing or head back home." }),
-    /* @__PURE__ */ jsxs("div", { className: "mt-6 flex flex-wrap justify-center gap-2", children: [
-      /* @__PURE__ */ jsx(
-        "button",
-        {
-          onClick: () => {
-            router2.invalidate();
-            reset();
-          },
-          className: "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
-          children: "Try again"
-        }
-      ),
-      /* @__PURE__ */ jsx(
-        "a",
-        {
-          href: "/",
-          className: "inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent",
-          children: "Go home"
-        }
-      )
-    ] })
-  ] }) });
+  return /* @__PURE__ */ jsx("div", {
+    className: "flex min-h-screen items-center justify-center bg-background px-4",
+    children: /* @__PURE__ */ jsxs("div", {
+      className: "max-w-md text-center",
+      children: [
+        /* @__PURE__ */ jsx("h1", {
+          className: "text-xl font-semibold tracking-tight text-foreground",
+          children: "This page didn't load",
+        }),
+        /* @__PURE__ */ jsx("p", {
+          className: "mt-2 text-sm text-muted-foreground",
+          children: "Something went wrong on our end. You can try refreshing or head back home.",
+        }),
+        /* @__PURE__ */ jsxs("div", {
+          className: "mt-6 flex flex-wrap justify-center gap-2",
+          children: [
+            /* @__PURE__ */ jsx("button", {
+              onClick: () => {
+                router2.invalidate();
+                reset();
+              },
+              className:
+                "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
+              children: "Try again",
+            }),
+            /* @__PURE__ */ jsx("a", {
+              href: "/",
+              className:
+                "inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent",
+              children: "Go home",
+            }),
+          ],
+        }),
+      ],
+    }),
+  });
 }
 const CSP = [
   "default-src 'self'",
@@ -4659,7 +5614,7 @@ const CSP = [
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",
-  "object-src 'none'"
+  "object-src 'none'",
 ].join("; ");
 const Route$j = createRootRouteWithContext()({
   head: () => ({
@@ -4671,26 +5626,27 @@ const Route$j = createRootRouteWithContext()({
       { title: "Pit Wall — Live iRacing Telemetry & Lap Analysis" },
       {
         name: "description",
-        content: "Pit Wall combines live iRacing telemetry from a local bridge with a MoTeC-style .ibt lap analysis workbench."
+        content:
+          "Pit Wall combines live iRacing telemetry from a local bridge with a MoTeC-style .ibt lap analysis workbench.",
       },
       { name: "author", content: "Pit Wall" },
       { property: "og:site_name", content: "Pit Wall" },
       { property: "og:title", content: "Pit Wall — Live iRacing Telemetry & Lap Analysis" },
       {
         property: "og:description",
-        content: "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing."
+        content: "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Pit Wall — Live iRacing Telemetry & Lap Analysis" },
       {
         name: "twitter:description",
-        content: "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing."
+        content: "Live telemetry dashboard + .ibt lap analysis workbench, AI coach and sharing.",
       },
       { name: "theme-color", content: "#1a1d21" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Pit Wall" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" }
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -4699,23 +5655,27 @@ const Route$j = createRootRouteWithContext()({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Geist+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700;900&display=swap"
-      }
-    ]
+        href: "https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Geist+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700;900&display=swap",
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent
+  errorComponent: ErrorComponent,
 });
 function RootShell({ children }) {
-  return /* @__PURE__ */ jsxs("html", { lang: "en", className: "dark", children: [
-    /* @__PURE__ */ jsx("head", { children: /* @__PURE__ */ jsx(HeadContent, {}) }),
-    /* @__PURE__ */ jsxs("body", { className: "bg-background text-foreground", children: [
-      children,
-      /* @__PURE__ */ jsx(Scripts, {})
-    ] })
-  ] });
+  return /* @__PURE__ */ jsxs("html", {
+    lang: "en",
+    className: "dark",
+    children: [
+      /* @__PURE__ */ jsx("head", { children: /* @__PURE__ */ jsx(HeadContent, {}) }),
+      /* @__PURE__ */ jsxs("body", {
+        className: "bg-background text-foreground",
+        children: [children, /* @__PURE__ */ jsx(Scripts, {})],
+      }),
+    ],
+  });
 }
 function RootComponent() {
   const { queryClient } = Route$j.useRouteContext();
@@ -4723,7 +5683,7 @@ function RootComponent() {
   const t = useTelemetry();
   useEffect(() => {
     const {
-      data: { subscription }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
       router2.invalidate();
       queryClient.invalidateQueries();
@@ -4731,281 +5691,365 @@ function RootComponent() {
     return () => subscription.unsubscribe();
   }, [router2, queryClient]);
   useEffect(() => {
-    if (typeof window !== "undefined" && window.navigator.userAgent.toLowerCase().includes("electron")) {
+    if (
+      typeof window !== "undefined" &&
+      window.navigator.userAgent.toLowerCase().includes("electron")
+    ) {
       document.documentElement.classList.add("is-electron");
     }
   }, []);
-  return /* @__PURE__ */ jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsx(AuthProvider, { children: /* @__PURE__ */ jsxs(ThemeProvider, { children: [
-    /* @__PURE__ */ jsx(LiveBridgeSync, { t }),
-    /* @__PURE__ */ jsx(DesktopLapSync, {}),
-    /* @__PURE__ */ jsx(HelpSystem, {}),
-    /* @__PURE__ */ jsx(GlobalSettingsDialog, {}),
-    /* @__PURE__ */ jsx(KeyboardShortcuts, {}),
-    /* @__PURE__ */ jsx(Outlet, {}),
-    /* @__PURE__ */ jsx(Toaster, {})
-  ] }) }) });
+  return /* @__PURE__ */ jsx(QueryClientProvider, {
+    client: queryClient,
+    children: /* @__PURE__ */ jsx(AuthProvider, {
+      children: /* @__PURE__ */ jsxs(ThemeProvider, {
+        children: [
+          /* @__PURE__ */ jsx(LiveBridgeSync, { t }),
+          /* @__PURE__ */ jsx(DesktopLapSync, {}),
+          /* @__PURE__ */ jsx(HelpSystem, {}),
+          /* @__PURE__ */ jsx(GlobalSettingsDialog, {}),
+          /* @__PURE__ */ jsx(KeyboardShortcuts, {}),
+          /* @__PURE__ */ jsx(Outlet, {}),
+          /* @__PURE__ */ jsx(Toaster, {}),
+        ],
+      }),
+    }),
+  });
 }
 const $$splitComponentImporter$h = () => import("./team-guide-8Vp3B4VK.js");
 const Route$i = createFileRoute("/team-guide")({
   head: () => ({
-    meta: [{
-      title: "Team Setup Guide — Pit Wall Operations Center"
-    }, {
-      name: "description",
-      content: "High-density tactical setup and role guide for iRacing realtime relay pit wall sessions. Configure Supabase channels and local bridge pub/sub."
-    }]
+    meta: [
+      {
+        title: "Team Setup Guide — Pit Wall Operations Center",
+      },
+      {
+        name: "description",
+        content:
+          "High-density tactical setup and role guide for iRacing realtime relay pit wall sessions. Configure Supabase channels and local bridge pub/sub.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$h, "component")
+  component: lazyRouteComponent($$splitComponentImporter$h, "component"),
 });
 const $$splitComponentImporter$g = () => import("./team-CluZ_rp0.js");
 const Route$h = createFileRoute("/team")({
   head: () => ({
-    meta: [{
-      title: "Team Command — Pit Wall Operations Center"
-    }, {
-      name: "description",
-      content: "Cinematic multi-driver race strategy command center. Coordinate stints, track active telemetry links, and calculate fuel targets."
-    }]
+    meta: [
+      {
+        title: "Team Command — Pit Wall Operations Center",
+      },
+      {
+        name: "description",
+        content:
+          "Cinematic multi-driver race strategy command center. Coordinate stints, track active telemetry links, and calculate fuel targets.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$g, "component")
+  component: lazyRouteComponent($$splitComponentImporter$g, "component"),
 });
 const $$splitComponentImporter$f = () => import("./settings-5aP1LUgJ.js");
 const Route$g = createFileRoute("/settings")({
   head: () => ({
-    meta: [{
-      title: "Settings - Pit Wall"
-    }, {
-      name: "description",
-      content: "Configure AI provider, local LLM host, and local MongoDB diagnostics."
-    }]
+    meta: [
+      {
+        title: "Settings - Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Configure AI provider, local LLM host, and local MongoDB diagnostics.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$f, "component")
+  component: lazyRouteComponent($$splitComponentImporter$f, "component"),
 });
 const $$splitComponentImporter$e = () => import("./runtime-sjmJq53y.js");
 const Route$f = createFileRoute("/runtime")({
   head: () => ({
-    meta: [{
-      title: "Pit Wall Workstation — Runtime Initialization"
-    }, {
-      name: "description",
-      content: "Pit Wall workstation runtime environment is initializing."
-    }]
+    meta: [
+      {
+        title: "Pit Wall Workstation — Runtime Initialization",
+      },
+      {
+        name: "description",
+        content: "Pit Wall workstation runtime environment is initializing.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$e, "component")
+  component: lazyRouteComponent($$splitComponentImporter$e, "component"),
 });
 const $$splitComponentImporter$d = () => import("./roadmap-DpHr6WBO.js");
 const Route$e = createFileRoute("/roadmap")({
   head: () => ({
-    meta: [{
-      title: "Roadmap — Pit Wall"
-    }, {
-      name: "description",
-      content: "Pit Wall development roadmap — what's been built and what's coming next."
-    }]
+    meta: [
+      {
+        title: "Roadmap — Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Pit Wall development roadmap — what's been built and what's coming next.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$d, "component")
+  component: lazyRouteComponent($$splitComponentImporter$d, "component"),
 });
 const $$splitComponentImporter$c = () => import("./live-CjxMtUyP.js");
 const Route$d = createFileRoute("/live")({
   head: () => ({
-    meta: [{
-      title: "Pit Wall — Live iRacing Telemetry Workbench"
-    }, {
-      name: "description",
-      content: "MoTeC-style live iRacing telemetry workbench. Rolling channel traces, G-G scatter, channel list, sector + tyre data straight from the bridge."
-    }, {
-      property: "og:title",
-      content: "Pit Wall — Live iRacing Telemetry Workbench"
-    }, {
-      property: "og:description",
-      content: "MoTeC-style live iRacing telemetry workbench. Rolling channel traces, G-G scatter, channel list, sector + tyre data straight from the bridge."
-    }]
+    meta: [
+      {
+        title: "Pit Wall — Live iRacing Telemetry Workbench",
+      },
+      {
+        name: "description",
+        content:
+          "MoTeC-style live iRacing telemetry workbench. Rolling channel traces, G-G scatter, channel list, sector + tyre data straight from the bridge.",
+      },
+      {
+        property: "og:title",
+        content: "Pit Wall — Live iRacing Telemetry Workbench",
+      },
+      {
+        property: "og:description",
+        content:
+          "MoTeC-style live iRacing telemetry workbench. Rolling channel traces, G-G scatter, channel list, sector + tyre data straight from the bridge.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$c, "component")
+  component: lazyRouteComponent($$splitComponentImporter$c, "component"),
 });
 const $$splitComponentImporter$b = () => import("./how-it-works-De8v82N6.js");
 const Route$c = createFileRoute("/how-it-works")({
   head: () => ({
-    meta: [{
-      title: "How it works — Pit Wall"
-    }, {
-      name: "description",
-      content: "How Pit Wall parses iRacing .ibt telemetry files in your browser and renders a MoTeC-style analysis workbench."
-    }, {
-      property: "og:title",
-      content: "How Pit Wall works"
-    }, {
-      property: "og:description",
-      content: "From .ibt binary to stacked traces, track map and lap compare — the parsing pipeline explained."
-    }]
+    meta: [
+      {
+        title: "How it works — Pit Wall",
+      },
+      {
+        name: "description",
+        content:
+          "How Pit Wall parses iRacing .ibt telemetry files in your browser and renders a MoTeC-style analysis workbench.",
+      },
+      {
+        property: "og:title",
+        content: "How Pit Wall works",
+      },
+      {
+        property: "og:description",
+        content:
+          "From .ibt binary to stacked traces, track map and lap compare — the parsing pipeline explained.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$b, "component")
+  component: lazyRouteComponent($$splitComponentImporter$b, "component"),
 });
 const $$splitComponentImporter$a = () => import("./fingerprint-DtktXtyp.js");
 const Route$b = createFileRoute("/fingerprint")({
   head: () => ({
-    meta: [{
-      title: "Driver Fingerprint — Pit Wall"
-    }, {
-      name: "description",
-      content: "Upload your iRacing lapfiles folder to build a baseline driver fingerprint from every track and car you've ever set a reference lap on."
-    }]
+    meta: [
+      {
+        title: "Driver Fingerprint — Pit Wall",
+      },
+      {
+        name: "description",
+        content:
+          "Upload your iRacing lapfiles folder to build a baseline driver fingerprint from every track and car you've ever set a reference lap on.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$a, "component")
+  component: lazyRouteComponent($$splitComponentImporter$a, "component"),
 });
 const $$splitComponentImporter$9 = () => import("./driver-bridge-7ZUFR68t.js");
 const Route$a = createFileRoute("/driver-bridge")({
   head: () => ({
-    meta: [{
-      title: "Driver Cockpit HUD — Pit Wall"
-    }, {
-      name: "description",
-      content: "Simplified high-performance live telemetry cockpit HUD designed specifically for drivers."
-    }]
+    meta: [
+      {
+        title: "Driver Cockpit HUD — Pit Wall",
+      },
+      {
+        name: "description",
+        content:
+          "Simplified high-performance live telemetry cockpit HUD designed specifically for drivers.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$9, "component")
+  component: lazyRouteComponent($$splitComponentImporter$9, "component"),
 });
 const $$splitComponentImporter$8 = () => import("./auth-0xg4pPaJ.js");
 const Route$9 = createFileRoute("/auth")({
   head: () => ({
-    meta: [{
-      title: "Welcome — Pit Wall"
-    }, {
-      name: "description",
-      content: "Welcome to your local Pit Wall telemetry workbench."
-    }]
+    meta: [
+      {
+        title: "Welcome — Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Welcome to your local Pit Wall telemetry workbench.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$8, "component")
+  component: lazyRouteComponent($$splitComponentImporter$8, "component"),
 });
 const $$splitComponentImporter$7 = () => import("./ai-engineer-C-fgFg4h.js");
 const Route$8 = createFileRoute("/ai-engineer")({
   head: () => ({
-    meta: [{
-      title: "AI Engineer Console — Pit Wall Terminal"
-    }, {
-      name: "description",
-      content: "Motorsport engineering terminal. Receive tire pressure and damper advice mapped directly to telemetry logs."
-    }]
+    meta: [
+      {
+        title: "AI Engineer Console — Pit Wall Terminal",
+      },
+      {
+        name: "description",
+        content:
+          "Motorsport engineering terminal. Receive tire pressure and damper advice mapped directly to telemetry logs.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$7, "component")
+  component: lazyRouteComponent($$splitComponentImporter$7, "component"),
 });
 const $$splitComponentImporter$6 = () => import("./admin-D-MjCriG.js");
 const Route$7 = createFileRoute("/admin")({
   head: () => ({
-    meta: [{
-      title: "Admin — Pit Wall"
-    }, {
-      name: "robots",
-      content: "noindex"
-    }]
+    meta: [
+      {
+        title: "Admin — Pit Wall",
+      },
+      {
+        name: "robots",
+        content: "noindex",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$6, "component")
+  component: lazyRouteComponent($$splitComponentImporter$6, "component"),
 });
 const $$splitComponentImporter$5 = () => import("./index-Bq6DxdFQ.js");
 const Route$6 = createFileRoute("/")({
   head: () => ({
-    meta: [{
-      title: "Pit Wall — Motorsport Engineering & Lap Analysis"
-    }, {
-      name: "description",
-      content: "Motorsport engineering command center. Stream live telemetry at 60Hz and analyze laps with professional stacked traces and AI strategies."
-    }]
+    meta: [
+      {
+        title: "Pit Wall — Motorsport Engineering & Lap Analysis",
+      },
+      {
+        name: "description",
+        content:
+          "Motorsport engineering command center. Stream live telemetry at 60Hz and analyze laps with professional stacked traces and AI strategies.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$5, "component")
+  component: lazyRouteComponent($$splitComponentImporter$5, "component"),
 });
 const $$splitComponentImporter$4 = () => import("./sessions.index-Bd5LeaZq.js");
 const Route$5 = createFileRoute("/sessions/")({
   head: () => ({
-    meta: [{
-      title: "Sessions — Pit Wall"
-    }, {
-      name: "description",
-      content: "Your uploaded iRacing telemetry sessions."
-    }]
+    meta: [
+      {
+        title: "Sessions — Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Your uploaded iRacing telemetry sessions.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$4, "component")
+  component: lazyRouteComponent($$splitComponentImporter$4, "component"),
 });
 const $$splitComponentImporter$3 = () => import("./share._token-C-u9ZXjl.js");
 const Route$4 = createFileRoute("/share/$token")({
-  head: ({
-    params
-  }) => {
+  head: ({ params }) => {
     const og = `/api/public/og/share/${params.token}`;
     return {
-      meta: [{
-        title: "Shared Lap — Pit Wall"
-      }, {
-        name: "description",
-        content: "Public read-only telemetry lap card."
-      }, {
-        property: "og:title",
-        content: "Shared Lap — Pit Wall"
-      }, {
-        property: "og:description",
-        content: "Public read-only telemetry lap card."
-      }, {
-        property: "og:image",
-        content: og
-      }, {
-        property: "og:image:width",
-        content: "1200"
-      }, {
-        property: "og:image:height",
-        content: "630"
-      }, {
-        property: "og:type",
-        content: "website"
-      }, {
-        name: "twitter:card",
-        content: "summary_large_image"
-      }, {
-        name: "twitter:image",
-        content: og
-      }]
+      meta: [
+        {
+          title: "Shared Lap — Pit Wall",
+        },
+        {
+          name: "description",
+          content: "Public read-only telemetry lap card.",
+        },
+        {
+          property: "og:title",
+          content: "Shared Lap — Pit Wall",
+        },
+        {
+          property: "og:description",
+          content: "Public read-only telemetry lap card.",
+        },
+        {
+          property: "og:image",
+          content: og,
+        },
+        {
+          property: "og:image:width",
+          content: "1200",
+        },
+        {
+          property: "og:image:height",
+          content: "630",
+        },
+        {
+          property: "og:type",
+          content: "website",
+        },
+        {
+          name: "twitter:card",
+          content: "summary_large_image",
+        },
+        {
+          name: "twitter:image",
+          content: og,
+        },
+      ],
     };
   },
-  component: lazyRouteComponent($$splitComponentImporter$3, "component")
+  component: lazyRouteComponent($$splitComponentImporter$3, "component"),
 });
 const $$splitComponentImporter$2 = () => import("./sessions._id-DsrZ_Tdw.js").then((n) => n.s);
 const Route$3 = createFileRoute("/sessions/$id")({
   head: () => ({
-    meta: [{
-      title: "Workbench — Pit Wall"
-    }, {
-      name: "description",
-      content: "Telemetry workbench for an iRacing .ibt session."
-    }]
+    meta: [
+      {
+        title: "Workbench — Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Telemetry workbench for an iRacing .ibt session.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$2, "component")
+  component: lazyRouteComponent($$splitComponentImporter$2, "component"),
 });
 const $$splitComponentImporter$1 = () => import("./lab.lapfile-WQ5gt_bg.js");
 const Route$2 = createFileRoute("/lab/lapfile")({
   head: () => ({
-    meta: [{
-      title: "Lapfile Lab — Pit Wall"
-    }, {
-      name: "description",
-      content: "Inspect iRacing .olap / .blap / .plap reference lap files."
-    }]
+    meta: [
+      {
+        title: "Lapfile Lab — Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Inspect iRacing .olap / .blap / .plap reference lap files.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter$1, "component")
+  component: lazyRouteComponent($$splitComponentImporter$1, "component"),
 });
 const $$splitComponentImporter = () => import("./detached._instrument-uVWXk9F8.js");
 const Route$1 = createFileRoute("/detached/$instrument")({
   head: () => ({
-    meta: [{
-      title: "Detached Cockpit Monitor — Pit Wall"
-    }, {
-      name: "description",
-      content: "Standalone motorsport command window."
-    }]
+    meta: [
+      {
+        title: "Detached Cockpit Monitor — Pit Wall",
+      },
+      {
+        name: "description",
+        content: "Standalone motorsport command window.",
+      },
+    ],
   }),
-  component: lazyRouteComponent($$splitComponentImporter, "component")
+  component: lazyRouteComponent($$splitComponentImporter, "component"),
 });
 function esc(s) {
   return s.replace(
     /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 }
 function fmtLap(s) {
@@ -5018,7 +6062,11 @@ const Route = createFileRoute("/api/public/og/share/$token")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const { data: share } = await supabaseAdmin.from("shared_laps").select("session_id, ref_lap, cmp_lap, revoked_at, expires_at").eq("token", params.token).maybeSingle();
+        const { data: share } = await supabaseAdmin
+          .from("shared_laps")
+          .select("session_id, ref_lap, cmp_lap, revoked_at, expires_at")
+          .eq("token", params.token)
+          .maybeSingle();
         let track = "Shared Lap";
         let car = "Pit Wall telemetry";
         let refLap = null;
@@ -5027,10 +6075,15 @@ const Route = createFileRoute("/api/public/og/share/$token")({
         let badge = "SHARED LAP";
         if (share) {
           if (share.revoked_at) badge = "REVOKED";
-          else if (share.expires_at && new Date(share.expires_at) < /* @__PURE__ */ new Date()) badge = "EXPIRED";
+          else if (share.expires_at && new Date(share.expires_at) < /* @__PURE__ */ new Date())
+            badge = "EXPIRED";
           refLap = share.ref_lap;
           cmpLap = share.cmp_lap;
-          const { data: sess } = await supabaseAdmin.from("telemetry_sessions").select("track, car, best_lap_s").eq("id", share.session_id).single();
+          const { data: sess } = await supabaseAdmin
+            .from("telemetry_sessions")
+            .select("track, car, best_lap_s")
+            .eq("id", share.session_id)
+            .single();
           if (sess) {
             track = sess.track ?? track;
             car = sess.car ?? car;
@@ -5062,11 +6115,15 @@ const Route = createFileRoute("/api/public/og/share/$token")({
       <text x="0" y="60" font-size="64" font-weight="700">L${refLap ?? "—"}</text>
       <text x="0" y="100" font-size="26" fill="#ff8a4c">${fmtLap(bestLapS)}</text>
     </g>
-    ${cmpLap != null ? `<g transform="translate(420,360)">
+    ${
+      cmpLap != null
+        ? `<g transform="translate(420,360)">
       <text x="0" y="0" font-size="22" letter-spacing="4" fill="#9aa3ad">VS</text>
       <text x="0" y="60" font-size="64" font-weight="700">L${cmpLap}</text>
       <text x="0" y="100" font-size="26" fill="#9aa3ad">ghost compare</text>
-    </g>` : ""}
+    </g>`
+        : ""
+    }
     <text x="64" y="${h - 48}" font-size="20" fill="#6b7280">pit wall · iRacing telemetry workbench</text>
   </g>
 </svg>`;
@@ -5074,107 +6131,107 @@ const Route = createFileRoute("/api/public/og/share/$token")({
           status: 200,
           headers: {
             "Content-Type": "image/svg+xml; charset=utf-8",
-            "Cache-Control": "public, max-age=300, s-maxage=300"
-          }
+            "Cache-Control": "public, max-age=300, s-maxage=300",
+          },
         });
-      }
-    }
-  }
+      },
+    },
+  },
 });
 const TeamGuideRoute = Route$i.update({
   id: "/team-guide",
   path: "/team-guide",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const TeamRoute = Route$h.update({
   id: "/team",
   path: "/team",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const SettingsRoute = Route$g.update({
   id: "/settings",
   path: "/settings",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const RuntimeRoute = Route$f.update({
   id: "/runtime",
   path: "/runtime",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const RoadmapRoute = Route$e.update({
   id: "/roadmap",
   path: "/roadmap",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const LiveRoute = Route$d.update({
   id: "/live",
   path: "/live",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const HowItWorksRoute = Route$c.update({
   id: "/how-it-works",
   path: "/how-it-works",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const FingerprintRoute = Route$b.update({
   id: "/fingerprint",
   path: "/fingerprint",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const DriverBridgeRoute = Route$a.update({
   id: "/driver-bridge",
   path: "/driver-bridge",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const AuthRoute = Route$9.update({
   id: "/auth",
   path: "/auth",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const AiEngineerRoute = Route$8.update({
   id: "/ai-engineer",
   path: "/ai-engineer",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const AdminRoute = Route$7.update({
   id: "/admin",
   path: "/admin",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const IndexRoute = Route$6.update({
   id: "/",
   path: "/",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const SessionsIndexRoute = Route$5.update({
   id: "/sessions/",
   path: "/sessions/",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const ShareTokenRoute = Route$4.update({
   id: "/share/$token",
   path: "/share/$token",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const SessionsIdRoute = Route$3.update({
   id: "/sessions/$id",
   path: "/sessions/$id",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const LabLapfileRoute = Route$2.update({
   id: "/lab/lapfile",
   path: "/lab/lapfile",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const DetachedInstrumentRoute = Route$1.update({
   id: "/detached/$instrument",
   path: "/detached/$instrument",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const ApiPublicOgShareTokenRoute = Route.update({
   id: "/api/public/og/share/$token",
   path: "/api/public/og/share/$token",
-  getParentRoute: () => Route$j
+  getParentRoute: () => Route$j,
 });
 const rootRouteChildren = {
   IndexRoute,
@@ -5195,7 +6252,7 @@ const rootRouteChildren = {
   SessionsIdRoute,
   ShareTokenRoute,
   SessionsIndexRoute,
-  ApiPublicOgShareTokenRoute
+  ApiPublicOgShareTokenRoute,
 };
 const routeTree = Route$j._addFileChildren(rootRouteChildren)._addFileTypes();
 const getRouter = () => {
@@ -5204,14 +6261,20 @@ const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 0
+    defaultPreloadStaleTime: 0,
   });
   return router2;
 };
-const router = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  getRouter
-}, Symbol.toStringTag, { value: "Module" }));
+const router = /* @__PURE__ */ Object.freeze(
+  /* @__PURE__ */ Object.defineProperty(
+    {
+      __proto__: null,
+      getRouter,
+    },
+    Symbol.toStringTag,
+    { value: "Module" },
+  ),
+);
 export {
   setBridgePerformanceMode as A,
   Button as B,
@@ -5258,5 +6321,5 @@ export {
   publishMyGearRatios as w,
   resolveLLMUrl as x,
   router as y,
-  saveDbConfig as z
+  saveDbConfig as z,
 };

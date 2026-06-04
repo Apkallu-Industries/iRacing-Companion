@@ -36,7 +36,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e101",
         name: "Thr/Brake/Coast",
         key: "throttle_brake_coast",
-        expression: "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
+        expression:
+          "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
         unit: "state",
         enabled: true,
         scope: "both",
@@ -180,7 +181,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
   plus: {
     key: "plus",
     name: "iRacing Plus Workbook v1.3",
-    description: "Expanded professional offline analysis workbook. Dampers, Scatters, and Setup Diffs.",
+    description:
+      "Expanded professional offline analysis workbook. Dampers, Scatters, and Setup Diffs.",
     tier: "Plus",
     defaultChannels: [
       "Speed",
@@ -227,7 +229,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e101",
         name: "Thr/Brake/Coast",
         key: "throttle_brake_coast",
-        expression: "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
+        expression:
+          "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
         unit: "state",
         enabled: true,
         scope: "both",
@@ -371,7 +374,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e120",
         name: "G Total (Vector)",
         key: "g_total",
-        expression: "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
+        expression:
+          "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
         unit: "G",
         enabled: true,
         scope: "both",
@@ -437,7 +441,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e126",
         name: "Corner State Machine",
         key: "corner_state",
-        expression: "choose(([Brake]>20)&&([Accel Longitudinal]<-0.3),3,choose(([Throttle]>30)&&(abs([Accel Lateral])>0.5),5,choose((abs([Accel Lateral])>0.5),1,0)))",
+        expression:
+          "choose(([Brake]>20)&&([Accel Longitudinal]<-0.3),3,choose(([Throttle]>30)&&(abs([Accel Lateral])>0.5),5,choose((abs([Accel Lateral])>0.5),1,0)))",
         unit: "state",
         enabled: true,
         scope: "both",
@@ -449,7 +454,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
   realtime: {
     key: "realtime",
     name: "iRacing Plus Real-Time Workbook v1.0",
-    description: "Full pro-tier workspace. Integrates high-frequency active math, 3D overlays, and spider trackers.",
+    description:
+      "Full pro-tier workspace. Integrates high-frequency active math, 3D overlays, and spider trackers.",
     tier: "Pro",
     defaultChannels: [
       "Speed",
@@ -500,7 +506,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e101",
         name: "Thr/Brake/Coast",
         key: "throttle_brake_coast",
-        expression: "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
+        expression:
+          "choose(([Throttle]>98),2,choose(([Brake]>65),4,choose(([Throttle]>2)&&([Throttle]<98),1,choose(([Brake]>2)&&([Brake]<65),3,0))))",
         unit: "state",
         enabled: true,
         scope: "both",
@@ -643,7 +650,8 @@ export const WORKSPACES: Record<WorkspaceKey, WorkspaceConfig> = {
         id: "d04a6011-e4f0-4d4e-bba3-5d803836e120",
         name: "G Total (Vector)",
         key: "g_total",
-        expression: "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
+        expression:
+          "sqrt(([Accel Lateral]*[Accel Lateral])+([Accel Longitudinal]*[Accel Longitudinal]))",
         unit: "G",
         enabled: true,
         scope: "both",

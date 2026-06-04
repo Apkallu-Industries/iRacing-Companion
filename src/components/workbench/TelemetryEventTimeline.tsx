@@ -8,13 +8,19 @@ export function TelemetryEventTimeline() {
   // Only seed mock events when simulator allowance is enabled. In force-live mode we never seed.
   useEffect(() => {
     try {
-      if (events.length === 0 && window && window.localStorage && window.localStorage.getItem("pitwall:allow_simulator") === "1") {
+      if (
+        events.length === 0 &&
+        window &&
+        window.localStorage &&
+        window.localStorage.getItem("pitwall:allow_simulator") === "1"
+      ) {
         addEvent({
           timestampSec: 12.5,
           label: "REAR LOCKUP DETECTED",
           category: "thermal",
           severity: "critical",
-          description: "Rear axle slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift bias forward.",
+          description:
+            "Rear axle slip exceeding 18% under heavy threshold braking at Turn 8 entry. Shift bias forward.",
           associatedChannels: ["Brake", "LFbrakeLinePress", "LRbrakeTemp"],
           cornerNumber: 8,
         });
@@ -23,7 +29,8 @@ export function TelemetryEventTimeline() {
           label: "ERS DEPLOYMENT SATURATION",
           category: "hybrid",
           severity: "warning",
-          description: "MGU-K deploy saturated at 120kW for 5.2s. Potential state-of-charge exhaustion at back straight.",
+          description:
+            "MGU-K deploy saturated at 120kW for 5.2s. Potential state-of-charge exhaustion at back straight.",
           associatedChannels: ["EnergyStorePct", "MgukDeploykW"],
           cornerNumber: 11,
         });
@@ -32,7 +39,8 @@ export function TelemetryEventTimeline() {
           label: "THROTTLE INSTABILITY AT CORNER EXIT",
           category: "inputs",
           severity: "info",
-          description: "Rapid throttle micro-pumping detected at Turn 3 exit. Steer smoothness rating dropped to 72%.",
+          description:
+            "Rapid throttle micro-pumping detected at Turn 3 exit. Steer smoothness rating dropped to 72%.",
           associatedChannels: ["Throttle", "SteeringWheelAngle"],
           cornerNumber: 3,
         });
@@ -41,7 +49,8 @@ export function TelemetryEventTimeline() {
           label: "CHASSIS REB COMPRESSION GROUNDING",
           category: "dynamics",
           severity: "warning",
-          description: "Nose pitch rotation exceeding -1.8 deg. Splitter grounding threat detected under heavy heave load.",
+          description:
+            "Nose pitch rotation exceeding -1.8 deg. Splitter grounding threat detected under heavy heave load.",
           associatedChannels: ["LongAccel", "LatAccel", "pitch"],
           cornerNumber: 5,
         });
@@ -53,17 +62,21 @@ export function TelemetryEventTimeline() {
 
   const getCategoryIcon = (category: TelemetryEvent["category"]) => {
     switch (category) {
-      case "thermal": return <AlertTriangle className="h-3.5 w-3.5 text-[#FF4D4D]" />;
-      case "hybrid": return <Zap className="h-3.5 w-3.5 text-[#8B5CF6]" />;
-      case "inputs": return <Activity className="h-3.5 w-3.5 text-[#00D17F]" />;
-      case "dynamics": return <Shield className="h-3.5 w-3.5 text-[#3B82F6]" />;
+      case "thermal":
+        return <AlertTriangle className="h-3.5 w-3.5 text-[#FF4D4D]" />;
+      case "hybrid":
+        return <Zap className="h-3.5 w-3.5 text-[#8B5CF6]" />;
+      case "inputs":
+        return <Activity className="h-3.5 w-3.5 text-[#00D17F]" />;
+      case "dynamics":
+        return <Shield className="h-3.5 w-3.5 text-[#3B82F6]" />;
     }
   };
 
   const getClassificationBadge = (event: TelemetryEvent) => {
     let text = "DIAGNOSTIC";
     let color = "text-[#7A828C] border-[#7A828C]/30 bg-[#7A828C]/10";
-    
+
     if (event.category === "thermal") {
       text = "STABILITY";
       color = "text-[#FF4D4D] border-[#FF4D4D]/30 bg-[#FF4D4D]/10";
@@ -77,9 +90,11 @@ export function TelemetryEventTimeline() {
       text = "AERO PLATFORM";
       color = "text-[#3B82F6] border-[#3B82F6]/30 bg-[#3B82F6]/10";
     }
-    
+
     return (
-      <span className={`text-[7px] font-black tracking-widest px-1 py-0.5 border rounded-xs uppercase ${color}`}>
+      <span
+        className={`text-[7px] font-black tracking-widest px-1 py-0.5 border rounded-xs uppercase ${color}`}
+      >
         {text}
       </span>
     );
@@ -87,9 +102,12 @@ export function TelemetryEventTimeline() {
 
   const getSeverityStyles = (severity: TelemetryEvent["severity"]) => {
     switch (severity) {
-      case "critical": return "border-l-2 border-l-[#FF4D4D] bg-[#FF4D4D]/5";
-      case "warning": return "border-l-2 border-l-[#FFB800] bg-[#FFB800]/5";
-      case "info": return "border-l-2 border-l-[#3B82F6] bg-[#3B82F6]/5";
+      case "critical":
+        return "border-l-2 border-l-[#FF4D4D] bg-[#FF4D4D]/5";
+      case "warning":
+        return "border-l-2 border-l-[#FFB800] bg-[#FFB800]/5";
+      case "info":
+        return "border-l-2 border-l-[#3B82F6] bg-[#3B82F6]/5";
     }
   };
 
@@ -142,13 +160,17 @@ export function TelemetryEventTimeline() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   {event.metadata?.confidence !== undefined && (
-                    <span className="text-[7.5px] text-[#00D17F] font-black border border-[#00D17F]/30 bg-[#00D17F]/10 px-1 py-0.5 rounded-xs tabular-nums" title="Scanner Signal Certainty Score">
+                    <span
+                      className="text-[7.5px] text-[#00D17F] font-black border border-[#00D17F]/30 bg-[#00D17F]/10 px-1 py-0.5 rounded-xs tabular-nums"
+                      title="Scanner Signal Certainty Score"
+                    >
                       {(event.metadata.confidence * 100).toFixed(0)}% CERT
                     </span>
                   )}
                   {getClassificationBadge(event)}
                   <span className="text-[8px] text-[#7A828C] font-bold tabular-nums">
-                    t = {event.timestampSec.toFixed(2)}s {event.cornerNumber ? `· T${event.cornerNumber}` : ""}
+                    t = {event.timestampSec.toFixed(2)}s{" "}
+                    {event.cornerNumber ? `· T${event.cornerNumber}` : ""}
                   </span>
                   {/* Delete single event button */}
                   <button
@@ -166,7 +188,7 @@ export function TelemetryEventTimeline() {
                   </button>
                 </div>
               </div>
-              
+
               <p className="text-[8.5px] leading-relaxed text-[#7A828C] select-text">
                 {event.description}
               </p>
@@ -182,13 +204,15 @@ export function TelemetryEventTimeline() {
                     </span>
                   ))}
                 </div>
-                <span className={`text-[7px] font-black uppercase tracking-widest px-1 py-0.5 border rounded-xs ${
-                  event.severity === "critical"
-                    ? "text-[#FF4D4D] border-[#FF4D4D]/20 bg-[#FF4D4D]/5"
-                    : event.severity === "warning"
-                      ? "text-[#FFB800] border-[#FFB800]/20 bg-[#FFB800]/5"
-                      : "text-[#3B82F6] border-[#3B82F6]/20 bg-[#3B82F6]/5"
-                }`}>
+                <span
+                  className={`text-[7px] font-black uppercase tracking-widest px-1 py-0.5 border rounded-xs ${
+                    event.severity === "critical"
+                      ? "text-[#FF4D4D] border-[#FF4D4D]/20 bg-[#FF4D4D]/5"
+                      : event.severity === "warning"
+                        ? "text-[#FFB800] border-[#FFB800]/20 bg-[#FFB800]/5"
+                        : "text-[#3B82F6] border-[#3B82F6]/20 bg-[#3B82F6]/5"
+                  }`}
+                >
                   {event.severity}
                 </span>
               </div>

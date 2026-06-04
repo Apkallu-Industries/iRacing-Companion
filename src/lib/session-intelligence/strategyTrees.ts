@@ -8,8 +8,13 @@
 export interface StrategyDecisionNode {
   nodeId: string;
   conditionMet: string;
-  recommendedAction: "BOX_THIS_LAP" | "EXTEND_STINT" | "FUEL_SAVE_LIFT" | "PUSH_LAP_ATTACK" | "SAFETY_CAR_STANDBY";
-  probabilityWeightPct: number;    // estimated chance of outcome success
+  recommendedAction:
+    | "BOX_THIS_LAP"
+    | "EXTEND_STINT"
+    | "FUEL_SAVE_LIFT"
+    | "PUSH_LAP_ATTACK"
+    | "SAFETY_CAR_STANDBY";
+  probabilityWeightPct: number; // estimated chance of outcome success
   alternativeBranchName: string;
   alternativeBranchNarrative: string;
 }
@@ -25,9 +30,8 @@ export function evaluateStrategyTree(
   tireGripPct: number,
   fuelLapsRemaining: number,
   trafficGapSec: number,
-  currentObjectiveMode: string
+  currentObjectiveMode: string,
 ): StrategyDecisionNode {
-  
   const isTireCliffClose = tireGripPct < 75.0;
   const isFuelLimitClose = fuelLapsRemaining < 2.0;
   const isTrafficClear = trafficGapSec > 2.5;
@@ -40,7 +44,8 @@ export function evaluateStrategyTree(
       recommendedAction: "BOX_THIS_LAP",
       probabilityWeightPct: 100,
       alternativeBranchName: "Combustion starvation recovery",
-      alternativeBranchNarrative: "Fuel exhaustion renders stint extension non-viable. Pit immediately.",
+      alternativeBranchNarrative:
+        "Fuel exhaustion renders stint extension non-viable. Pit immediately.",
     };
   }
 
@@ -54,7 +59,8 @@ export function evaluateStrategyTree(
         recommendedAction: "BOX_THIS_LAP",
         probabilityWeightPct: 88,
         alternativeBranchName: "Extend stint for overcut",
-        alternativeBranchNarrative: "Extending stint runs worn tires into cumulative pace losses, risking sector time decay.",
+        alternativeBranchNarrative:
+          "Extending stint runs worn tires into cumulative pace losses, risking sector time decay.",
       };
     } else {
       // Exiting would merge inside traffic pack
@@ -64,7 +70,8 @@ export function evaluateStrategyTree(
         recommendedAction: "FUEL_SAVE_LIFT",
         probabilityWeightPct: 76,
         alternativeBranchName: "Immediate pit release",
-        alternativeBranchNarrative: "Pitting now exits directly behind slower GT cars, block-stalling downforce flow.",
+        alternativeBranchNarrative:
+          "Pitting now exits directly behind slower GT cars, block-stalling downforce flow.",
       };
     }
   }
@@ -77,7 +84,8 @@ export function evaluateStrategyTree(
       recommendedAction: "SAFETY_CAR_STANDBY",
       probabilityWeightPct: 95,
       alternativeBranchName: "Pre-emptive cheap pitstop",
-      alternativeBranchNarrative: "Box now to acquire fresh compound vectors under low time-loss penalty.",
+      alternativeBranchNarrative:
+        "Box now to acquire fresh compound vectors under low time-loss penalty.",
     };
   }
 
@@ -89,7 +97,8 @@ export function evaluateStrategyTree(
       recommendedAction: "FUEL_SAVE_LIFT",
       probabilityWeightPct: 90,
       alternativeBranchName: "Qualifying Pace Attack",
-      alternativeBranchNarrative: "Toggling to attack consumes fuel reserves rapidly, shortening stint limits by -3 laps.",
+      alternativeBranchNarrative:
+        "Toggling to attack consumes fuel reserves rapidly, shortening stint limits by -3 laps.",
     };
   }
 
@@ -100,6 +109,7 @@ export function evaluateStrategyTree(
     recommendedAction: "PUSH_LAP_ATTACK",
     probabilityWeightPct: 85,
     alternativeBranchName: "Early strategy window",
-    alternativeBranchNarrative: "Pitting now triggers an early undercut, but pushes subsequent tyre wear limits.",
+    alternativeBranchNarrative:
+      "Pitting now triggers an early undercut, but pushes subsequent tyre wear limits.",
   };
 }

@@ -65,51 +65,51 @@
   /* Cinematic motorsport workstation tokens (sharp, high-performance) */
   --radius: 2px;
 
-  --background: #05070A;
-  --foreground: #E2E4E8;
+  --background: #05070a;
+  --foreground: #e2e4e8;
 
-  --panel: #0B0F14;
-  --panel-2: #11161D;
-  --rail: #05070A;
+  --panel: #0b0f14;
+  --panel-2: #11161d;
+  --rail: #05070a;
 
   --card: var(--panel);
   --card-foreground: var(--foreground);
   --popover: var(--panel-2);
   --popover-foreground: var(--foreground);
 
-  --primary: #3B82F6; /* Telemetry Blue */
-  --primary-foreground: #FFFFFF;
+  --primary: #3b82f6; /* Telemetry Blue */
+  --primary-foreground: #ffffff;
 
-  --secondary: #0B0F14;
-  --secondary-foreground: #E2E4E8;
+  --secondary: #0b0f14;
+  --secondary-foreground: #e2e4e8;
 
-  --muted: #11161D;
-  --muted-foreground: #7A828C;
+  --muted: #11161d;
+  --muted-foreground: #7a828c;
 
-  --accent: #161C24;
-  --accent-foreground: #E2E4E8;
+  --accent: #161c24;
+  --accent-foreground: #e2e4e8;
 
-  --destructive: #FF4D4D; /* Warning Red */
-  --destructive-foreground: #FFFFFF;
+  --destructive: #ff4d4d; /* Warning Red */
+  --destructive-foreground: #ffffff;
 
-  --border: #1C2430; /* Thin separators */
+  --border: #1c2430; /* Thin separators */
   --border-strong: #263241; /* Subtle outlines */
-  --input: #1C2430;
-  --ring: #3B82F6;
+  --input: #1c2430;
+  --ring: #3b82f6;
 
   /* Channel trace colors (motorsport functional convention) */
-  --ch-speed: #3B82F6;      /* Telemetry Blue */
-  --ch-throttle: #00D17F;   /* Delta Green */
-  --ch-brake: #FF4D4D;      /* Warning Red */
-  --ch-rpm: #FFB800;        /* Warning Amber */
-  --ch-gear: #E2E4E8;       /* White */
-  --ch-steer: #8B5CF6;      /* Hybrid Purple */
-  --ch-glat: #FFB800;       /* Warning Amber */
-  --ch-glong: #3B82F6;      /* Telemetry Blue */
-  --ch-default: #7A828C;
+  --ch-speed: #3b82f6; /* Telemetry Blue */
+  --ch-throttle: #00d17f; /* Delta Green */
+  --ch-brake: #ff4d4d; /* Warning Red */
+  --ch-rpm: #ffb800; /* Warning Amber */
+  --ch-gear: #e2e4e8; /* White */
+  --ch-steer: #8b5cf6; /* Hybrid Purple */
+  --ch-glat: #ffb800; /* Warning Amber */
+  --ch-glong: #3b82f6; /* Telemetry Blue */
+  --ch-default: #7a828c;
 
-  --grid-major: #1C2430;
-  --grid-minor: #11161D;
+  --grid-major: #1c2430;
+  --grid-minor: #11161d;
 
   --chart-1: var(--ch-speed);
   --chart-2: var(--ch-throttle);
@@ -142,7 +142,9 @@
     border-color: var(--color-border);
   }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     width: 100%;
     margin: 0;
@@ -343,7 +345,7 @@
   --layout-font-label: 10px;
   --layout-font-heading: 13px;
   --layout-nav-height: 48px;
-  --layout-card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --layout-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* ── E: Carbon UI ──
@@ -364,7 +366,6 @@
   --layout-font-heading: 11px;
   --layout-nav-height: 40px;
 }
-
 
 /* ── F: Modern F1 ──
    High contrast, F1 red accents, bold headings,
@@ -422,12 +423,24 @@
     box-shadow: var(--layout-card-shadow);
   }
 
-  .layout-pad { padding: var(--layout-pad-md); }
-  .layout-pad-sm { padding: var(--layout-pad-sm); }
-  .layout-pad-lg { padding: var(--layout-pad-lg); }
-  .layout-pad-xl { padding: var(--layout-pad-xl); }
-  .layout-gap { gap: var(--layout-gap); }
-  .layout-gap-lg { gap: var(--layout-gap-lg); }
+  .layout-pad {
+    padding: var(--layout-pad-md);
+  }
+  .layout-pad-sm {
+    padding: var(--layout-pad-sm);
+  }
+  .layout-pad-lg {
+    padding: var(--layout-pad-lg);
+  }
+  .layout-pad-xl {
+    padding: var(--layout-pad-xl);
+  }
+  .layout-gap {
+    gap: var(--layout-gap);
+  }
+  .layout-gap-lg {
+    gap: var(--layout-gap-lg);
+  }
 
   /* Data typography */
   .layout-data {
@@ -594,11 +607,16 @@
 .telemetry-instrument,
 .layout-card,
 .min-h-\[260px\] {
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* --- BRAKE ANALYSIS FOCUS --- */
-.workspace-focus-brakes .hairline-b:not(:has(span[style*="brake"])):not(:has(span[style*="Brake"])):not(:has(span[style*="Speed"])):not(:has(span[style*="speed"])):not(:has(span[style*="Yaw"])):not(:has(span[style*="yaw"])) {
+.workspace-focus-brakes
+  .hairline-b:not(:has(span[style*="brake"])):not(:has(span[style*="Brake"])):not(
+    :has(span[style*="Speed"])
+  ):not(:has(span[style*="speed"])):not(:has(span[style*="Yaw"])):not(:has(span[style*="yaw"])) {
   opacity: 0.26 !important;
   filter: grayscale(80%) !important;
 }
@@ -609,7 +627,10 @@
 }
 
 /* --- ERS HYBRID FOCUS --- */
-.workspace-focus-ers .hairline-b:not(:has(span[style*="Energy"])):not(:has(span[style*="ers"])):not(:has(span[style*="Mgu"])):not(:has(span[style*="mgu"])):not(:has(span[style*="Speed"])):not(:has(span[style*="speed"])) {
+.workspace-focus-ers
+  .hairline-b:not(:has(span[style*="Energy"])):not(:has(span[style*="ers"])):not(
+    :has(span[style*="Mgu"])
+  ):not(:has(span[style*="mgu"])):not(:has(span[style*="Speed"])):not(:has(span[style*="speed"])) {
   opacity: 0.26 !important;
   filter: grayscale(80%) !important;
 }
@@ -620,7 +641,10 @@
 }
 
 /* --- CHASSIS & SUSPENSION FOCUS --- */
-.workspace-focus-chassis .hairline-b:not(:has(span[style*="suspension"])):not(:has(span[style*="damper"])):not(:has(span[style*="pitch"])):not(:has(span[style*="roll"])):not(:has(span[style*="heave"])):not(:has(span[style*="ride"])) {
+.workspace-focus-chassis
+  .hairline-b:not(:has(span[style*="suspension"])):not(:has(span[style*="damper"])):not(
+    :has(span[style*="pitch"])
+  ):not(:has(span[style*="roll"])):not(:has(span[style*="heave"])):not(:has(span[style*="ride"])) {
   opacity: 0.26 !important;
   filter: grayscale(80%) !important;
 }
@@ -631,7 +655,10 @@
 }
 
 /* --- TIRE THERMAL FOCUS --- */
-.workspace-focus-tires .hairline-b:not(:has(span[style*="temp"])):not(:has(span[style*="press"])):not(:has(span[style*="wear"])):not(:has(span[style*="tire"])):not(:has(span[style*="grip"])) {
+.workspace-focus-tires
+  .hairline-b:not(:has(span[style*="temp"])):not(:has(span[style*="press"])):not(
+    :has(span[style*="wear"])
+  ):not(:has(span[style*="tire"])):not(:has(span[style*="grip"])) {
   opacity: 0.26 !important;
   filter: grayscale(80%) !important;
 }
@@ -642,7 +669,12 @@
 }
 
 /* --- DRIVER INPUTS FOCUS --- */
-.workspace-focus-inputs .hairline-b:not(:has(span[style*="Throttle"])):not(:has(span[style*="throttle"])):not(:has(span[style*="Brake"])):not(:has(span[style*="brake"])):not(:has(span[style*="Steer"])):not(:has(span[style*="steer"])) {
+.workspace-focus-inputs
+  .hairline-b:not(:has(span[style*="Throttle"])):not(:has(span[style*="throttle"])):not(
+    :has(span[style*="Brake"])
+  ):not(:has(span[style*="brake"])):not(:has(span[style*="Steer"])):not(
+    :has(span[style*="steer"])
+  ) {
   opacity: 0.26 !important;
   filter: grayscale(80%) !important;
 }

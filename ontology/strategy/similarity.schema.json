@@ -3,12 +3,7 @@
   "$id": "https://motorsport-intelligence.org/schemas/ontology/similarity.schema.json",
   "title": "SimilarityContext",
   "type": "object",
-  "required": [
-    "trackLayoutType",
-    "optimalThermalWindowC",
-    "vehicleClass",
-    "driverTraits"
-  ],
+  "required": ["trackLayoutType", "optimalThermalWindowC", "vehicleClass", "driverTraits"],
   "properties": {
     "trackLayoutType": {
       "type": "string",
@@ -44,9 +39,15 @@
       ],
       "properties": {
         "cornerEntryRotationPreference": { "type": "string", "enum": ["high", "medium", "low"] },
-        "rearAxleStabilityTolerance": { "type": "string", "enum": ["aggressive", "neutral", "cautious"] },
+        "rearAxleStabilityTolerance": {
+          "type": "string",
+          "enum": ["aggressive", "neutral", "cautious"]
+        },
         "brakeReleaseStyle": { "type": "string", "enum": ["fast_decay", "linear", "smooth_trail"] },
-        "throttleCommitmentConfidence": { "type": "string", "enum": ["early", "progressive", "hesitant"] }
+        "throttleCommitmentConfidence": {
+          "type": "string",
+          "enum": ["early", "progressive", "hesitant"]
+        }
       }
     }
   }

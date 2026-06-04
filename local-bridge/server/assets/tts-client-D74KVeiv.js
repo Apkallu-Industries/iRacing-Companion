@@ -46,8 +46,8 @@ async function speak(text, overrideDeviceId) {
     data: {
       text,
       apiKey: elevenLabsApiKey,
-      voiceId: elevenLabsVoiceId
-    }
+      voiceId: elevenLabsVoiceId,
+    },
   });
   if (resp.error) return resp.error;
   if (!resp.audioBase64) return "No audio data returned.";
@@ -55,7 +55,4 @@ async function speak(text, overrideDeviceId) {
   await playOnSelectedDevice(resp.audioBase64, resp.mime ?? "audio/mpeg", deviceId);
   return null;
 }
-export {
-  playOnSelectedDevice,
-  speak
-};
+export { playOnSelectedDevice, speak };

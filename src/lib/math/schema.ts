@@ -32,7 +32,8 @@ export type MathExpression = z.infer<typeof MathExpressionSchema> & {
   compiled?: CompiledMathExpression;
 };
 
-const TOKEN_RE = /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|<=|>=|==|!=|&&|\|\||[()+\-*/,<>=!&|])\s*/g;
+const TOKEN_RE =
+  /\s*([A-Za-z_][A-Za-z0-9_.]*|\d+(?:\.\d+)?|<=|>=|==|!=|&&|\|\||[()+\-*/,<>=!&|])\s*/g;
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_.]*$/;
 const FUNC_NAMES = new Set([
   "min",

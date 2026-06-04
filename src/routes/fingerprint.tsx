@@ -377,9 +377,11 @@ function FingerprintPage() {
           <span className="text-foreground">{live.car}</span>
           <span className="text-muted-foreground">@</span>
           <span className="text-foreground">{live.track}</span>
-          {fp && fp.pairs.some((p) =>
-            p.track.toLowerCase().includes(live.track.toLowerCase()) ||
-            live.track.toLowerCase().includes(p.track.toLowerCase())
+          {fp &&
+          fp.pairs.some(
+            (p) =>
+              p.track.toLowerCase().includes(live.track.toLowerCase()) ||
+              live.track.toLowerCase().includes(p.track.toLowerCase()),
           ) ? (
             <span className="ml-2 rounded-sm bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300 uppercase tracking-wider">
               ✓ Fingerprint available for this track
@@ -390,7 +392,8 @@ function FingerprintPage() {
             </span>
           )}
           <span className="ml-auto text-muted-foreground">
-            {live.fuelRemainingL.toFixed(1)}L · Lap Δ {live.deltaSec >= 0 ? "+" : ""}{live.deltaSec.toFixed(3)}s
+            {live.fuelRemainingL.toFixed(1)}L · Lap Δ {live.deltaSec >= 0 ? "+" : ""}
+            {live.deltaSec.toFixed(3)}s
           </span>
         </div>
       )}
@@ -579,12 +582,15 @@ function FingerprintPage() {
                       const t = targets[pairKey(p.track, p.car)];
                       const gap = t ? p.bestEverS - t : null;
                       const pct = t ? (t / p.bestEverS) * 100 : null;
-                      const isLiveMatch = live.connected && (
-                        p.track.toLowerCase().includes(live.track.toLowerCase()) ||
-                        live.track.toLowerCase().includes(p.track.toLowerCase())
-                      );
+                      const isLiveMatch =
+                        live.connected &&
+                        (p.track.toLowerCase().includes(live.track.toLowerCase()) ||
+                          live.track.toLowerCase().includes(p.track.toLowerCase()));
                       return (
-                        <tr key={i} className={`hairline-b hover:bg-accent/30 ${isLiveMatch ? "bg-emerald-500/5 ring-1 ring-inset ring-emerald-500/20" : ""}`}>
+                        <tr
+                          key={i}
+                          className={`hairline-b hover:bg-accent/30 ${isLiveMatch ? "bg-emerald-500/5 ring-1 ring-inset ring-emerald-500/20" : ""}`}
+                        >
                           <td className="px-2 py-1 text-left">{p.track}</td>
                           <td className="px-2 py-1 text-left text-muted-foreground">{p.car}</td>
                           <td className="px-2 py-1 text-right tabular-nums">{p.fileCount}</td>

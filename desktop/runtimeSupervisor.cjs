@@ -15,10 +15,10 @@
  * ─ Exposes getStatus() for the IPC runtime manifest handler.
  */
 
-const net    = require("net");
-const http   = require("http");
+const net = require("net");
+const http = require("http");
 const { exec, execSync } = require("child_process");
-const os     = require("os");
+const os = require("os");
 const { EventEmitter } = require("events");
 const supervisorApi = require("./supervisorApi.cjs");
 const ingestionController = require("./ingestionController.cjs");
@@ -27,18 +27,29 @@ const supervisorEvents = new EventEmitter();
 
 // ─── Port constants ────────────────────────────────────────────────────────────
 
-const MONGO_PORT    = 27017;
+const MONGO_PORT = 27017;
 const LMSTUDIO_PORT = 1234;
-const OLLAMA_PORT   = 11434;
+const OLLAMA_PORT = 11434;
 
-const MONGO_SERVICE_NAME = "PitWallMongoDB";   // NSIS installs this name
-const MONGO_FALLBACK_SVC = "MongoDB";           // Default MongoDB service name
+const LMSTUDIO_LAUNCH_COMMAND =
+  process.env.LMSTUDIO_LAUNCH_COMMAND ||
+  process.env.LMSTUDIO_EXECUTABLE ||
+  process.env.LMSTUDIO_PATH ||
+  null;
+const OLLAMA_LAUNCH_COMMAND =
+  process.env.OLLAMA_LAUNCH_COMMAND ||
+  process.env.OLLAMA_EXECUTABLE ||
+  process.env.OLLAMA_PATH ||
+  null;
+
+const MONGO_SERVICE_NAME = "PitWallMongoDB"; // NSIS installs this name
+const MONGO_FALLBACK_SVC = "MongoDB"; // Default MongoDB service name
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
 /** @type {"initializing"|"active"|"unavailable"|"starting"|"error"} */
 let mongoStatus = "initializing";
-let mongoUri    = null;
+let mongoUri = null;
 
 /** @type {"lmstudio"|"ollama"|"cloud"|"unknown"} */
 let aiMode = "unknown";
@@ -66,9 +77,9 @@ function isPortListening(port, timeoutMs = 1000) {
       }
     };
     sock.setTimeout(timeoutMs);
-    sock.once("connect",  () => done(true));
-    sock.once("error",    () => done(false));
-    sock.once("timeout",  () => done(false));
+    sock.once("connect", () => done(true));
+    sock.once("error", () => done(false));
+    sock.once("timeout", () => done(false));
     sock.connect(port, "127.0.0.1");
   });
 }
@@ -82,8 +93,11 @@ function isHttpReachable(url, timeoutMs = 2000) {
       resolve(res.statusCode < 500);
       res.resume(); // drain
     });
-    req.once("error",   () => resolve(false));
-    req.once("timeout", () => { req.destroy(); resolve(false); });
+    req.once("error", () => resolve(false));
+    req.once("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
   });
 }
 
@@ -180,7 +194,7 @@ async function ensureMongoDB() {
   mongoUri = null;
   console.warn(
     "[supervisor] MongoDB not reachable. Telemetry recording disabled.",
-    "Install MongoDB Community Server or ensure the service is running."
+    "Install MongoDB Community Server or ensure the service is running.",
   );
 }
 
@@ -229,6 +243,39 @@ async function probeLocalAI() {
   console.log("[supervisor] No local AI server detected → cloud fallback");
 }
 
+async function launchConfiguredLocalAI() {
+  const launches = [
+    { name: "LM Studio", cmd: LMSTUDIO_LAUNCH_COMMAND, port: LMSTUDIO_PORT },
+    { name: "Ollama", cmd: OLLAMA_LAUNCH_COMMAND, port: OLLAMA_PORT },
+  ];
+
+  for (const launch of launches) {
+    if (!launch.cmd) continue;
+    if (await isPortListening(launch.port, 300)) {
+      console.log(
+        `[supervisor] ${launch.name} port ${launch.port} already open; skipping auto-launch.`,
+      );
+      continue;
+    }
+
+    console.log(`[supervisor] Auto-launching configured local AI: ${launch.name}`);
+    try {
+      const child = exec(launch.cmd, { windowsHide: true }, (err) => {
+        if (err) {
+          console.warn(`[supervisor] ${launch.name} auto-launch failed:`, err.message || err);
+        }
+      });
+      if (typeof child.unref === "function") {
+        child.unref();
+      }
+    } catch (e) {
+      console.warn(`[supervisor] ${launch.name} auto-launch failed:`, e.message || e);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+  }
+}
+
 // ─── Operational Workstation States ──────────────────────────────────────────
 
 /** @type {"RUNNING"|"DEGRADED"|"RECOVERING"|"FAILED"|"OFFLINE"} */
@@ -257,7 +304,9 @@ function startWatchdogLoop() {
         await ensureMongoDB();
       } else {
         mongoStatus = "unavailable";
-        console.error("[supervisor] Maximum MongoDB recovery retries exceeded. Marking service degraded.");
+        console.error(
+          "[supervisor] Maximum MongoDB recovery retries exceeded. Marking service degraded.",
+        );
       }
     } else if (mongoListening) {
       mongoStatus = "active";
@@ -295,11 +344,9 @@ async function init() {
   supervisorState = "RECOVERING";
   console.log("[supervisor] Initializing runtime services…");
 
-  // Run MongoDB and AI probe in parallel
-  await Promise.all([
-    ensureMongoDB(),
-    probeLocalAI(),
-  ]);
+  // Run MongoDB and local AI startup in parallel.
+  // If a configured local AI command is present, launch it before probing.
+  await Promise.all([ensureMongoDB(), launchConfiguredLocalAI().then(() => probeLocalAI())]);
 
   // Start active supervision watchdog
   startWatchdogLoop();
@@ -312,13 +359,25 @@ async function init() {
       tcpPort: Number(process.env.SUPERVISOR_TCP_PORT || 4712),
       onPacket: ({ packet, source, sessionId, sessionMeta }) => {
         if (apiController && typeof apiController.broadcastTelemetry === "function") {
-          apiController.broadcastTelemetry({ type: "telemetry.packet", packet, source, sessionId, sessionMeta });
+          apiController.broadcastTelemetry({
+            type: "telemetry.packet",
+            packet,
+            source,
+            sessionId,
+            sessionMeta,
+          });
         }
         supervisorEvents.emit("live", packet);
       },
       onRawPacket: ({ packet, source, sessionId, sessionMeta }) => {
         if (apiController && typeof apiController.broadcastRawTelemetry === "function") {
-          apiController.broadcastRawTelemetry({ type: "telemetry.raw", packet, source, sessionId, sessionMeta });
+          apiController.broadcastRawTelemetry({
+            type: "telemetry.raw",
+            packet,
+            source,
+            sessionId,
+            sessionMeta,
+          });
         }
         supervisorEvents.emit("raw", packet);
       },
@@ -340,7 +399,8 @@ async function init() {
     apiController = supervisorApi.start({
       port: process.env.SUPERVISOR_API_PORT || 17777,
       getStatus,
-      onExternalTelemetry: (packet) => ingestionControllerHandle?.emitTelemetryPacket(packet, "http") ?? false,
+      onExternalTelemetry: (packet) =>
+        ingestionControllerHandle?.emitTelemetryPacket(packet, "http") ?? false,
     });
     activeSessionId = getActiveSession()?.id || null;
     console.log(`[supervisor] API started on ${apiController.host}:${apiController.port}`);
@@ -348,7 +408,9 @@ async function init() {
     console.warn("[supervisor] Failed to start API:", e.message || e);
   }
 
-  console.log(`[supervisor] Init complete — State: ${supervisorState} | MongoDB: ${mongoStatus} | AI: ${aiMode}`);
+  console.log(
+    `[supervisor] Init complete — State: ${supervisorState} | MongoDB: ${mongoStatus} | AI: ${aiMode}`,
+  );
 }
 
 /**
@@ -416,7 +478,10 @@ let activeSessionId = null;
 
 function getActiveSession() {
   try {
-    if (ingestionControllerHandle && typeof ingestionControllerHandle.getActiveSession === "function") {
+    if (
+      ingestionControllerHandle &&
+      typeof ingestionControllerHandle.getActiveSession === "function"
+    ) {
       const session = ingestionControllerHandle.getActiveSession();
       activeSessionId = session?.id || null;
       return session;
@@ -427,15 +492,16 @@ function getActiveSession() {
       return session;
     }
   } catch (e) {
-    console.warn('[supervisor] getActiveSession failed', e?.message || e);
+    console.warn("[supervisor] getActiveSession failed", e?.message || e);
   }
   return null;
 }
 
 function startSession(sessionId, meta) {
-  const result = apiController && typeof apiController.startSession === "function"
-    ? apiController.startSession(sessionId, meta)
-    : { ok: false, error: "supervisor API unavailable" };
+  const result =
+    apiController && typeof apiController.startSession === "function"
+      ? apiController.startSession(sessionId, meta)
+      : { ok: false, error: "supervisor API unavailable" };
   if (result?.ok) {
     activeSessionId = result.sessionId;
     if (ingestionControllerHandle) {
@@ -456,9 +522,10 @@ function startSession(sessionId, meta) {
 function stopSession(sessionId) {
   const id = sessionId || activeSessionId;
   if (!id) return { ok: false, error: "missing sessionId" };
-  const result = apiController && typeof apiController.stopSession === "function"
-    ? apiController.stopSession(id)
-    : { ok: false, error: "supervisor API unavailable" };
+  const result =
+    apiController && typeof apiController.stopSession === "function"
+      ? apiController.stopSession(id)
+      : { ok: false, error: "supervisor API unavailable" };
   if (result?.ok) {
     if (activeSessionId === id) activeSessionId = null;
     if (ingestionControllerHandle) {
@@ -479,7 +546,7 @@ function getSessions() {
       return apiController.getSessions();
     }
   } catch (e) {
-    console.warn('[supervisor] getSessions failed', e?.message || e);
+    console.warn("[supervisor] getSessions failed", e?.message || e);
   }
   return [];
 }
@@ -492,10 +559,19 @@ async function shutdown() {
     clearInterval(watchdogInterval);
   }
   if (apiController && typeof apiController.stop === "function") {
-    try { await apiController.stop(); } catch {}
+    try {
+      await apiController.stop();
+    } catch {}
   }
-  if (ingestionControllerHandle && typeof ingestionControllerHandle.closeTelemetryStream === "function") {
-    try { ingestionControllerHandle.closeTelemetryStream(); } catch (e) { console.warn("[supervisor] ingestion shutdown failed", e?.message || e); }
+  if (
+    ingestionControllerHandle &&
+    typeof ingestionControllerHandle.closeTelemetryStream === "function"
+  ) {
+    try {
+      ingestionControllerHandle.closeTelemetryStream();
+    } catch (e) {
+      console.warn("[supervisor] ingestion shutdown failed", e?.message || e);
+    }
   }
   supervisorState = "OFFLINE";
   console.log("[supervisor] Shutdown complete");

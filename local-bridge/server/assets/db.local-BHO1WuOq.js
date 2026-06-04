@@ -16,7 +16,7 @@ async function readDbConfig() {
   } catch (e) {
     return {
       localUri: "mongodb://127.0.0.1:27017/",
-      cloudUri: ""
+      cloudUri: "",
     };
   }
 }
@@ -55,11 +55,11 @@ async function connectToLocalDb() {
     serverApi: {
       version: ServerApiVersion.v1,
       strict: true,
-      deprecationErrors: true
+      deprecationErrors: true,
     },
     // Failsafe timeouts so the app doesn't hang if MongoDB isn't running
     serverSelectionTimeoutMS: 2e3,
-    connectTimeoutMS: 2e3
+    connectTimeoutMS: 2e3,
   });
   try {
     await client.connect();
@@ -86,9 +86,9 @@ async function setupIndexes(db) {
         track: { bsonType: ["string", "null"] },
         car: { bsonType: ["string", "null"] },
         best_lap_s: { bsonType: ["number", "null"] },
-        duration_s: { bsonType: ["number", "null"] }
-      }
-    }
+        duration_s: { bsonType: ["number", "null"] },
+      },
+    },
   };
   const collections = await db.listCollections().toArray();
   const collectionNames = collections.map((c) => c.name);
@@ -109,9 +109,9 @@ async function setupIndexes(db) {
         car: { bsonType: "string" },
         lap_time_s: { bsonType: "number" },
         user_id: { bsonType: "string" },
-        is_valid: { bsonType: "bool" }
-      }
-    }
+        is_valid: { bsonType: "bool" },
+      },
+    },
   };
   if (!collectionNames.includes("live_lap_records")) {
     await db.createCollection("live_lap_records", { validator: liveLapValidator });
@@ -127,9 +127,4 @@ async function setupIndexes(db) {
   const settings = db.collection("user_settings");
   await settings.createIndex({ user_id: 1 }, { unique: true });
 }
-export {
-  resetDbConnection as a,
-  connectToLocalDb as c,
-  readDbConfig as r,
-  writeDbConfig as w
-};
+export { resetDbConnection as a, connectToLocalDb as c, readDbConfig as r, writeDbConfig as w };

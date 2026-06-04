@@ -1,5 +1,2220 @@
-import{d as s,j as f,a as le,r as At,b as Dt,R as U}from"./react-core-hSJfnumv.js";import{j as It,R as _t}from"./vendor-CUluG-o1.js";function w(e,t,{checkForDefaultPrevented:n=!0}={}){return function(o){if(e?.(o),n===!1||!o.defaultPrevented)return t?.(o)}}function Se(e,t){if(typeof e=="function")return e(t);e!=null&&(e.current=t)}function z(...e){return t=>{let n=!1;const r=e.map(o=>{const i=Se(o,t);return!n&&typeof i=="function"&&(n=!0),i});if(n)return()=>{for(let o=0;o<r.length;o++){const i=r[o];typeof i=="function"?i():Se(e[o],null)}}}}function I(...e){return s.useCallback(z(...e),e)}function Nt(e,t){const n=s.createContext(t),r=i=>{const{children:a,...c}=i,u=s.useMemo(()=>c,Object.values(c));return f.jsx(n.Provider,{value:u,children:a})};r.displayName=e+"Provider";function o(i){const a=s.useContext(n);if(a)return a;if(t!==void 0)return t;throw new Error(`\`${i}\` must be used within \`${e}\``)}return[r,o]}function G(e,t=[]){let n=[];function r(i,a){const c=s.createContext(a),u=n.length;n=[...n,a];const l=p=>{const{scope:m,children:v,...y}=p,h=m?.[e]?.[u]||c,g=s.useMemo(()=>y,Object.values(y));return f.jsx(h.Provider,{value:g,children:v})};l.displayName=i+"Provider";function d(p,m){const v=m?.[e]?.[u]||c,y=s.useContext(v);if(y)return y;if(a!==void 0)return a;throw new Error(`\`${p}\` must be used within \`${i}\``)}return[l,d]}const o=()=>{const i=n.map(a=>s.createContext(a));return function(c){const u=c?.[e]||i;return s.useMemo(()=>({[`__scope${e}`]:{...c,[e]:u}}),[c,u])}};return o.scopeName=e,[r,Ot(o,...t)]}function Ot(...e){const t=e[0];if(e.length===1)return t;const n=()=>{const r=e.map(o=>({useScope:o(),scopeName:o.scopeName}));return function(i){const a=r.reduce((c,{useScope:u,scopeName:l})=>{const p=u(i)[`__scope${l}`];return{...c,...p}},{});return s.useMemo(()=>({[`__scope${t.scopeName}`]:a}),[a])}};return n.scopeName=t.scopeName,n}var k=globalThis?.document?s.useLayoutEffect:()=>{},Ft=le[" useId ".trim().toString()]||(()=>{}),Lt=0;function H(e){const[t,n]=s.useState(Ft());return k(()=>{n(r=>r??String(Lt++))},[e]),e||(t?`radix-${t}`:"")}var Mt=le[" useInsertionEffect ".trim().toString()]||k;function ue({prop:e,defaultProp:t,onChange:n=()=>{},caller:r}){const[o,i,a]=jt({defaultProp:t,onChange:n}),c=e!==void 0,u=c?e:o;{const d=s.useRef(e!==void 0);s.useEffect(()=>{const p=d.current;p!==c&&console.warn(`${r} is changing from ${p?"controlled":"uncontrolled"} to ${c?"controlled":"uncontrolled"}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`),d.current=c},[c,r])}const l=s.useCallback(d=>{if(c){const p=Wt(d)?d(e):d;p!==e&&a.current?.(p)}else i(d)},[c,e,i,a]);return[u,l]}function jt({defaultProp:e,onChange:t}){const[n,r]=s.useState(e),o=s.useRef(n),i=s.useRef(t);return Mt(()=>{i.current=t},[t]),s.useEffect(()=>{o.current!==n&&(i.current?.(n),o.current=n)},[n,o]),[n,r,i]}function Wt(e){return typeof e=="function"}function $t(e){const t=Ut(e),n=s.forwardRef((r,o)=>{const{children:i,...a}=r,c=s.Children.toArray(i),u=c.find(kt);if(u){const l=u.props.children,d=c.map(p=>p===u?s.Children.count(l)>1?s.Children.only(null):s.isValidElement(l)?l.props.children:null:p);return f.jsx(t,{...a,ref:o,children:s.isValidElement(l)?s.cloneElement(l,void 0,d):null})}return f.jsx(t,{...a,ref:o,children:i})});return n.displayName=`${e}.Slot`,n}function Ut(e){const t=s.forwardRef((n,r)=>{const{children:o,...i}=n;if(s.isValidElement(o)){const a=Ht(o),c=Bt(i,o.props);return o.type!==s.Fragment&&(c.ref=r?z(r,a):a),s.cloneElement(o,c)}return s.Children.count(o)>1?s.Children.only(null):null});return t.displayName=`${e}.SlotClone`,t}var Vt=Symbol("radix.slottable");function kt(e){return s.isValidElement(e)&&typeof e.type=="function"&&"__radixId"in e.type&&e.type.__radixId===Vt}function Bt(e,t){const n={...t};for(const r in t){const o=e[r],i=t[r];/^on[A-Z]/.test(r)?o&&i?n[r]=(...c)=>{const u=i(...c);return o(...c),u}:o&&(n[r]=o):r==="style"?n[r]={...o,...i}:r==="className"&&(n[r]=[o,i].filter(Boolean).join(" "))}return{...e,...n}}function Ht(e){let t=Object.getOwnPropertyDescriptor(e.props,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=Object.getOwnPropertyDescriptor(e,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var zt=["a","button","div","form","h2","h3","img","input","label","li","nav","ol","p","select","span","svg","ul"],T=zt.reduce((e,t)=>{const n=$t(`Primitive.${t}`),r=s.forwardRef((o,i)=>{const{asChild:a,...c}=o,u=a?n:t;return typeof window<"u"&&(window[Symbol.for("radix-ui")]=!0),f.jsx(u,{...c,ref:i})});return r.displayName=`Primitive.${t}`,{...e,[t]:r}},{});function Gt(e,t){e&&At.flushSync(()=>e.dispatchEvent(t))}function N(e){const t=s.useRef(e);return s.useEffect(()=>{t.current=e}),s.useMemo(()=>(...n)=>t.current?.(...n),[])}function Kt(e,t=globalThis?.document){const n=N(e);s.useEffect(()=>{const r=o=>{o.key==="Escape"&&n(o)};return t.addEventListener("keydown",r,{capture:!0}),()=>t.removeEventListener("keydown",r,{capture:!0})},[n,t])}var Yt="DismissableLayer",ce="dismissableLayer.update",Xt="dismissableLayer.pointerDownOutside",qt="dismissableLayer.focusOutside",ye,Ie=s.createContext({layers:new Set,layersWithOutsidePointerEventsDisabled:new Set,branches:new Set}),_e=s.forwardRef((e,t)=>{const{disableOutsidePointerEvents:n=!1,onEscapeKeyDown:r,onPointerDownOutside:o,onFocusOutside:i,onInteractOutside:a,onDismiss:c,...u}=e,l=s.useContext(Ie),[d,p]=s.useState(null),m=d?.ownerDocument??globalThis?.document,[,v]=s.useState({}),y=I(t,C=>p(C)),h=Array.from(l.layers),[g]=[...l.layersWithOutsidePointerEventsDisabled].slice(-1),b=h.indexOf(g),R=d?h.indexOf(d):-1,E=l.layersWithOutsidePointerEventsDisabled.size>0,S=R>=b,D=Qt(C=>{const x=C.target,P=[...l.branches].some(A=>A.contains(x));!S||P||(o?.(C),a?.(C),C.defaultPrevented||c?.())},m),_=en(C=>{const x=C.target;[...l.branches].some(A=>A.contains(x))||(i?.(C),a?.(C),C.defaultPrevented||c?.())},m);return Kt(C=>{R===l.layers.size-1&&(r?.(C),!C.defaultPrevented&&c&&(C.preventDefault(),c()))},m),s.useEffect(()=>{if(d)return n&&(l.layersWithOutsidePointerEventsDisabled.size===0&&(ye=m.body.style.pointerEvents,m.body.style.pointerEvents="none"),l.layersWithOutsidePointerEventsDisabled.add(d)),l.layers.add(d),Ce(),()=>{n&&l.layersWithOutsidePointerEventsDisabled.size===1&&(m.body.style.pointerEvents=ye)}},[d,m,n,l]),s.useEffect(()=>()=>{d&&(l.layers.delete(d),l.layersWithOutsidePointerEventsDisabled.delete(d),Ce())},[d,l]),s.useEffect(()=>{const C=()=>v({});return document.addEventListener(ce,C),()=>document.removeEventListener(ce,C)},[]),f.jsx(T.div,{...u,ref:y,style:{pointerEvents:E?S?"auto":"none":void 0,...e.style},onFocusCapture:w(e.onFocusCapture,_.onFocusCapture),onBlurCapture:w(e.onBlurCapture,_.onBlurCapture),onPointerDownCapture:w(e.onPointerDownCapture,D.onPointerDownCapture)})});_e.displayName=Yt;var Zt="DismissableLayerBranch",Jt=s.forwardRef((e,t)=>{const n=s.useContext(Ie),r=s.useRef(null),o=I(t,r);return s.useEffect(()=>{const i=r.current;if(i)return n.branches.add(i),()=>{n.branches.delete(i)}},[n.branches]),f.jsx(T.div,{...e,ref:o})});Jt.displayName=Zt;function Qt(e,t=globalThis?.document){const n=N(e),r=s.useRef(!1),o=s.useRef(()=>{});return s.useEffect(()=>{const i=c=>{if(c.target&&!r.current){let u=function(){Ne(Xt,n,l,{discrete:!0})};const l={originalEvent:c};c.pointerType==="touch"?(t.removeEventListener("click",o.current),o.current=u,t.addEventListener("click",o.current,{once:!0})):u()}else t.removeEventListener("click",o.current);r.current=!1},a=window.setTimeout(()=>{t.addEventListener("pointerdown",i)},0);return()=>{window.clearTimeout(a),t.removeEventListener("pointerdown",i),t.removeEventListener("click",o.current)}},[t,n]),{onPointerDownCapture:()=>r.current=!0}}function en(e,t=globalThis?.document){const n=N(e),r=s.useRef(!1);return s.useEffect(()=>{const o=i=>{i.target&&!r.current&&Ne(qt,n,{originalEvent:i},{discrete:!1})};return t.addEventListener("focusin",o),()=>t.removeEventListener("focusin",o)},[t,n]),{onFocusCapture:()=>r.current=!0,onBlurCapture:()=>r.current=!1}}function Ce(){const e=new CustomEvent(ce);document.dispatchEvent(e)}function Ne(e,t,n,{discrete:r}){const o=n.originalEvent.target,i=new CustomEvent(e,{bubbles:!1,cancelable:!0,detail:n});t&&o.addEventListener(e,t,{once:!0}),r?Gt(o,i):o.dispatchEvent(i)}var oe="focusScope.autoFocusOnMount",re="focusScope.autoFocusOnUnmount",Re={bubbles:!1,cancelable:!0},tn="FocusScope",Oe=s.forwardRef((e,t)=>{const{loop:n=!1,trapped:r=!1,onMountAutoFocus:o,onUnmountAutoFocus:i,...a}=e,[c,u]=s.useState(null),l=N(o),d=N(i),p=s.useRef(null),m=I(t,h=>u(h)),v=s.useRef({paused:!1,pause(){this.paused=!0},resume(){this.paused=!1}}).current;s.useEffect(()=>{if(r){let h=function(E){if(v.paused||!c)return;const S=E.target;c.contains(S)?p.current=S:W(p.current,{select:!0})},g=function(E){if(v.paused||!c)return;const S=E.relatedTarget;S!==null&&(c.contains(S)||W(p.current,{select:!0}))},b=function(E){if(document.activeElement===document.body)for(const D of E)D.removedNodes.length>0&&W(c)};document.addEventListener("focusin",h),document.addEventListener("focusout",g);const R=new MutationObserver(b);return c&&R.observe(c,{childList:!0,subtree:!0}),()=>{document.removeEventListener("focusin",h),document.removeEventListener("focusout",g),R.disconnect()}}},[r,c,v.paused]),s.useEffect(()=>{if(c){xe.add(v);const h=document.activeElement;if(!c.contains(h)){const b=new CustomEvent(oe,Re);c.addEventListener(oe,l),c.dispatchEvent(b),b.defaultPrevented||(nn(an(Fe(c)),{select:!0}),document.activeElement===h&&W(c))}return()=>{c.removeEventListener(oe,l),setTimeout(()=>{const b=new CustomEvent(re,Re);c.addEventListener(re,d),c.dispatchEvent(b),b.defaultPrevented||W(h??document.body,{select:!0}),c.removeEventListener(re,d),xe.remove(v)},0)}}},[c,l,d,v]);const y=s.useCallback(h=>{if(!n&&!r||v.paused)return;const g=h.key==="Tab"&&!h.altKey&&!h.ctrlKey&&!h.metaKey,b=document.activeElement;if(g&&b){const R=h.currentTarget,[E,S]=on(R);E&&S?!h.shiftKey&&b===S?(h.preventDefault(),n&&W(E,{select:!0})):h.shiftKey&&b===E&&(h.preventDefault(),n&&W(S,{select:!0})):b===R&&h.preventDefault()}},[n,r,v.paused]);return f.jsx(T.div,{tabIndex:-1,...a,ref:m,onKeyDown:y})});Oe.displayName=tn;function nn(e,{select:t=!1}={}){const n=document.activeElement;for(const r of e)if(W(r,{select:t}),document.activeElement!==n)return}function on(e){const t=Fe(e),n=we(t,e),r=we(t.reverse(),e);return[n,r]}function Fe(e){const t=[],n=document.createTreeWalker(e,NodeFilter.SHOW_ELEMENT,{acceptNode:r=>{const o=r.tagName==="INPUT"&&r.type==="hidden";return r.disabled||r.hidden||o?NodeFilter.FILTER_SKIP:r.tabIndex>=0?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}});for(;n.nextNode();)t.push(n.currentNode);return t}function we(e,t){for(const n of e)if(!rn(n,{upTo:t}))return n}function rn(e,{upTo:t}){if(getComputedStyle(e).visibility==="hidden")return!0;for(;e;){if(t!==void 0&&e===t)return!1;if(getComputedStyle(e).display==="none")return!0;e=e.parentElement}return!1}function sn(e){return e instanceof HTMLInputElement&&"select"in e}function W(e,{select:t=!1}={}){if(e&&e.focus){const n=document.activeElement;e.focus({preventScroll:!0}),e!==n&&sn(e)&&t&&e.select()}}var xe=cn();function cn(){let e=[];return{add(t){const n=e[0];t!==n&&n?.pause(),e=Pe(e,t),e.unshift(t)},remove(t){e=Pe(e,t),e[0]?.resume()}}}function Pe(e,t){const n=[...e],r=n.indexOf(t);return r!==-1&&n.splice(r,1),n}function an(e){return e.filter(t=>t.tagName!=="A")}var ln="Portal",Le=s.forwardRef((e,t)=>{const{container:n,...r}=e,[o,i]=s.useState(!1);k(()=>i(!0),[]);const a=n||o&&globalThis?.document?.body;return a?Dt.createPortal(f.jsx(T.div,{...r,ref:t}),a):null});Le.displayName=ln;function un(e,t){return s.useReducer((n,r)=>t[n][r]??n,e)}var j=e=>{const{present:t,children:n}=e,r=dn(t),o=typeof n=="function"?n({present:r.isPresent}):s.Children.only(n),i=I(r.ref,fn(o));return typeof n=="function"||r.isPresent?s.cloneElement(o,{ref:i}):null};j.displayName="Presence";function dn(e){const[t,n]=s.useState(),r=s.useRef(null),o=s.useRef(e),i=s.useRef("none"),a=e?"mounted":"unmounted",[c,u]=un(a,{mounted:{UNMOUNT:"unmounted",ANIMATION_OUT:"unmountSuspended"},unmountSuspended:{MOUNT:"mounted",ANIMATION_END:"unmounted"},unmounted:{MOUNT:"mounted"}});return s.useEffect(()=>{const l=Y(r.current);i.current=c==="mounted"?l:"none"},[c]),k(()=>{const l=r.current,d=o.current;if(d!==e){const m=i.current,v=Y(l);e?u("MOUNT"):v==="none"||l?.display==="none"?u("UNMOUNT"):u(d&&m!==v?"ANIMATION_OUT":"UNMOUNT"),o.current=e}},[e,u]),k(()=>{if(t){let l;const d=t.ownerDocument.defaultView??window,p=v=>{const h=Y(r.current).includes(CSS.escape(v.animationName));if(v.target===t&&h&&(u("ANIMATION_END"),!o.current)){const g=t.style.animationFillMode;t.style.animationFillMode="forwards",l=d.setTimeout(()=>{t.style.animationFillMode==="forwards"&&(t.style.animationFillMode=g)})}},m=v=>{v.target===t&&(i.current=Y(r.current))};return t.addEventListener("animationstart",m),t.addEventListener("animationcancel",p),t.addEventListener("animationend",p),()=>{d.clearTimeout(l),t.removeEventListener("animationstart",m),t.removeEventListener("animationcancel",p),t.removeEventListener("animationend",p)}}else u("ANIMATION_END")},[t,u]),{isPresent:["mounted","unmountSuspended"].includes(c),ref:s.useCallback(l=>{r.current=l?getComputedStyle(l):null,n(l)},[])}}function Y(e){return e?.animationName||"none"}function fn(e){let t=Object.getOwnPropertyDescriptor(e.props,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=Object.getOwnPropertyDescriptor(e,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var se=0;function pn(){s.useEffect(()=>{const e=document.querySelectorAll("[data-radix-focus-guard]");return document.body.insertAdjacentElement("afterbegin",e[0]??Te()),document.body.insertAdjacentElement("beforeend",e[1]??Te()),se++,()=>{se===1&&document.querySelectorAll("[data-radix-focus-guard]").forEach(t=>t.remove()),se--}},[])}function Te(){const e=document.createElement("span");return e.setAttribute("data-radix-focus-guard",""),e.tabIndex=0,e.style.outline="none",e.style.opacity="0",e.style.position="fixed",e.style.pointerEvents="none",e}function mn(e){const t=vn(e),n=s.forwardRef((r,o)=>{const{children:i,...a}=r,c=s.Children.toArray(i),u=c.find(gn);if(u){const l=u.props.children,d=c.map(p=>p===u?s.Children.count(l)>1?s.Children.only(null):s.isValidElement(l)?l.props.children:null:p);return f.jsx(t,{...a,ref:o,children:s.isValidElement(l)?s.cloneElement(l,void 0,d):null})}return f.jsx(t,{...a,ref:o,children:i})});return n.displayName=`${e}.Slot`,n}function vn(e){const t=s.forwardRef((n,r)=>{const{children:o,...i}=n;if(s.isValidElement(o)){const a=En(o),c=bn(i,o.props);return o.type!==s.Fragment&&(c.ref=r?z(r,a):a),s.cloneElement(o,c)}return s.Children.count(o)>1?s.Children.only(null):null});return t.displayName=`${e}.SlotClone`,t}var hn=Symbol("radix.slottable");function gn(e){return s.isValidElement(e)&&typeof e.type=="function"&&"__radixId"in e.type&&e.type.__radixId===hn}function bn(e,t){const n={...t};for(const r in t){const o=e[r],i=t[r];/^on[A-Z]/.test(r)?o&&i?n[r]=(...c)=>{const u=i(...c);return o(...c),u}:o&&(n[r]=o):r==="style"?n[r]={...o,...i}:r==="className"&&(n[r]=[o,i].filter(Boolean).join(" "))}return{...e,...n}}function En(e){let t=Object.getOwnPropertyDescriptor(e.props,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=Object.getOwnPropertyDescriptor(e,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}var Q="Dialog",[Me]=G(Q),[Sn,F]=Me(Q),je=e=>{const{__scopeDialog:t,children:n,open:r,defaultOpen:o,onOpenChange:i,modal:a=!0}=e,c=s.useRef(null),u=s.useRef(null),[l,d]=ue({prop:r,defaultProp:o??!1,onChange:i,caller:Q});return f.jsx(Sn,{scope:t,triggerRef:c,contentRef:u,contentId:H(),titleId:H(),descriptionId:H(),open:l,onOpenChange:d,onOpenToggle:s.useCallback(()=>d(p=>!p),[d]),modal:a,children:n})};je.displayName=Q;var We="DialogTrigger",$e=s.forwardRef((e,t)=>{const{__scopeDialog:n,...r}=e,o=F(We,n),i=I(t,o.triggerRef);return f.jsx(T.button,{type:"button","aria-haspopup":"dialog","aria-expanded":o.open,"aria-controls":o.contentId,"data-state":pe(o.open),...r,ref:i,onClick:w(e.onClick,o.onOpenToggle)})});$e.displayName=We;var de="DialogPortal",[yn,Ue]=Me(de,{forceMount:void 0}),Ve=e=>{const{__scopeDialog:t,forceMount:n,children:r,container:o}=e,i=F(de,t);return f.jsx(yn,{scope:t,forceMount:n,children:s.Children.map(r,a=>f.jsx(j,{present:n||i.open,children:f.jsx(Le,{asChild:!0,container:o,children:a})}))})};Ve.displayName=de;var X="DialogOverlay",ke=s.forwardRef((e,t)=>{const n=Ue(X,e.__scopeDialog),{forceMount:r=n.forceMount,...o}=e,i=F(X,e.__scopeDialog);return i.modal?f.jsx(j,{present:r||i.open,children:f.jsx(Rn,{...o,ref:t})}):null});ke.displayName=X;var Cn=mn("DialogOverlay.RemoveScroll"),Rn=s.forwardRef((e,t)=>{const{__scopeDialog:n,...r}=e,o=F(X,n);return f.jsx(_t,{as:Cn,allowPinchZoom:!0,shards:[o.contentRef],children:f.jsx(T.div,{"data-state":pe(o.open),...r,ref:t,style:{pointerEvents:"auto",...r.style}})})}),V="DialogContent",Be=s.forwardRef((e,t)=>{const n=Ue(V,e.__scopeDialog),{forceMount:r=n.forceMount,...o}=e,i=F(V,e.__scopeDialog);return f.jsx(j,{present:r||i.open,children:i.modal?f.jsx(wn,{...o,ref:t}):f.jsx(xn,{...o,ref:t})})});Be.displayName=V;var wn=s.forwardRef((e,t)=>{const n=F(V,e.__scopeDialog),r=s.useRef(null),o=I(t,n.contentRef,r);return s.useEffect(()=>{const i=r.current;if(i)return It(i)},[]),f.jsx(He,{...e,ref:o,trapFocus:n.open,disableOutsidePointerEvents:!0,onCloseAutoFocus:w(e.onCloseAutoFocus,i=>{i.preventDefault(),n.triggerRef.current?.focus()}),onPointerDownOutside:w(e.onPointerDownOutside,i=>{const a=i.detail.originalEvent,c=a.button===0&&a.ctrlKey===!0;(a.button===2||c)&&i.preventDefault()}),onFocusOutside:w(e.onFocusOutside,i=>i.preventDefault())})}),xn=s.forwardRef((e,t)=>{const n=F(V,e.__scopeDialog),r=s.useRef(!1),o=s.useRef(!1);return f.jsx(He,{...e,ref:t,trapFocus:!1,disableOutsidePointerEvents:!1,onCloseAutoFocus:i=>{e.onCloseAutoFocus?.(i),i.defaultPrevented||(r.current||n.triggerRef.current?.focus(),i.preventDefault()),r.current=!1,o.current=!1},onInteractOutside:i=>{e.onInteractOutside?.(i),i.defaultPrevented||(r.current=!0,i.detail.originalEvent.type==="pointerdown"&&(o.current=!0));const a=i.target;n.triggerRef.current?.contains(a)&&i.preventDefault(),i.detail.originalEvent.type==="focusin"&&o.current&&i.preventDefault()}})}),He=s.forwardRef((e,t)=>{const{__scopeDialog:n,trapFocus:r,onOpenAutoFocus:o,onCloseAutoFocus:i,...a}=e,c=F(V,n),u=s.useRef(null),l=I(t,u);return pn(),f.jsxs(f.Fragment,{children:[f.jsx(Oe,{asChild:!0,loop:!0,trapped:r,onMountAutoFocus:o,onUnmountAutoFocus:i,children:f.jsx(_e,{role:"dialog",id:c.contentId,"aria-describedby":c.descriptionId,"aria-labelledby":c.titleId,"data-state":pe(c.open),...a,ref:l,onDismiss:()=>c.onOpenChange(!1)})}),f.jsxs(f.Fragment,{children:[f.jsx(Pn,{titleId:c.titleId}),f.jsx(An,{contentRef:u,descriptionId:c.descriptionId})]})]})}),fe="DialogTitle",ze=s.forwardRef((e,t)=>{const{__scopeDialog:n,...r}=e,o=F(fe,n);return f.jsx(T.h2,{id:o.titleId,...r,ref:t})});ze.displayName=fe;var Ge="DialogDescription",Ke=s.forwardRef((e,t)=>{const{__scopeDialog:n,...r}=e,o=F(Ge,n);return f.jsx(T.p,{id:o.descriptionId,...r,ref:t})});Ke.displayName=Ge;var Ye="DialogClose",Xe=s.forwardRef((e,t)=>{const{__scopeDialog:n,...r}=e,o=F(Ye,n);return f.jsx(T.button,{type:"button",...r,ref:t,onClick:w(e.onClick,()=>o.onOpenChange(!1))})});Xe.displayName=Ye;function pe(e){return e?"open":"closed"}var qe="DialogTitleWarning",[Co,Ze]=Nt(qe,{contentName:V,titleName:fe,docsSlug:"dialog"}),Pn=({titleId:e})=>{const t=Ze(qe),n=`\`${t.contentName}\` requires a \`${t.titleName}\` for the component to be accessible for screen reader users.
+import { d as s, j as f, a as le, r as At, b as Dt, R as U } from "./react-core-hSJfnumv.js";
+import { j as It, R as _t } from "./vendor-CUluG-o1.js";
+function w(e, t, { checkForDefaultPrevented: n = !0 } = {}) {
+  return function (o) {
+    if ((e?.(o), n === !1 || !o.defaultPrevented)) return t?.(o);
+  };
+}
+function Se(e, t) {
+  if (typeof e == "function") return e(t);
+  e != null && (e.current = t);
+}
+function z(...e) {
+  return (t) => {
+    let n = !1;
+    const r = e.map((o) => {
+      const i = Se(o, t);
+      return (!n && typeof i == "function" && (n = !0), i);
+    });
+    if (n)
+      return () => {
+        for (let o = 0; o < r.length; o++) {
+          const i = r[o];
+          typeof i == "function" ? i() : Se(e[o], null);
+        }
+      };
+  };
+}
+function I(...e) {
+  return s.useCallback(z(...e), e);
+}
+function Nt(e, t) {
+  const n = s.createContext(t),
+    r = (i) => {
+      const { children: a, ...c } = i,
+        u = s.useMemo(() => c, Object.values(c));
+      return f.jsx(n.Provider, { value: u, children: a });
+    };
+  r.displayName = e + "Provider";
+  function o(i) {
+    const a = s.useContext(n);
+    if (a) return a;
+    if (t !== void 0) return t;
+    throw new Error(`\`${i}\` must be used within \`${e}\``);
+  }
+  return [r, o];
+}
+function G(e, t = []) {
+  let n = [];
+  function r(i, a) {
+    const c = s.createContext(a),
+      u = n.length;
+    n = [...n, a];
+    const l = (p) => {
+      const { scope: m, children: v, ...y } = p,
+        h = m?.[e]?.[u] || c,
+        g = s.useMemo(() => y, Object.values(y));
+      return f.jsx(h.Provider, { value: g, children: v });
+    };
+    l.displayName = i + "Provider";
+    function d(p, m) {
+      const v = m?.[e]?.[u] || c,
+        y = s.useContext(v);
+      if (y) return y;
+      if (a !== void 0) return a;
+      throw new Error(`\`${p}\` must be used within \`${i}\``);
+    }
+    return [l, d];
+  }
+  const o = () => {
+    const i = n.map((a) => s.createContext(a));
+    return function (c) {
+      const u = c?.[e] || i;
+      return s.useMemo(() => ({ [`__scope${e}`]: { ...c, [e]: u } }), [c, u]);
+    };
+  };
+  return ((o.scopeName = e), [r, Ot(o, ...t)]);
+}
+function Ot(...e) {
+  const t = e[0];
+  if (e.length === 1) return t;
+  const n = () => {
+    const r = e.map((o) => ({ useScope: o(), scopeName: o.scopeName }));
+    return function (i) {
+      const a = r.reduce((c, { useScope: u, scopeName: l }) => {
+        const p = u(i)[`__scope${l}`];
+        return { ...c, ...p };
+      }, {});
+      return s.useMemo(() => ({ [`__scope${t.scopeName}`]: a }), [a]);
+    };
+  };
+  return ((n.scopeName = t.scopeName), n);
+}
+var k = globalThis?.document ? s.useLayoutEffect : () => {},
+  Ft = le[" useId ".trim().toString()] || (() => {}),
+  Lt = 0;
+function H(e) {
+  const [t, n] = s.useState(Ft());
+  return (
+    k(() => {
+      n((r) => r ?? String(Lt++));
+    }, [e]),
+    e || (t ? `radix-${t}` : "")
+  );
+}
+var Mt = le[" useInsertionEffect ".trim().toString()] || k;
+function ue({ prop: e, defaultProp: t, onChange: n = () => {}, caller: r }) {
+  const [o, i, a] = jt({ defaultProp: t, onChange: n }),
+    c = e !== void 0,
+    u = c ? e : o;
+  {
+    const d = s.useRef(e !== void 0);
+    s.useEffect(() => {
+      const p = d.current;
+      (p !== c &&
+        console.warn(
+          `${r} is changing from ${p ? "controlled" : "uncontrolled"} to ${c ? "controlled" : "uncontrolled"}. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component.`,
+        ),
+        (d.current = c));
+    }, [c, r]);
+  }
+  const l = s.useCallback(
+    (d) => {
+      if (c) {
+        const p = Wt(d) ? d(e) : d;
+        p !== e && a.current?.(p);
+      } else i(d);
+    },
+    [c, e, i, a],
+  );
+  return [u, l];
+}
+function jt({ defaultProp: e, onChange: t }) {
+  const [n, r] = s.useState(e),
+    o = s.useRef(n),
+    i = s.useRef(t);
+  return (
+    Mt(() => {
+      i.current = t;
+    }, [t]),
+    s.useEffect(() => {
+      o.current !== n && (i.current?.(n), (o.current = n));
+    }, [n, o]),
+    [n, r, i]
+  );
+}
+function Wt(e) {
+  return typeof e == "function";
+}
+function $t(e) {
+  const t = Ut(e),
+    n = s.forwardRef((r, o) => {
+      const { children: i, ...a } = r,
+        c = s.Children.toArray(i),
+        u = c.find(kt);
+      if (u) {
+        const l = u.props.children,
+          d = c.map((p) =>
+            p === u
+              ? s.Children.count(l) > 1
+                ? s.Children.only(null)
+                : s.isValidElement(l)
+                  ? l.props.children
+                  : null
+              : p,
+          );
+        return f.jsx(t, {
+          ...a,
+          ref: o,
+          children: s.isValidElement(l) ? s.cloneElement(l, void 0, d) : null,
+        });
+      }
+      return f.jsx(t, { ...a, ref: o, children: i });
+    });
+  return ((n.displayName = `${e}.Slot`), n);
+}
+function Ut(e) {
+  const t = s.forwardRef((n, r) => {
+    const { children: o, ...i } = n;
+    if (s.isValidElement(o)) {
+      const a = Ht(o),
+        c = Bt(i, o.props);
+      return (o.type !== s.Fragment && (c.ref = r ? z(r, a) : a), s.cloneElement(o, c));
+    }
+    return s.Children.count(o) > 1 ? s.Children.only(null) : null;
+  });
+  return ((t.displayName = `${e}.SlotClone`), t);
+}
+var Vt = Symbol("radix.slottable");
+function kt(e) {
+  return (
+    s.isValidElement(e) &&
+    typeof e.type == "function" &&
+    "__radixId" in e.type &&
+    e.type.__radixId === Vt
+  );
+}
+function Bt(e, t) {
+  const n = { ...t };
+  for (const r in t) {
+    const o = e[r],
+      i = t[r];
+    /^on[A-Z]/.test(r)
+      ? o && i
+        ? (n[r] = (...c) => {
+            const u = i(...c);
+            return (o(...c), u);
+          })
+        : o && (n[r] = o)
+      : r === "style"
+        ? (n[r] = { ...o, ...i })
+        : r === "className" && (n[r] = [o, i].filter(Boolean).join(" "));
+  }
+  return { ...e, ...n };
+}
+function Ht(e) {
+  let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get,
+    n = t && "isReactWarning" in t && t.isReactWarning;
+  return n
+    ? e.ref
+    : ((t = Object.getOwnPropertyDescriptor(e, "ref")?.get),
+      (n = t && "isReactWarning" in t && t.isReactWarning),
+      n ? e.props.ref : e.props.ref || e.ref);
+}
+var zt = [
+    "a",
+    "button",
+    "div",
+    "form",
+    "h2",
+    "h3",
+    "img",
+    "input",
+    "label",
+    "li",
+    "nav",
+    "ol",
+    "p",
+    "select",
+    "span",
+    "svg",
+    "ul",
+  ],
+  T = zt.reduce((e, t) => {
+    const n = $t(`Primitive.${t}`),
+      r = s.forwardRef((o, i) => {
+        const { asChild: a, ...c } = o,
+          u = a ? n : t;
+        return (
+          typeof window < "u" && (window[Symbol.for("radix-ui")] = !0),
+          f.jsx(u, { ...c, ref: i })
+        );
+      });
+    return ((r.displayName = `Primitive.${t}`), { ...e, [t]: r });
+  }, {});
+function Gt(e, t) {
+  e && At.flushSync(() => e.dispatchEvent(t));
+}
+function N(e) {
+  const t = s.useRef(e);
+  return (
+    s.useEffect(() => {
+      t.current = e;
+    }),
+    s.useMemo(
+      () =>
+        (...n) =>
+          t.current?.(...n),
+      [],
+    )
+  );
+}
+function Kt(e, t = globalThis?.document) {
+  const n = N(e);
+  s.useEffect(() => {
+    const r = (o) => {
+      o.key === "Escape" && n(o);
+    };
+    return (
+      t.addEventListener("keydown", r, { capture: !0 }),
+      () => t.removeEventListener("keydown", r, { capture: !0 })
+    );
+  }, [n, t]);
+}
+var Yt = "DismissableLayer",
+  ce = "dismissableLayer.update",
+  Xt = "dismissableLayer.pointerDownOutside",
+  qt = "dismissableLayer.focusOutside",
+  ye,
+  Ie = s.createContext({
+    layers: new Set(),
+    layersWithOutsidePointerEventsDisabled: new Set(),
+    branches: new Set(),
+  }),
+  _e = s.forwardRef((e, t) => {
+    const {
+        disableOutsidePointerEvents: n = !1,
+        onEscapeKeyDown: r,
+        onPointerDownOutside: o,
+        onFocusOutside: i,
+        onInteractOutside: a,
+        onDismiss: c,
+        ...u
+      } = e,
+      l = s.useContext(Ie),
+      [d, p] = s.useState(null),
+      m = d?.ownerDocument ?? globalThis?.document,
+      [, v] = s.useState({}),
+      y = I(t, (C) => p(C)),
+      h = Array.from(l.layers),
+      [g] = [...l.layersWithOutsidePointerEventsDisabled].slice(-1),
+      b = h.indexOf(g),
+      R = d ? h.indexOf(d) : -1,
+      E = l.layersWithOutsidePointerEventsDisabled.size > 0,
+      S = R >= b,
+      D = Qt((C) => {
+        const x = C.target,
+          P = [...l.branches].some((A) => A.contains(x));
+        !S || P || (o?.(C), a?.(C), C.defaultPrevented || c?.());
+      }, m),
+      _ = en((C) => {
+        const x = C.target;
+        [...l.branches].some((A) => A.contains(x)) || (i?.(C), a?.(C), C.defaultPrevented || c?.());
+      }, m);
+    return (
+      Kt((C) => {
+        R === l.layers.size - 1 && (r?.(C), !C.defaultPrevented && c && (C.preventDefault(), c()));
+      }, m),
+      s.useEffect(() => {
+        if (d)
+          return (
+            n &&
+              (l.layersWithOutsidePointerEventsDisabled.size === 0 &&
+                ((ye = m.body.style.pointerEvents), (m.body.style.pointerEvents = "none")),
+              l.layersWithOutsidePointerEventsDisabled.add(d)),
+            l.layers.add(d),
+            Ce(),
+            () => {
+              n &&
+                l.layersWithOutsidePointerEventsDisabled.size === 1 &&
+                (m.body.style.pointerEvents = ye);
+            }
+          );
+      }, [d, m, n, l]),
+      s.useEffect(
+        () => () => {
+          d && (l.layers.delete(d), l.layersWithOutsidePointerEventsDisabled.delete(d), Ce());
+        },
+        [d, l],
+      ),
+      s.useEffect(() => {
+        const C = () => v({});
+        return (document.addEventListener(ce, C), () => document.removeEventListener(ce, C));
+      }, []),
+      f.jsx(T.div, {
+        ...u,
+        ref: y,
+        style: { pointerEvents: E ? (S ? "auto" : "none") : void 0, ...e.style },
+        onFocusCapture: w(e.onFocusCapture, _.onFocusCapture),
+        onBlurCapture: w(e.onBlurCapture, _.onBlurCapture),
+        onPointerDownCapture: w(e.onPointerDownCapture, D.onPointerDownCapture),
+      })
+    );
+  });
+_e.displayName = Yt;
+var Zt = "DismissableLayerBranch",
+  Jt = s.forwardRef((e, t) => {
+    const n = s.useContext(Ie),
+      r = s.useRef(null),
+      o = I(t, r);
+    return (
+      s.useEffect(() => {
+        const i = r.current;
+        if (i)
+          return (
+            n.branches.add(i),
+            () => {
+              n.branches.delete(i);
+            }
+          );
+      }, [n.branches]),
+      f.jsx(T.div, { ...e, ref: o })
+    );
+  });
+Jt.displayName = Zt;
+function Qt(e, t = globalThis?.document) {
+  const n = N(e),
+    r = s.useRef(!1),
+    o = s.useRef(() => {});
+  return (
+    s.useEffect(() => {
+      const i = (c) => {
+          if (c.target && !r.current) {
+            let u = function () {
+              Ne(Xt, n, l, { discrete: !0 });
+            };
+            const l = { originalEvent: c };
+            c.pointerType === "touch"
+              ? (t.removeEventListener("click", o.current),
+                (o.current = u),
+                t.addEventListener("click", o.current, { once: !0 }))
+              : u();
+          } else t.removeEventListener("click", o.current);
+          r.current = !1;
+        },
+        a = window.setTimeout(() => {
+          t.addEventListener("pointerdown", i);
+        }, 0);
+      return () => {
+        (window.clearTimeout(a),
+          t.removeEventListener("pointerdown", i),
+          t.removeEventListener("click", o.current));
+      };
+    }, [t, n]),
+    { onPointerDownCapture: () => (r.current = !0) }
+  );
+}
+function en(e, t = globalThis?.document) {
+  const n = N(e),
+    r = s.useRef(!1);
+  return (
+    s.useEffect(() => {
+      const o = (i) => {
+        i.target && !r.current && Ne(qt, n, { originalEvent: i }, { discrete: !1 });
+      };
+      return (t.addEventListener("focusin", o), () => t.removeEventListener("focusin", o));
+    }, [t, n]),
+    { onFocusCapture: () => (r.current = !0), onBlurCapture: () => (r.current = !1) }
+  );
+}
+function Ce() {
+  const e = new CustomEvent(ce);
+  document.dispatchEvent(e);
+}
+function Ne(e, t, n, { discrete: r }) {
+  const o = n.originalEvent.target,
+    i = new CustomEvent(e, { bubbles: !1, cancelable: !0, detail: n });
+  (t && o.addEventListener(e, t, { once: !0 }), r ? Gt(o, i) : o.dispatchEvent(i));
+}
+var oe = "focusScope.autoFocusOnMount",
+  re = "focusScope.autoFocusOnUnmount",
+  Re = { bubbles: !1, cancelable: !0 },
+  tn = "FocusScope",
+  Oe = s.forwardRef((e, t) => {
+    const { loop: n = !1, trapped: r = !1, onMountAutoFocus: o, onUnmountAutoFocus: i, ...a } = e,
+      [c, u] = s.useState(null),
+      l = N(o),
+      d = N(i),
+      p = s.useRef(null),
+      m = I(t, (h) => u(h)),
+      v = s.useRef({
+        paused: !1,
+        pause() {
+          this.paused = !0;
+        },
+        resume() {
+          this.paused = !1;
+        },
+      }).current;
+    (s.useEffect(() => {
+      if (r) {
+        let h = function (E) {
+            if (v.paused || !c) return;
+            const S = E.target;
+            c.contains(S) ? (p.current = S) : W(p.current, { select: !0 });
+          },
+          g = function (E) {
+            if (v.paused || !c) return;
+            const S = E.relatedTarget;
+            S !== null && (c.contains(S) || W(p.current, { select: !0 }));
+          },
+          b = function (E) {
+            if (document.activeElement === document.body)
+              for (const D of E) D.removedNodes.length > 0 && W(c);
+          };
+        (document.addEventListener("focusin", h), document.addEventListener("focusout", g));
+        const R = new MutationObserver(b);
+        return (
+          c && R.observe(c, { childList: !0, subtree: !0 }),
+          () => {
+            (document.removeEventListener("focusin", h),
+              document.removeEventListener("focusout", g),
+              R.disconnect());
+          }
+        );
+      }
+    }, [r, c, v.paused]),
+      s.useEffect(() => {
+        if (c) {
+          xe.add(v);
+          const h = document.activeElement;
+          if (!c.contains(h)) {
+            const b = new CustomEvent(oe, Re);
+            (c.addEventListener(oe, l),
+              c.dispatchEvent(b),
+              b.defaultPrevented ||
+                (nn(an(Fe(c)), { select: !0 }), document.activeElement === h && W(c)));
+          }
+          return () => {
+            (c.removeEventListener(oe, l),
+              setTimeout(() => {
+                const b = new CustomEvent(re, Re);
+                (c.addEventListener(re, d),
+                  c.dispatchEvent(b),
+                  b.defaultPrevented || W(h ?? document.body, { select: !0 }),
+                  c.removeEventListener(re, d),
+                  xe.remove(v));
+              }, 0));
+          };
+        }
+      }, [c, l, d, v]));
+    const y = s.useCallback(
+      (h) => {
+        if ((!n && !r) || v.paused) return;
+        const g = h.key === "Tab" && !h.altKey && !h.ctrlKey && !h.metaKey,
+          b = document.activeElement;
+        if (g && b) {
+          const R = h.currentTarget,
+            [E, S] = on(R);
+          E && S
+            ? !h.shiftKey && b === S
+              ? (h.preventDefault(), n && W(E, { select: !0 }))
+              : h.shiftKey && b === E && (h.preventDefault(), n && W(S, { select: !0 }))
+            : b === R && h.preventDefault();
+        }
+      },
+      [n, r, v.paused],
+    );
+    return f.jsx(T.div, { tabIndex: -1, ...a, ref: m, onKeyDown: y });
+  });
+Oe.displayName = tn;
+function nn(e, { select: t = !1 } = {}) {
+  const n = document.activeElement;
+  for (const r of e) if ((W(r, { select: t }), document.activeElement !== n)) return;
+}
+function on(e) {
+  const t = Fe(e),
+    n = we(t, e),
+    r = we(t.reverse(), e);
+  return [n, r];
+}
+function Fe(e) {
+  const t = [],
+    n = document.createTreeWalker(e, NodeFilter.SHOW_ELEMENT, {
+      acceptNode: (r) => {
+        const o = r.tagName === "INPUT" && r.type === "hidden";
+        return r.disabled || r.hidden || o
+          ? NodeFilter.FILTER_SKIP
+          : r.tabIndex >= 0
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_SKIP;
+      },
+    });
+  for (; n.nextNode(); ) t.push(n.currentNode);
+  return t;
+}
+function we(e, t) {
+  for (const n of e) if (!rn(n, { upTo: t })) return n;
+}
+function rn(e, { upTo: t }) {
+  if (getComputedStyle(e).visibility === "hidden") return !0;
+  for (; e; ) {
+    if (t !== void 0 && e === t) return !1;
+    if (getComputedStyle(e).display === "none") return !0;
+    e = e.parentElement;
+  }
+  return !1;
+}
+function sn(e) {
+  return e instanceof HTMLInputElement && "select" in e;
+}
+function W(e, { select: t = !1 } = {}) {
+  if (e && e.focus) {
+    const n = document.activeElement;
+    (e.focus({ preventScroll: !0 }), e !== n && sn(e) && t && e.select());
+  }
+}
+var xe = cn();
+function cn() {
+  let e = [];
+  return {
+    add(t) {
+      const n = e[0];
+      (t !== n && n?.pause(), (e = Pe(e, t)), e.unshift(t));
+    },
+    remove(t) {
+      ((e = Pe(e, t)), e[0]?.resume());
+    },
+  };
+}
+function Pe(e, t) {
+  const n = [...e],
+    r = n.indexOf(t);
+  return (r !== -1 && n.splice(r, 1), n);
+}
+function an(e) {
+  return e.filter((t) => t.tagName !== "A");
+}
+var ln = "Portal",
+  Le = s.forwardRef((e, t) => {
+    const { container: n, ...r } = e,
+      [o, i] = s.useState(!1);
+    k(() => i(!0), []);
+    const a = n || (o && globalThis?.document?.body);
+    return a ? Dt.createPortal(f.jsx(T.div, { ...r, ref: t }), a) : null;
+  });
+Le.displayName = ln;
+function un(e, t) {
+  return s.useReducer((n, r) => t[n][r] ?? n, e);
+}
+var j = (e) => {
+  const { present: t, children: n } = e,
+    r = dn(t),
+    o = typeof n == "function" ? n({ present: r.isPresent }) : s.Children.only(n),
+    i = I(r.ref, fn(o));
+  return typeof n == "function" || r.isPresent ? s.cloneElement(o, { ref: i }) : null;
+};
+j.displayName = "Presence";
+function dn(e) {
+  const [t, n] = s.useState(),
+    r = s.useRef(null),
+    o = s.useRef(e),
+    i = s.useRef("none"),
+    a = e ? "mounted" : "unmounted",
+    [c, u] = un(a, {
+      mounted: { UNMOUNT: "unmounted", ANIMATION_OUT: "unmountSuspended" },
+      unmountSuspended: { MOUNT: "mounted", ANIMATION_END: "unmounted" },
+      unmounted: { MOUNT: "mounted" },
+    });
+  return (
+    s.useEffect(() => {
+      const l = Y(r.current);
+      i.current = c === "mounted" ? l : "none";
+    }, [c]),
+    k(() => {
+      const l = r.current,
+        d = o.current;
+      if (d !== e) {
+        const m = i.current,
+          v = Y(l);
+        (e
+          ? u("MOUNT")
+          : v === "none" || l?.display === "none"
+            ? u("UNMOUNT")
+            : u(d && m !== v ? "ANIMATION_OUT" : "UNMOUNT"),
+          (o.current = e));
+      }
+    }, [e, u]),
+    k(() => {
+      if (t) {
+        let l;
+        const d = t.ownerDocument.defaultView ?? window,
+          p = (v) => {
+            const h = Y(r.current).includes(CSS.escape(v.animationName));
+            if (v.target === t && h && (u("ANIMATION_END"), !o.current)) {
+              const g = t.style.animationFillMode;
+              ((t.style.animationFillMode = "forwards"),
+                (l = d.setTimeout(() => {
+                  t.style.animationFillMode === "forwards" && (t.style.animationFillMode = g);
+                })));
+            }
+          },
+          m = (v) => {
+            v.target === t && (i.current = Y(r.current));
+          };
+        return (
+          t.addEventListener("animationstart", m),
+          t.addEventListener("animationcancel", p),
+          t.addEventListener("animationend", p),
+          () => {
+            (d.clearTimeout(l),
+              t.removeEventListener("animationstart", m),
+              t.removeEventListener("animationcancel", p),
+              t.removeEventListener("animationend", p));
+          }
+        );
+      } else u("ANIMATION_END");
+    }, [t, u]),
+    {
+      isPresent: ["mounted", "unmountSuspended"].includes(c),
+      ref: s.useCallback((l) => {
+        ((r.current = l ? getComputedStyle(l) : null), n(l));
+      }, []),
+    }
+  );
+}
+function Y(e) {
+  return e?.animationName || "none";
+}
+function fn(e) {
+  let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get,
+    n = t && "isReactWarning" in t && t.isReactWarning;
+  return n
+    ? e.ref
+    : ((t = Object.getOwnPropertyDescriptor(e, "ref")?.get),
+      (n = t && "isReactWarning" in t && t.isReactWarning),
+      n ? e.props.ref : e.props.ref || e.ref);
+}
+var se = 0;
+function pn() {
+  s.useEffect(() => {
+    const e = document.querySelectorAll("[data-radix-focus-guard]");
+    return (
+      document.body.insertAdjacentElement("afterbegin", e[0] ?? Te()),
+      document.body.insertAdjacentElement("beforeend", e[1] ?? Te()),
+      se++,
+      () => {
+        (se === 1 &&
+          document.querySelectorAll("[data-radix-focus-guard]").forEach((t) => t.remove()),
+          se--);
+      }
+    );
+  }, []);
+}
+function Te() {
+  const e = document.createElement("span");
+  return (
+    e.setAttribute("data-radix-focus-guard", ""),
+    (e.tabIndex = 0),
+    (e.style.outline = "none"),
+    (e.style.opacity = "0"),
+    (e.style.position = "fixed"),
+    (e.style.pointerEvents = "none"),
+    e
+  );
+}
+function mn(e) {
+  const t = vn(e),
+    n = s.forwardRef((r, o) => {
+      const { children: i, ...a } = r,
+        c = s.Children.toArray(i),
+        u = c.find(gn);
+      if (u) {
+        const l = u.props.children,
+          d = c.map((p) =>
+            p === u
+              ? s.Children.count(l) > 1
+                ? s.Children.only(null)
+                : s.isValidElement(l)
+                  ? l.props.children
+                  : null
+              : p,
+          );
+        return f.jsx(t, {
+          ...a,
+          ref: o,
+          children: s.isValidElement(l) ? s.cloneElement(l, void 0, d) : null,
+        });
+      }
+      return f.jsx(t, { ...a, ref: o, children: i });
+    });
+  return ((n.displayName = `${e}.Slot`), n);
+}
+function vn(e) {
+  const t = s.forwardRef((n, r) => {
+    const { children: o, ...i } = n;
+    if (s.isValidElement(o)) {
+      const a = En(o),
+        c = bn(i, o.props);
+      return (o.type !== s.Fragment && (c.ref = r ? z(r, a) : a), s.cloneElement(o, c));
+    }
+    return s.Children.count(o) > 1 ? s.Children.only(null) : null;
+  });
+  return ((t.displayName = `${e}.SlotClone`), t);
+}
+var hn = Symbol("radix.slottable");
+function gn(e) {
+  return (
+    s.isValidElement(e) &&
+    typeof e.type == "function" &&
+    "__radixId" in e.type &&
+    e.type.__radixId === hn
+  );
+}
+function bn(e, t) {
+  const n = { ...t };
+  for (const r in t) {
+    const o = e[r],
+      i = t[r];
+    /^on[A-Z]/.test(r)
+      ? o && i
+        ? (n[r] = (...c) => {
+            const u = i(...c);
+            return (o(...c), u);
+          })
+        : o && (n[r] = o)
+      : r === "style"
+        ? (n[r] = { ...o, ...i })
+        : r === "className" && (n[r] = [o, i].filter(Boolean).join(" "));
+  }
+  return { ...e, ...n };
+}
+function En(e) {
+  let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get,
+    n = t && "isReactWarning" in t && t.isReactWarning;
+  return n
+    ? e.ref
+    : ((t = Object.getOwnPropertyDescriptor(e, "ref")?.get),
+      (n = t && "isReactWarning" in t && t.isReactWarning),
+      n ? e.props.ref : e.props.ref || e.ref);
+}
+var Q = "Dialog",
+  [Me] = G(Q),
+  [Sn, F] = Me(Q),
+  je = (e) => {
+    const {
+        __scopeDialog: t,
+        children: n,
+        open: r,
+        defaultOpen: o,
+        onOpenChange: i,
+        modal: a = !0,
+      } = e,
+      c = s.useRef(null),
+      u = s.useRef(null),
+      [l, d] = ue({ prop: r, defaultProp: o ?? !1, onChange: i, caller: Q });
+    return f.jsx(Sn, {
+      scope: t,
+      triggerRef: c,
+      contentRef: u,
+      contentId: H(),
+      titleId: H(),
+      descriptionId: H(),
+      open: l,
+      onOpenChange: d,
+      onOpenToggle: s.useCallback(() => d((p) => !p), [d]),
+      modal: a,
+      children: n,
+    });
+  };
+je.displayName = Q;
+var We = "DialogTrigger",
+  $e = s.forwardRef((e, t) => {
+    const { __scopeDialog: n, ...r } = e,
+      o = F(We, n),
+      i = I(t, o.triggerRef);
+    return f.jsx(T.button, {
+      type: "button",
+      "aria-haspopup": "dialog",
+      "aria-expanded": o.open,
+      "aria-controls": o.contentId,
+      "data-state": pe(o.open),
+      ...r,
+      ref: i,
+      onClick: w(e.onClick, o.onOpenToggle),
+    });
+  });
+$e.displayName = We;
+var de = "DialogPortal",
+  [yn, Ue] = Me(de, { forceMount: void 0 }),
+  Ve = (e) => {
+    const { __scopeDialog: t, forceMount: n, children: r, container: o } = e,
+      i = F(de, t);
+    return f.jsx(yn, {
+      scope: t,
+      forceMount: n,
+      children: s.Children.map(r, (a) =>
+        f.jsx(j, {
+          present: n || i.open,
+          children: f.jsx(Le, { asChild: !0, container: o, children: a }),
+        }),
+      ),
+    });
+  };
+Ve.displayName = de;
+var X = "DialogOverlay",
+  ke = s.forwardRef((e, t) => {
+    const n = Ue(X, e.__scopeDialog),
+      { forceMount: r = n.forceMount, ...o } = e,
+      i = F(X, e.__scopeDialog);
+    return i.modal
+      ? f.jsx(j, { present: r || i.open, children: f.jsx(Rn, { ...o, ref: t }) })
+      : null;
+  });
+ke.displayName = X;
+var Cn = mn("DialogOverlay.RemoveScroll"),
+  Rn = s.forwardRef((e, t) => {
+    const { __scopeDialog: n, ...r } = e,
+      o = F(X, n);
+    return f.jsx(_t, {
+      as: Cn,
+      allowPinchZoom: !0,
+      shards: [o.contentRef],
+      children: f.jsx(T.div, {
+        "data-state": pe(o.open),
+        ...r,
+        ref: t,
+        style: { pointerEvents: "auto", ...r.style },
+      }),
+    });
+  }),
+  V = "DialogContent",
+  Be = s.forwardRef((e, t) => {
+    const n = Ue(V, e.__scopeDialog),
+      { forceMount: r = n.forceMount, ...o } = e,
+      i = F(V, e.__scopeDialog);
+    return f.jsx(j, {
+      present: r || i.open,
+      children: i.modal ? f.jsx(wn, { ...o, ref: t }) : f.jsx(xn, { ...o, ref: t }),
+    });
+  });
+Be.displayName = V;
+var wn = s.forwardRef((e, t) => {
+    const n = F(V, e.__scopeDialog),
+      r = s.useRef(null),
+      o = I(t, n.contentRef, r);
+    return (
+      s.useEffect(() => {
+        const i = r.current;
+        if (i) return It(i);
+      }, []),
+      f.jsx(He, {
+        ...e,
+        ref: o,
+        trapFocus: n.open,
+        disableOutsidePointerEvents: !0,
+        onCloseAutoFocus: w(e.onCloseAutoFocus, (i) => {
+          (i.preventDefault(), n.triggerRef.current?.focus());
+        }),
+        onPointerDownOutside: w(e.onPointerDownOutside, (i) => {
+          const a = i.detail.originalEvent,
+            c = a.button === 0 && a.ctrlKey === !0;
+          (a.button === 2 || c) && i.preventDefault();
+        }),
+        onFocusOutside: w(e.onFocusOutside, (i) => i.preventDefault()),
+      })
+    );
+  }),
+  xn = s.forwardRef((e, t) => {
+    const n = F(V, e.__scopeDialog),
+      r = s.useRef(!1),
+      o = s.useRef(!1);
+    return f.jsx(He, {
+      ...e,
+      ref: t,
+      trapFocus: !1,
+      disableOutsidePointerEvents: !1,
+      onCloseAutoFocus: (i) => {
+        (e.onCloseAutoFocus?.(i),
+          i.defaultPrevented || (r.current || n.triggerRef.current?.focus(), i.preventDefault()),
+          (r.current = !1),
+          (o.current = !1));
+      },
+      onInteractOutside: (i) => {
+        (e.onInteractOutside?.(i),
+          i.defaultPrevented ||
+            ((r.current = !0), i.detail.originalEvent.type === "pointerdown" && (o.current = !0)));
+        const a = i.target;
+        (n.triggerRef.current?.contains(a) && i.preventDefault(),
+          i.detail.originalEvent.type === "focusin" && o.current && i.preventDefault());
+      },
+    });
+  }),
+  He = s.forwardRef((e, t) => {
+    const { __scopeDialog: n, trapFocus: r, onOpenAutoFocus: o, onCloseAutoFocus: i, ...a } = e,
+      c = F(V, n),
+      u = s.useRef(null),
+      l = I(t, u);
+    return (
+      pn(),
+      f.jsxs(f.Fragment, {
+        children: [
+          f.jsx(Oe, {
+            asChild: !0,
+            loop: !0,
+            trapped: r,
+            onMountAutoFocus: o,
+            onUnmountAutoFocus: i,
+            children: f.jsx(_e, {
+              role: "dialog",
+              id: c.contentId,
+              "aria-describedby": c.descriptionId,
+              "aria-labelledby": c.titleId,
+              "data-state": pe(c.open),
+              ...a,
+              ref: l,
+              onDismiss: () => c.onOpenChange(!1),
+            }),
+          }),
+          f.jsxs(f.Fragment, {
+            children: [
+              f.jsx(Pn, { titleId: c.titleId }),
+              f.jsx(An, { contentRef: u, descriptionId: c.descriptionId }),
+            ],
+          }),
+        ],
+      })
+    );
+  }),
+  fe = "DialogTitle",
+  ze = s.forwardRef((e, t) => {
+    const { __scopeDialog: n, ...r } = e,
+      o = F(fe, n);
+    return f.jsx(T.h2, { id: o.titleId, ...r, ref: t });
+  });
+ze.displayName = fe;
+var Ge = "DialogDescription",
+  Ke = s.forwardRef((e, t) => {
+    const { __scopeDialog: n, ...r } = e,
+      o = F(Ge, n);
+    return f.jsx(T.p, { id: o.descriptionId, ...r, ref: t });
+  });
+Ke.displayName = Ge;
+var Ye = "DialogClose",
+  Xe = s.forwardRef((e, t) => {
+    const { __scopeDialog: n, ...r } = e,
+      o = F(Ye, n);
+    return f.jsx(T.button, {
+      type: "button",
+      ...r,
+      ref: t,
+      onClick: w(e.onClick, () => o.onOpenChange(!1)),
+    });
+  });
+Xe.displayName = Ye;
+function pe(e) {
+  return e ? "open" : "closed";
+}
+var qe = "DialogTitleWarning",
+  [Co, Ze] = Nt(qe, { contentName: V, titleName: fe, docsSlug: "dialog" }),
+  Pn = ({ titleId: e }) => {
+    const t = Ze(qe),
+      n = `\`${t.contentName}\` requires a \`${t.titleName}\` for the component to be accessible for screen reader users.
 
 If you want to hide the \`${t.titleName}\`, you can wrap it with our VisuallyHidden component.
 
-For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;return s.useEffect(()=>{e&&(document.getElementById(e)||console.error(n))},[n,e]),null},Tn="DialogDescriptionWarning",An=({contentRef:e,descriptionId:t})=>{const r=`Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${Ze(Tn).contentName}}.`;return s.useEffect(()=>{const o=e.current?.getAttribute("aria-describedby");t&&o&&(document.getElementById(t)||console.warn(r))},[r,e,t]),null},Ro=je,wo=$e,xo=Ve,Po=ke,To=Be,Ao=ze,Do=Ke,Io=Xe;function Ae(e){const t=Dn(e),n=s.forwardRef((r,o)=>{const{children:i,...a}=r,c=s.Children.toArray(i),u=c.find(_n);if(u){const l=u.props.children,d=c.map(p=>p===u?s.Children.count(l)>1?s.Children.only(null):s.isValidElement(l)?l.props.children:null:p);return f.jsx(t,{...a,ref:o,children:s.isValidElement(l)?s.cloneElement(l,void 0,d):null})}return f.jsx(t,{...a,ref:o,children:i})});return n.displayName=`${e}.Slot`,n}function Dn(e){const t=s.forwardRef((n,r)=>{const{children:o,...i}=n;if(s.isValidElement(o)){const a=On(o),c=Nn(i,o.props);return o.type!==s.Fragment&&(c.ref=r?z(r,a):a),s.cloneElement(o,c)}return s.Children.count(o)>1?s.Children.only(null):null});return t.displayName=`${e}.SlotClone`,t}var In=Symbol("radix.slottable");function _n(e){return s.isValidElement(e)&&typeof e.type=="function"&&"__radixId"in e.type&&e.type.__radixId===In}function Nn(e,t){const n={...t};for(const r in t){const o=e[r],i=t[r];/^on[A-Z]/.test(r)?o&&i?n[r]=(...c)=>{const u=i(...c);return o(...c),u}:o&&(n[r]=o):r==="style"?n[r]={...o,...i}:r==="className"&&(n[r]=[o,i].filter(Boolean).join(" "))}return{...e,...n}}function On(e){let t=Object.getOwnPropertyDescriptor(e.props,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=Object.getOwnPropertyDescriptor(e,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}function Fn(e){const t=e+"CollectionProvider",[n,r]=G(t),[o,i]=n(t,{collectionRef:{current:null},itemMap:new Map}),a=h=>{const{scope:g,children:b}=h,R=U.useRef(null),E=U.useRef(new Map).current;return f.jsx(o,{scope:g,itemMap:E,collectionRef:R,children:b})};a.displayName=t;const c=e+"CollectionSlot",u=Ae(c),l=U.forwardRef((h,g)=>{const{scope:b,children:R}=h,E=i(c,b),S=I(g,E.collectionRef);return f.jsx(u,{ref:S,children:R})});l.displayName=c;const d=e+"CollectionItemSlot",p="data-radix-collection-item",m=Ae(d),v=U.forwardRef((h,g)=>{const{scope:b,children:R,...E}=h,S=U.useRef(null),D=I(g,S),_=i(d,b);return U.useEffect(()=>(_.itemMap.set(S,{ref:S,...E}),()=>{_.itemMap.delete(S)})),f.jsx(m,{[p]:"",ref:D,children:R})});v.displayName=d;function y(h){const g=i(e+"CollectionConsumer",h);return U.useCallback(()=>{const R=g.collectionRef.current;if(!R)return[];const E=Array.from(R.querySelectorAll(`[${p}]`));return Array.from(g.itemMap.values()).sort((_,C)=>E.indexOf(_.ref.current)-E.indexOf(C.ref.current))},[g.collectionRef,g.itemMap])}return[{Provider:a,Slot:l,ItemSlot:v},y,r]}var Ln=s.createContext(void 0);function me(e){const t=s.useContext(Ln);return e||t||"ltr"}var ie="rovingFocusGroup.onEntryFocus",Mn={bubbles:!1,cancelable:!0},K="RovingFocusGroup",[ae,Je,jn]=Fn(K),[Wn,Qe]=G(K,[jn]),[$n,Un]=Wn(K),et=s.forwardRef((e,t)=>f.jsx(ae.Provider,{scope:e.__scopeRovingFocusGroup,children:f.jsx(ae.Slot,{scope:e.__scopeRovingFocusGroup,children:f.jsx(Vn,{...e,ref:t})})}));et.displayName=K;var Vn=s.forwardRef((e,t)=>{const{__scopeRovingFocusGroup:n,orientation:r,loop:o=!1,dir:i,currentTabStopId:a,defaultCurrentTabStopId:c,onCurrentTabStopIdChange:u,onEntryFocus:l,preventScrollOnEntryFocus:d=!1,...p}=e,m=s.useRef(null),v=I(t,m),y=me(i),[h,g]=ue({prop:a,defaultProp:c??null,onChange:u,caller:K}),[b,R]=s.useState(!1),E=N(l),S=Je(n),D=s.useRef(!1),[_,C]=s.useState(0);return s.useEffect(()=>{const x=m.current;if(x)return x.addEventListener(ie,E),()=>x.removeEventListener(ie,E)},[E]),f.jsx($n,{scope:n,orientation:r,dir:y,loop:o,currentTabStopId:h,onItemFocus:s.useCallback(x=>g(x),[g]),onItemShiftTab:s.useCallback(()=>R(!0),[]),onFocusableItemAdd:s.useCallback(()=>C(x=>x+1),[]),onFocusableItemRemove:s.useCallback(()=>C(x=>x-1),[]),children:f.jsx(T.div,{tabIndex:b||_===0?-1:0,"data-orientation":r,...p,ref:v,style:{outline:"none",...e.style},onMouseDown:w(e.onMouseDown,()=>{D.current=!0}),onFocus:w(e.onFocus,x=>{const P=!D.current;if(x.target===x.currentTarget&&P&&!b){const A=new CustomEvent(ie,Mn);if(x.currentTarget.dispatchEvent(A),!A.defaultPrevented){const L=S().filter($=>$.focusable),Ee=L.find($=>$.active),Pt=L.find($=>$.id===h),Tt=[Ee,Pt,...L].filter(Boolean).map($=>$.ref.current);ot(Tt,d)}}D.current=!1}),onBlur:w(e.onBlur,()=>R(!1))})})}),tt="RovingFocusGroupItem",nt=s.forwardRef((e,t)=>{const{__scopeRovingFocusGroup:n,focusable:r=!0,active:o=!1,tabStopId:i,children:a,...c}=e,u=H(),l=i||u,d=Un(tt,n),p=d.currentTabStopId===l,m=Je(n),{onFocusableItemAdd:v,onFocusableItemRemove:y,currentTabStopId:h}=d;return s.useEffect(()=>{if(r)return v(),()=>y()},[r,v,y]),f.jsx(ae.ItemSlot,{scope:n,id:l,focusable:r,active:o,children:f.jsx(T.span,{tabIndex:p?0:-1,"data-orientation":d.orientation,...c,ref:t,onMouseDown:w(e.onMouseDown,g=>{r?d.onItemFocus(l):g.preventDefault()}),onFocus:w(e.onFocus,()=>d.onItemFocus(l)),onKeyDown:w(e.onKeyDown,g=>{if(g.key==="Tab"&&g.shiftKey){d.onItemShiftTab();return}if(g.target!==g.currentTarget)return;const b=Hn(g,d.orientation,d.dir);if(b!==void 0){if(g.metaKey||g.ctrlKey||g.altKey||g.shiftKey)return;g.preventDefault();let E=m().filter(S=>S.focusable).map(S=>S.ref.current);if(b==="last")E.reverse();else if(b==="prev"||b==="next"){b==="prev"&&E.reverse();const S=E.indexOf(g.currentTarget);E=d.loop?zn(E,S+1):E.slice(S+1)}setTimeout(()=>ot(E))}}),children:typeof a=="function"?a({isCurrentTabStop:p,hasTabStop:h!=null}):a})})});nt.displayName=tt;var kn={ArrowLeft:"prev",ArrowUp:"prev",ArrowRight:"next",ArrowDown:"next",PageUp:"first",Home:"first",PageDown:"last",End:"last"};function Bn(e,t){return t!=="rtl"?e:e==="ArrowLeft"?"ArrowRight":e==="ArrowRight"?"ArrowLeft":e}function Hn(e,t,n){const r=Bn(e.key,n);if(!(t==="vertical"&&["ArrowLeft","ArrowRight"].includes(r))&&!(t==="horizontal"&&["ArrowUp","ArrowDown"].includes(r)))return kn[r]}function ot(e,t=!1){const n=document.activeElement;for(const r of e)if(r===n||(r.focus({preventScroll:t}),document.activeElement!==n))return}function zn(e,t){return e.map((n,r)=>e[(t+r)%e.length])}var Gn=et,Kn=nt,ee="Tabs",[Yn]=G(ee,[Qe]),rt=Qe(),[Xn,ve]=Yn(ee),st=s.forwardRef((e,t)=>{const{__scopeTabs:n,value:r,onValueChange:o,defaultValue:i,orientation:a="horizontal",dir:c,activationMode:u="automatic",...l}=e,d=me(c),[p,m]=ue({prop:r,onChange:o,defaultProp:i??"",caller:ee});return f.jsx(Xn,{scope:n,baseId:H(),value:p,onValueChange:m,orientation:a,dir:d,activationMode:u,children:f.jsx(T.div,{dir:d,"data-orientation":a,...l,ref:t})})});st.displayName=ee;var it="TabsList",ct=s.forwardRef((e,t)=>{const{__scopeTabs:n,loop:r=!0,...o}=e,i=ve(it,n),a=rt(n);return f.jsx(Gn,{asChild:!0,...a,orientation:i.orientation,dir:i.dir,loop:r,children:f.jsx(T.div,{role:"tablist","aria-orientation":i.orientation,...o,ref:t})})});ct.displayName=it;var at="TabsTrigger",lt=s.forwardRef((e,t)=>{const{__scopeTabs:n,value:r,disabled:o=!1,...i}=e,a=ve(at,n),c=rt(n),u=ft(a.baseId,r),l=pt(a.baseId,r),d=r===a.value;return f.jsx(Kn,{asChild:!0,...c,focusable:!o,active:d,children:f.jsx(T.button,{type:"button",role:"tab","aria-selected":d,"aria-controls":l,"data-state":d?"active":"inactive","data-disabled":o?"":void 0,disabled:o,id:u,...i,ref:t,onMouseDown:w(e.onMouseDown,p=>{!o&&p.button===0&&p.ctrlKey===!1?a.onValueChange(r):p.preventDefault()}),onKeyDown:w(e.onKeyDown,p=>{[" ","Enter"].includes(p.key)&&a.onValueChange(r)}),onFocus:w(e.onFocus,()=>{const p=a.activationMode!=="manual";!d&&!o&&p&&a.onValueChange(r)})})})});lt.displayName=at;var ut="TabsContent",dt=s.forwardRef((e,t)=>{const{__scopeTabs:n,value:r,forceMount:o,children:i,...a}=e,c=ve(ut,n),u=ft(c.baseId,r),l=pt(c.baseId,r),d=r===c.value,p=s.useRef(d);return s.useEffect(()=>{const m=requestAnimationFrame(()=>p.current=!1);return()=>cancelAnimationFrame(m)},[]),f.jsx(j,{present:o||d,children:({present:m})=>f.jsx(T.div,{"data-state":d?"active":"inactive","data-orientation":c.orientation,role:"tabpanel","aria-labelledby":u,hidden:!m,id:l,tabIndex:0,...a,ref:t,style:{...e.style,animationDuration:p.current?"0s":void 0},children:m&&i})})});dt.displayName=ut;function ft(e,t){return`${e}-trigger-${t}`}function pt(e,t){return`${e}-content-${t}`}var _o=st,No=ct,Oo=lt,Fo=dt,qn=Symbol.for("react.lazy"),q=le[" use ".trim().toString()];function Zn(e){return typeof e=="object"&&e!==null&&"then"in e}function mt(e){return e!=null&&typeof e=="object"&&"$$typeof"in e&&e.$$typeof===qn&&"_payload"in e&&Zn(e._payload)}function Jn(e){const t=Qn(e),n=s.forwardRef((r,o)=>{let{children:i,...a}=r;mt(i)&&typeof q=="function"&&(i=q(i._payload));const c=s.Children.toArray(i),u=c.find(to);if(u){const l=u.props.children,d=c.map(p=>p===u?s.Children.count(l)>1?s.Children.only(null):s.isValidElement(l)?l.props.children:null:p);return f.jsx(t,{...a,ref:o,children:s.isValidElement(l)?s.cloneElement(l,void 0,d):null})}return f.jsx(t,{...a,ref:o,children:i})});return n.displayName=`${e}.Slot`,n}var Lo=Jn("Slot");function Qn(e){const t=s.forwardRef((n,r)=>{let{children:o,...i}=n;if(mt(o)&&typeof q=="function"&&(o=q(o._payload)),s.isValidElement(o)){const a=oo(o),c=no(i,o.props);return o.type!==s.Fragment&&(c.ref=r?z(r,a):a),s.cloneElement(o,c)}return s.Children.count(o)>1?s.Children.only(null):null});return t.displayName=`${e}.SlotClone`,t}var eo=Symbol("radix.slottable");function to(e){return s.isValidElement(e)&&typeof e.type=="function"&&"__radixId"in e.type&&e.type.__radixId===eo}function no(e,t){const n={...t};for(const r in t){const o=e[r],i=t[r];/^on[A-Z]/.test(r)?o&&i?n[r]=(...c)=>{const u=i(...c);return o(...c),u}:o&&(n[r]=o):r==="style"?n[r]={...o,...i}:r==="className"&&(n[r]=[o,i].filter(Boolean).join(" "))}return{...e,...n}}function oo(e){let t=Object.getOwnPropertyDescriptor(e.props,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning;return n?e.ref:(t=Object.getOwnPropertyDescriptor(e,"ref")?.get,n=t&&"isReactWarning"in t&&t.isReactWarning,n?e.props.ref:e.props.ref||e.ref)}function ro(e,[t,n]){return Math.min(n,Math.max(t,e))}function so(e,t){return s.useReducer((n,r)=>t[n][r]??n,e)}var he="ScrollArea",[vt]=G(he),[io,O]=vt(he),ht=s.forwardRef((e,t)=>{const{__scopeScrollArea:n,type:r="hover",dir:o,scrollHideDelay:i=600,...a}=e,[c,u]=s.useState(null),[l,d]=s.useState(null),[p,m]=s.useState(null),[v,y]=s.useState(null),[h,g]=s.useState(null),[b,R]=s.useState(0),[E,S]=s.useState(0),[D,_]=s.useState(!1),[C,x]=s.useState(!1),P=I(t,L=>u(L)),A=me(o);return f.jsx(io,{scope:n,type:r,dir:A,scrollHideDelay:i,scrollArea:c,viewport:l,onViewportChange:d,content:p,onContentChange:m,scrollbarX:v,onScrollbarXChange:y,scrollbarXEnabled:D,onScrollbarXEnabledChange:_,scrollbarY:h,onScrollbarYChange:g,scrollbarYEnabled:C,onScrollbarYEnabledChange:x,onCornerWidthChange:R,onCornerHeightChange:S,children:f.jsx(T.div,{dir:A,...a,ref:P,style:{position:"relative","--radix-scroll-area-corner-width":b+"px","--radix-scroll-area-corner-height":E+"px",...e.style}})})});ht.displayName=he;var gt="ScrollAreaViewport",bt=s.forwardRef((e,t)=>{const{__scopeScrollArea:n,children:r,nonce:o,...i}=e,a=O(gt,n),c=s.useRef(null),u=I(t,c,a.onViewportChange);return f.jsxs(f.Fragment,{children:[f.jsx("style",{dangerouslySetInnerHTML:{__html:"[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}"},nonce:o}),f.jsx(T.div,{"data-radix-scroll-area-viewport":"",...i,ref:u,style:{overflowX:a.scrollbarXEnabled?"scroll":"hidden",overflowY:a.scrollbarYEnabled?"scroll":"hidden",...e.style},children:f.jsx("div",{ref:a.onContentChange,style:{minWidth:"100%",display:"table"},children:r})})]})});bt.displayName=gt;var M="ScrollAreaScrollbar",co=s.forwardRef((e,t)=>{const{forceMount:n,...r}=e,o=O(M,e.__scopeScrollArea),{onScrollbarXEnabledChange:i,onScrollbarYEnabledChange:a}=o,c=e.orientation==="horizontal";return s.useEffect(()=>(c?i(!0):a(!0),()=>{c?i(!1):a(!1)}),[c,i,a]),o.type==="hover"?f.jsx(ao,{...r,ref:t,forceMount:n}):o.type==="scroll"?f.jsx(lo,{...r,ref:t,forceMount:n}):o.type==="auto"?f.jsx(Et,{...r,ref:t,forceMount:n}):o.type==="always"?f.jsx(ge,{...r,ref:t}):null});co.displayName=M;var ao=s.forwardRef((e,t)=>{const{forceMount:n,...r}=e,o=O(M,e.__scopeScrollArea),[i,a]=s.useState(!1);return s.useEffect(()=>{const c=o.scrollArea;let u=0;if(c){const l=()=>{window.clearTimeout(u),a(!0)},d=()=>{u=window.setTimeout(()=>a(!1),o.scrollHideDelay)};return c.addEventListener("pointerenter",l),c.addEventListener("pointerleave",d),()=>{window.clearTimeout(u),c.removeEventListener("pointerenter",l),c.removeEventListener("pointerleave",d)}}},[o.scrollArea,o.scrollHideDelay]),f.jsx(j,{present:n||i,children:f.jsx(Et,{"data-state":i?"visible":"hidden",...r,ref:t})})}),lo=s.forwardRef((e,t)=>{const{forceMount:n,...r}=e,o=O(M,e.__scopeScrollArea),i=e.orientation==="horizontal",a=ne(()=>u("SCROLL_END"),100),[c,u]=so("hidden",{hidden:{SCROLL:"scrolling"},scrolling:{SCROLL_END:"idle",POINTER_ENTER:"interacting"},interacting:{SCROLL:"interacting",POINTER_LEAVE:"idle"},idle:{HIDE:"hidden",SCROLL:"scrolling",POINTER_ENTER:"interacting"}});return s.useEffect(()=>{if(c==="idle"){const l=window.setTimeout(()=>u("HIDE"),o.scrollHideDelay);return()=>window.clearTimeout(l)}},[c,o.scrollHideDelay,u]),s.useEffect(()=>{const l=o.viewport,d=i?"scrollLeft":"scrollTop";if(l){let p=l[d];const m=()=>{const v=l[d];p!==v&&(u("SCROLL"),a()),p=v};return l.addEventListener("scroll",m),()=>l.removeEventListener("scroll",m)}},[o.viewport,i,u,a]),f.jsx(j,{present:n||c!=="hidden",children:f.jsx(ge,{"data-state":c==="hidden"?"hidden":"visible",...r,ref:t,onPointerEnter:w(e.onPointerEnter,()=>u("POINTER_ENTER")),onPointerLeave:w(e.onPointerLeave,()=>u("POINTER_LEAVE"))})})}),Et=s.forwardRef((e,t)=>{const n=O(M,e.__scopeScrollArea),{forceMount:r,...o}=e,[i,a]=s.useState(!1),c=e.orientation==="horizontal",u=ne(()=>{if(n.viewport){const l=n.viewport.offsetWidth<n.viewport.scrollWidth,d=n.viewport.offsetHeight<n.viewport.scrollHeight;a(c?l:d)}},10);return B(n.viewport,u),B(n.content,u),f.jsx(j,{present:r||i,children:f.jsx(ge,{"data-state":i?"visible":"hidden",...o,ref:t})})}),ge=s.forwardRef((e,t)=>{const{orientation:n="vertical",...r}=e,o=O(M,e.__scopeScrollArea),i=s.useRef(null),a=s.useRef(0),[c,u]=s.useState({content:0,viewport:0,scrollbar:{size:0,paddingStart:0,paddingEnd:0}}),l=Rt(c.viewport,c.content),d={...r,sizes:c,onSizesChange:u,hasThumb:l>0&&l<1,onThumbChange:m=>i.current=m,onThumbPointerUp:()=>a.current=0,onThumbPointerDown:m=>a.current=m};function p(m,v){return go(m,a.current,c,v)}return n==="horizontal"?f.jsx(uo,{...d,ref:t,onThumbPositionChange:()=>{if(o.viewport&&i.current){const m=o.viewport.scrollLeft,v=De(m,c,o.dir);i.current.style.transform=`translate3d(${v}px, 0, 0)`}},onWheelScroll:m=>{o.viewport&&(o.viewport.scrollLeft=m)},onDragScroll:m=>{o.viewport&&(o.viewport.scrollLeft=p(m,o.dir))}}):n==="vertical"?f.jsx(fo,{...d,ref:t,onThumbPositionChange:()=>{if(o.viewport&&i.current){const m=o.viewport.scrollTop,v=De(m,c);i.current.style.transform=`translate3d(0, ${v}px, 0)`}},onWheelScroll:m=>{o.viewport&&(o.viewport.scrollTop=m)},onDragScroll:m=>{o.viewport&&(o.viewport.scrollTop=p(m))}}):null}),uo=s.forwardRef((e,t)=>{const{sizes:n,onSizesChange:r,...o}=e,i=O(M,e.__scopeScrollArea),[a,c]=s.useState(),u=s.useRef(null),l=I(t,u,i.onScrollbarXChange);return s.useEffect(()=>{u.current&&c(getComputedStyle(u.current))},[u]),f.jsx(yt,{"data-orientation":"horizontal",...o,ref:l,sizes:n,style:{bottom:0,left:i.dir==="rtl"?"var(--radix-scroll-area-corner-width)":0,right:i.dir==="ltr"?"var(--radix-scroll-area-corner-width)":0,"--radix-scroll-area-thumb-width":te(n)+"px",...e.style},onThumbPointerDown:d=>e.onThumbPointerDown(d.x),onDragScroll:d=>e.onDragScroll(d.x),onWheelScroll:(d,p)=>{if(i.viewport){const m=i.viewport.scrollLeft+d.deltaX;e.onWheelScroll(m),xt(m,p)&&d.preventDefault()}},onResize:()=>{u.current&&i.viewport&&a&&r({content:i.viewport.scrollWidth,viewport:i.viewport.offsetWidth,scrollbar:{size:u.current.clientWidth,paddingStart:J(a.paddingLeft),paddingEnd:J(a.paddingRight)}})}})}),fo=s.forwardRef((e,t)=>{const{sizes:n,onSizesChange:r,...o}=e,i=O(M,e.__scopeScrollArea),[a,c]=s.useState(),u=s.useRef(null),l=I(t,u,i.onScrollbarYChange);return s.useEffect(()=>{u.current&&c(getComputedStyle(u.current))},[u]),f.jsx(yt,{"data-orientation":"vertical",...o,ref:l,sizes:n,style:{top:0,right:i.dir==="ltr"?0:void 0,left:i.dir==="rtl"?0:void 0,bottom:"var(--radix-scroll-area-corner-height)","--radix-scroll-area-thumb-height":te(n)+"px",...e.style},onThumbPointerDown:d=>e.onThumbPointerDown(d.y),onDragScroll:d=>e.onDragScroll(d.y),onWheelScroll:(d,p)=>{if(i.viewport){const m=i.viewport.scrollTop+d.deltaY;e.onWheelScroll(m),xt(m,p)&&d.preventDefault()}},onResize:()=>{u.current&&i.viewport&&a&&r({content:i.viewport.scrollHeight,viewport:i.viewport.offsetHeight,scrollbar:{size:u.current.clientHeight,paddingStart:J(a.paddingTop),paddingEnd:J(a.paddingBottom)}})}})}),[po,St]=vt(M),yt=s.forwardRef((e,t)=>{const{__scopeScrollArea:n,sizes:r,hasThumb:o,onThumbChange:i,onThumbPointerUp:a,onThumbPointerDown:c,onThumbPositionChange:u,onDragScroll:l,onWheelScroll:d,onResize:p,...m}=e,v=O(M,n),[y,h]=s.useState(null),g=I(t,P=>h(P)),b=s.useRef(null),R=s.useRef(""),E=v.viewport,S=r.content-r.viewport,D=N(d),_=N(u),C=ne(p,10);function x(P){if(b.current){const A=P.clientX-b.current.left,L=P.clientY-b.current.top;l({x:A,y:L})}}return s.useEffect(()=>{const P=A=>{const L=A.target;y?.contains(L)&&D(A,S)};return document.addEventListener("wheel",P,{passive:!1}),()=>document.removeEventListener("wheel",P,{passive:!1})},[E,y,S,D]),s.useEffect(_,[r,_]),B(y,C),B(v.content,C),f.jsx(po,{scope:n,scrollbar:y,hasThumb:o,onThumbChange:N(i),onThumbPointerUp:N(a),onThumbPositionChange:_,onThumbPointerDown:N(c),children:f.jsx(T.div,{...m,ref:g,style:{position:"absolute",...m.style},onPointerDown:w(e.onPointerDown,P=>{P.button===0&&(P.target.setPointerCapture(P.pointerId),b.current=y.getBoundingClientRect(),R.current=document.body.style.webkitUserSelect,document.body.style.webkitUserSelect="none",v.viewport&&(v.viewport.style.scrollBehavior="auto"),x(P))}),onPointerMove:w(e.onPointerMove,x),onPointerUp:w(e.onPointerUp,P=>{const A=P.target;A.hasPointerCapture(P.pointerId)&&A.releasePointerCapture(P.pointerId),document.body.style.webkitUserSelect=R.current,v.viewport&&(v.viewport.style.scrollBehavior=""),b.current=null})})})}),Z="ScrollAreaThumb",mo=s.forwardRef((e,t)=>{const{forceMount:n,...r}=e,o=St(Z,e.__scopeScrollArea);return f.jsx(j,{present:n||o.hasThumb,children:f.jsx(vo,{ref:t,...r})})}),vo=s.forwardRef((e,t)=>{const{__scopeScrollArea:n,style:r,...o}=e,i=O(Z,n),a=St(Z,n),{onThumbPositionChange:c}=a,u=I(t,p=>a.onThumbChange(p)),l=s.useRef(void 0),d=ne(()=>{l.current&&(l.current(),l.current=void 0)},100);return s.useEffect(()=>{const p=i.viewport;if(p){const m=()=>{if(d(),!l.current){const v=bo(p,c);l.current=v,c()}};return c(),p.addEventListener("scroll",m),()=>p.removeEventListener("scroll",m)}},[i.viewport,d,c]),f.jsx(T.div,{"data-state":a.hasThumb?"visible":"hidden",...o,ref:u,style:{width:"var(--radix-scroll-area-thumb-width)",height:"var(--radix-scroll-area-thumb-height)",...r},onPointerDownCapture:w(e.onPointerDownCapture,p=>{const v=p.target.getBoundingClientRect(),y=p.clientX-v.left,h=p.clientY-v.top;a.onThumbPointerDown({x:y,y:h})}),onPointerUp:w(e.onPointerUp,a.onThumbPointerUp)})});mo.displayName=Z;var be="ScrollAreaCorner",Ct=s.forwardRef((e,t)=>{const n=O(be,e.__scopeScrollArea),r=!!(n.scrollbarX&&n.scrollbarY);return n.type!=="scroll"&&r?f.jsx(ho,{...e,ref:t}):null});Ct.displayName=be;var ho=s.forwardRef((e,t)=>{const{__scopeScrollArea:n,...r}=e,o=O(be,n),[i,a]=s.useState(0),[c,u]=s.useState(0),l=!!(i&&c);return B(o.scrollbarX,()=>{const d=o.scrollbarX?.offsetHeight||0;o.onCornerHeightChange(d),u(d)}),B(o.scrollbarY,()=>{const d=o.scrollbarY?.offsetWidth||0;o.onCornerWidthChange(d),a(d)}),l?f.jsx(T.div,{...r,ref:t,style:{width:i,height:c,position:"absolute",right:o.dir==="ltr"?0:void 0,left:o.dir==="rtl"?0:void 0,bottom:0,...e.style}}):null});function J(e){return e?parseInt(e,10):0}function Rt(e,t){const n=e/t;return isNaN(n)?0:n}function te(e){const t=Rt(e.viewport,e.content),n=e.scrollbar.paddingStart+e.scrollbar.paddingEnd,r=(e.scrollbar.size-n)*t;return Math.max(r,18)}function go(e,t,n,r="ltr"){const o=te(n),i=o/2,a=t||i,c=o-a,u=n.scrollbar.paddingStart+a,l=n.scrollbar.size-n.scrollbar.paddingEnd-c,d=n.content-n.viewport,p=r==="ltr"?[0,d]:[d*-1,0];return wt([u,l],p)(e)}function De(e,t,n="ltr"){const r=te(t),o=t.scrollbar.paddingStart+t.scrollbar.paddingEnd,i=t.scrollbar.size-o,a=t.content-t.viewport,c=i-r,u=n==="ltr"?[0,a]:[a*-1,0],l=ro(e,u);return wt([0,a],[0,c])(l)}function wt(e,t){return n=>{if(e[0]===e[1]||t[0]===t[1])return t[0];const r=(t[1]-t[0])/(e[1]-e[0]);return t[0]+r*(n-e[0])}}function xt(e,t){return e>0&&e<t}var bo=(e,t=()=>{})=>{let n={left:e.scrollLeft,top:e.scrollTop},r=0;return(function o(){const i={left:e.scrollLeft,top:e.scrollTop},a=n.left!==i.left,c=n.top!==i.top;(a||c)&&t(),n=i,r=window.requestAnimationFrame(o)})(),()=>window.cancelAnimationFrame(r)};function ne(e,t){const n=N(e),r=s.useRef(0);return s.useEffect(()=>()=>window.clearTimeout(r.current),[]),s.useCallback(()=>{window.clearTimeout(r.current),r.current=window.setTimeout(n,t)},[n,t])}function B(e,t){const n=N(t);k(()=>{let r=0;if(e){const o=new ResizeObserver(()=>{cancelAnimationFrame(r),r=window.requestAnimationFrame(n)});return o.observe(e),()=>{window.cancelAnimationFrame(r),o.unobserve(e)}}},[e,n])}var Mo=ht,jo=bt,Wo=Ct;export{Io as C,Do as D,No as L,Po as O,xo as P,Ro as R,co as S,Ao as T,jo as V,To as a,Fo as b,Wo as c,Mo as d,_o as e,mo as f,Lo as g,Oo as h,wo as i};
+For more information, see https://radix-ui.com/primitives/docs/components/${t.docsSlug}`;
+    return (
+      s.useEffect(() => {
+        e && (document.getElementById(e) || console.error(n));
+      }, [n, e]),
+      null
+    );
+  },
+  Tn = "DialogDescriptionWarning",
+  An = ({ contentRef: e, descriptionId: t }) => {
+    const r = `Warning: Missing \`Description\` or \`aria-describedby={undefined}\` for {${Ze(Tn).contentName}}.`;
+    return (
+      s.useEffect(() => {
+        const o = e.current?.getAttribute("aria-describedby");
+        t && o && (document.getElementById(t) || console.warn(r));
+      }, [r, e, t]),
+      null
+    );
+  },
+  Ro = je,
+  wo = $e,
+  xo = Ve,
+  Po = ke,
+  To = Be,
+  Ao = ze,
+  Do = Ke,
+  Io = Xe;
+function Ae(e) {
+  const t = Dn(e),
+    n = s.forwardRef((r, o) => {
+      const { children: i, ...a } = r,
+        c = s.Children.toArray(i),
+        u = c.find(_n);
+      if (u) {
+        const l = u.props.children,
+          d = c.map((p) =>
+            p === u
+              ? s.Children.count(l) > 1
+                ? s.Children.only(null)
+                : s.isValidElement(l)
+                  ? l.props.children
+                  : null
+              : p,
+          );
+        return f.jsx(t, {
+          ...a,
+          ref: o,
+          children: s.isValidElement(l) ? s.cloneElement(l, void 0, d) : null,
+        });
+      }
+      return f.jsx(t, { ...a, ref: o, children: i });
+    });
+  return ((n.displayName = `${e}.Slot`), n);
+}
+function Dn(e) {
+  const t = s.forwardRef((n, r) => {
+    const { children: o, ...i } = n;
+    if (s.isValidElement(o)) {
+      const a = On(o),
+        c = Nn(i, o.props);
+      return (o.type !== s.Fragment && (c.ref = r ? z(r, a) : a), s.cloneElement(o, c));
+    }
+    return s.Children.count(o) > 1 ? s.Children.only(null) : null;
+  });
+  return ((t.displayName = `${e}.SlotClone`), t);
+}
+var In = Symbol("radix.slottable");
+function _n(e) {
+  return (
+    s.isValidElement(e) &&
+    typeof e.type == "function" &&
+    "__radixId" in e.type &&
+    e.type.__radixId === In
+  );
+}
+function Nn(e, t) {
+  const n = { ...t };
+  for (const r in t) {
+    const o = e[r],
+      i = t[r];
+    /^on[A-Z]/.test(r)
+      ? o && i
+        ? (n[r] = (...c) => {
+            const u = i(...c);
+            return (o(...c), u);
+          })
+        : o && (n[r] = o)
+      : r === "style"
+        ? (n[r] = { ...o, ...i })
+        : r === "className" && (n[r] = [o, i].filter(Boolean).join(" "));
+  }
+  return { ...e, ...n };
+}
+function On(e) {
+  let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get,
+    n = t && "isReactWarning" in t && t.isReactWarning;
+  return n
+    ? e.ref
+    : ((t = Object.getOwnPropertyDescriptor(e, "ref")?.get),
+      (n = t && "isReactWarning" in t && t.isReactWarning),
+      n ? e.props.ref : e.props.ref || e.ref);
+}
+function Fn(e) {
+  const t = e + "CollectionProvider",
+    [n, r] = G(t),
+    [o, i] = n(t, { collectionRef: { current: null }, itemMap: new Map() }),
+    a = (h) => {
+      const { scope: g, children: b } = h,
+        R = U.useRef(null),
+        E = U.useRef(new Map()).current;
+      return f.jsx(o, { scope: g, itemMap: E, collectionRef: R, children: b });
+    };
+  a.displayName = t;
+  const c = e + "CollectionSlot",
+    u = Ae(c),
+    l = U.forwardRef((h, g) => {
+      const { scope: b, children: R } = h,
+        E = i(c, b),
+        S = I(g, E.collectionRef);
+      return f.jsx(u, { ref: S, children: R });
+    });
+  l.displayName = c;
+  const d = e + "CollectionItemSlot",
+    p = "data-radix-collection-item",
+    m = Ae(d),
+    v = U.forwardRef((h, g) => {
+      const { scope: b, children: R, ...E } = h,
+        S = U.useRef(null),
+        D = I(g, S),
+        _ = i(d, b);
+      return (
+        U.useEffect(
+          () => (
+            _.itemMap.set(S, { ref: S, ...E }),
+            () => {
+              _.itemMap.delete(S);
+            }
+          ),
+        ),
+        f.jsx(m, { [p]: "", ref: D, children: R })
+      );
+    });
+  v.displayName = d;
+  function y(h) {
+    const g = i(e + "CollectionConsumer", h);
+    return U.useCallback(() => {
+      const R = g.collectionRef.current;
+      if (!R) return [];
+      const E = Array.from(R.querySelectorAll(`[${p}]`));
+      return Array.from(g.itemMap.values()).sort(
+        (_, C) => E.indexOf(_.ref.current) - E.indexOf(C.ref.current),
+      );
+    }, [g.collectionRef, g.itemMap]);
+  }
+  return [{ Provider: a, Slot: l, ItemSlot: v }, y, r];
+}
+var Ln = s.createContext(void 0);
+function me(e) {
+  const t = s.useContext(Ln);
+  return e || t || "ltr";
+}
+var ie = "rovingFocusGroup.onEntryFocus",
+  Mn = { bubbles: !1, cancelable: !0 },
+  K = "RovingFocusGroup",
+  [ae, Je, jn] = Fn(K),
+  [Wn, Qe] = G(K, [jn]),
+  [$n, Un] = Wn(K),
+  et = s.forwardRef((e, t) =>
+    f.jsx(ae.Provider, {
+      scope: e.__scopeRovingFocusGroup,
+      children: f.jsx(ae.Slot, {
+        scope: e.__scopeRovingFocusGroup,
+        children: f.jsx(Vn, { ...e, ref: t }),
+      }),
+    }),
+  );
+et.displayName = K;
+var Vn = s.forwardRef((e, t) => {
+    const {
+        __scopeRovingFocusGroup: n,
+        orientation: r,
+        loop: o = !1,
+        dir: i,
+        currentTabStopId: a,
+        defaultCurrentTabStopId: c,
+        onCurrentTabStopIdChange: u,
+        onEntryFocus: l,
+        preventScrollOnEntryFocus: d = !1,
+        ...p
+      } = e,
+      m = s.useRef(null),
+      v = I(t, m),
+      y = me(i),
+      [h, g] = ue({ prop: a, defaultProp: c ?? null, onChange: u, caller: K }),
+      [b, R] = s.useState(!1),
+      E = N(l),
+      S = Je(n),
+      D = s.useRef(!1),
+      [_, C] = s.useState(0);
+    return (
+      s.useEffect(() => {
+        const x = m.current;
+        if (x) return (x.addEventListener(ie, E), () => x.removeEventListener(ie, E));
+      }, [E]),
+      f.jsx($n, {
+        scope: n,
+        orientation: r,
+        dir: y,
+        loop: o,
+        currentTabStopId: h,
+        onItemFocus: s.useCallback((x) => g(x), [g]),
+        onItemShiftTab: s.useCallback(() => R(!0), []),
+        onFocusableItemAdd: s.useCallback(() => C((x) => x + 1), []),
+        onFocusableItemRemove: s.useCallback(() => C((x) => x - 1), []),
+        children: f.jsx(T.div, {
+          tabIndex: b || _ === 0 ? -1 : 0,
+          "data-orientation": r,
+          ...p,
+          ref: v,
+          style: { outline: "none", ...e.style },
+          onMouseDown: w(e.onMouseDown, () => {
+            D.current = !0;
+          }),
+          onFocus: w(e.onFocus, (x) => {
+            const P = !D.current;
+            if (x.target === x.currentTarget && P && !b) {
+              const A = new CustomEvent(ie, Mn);
+              if ((x.currentTarget.dispatchEvent(A), !A.defaultPrevented)) {
+                const L = S().filter(($) => $.focusable),
+                  Ee = L.find(($) => $.active),
+                  Pt = L.find(($) => $.id === h),
+                  Tt = [Ee, Pt, ...L].filter(Boolean).map(($) => $.ref.current);
+                ot(Tt, d);
+              }
+            }
+            D.current = !1;
+          }),
+          onBlur: w(e.onBlur, () => R(!1)),
+        }),
+      })
+    );
+  }),
+  tt = "RovingFocusGroupItem",
+  nt = s.forwardRef((e, t) => {
+    const {
+        __scopeRovingFocusGroup: n,
+        focusable: r = !0,
+        active: o = !1,
+        tabStopId: i,
+        children: a,
+        ...c
+      } = e,
+      u = H(),
+      l = i || u,
+      d = Un(tt, n),
+      p = d.currentTabStopId === l,
+      m = Je(n),
+      { onFocusableItemAdd: v, onFocusableItemRemove: y, currentTabStopId: h } = d;
+    return (
+      s.useEffect(() => {
+        if (r) return (v(), () => y());
+      }, [r, v, y]),
+      f.jsx(ae.ItemSlot, {
+        scope: n,
+        id: l,
+        focusable: r,
+        active: o,
+        children: f.jsx(T.span, {
+          tabIndex: p ? 0 : -1,
+          "data-orientation": d.orientation,
+          ...c,
+          ref: t,
+          onMouseDown: w(e.onMouseDown, (g) => {
+            r ? d.onItemFocus(l) : g.preventDefault();
+          }),
+          onFocus: w(e.onFocus, () => d.onItemFocus(l)),
+          onKeyDown: w(e.onKeyDown, (g) => {
+            if (g.key === "Tab" && g.shiftKey) {
+              d.onItemShiftTab();
+              return;
+            }
+            if (g.target !== g.currentTarget) return;
+            const b = Hn(g, d.orientation, d.dir);
+            if (b !== void 0) {
+              if (g.metaKey || g.ctrlKey || g.altKey || g.shiftKey) return;
+              g.preventDefault();
+              let E = m()
+                .filter((S) => S.focusable)
+                .map((S) => S.ref.current);
+              if (b === "last") E.reverse();
+              else if (b === "prev" || b === "next") {
+                b === "prev" && E.reverse();
+                const S = E.indexOf(g.currentTarget);
+                E = d.loop ? zn(E, S + 1) : E.slice(S + 1);
+              }
+              setTimeout(() => ot(E));
+            }
+          }),
+          children: typeof a == "function" ? a({ isCurrentTabStop: p, hasTabStop: h != null }) : a,
+        }),
+      })
+    );
+  });
+nt.displayName = tt;
+var kn = {
+  ArrowLeft: "prev",
+  ArrowUp: "prev",
+  ArrowRight: "next",
+  ArrowDown: "next",
+  PageUp: "first",
+  Home: "first",
+  PageDown: "last",
+  End: "last",
+};
+function Bn(e, t) {
+  return t !== "rtl" ? e : e === "ArrowLeft" ? "ArrowRight" : e === "ArrowRight" ? "ArrowLeft" : e;
+}
+function Hn(e, t, n) {
+  const r = Bn(e.key, n);
+  if (
+    !(t === "vertical" && ["ArrowLeft", "ArrowRight"].includes(r)) &&
+    !(t === "horizontal" && ["ArrowUp", "ArrowDown"].includes(r))
+  )
+    return kn[r];
+}
+function ot(e, t = !1) {
+  const n = document.activeElement;
+  for (const r of e)
+    if (r === n || (r.focus({ preventScroll: t }), document.activeElement !== n)) return;
+}
+function zn(e, t) {
+  return e.map((n, r) => e[(t + r) % e.length]);
+}
+var Gn = et,
+  Kn = nt,
+  ee = "Tabs",
+  [Yn] = G(ee, [Qe]),
+  rt = Qe(),
+  [Xn, ve] = Yn(ee),
+  st = s.forwardRef((e, t) => {
+    const {
+        __scopeTabs: n,
+        value: r,
+        onValueChange: o,
+        defaultValue: i,
+        orientation: a = "horizontal",
+        dir: c,
+        activationMode: u = "automatic",
+        ...l
+      } = e,
+      d = me(c),
+      [p, m] = ue({ prop: r, onChange: o, defaultProp: i ?? "", caller: ee });
+    return f.jsx(Xn, {
+      scope: n,
+      baseId: H(),
+      value: p,
+      onValueChange: m,
+      orientation: a,
+      dir: d,
+      activationMode: u,
+      children: f.jsx(T.div, { dir: d, "data-orientation": a, ...l, ref: t }),
+    });
+  });
+st.displayName = ee;
+var it = "TabsList",
+  ct = s.forwardRef((e, t) => {
+    const { __scopeTabs: n, loop: r = !0, ...o } = e,
+      i = ve(it, n),
+      a = rt(n);
+    return f.jsx(Gn, {
+      asChild: !0,
+      ...a,
+      orientation: i.orientation,
+      dir: i.dir,
+      loop: r,
+      children: f.jsx(T.div, { role: "tablist", "aria-orientation": i.orientation, ...o, ref: t }),
+    });
+  });
+ct.displayName = it;
+var at = "TabsTrigger",
+  lt = s.forwardRef((e, t) => {
+    const { __scopeTabs: n, value: r, disabled: o = !1, ...i } = e,
+      a = ve(at, n),
+      c = rt(n),
+      u = ft(a.baseId, r),
+      l = pt(a.baseId, r),
+      d = r === a.value;
+    return f.jsx(Kn, {
+      asChild: !0,
+      ...c,
+      focusable: !o,
+      active: d,
+      children: f.jsx(T.button, {
+        type: "button",
+        role: "tab",
+        "aria-selected": d,
+        "aria-controls": l,
+        "data-state": d ? "active" : "inactive",
+        "data-disabled": o ? "" : void 0,
+        disabled: o,
+        id: u,
+        ...i,
+        ref: t,
+        onMouseDown: w(e.onMouseDown, (p) => {
+          !o && p.button === 0 && p.ctrlKey === !1 ? a.onValueChange(r) : p.preventDefault();
+        }),
+        onKeyDown: w(e.onKeyDown, (p) => {
+          [" ", "Enter"].includes(p.key) && a.onValueChange(r);
+        }),
+        onFocus: w(e.onFocus, () => {
+          const p = a.activationMode !== "manual";
+          !d && !o && p && a.onValueChange(r);
+        }),
+      }),
+    });
+  });
+lt.displayName = at;
+var ut = "TabsContent",
+  dt = s.forwardRef((e, t) => {
+    const { __scopeTabs: n, value: r, forceMount: o, children: i, ...a } = e,
+      c = ve(ut, n),
+      u = ft(c.baseId, r),
+      l = pt(c.baseId, r),
+      d = r === c.value,
+      p = s.useRef(d);
+    return (
+      s.useEffect(() => {
+        const m = requestAnimationFrame(() => (p.current = !1));
+        return () => cancelAnimationFrame(m);
+      }, []),
+      f.jsx(j, {
+        present: o || d,
+        children: ({ present: m }) =>
+          f.jsx(T.div, {
+            "data-state": d ? "active" : "inactive",
+            "data-orientation": c.orientation,
+            role: "tabpanel",
+            "aria-labelledby": u,
+            hidden: !m,
+            id: l,
+            tabIndex: 0,
+            ...a,
+            ref: t,
+            style: { ...e.style, animationDuration: p.current ? "0s" : void 0 },
+            children: m && i,
+          }),
+      })
+    );
+  });
+dt.displayName = ut;
+function ft(e, t) {
+  return `${e}-trigger-${t}`;
+}
+function pt(e, t) {
+  return `${e}-content-${t}`;
+}
+var _o = st,
+  No = ct,
+  Oo = lt,
+  Fo = dt,
+  qn = Symbol.for("react.lazy"),
+  q = le[" use ".trim().toString()];
+function Zn(e) {
+  return typeof e == "object" && e !== null && "then" in e;
+}
+function mt(e) {
+  return (
+    e != null &&
+    typeof e == "object" &&
+    "$$typeof" in e &&
+    e.$$typeof === qn &&
+    "_payload" in e &&
+    Zn(e._payload)
+  );
+}
+function Jn(e) {
+  const t = Qn(e),
+    n = s.forwardRef((r, o) => {
+      let { children: i, ...a } = r;
+      mt(i) && typeof q == "function" && (i = q(i._payload));
+      const c = s.Children.toArray(i),
+        u = c.find(to);
+      if (u) {
+        const l = u.props.children,
+          d = c.map((p) =>
+            p === u
+              ? s.Children.count(l) > 1
+                ? s.Children.only(null)
+                : s.isValidElement(l)
+                  ? l.props.children
+                  : null
+              : p,
+          );
+        return f.jsx(t, {
+          ...a,
+          ref: o,
+          children: s.isValidElement(l) ? s.cloneElement(l, void 0, d) : null,
+        });
+      }
+      return f.jsx(t, { ...a, ref: o, children: i });
+    });
+  return ((n.displayName = `${e}.Slot`), n);
+}
+var Lo = Jn("Slot");
+function Qn(e) {
+  const t = s.forwardRef((n, r) => {
+    let { children: o, ...i } = n;
+    if ((mt(o) && typeof q == "function" && (o = q(o._payload)), s.isValidElement(o))) {
+      const a = oo(o),
+        c = no(i, o.props);
+      return (o.type !== s.Fragment && (c.ref = r ? z(r, a) : a), s.cloneElement(o, c));
+    }
+    return s.Children.count(o) > 1 ? s.Children.only(null) : null;
+  });
+  return ((t.displayName = `${e}.SlotClone`), t);
+}
+var eo = Symbol("radix.slottable");
+function to(e) {
+  return (
+    s.isValidElement(e) &&
+    typeof e.type == "function" &&
+    "__radixId" in e.type &&
+    e.type.__radixId === eo
+  );
+}
+function no(e, t) {
+  const n = { ...t };
+  for (const r in t) {
+    const o = e[r],
+      i = t[r];
+    /^on[A-Z]/.test(r)
+      ? o && i
+        ? (n[r] = (...c) => {
+            const u = i(...c);
+            return (o(...c), u);
+          })
+        : o && (n[r] = o)
+      : r === "style"
+        ? (n[r] = { ...o, ...i })
+        : r === "className" && (n[r] = [o, i].filter(Boolean).join(" "));
+  }
+  return { ...e, ...n };
+}
+function oo(e) {
+  let t = Object.getOwnPropertyDescriptor(e.props, "ref")?.get,
+    n = t && "isReactWarning" in t && t.isReactWarning;
+  return n
+    ? e.ref
+    : ((t = Object.getOwnPropertyDescriptor(e, "ref")?.get),
+      (n = t && "isReactWarning" in t && t.isReactWarning),
+      n ? e.props.ref : e.props.ref || e.ref);
+}
+function ro(e, [t, n]) {
+  return Math.min(n, Math.max(t, e));
+}
+function so(e, t) {
+  return s.useReducer((n, r) => t[n][r] ?? n, e);
+}
+var he = "ScrollArea",
+  [vt] = G(he),
+  [io, O] = vt(he),
+  ht = s.forwardRef((e, t) => {
+    const { __scopeScrollArea: n, type: r = "hover", dir: o, scrollHideDelay: i = 600, ...a } = e,
+      [c, u] = s.useState(null),
+      [l, d] = s.useState(null),
+      [p, m] = s.useState(null),
+      [v, y] = s.useState(null),
+      [h, g] = s.useState(null),
+      [b, R] = s.useState(0),
+      [E, S] = s.useState(0),
+      [D, _] = s.useState(!1),
+      [C, x] = s.useState(!1),
+      P = I(t, (L) => u(L)),
+      A = me(o);
+    return f.jsx(io, {
+      scope: n,
+      type: r,
+      dir: A,
+      scrollHideDelay: i,
+      scrollArea: c,
+      viewport: l,
+      onViewportChange: d,
+      content: p,
+      onContentChange: m,
+      scrollbarX: v,
+      onScrollbarXChange: y,
+      scrollbarXEnabled: D,
+      onScrollbarXEnabledChange: _,
+      scrollbarY: h,
+      onScrollbarYChange: g,
+      scrollbarYEnabled: C,
+      onScrollbarYEnabledChange: x,
+      onCornerWidthChange: R,
+      onCornerHeightChange: S,
+      children: f.jsx(T.div, {
+        dir: A,
+        ...a,
+        ref: P,
+        style: {
+          position: "relative",
+          "--radix-scroll-area-corner-width": b + "px",
+          "--radix-scroll-area-corner-height": E + "px",
+          ...e.style,
+        },
+      }),
+    });
+  });
+ht.displayName = he;
+var gt = "ScrollAreaViewport",
+  bt = s.forwardRef((e, t) => {
+    const { __scopeScrollArea: n, children: r, nonce: o, ...i } = e,
+      a = O(gt, n),
+      c = s.useRef(null),
+      u = I(t, c, a.onViewportChange);
+    return f.jsxs(f.Fragment, {
+      children: [
+        f.jsx("style", {
+          dangerouslySetInnerHTML: {
+            __html:
+              "[data-radix-scroll-area-viewport]{scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}[data-radix-scroll-area-viewport]::-webkit-scrollbar{display:none}",
+          },
+          nonce: o,
+        }),
+        f.jsx(T.div, {
+          "data-radix-scroll-area-viewport": "",
+          ...i,
+          ref: u,
+          style: {
+            overflowX: a.scrollbarXEnabled ? "scroll" : "hidden",
+            overflowY: a.scrollbarYEnabled ? "scroll" : "hidden",
+            ...e.style,
+          },
+          children: f.jsx("div", {
+            ref: a.onContentChange,
+            style: { minWidth: "100%", display: "table" },
+            children: r,
+          }),
+        }),
+      ],
+    });
+  });
+bt.displayName = gt;
+var M = "ScrollAreaScrollbar",
+  co = s.forwardRef((e, t) => {
+    const { forceMount: n, ...r } = e,
+      o = O(M, e.__scopeScrollArea),
+      { onScrollbarXEnabledChange: i, onScrollbarYEnabledChange: a } = o,
+      c = e.orientation === "horizontal";
+    return (
+      s.useEffect(
+        () => (
+          c ? i(!0) : a(!0),
+          () => {
+            c ? i(!1) : a(!1);
+          }
+        ),
+        [c, i, a],
+      ),
+      o.type === "hover"
+        ? f.jsx(ao, { ...r, ref: t, forceMount: n })
+        : o.type === "scroll"
+          ? f.jsx(lo, { ...r, ref: t, forceMount: n })
+          : o.type === "auto"
+            ? f.jsx(Et, { ...r, ref: t, forceMount: n })
+            : o.type === "always"
+              ? f.jsx(ge, { ...r, ref: t })
+              : null
+    );
+  });
+co.displayName = M;
+var ao = s.forwardRef((e, t) => {
+    const { forceMount: n, ...r } = e,
+      o = O(M, e.__scopeScrollArea),
+      [i, a] = s.useState(!1);
+    return (
+      s.useEffect(() => {
+        const c = o.scrollArea;
+        let u = 0;
+        if (c) {
+          const l = () => {
+              (window.clearTimeout(u), a(!0));
+            },
+            d = () => {
+              u = window.setTimeout(() => a(!1), o.scrollHideDelay);
+            };
+          return (
+            c.addEventListener("pointerenter", l),
+            c.addEventListener("pointerleave", d),
+            () => {
+              (window.clearTimeout(u),
+                c.removeEventListener("pointerenter", l),
+                c.removeEventListener("pointerleave", d));
+            }
+          );
+        }
+      }, [o.scrollArea, o.scrollHideDelay]),
+      f.jsx(j, {
+        present: n || i,
+        children: f.jsx(Et, { "data-state": i ? "visible" : "hidden", ...r, ref: t }),
+      })
+    );
+  }),
+  lo = s.forwardRef((e, t) => {
+    const { forceMount: n, ...r } = e,
+      o = O(M, e.__scopeScrollArea),
+      i = e.orientation === "horizontal",
+      a = ne(() => u("SCROLL_END"), 100),
+      [c, u] = so("hidden", {
+        hidden: { SCROLL: "scrolling" },
+        scrolling: { SCROLL_END: "idle", POINTER_ENTER: "interacting" },
+        interacting: { SCROLL: "interacting", POINTER_LEAVE: "idle" },
+        idle: { HIDE: "hidden", SCROLL: "scrolling", POINTER_ENTER: "interacting" },
+      });
+    return (
+      s.useEffect(() => {
+        if (c === "idle") {
+          const l = window.setTimeout(() => u("HIDE"), o.scrollHideDelay);
+          return () => window.clearTimeout(l);
+        }
+      }, [c, o.scrollHideDelay, u]),
+      s.useEffect(() => {
+        const l = o.viewport,
+          d = i ? "scrollLeft" : "scrollTop";
+        if (l) {
+          let p = l[d];
+          const m = () => {
+            const v = l[d];
+            (p !== v && (u("SCROLL"), a()), (p = v));
+          };
+          return (l.addEventListener("scroll", m), () => l.removeEventListener("scroll", m));
+        }
+      }, [o.viewport, i, u, a]),
+      f.jsx(j, {
+        present: n || c !== "hidden",
+        children: f.jsx(ge, {
+          "data-state": c === "hidden" ? "hidden" : "visible",
+          ...r,
+          ref: t,
+          onPointerEnter: w(e.onPointerEnter, () => u("POINTER_ENTER")),
+          onPointerLeave: w(e.onPointerLeave, () => u("POINTER_LEAVE")),
+        }),
+      })
+    );
+  }),
+  Et = s.forwardRef((e, t) => {
+    const n = O(M, e.__scopeScrollArea),
+      { forceMount: r, ...o } = e,
+      [i, a] = s.useState(!1),
+      c = e.orientation === "horizontal",
+      u = ne(() => {
+        if (n.viewport) {
+          const l = n.viewport.offsetWidth < n.viewport.scrollWidth,
+            d = n.viewport.offsetHeight < n.viewport.scrollHeight;
+          a(c ? l : d);
+        }
+      }, 10);
+    return (
+      B(n.viewport, u),
+      B(n.content, u),
+      f.jsx(j, {
+        present: r || i,
+        children: f.jsx(ge, { "data-state": i ? "visible" : "hidden", ...o, ref: t }),
+      })
+    );
+  }),
+  ge = s.forwardRef((e, t) => {
+    const { orientation: n = "vertical", ...r } = e,
+      o = O(M, e.__scopeScrollArea),
+      i = s.useRef(null),
+      a = s.useRef(0),
+      [c, u] = s.useState({
+        content: 0,
+        viewport: 0,
+        scrollbar: { size: 0, paddingStart: 0, paddingEnd: 0 },
+      }),
+      l = Rt(c.viewport, c.content),
+      d = {
+        ...r,
+        sizes: c,
+        onSizesChange: u,
+        hasThumb: l > 0 && l < 1,
+        onThumbChange: (m) => (i.current = m),
+        onThumbPointerUp: () => (a.current = 0),
+        onThumbPointerDown: (m) => (a.current = m),
+      };
+    function p(m, v) {
+      return go(m, a.current, c, v);
+    }
+    return n === "horizontal"
+      ? f.jsx(uo, {
+          ...d,
+          ref: t,
+          onThumbPositionChange: () => {
+            if (o.viewport && i.current) {
+              const m = o.viewport.scrollLeft,
+                v = De(m, c, o.dir);
+              i.current.style.transform = `translate3d(${v}px, 0, 0)`;
+            }
+          },
+          onWheelScroll: (m) => {
+            o.viewport && (o.viewport.scrollLeft = m);
+          },
+          onDragScroll: (m) => {
+            o.viewport && (o.viewport.scrollLeft = p(m, o.dir));
+          },
+        })
+      : n === "vertical"
+        ? f.jsx(fo, {
+            ...d,
+            ref: t,
+            onThumbPositionChange: () => {
+              if (o.viewport && i.current) {
+                const m = o.viewport.scrollTop,
+                  v = De(m, c);
+                i.current.style.transform = `translate3d(0, ${v}px, 0)`;
+              }
+            },
+            onWheelScroll: (m) => {
+              o.viewport && (o.viewport.scrollTop = m);
+            },
+            onDragScroll: (m) => {
+              o.viewport && (o.viewport.scrollTop = p(m));
+            },
+          })
+        : null;
+  }),
+  uo = s.forwardRef((e, t) => {
+    const { sizes: n, onSizesChange: r, ...o } = e,
+      i = O(M, e.__scopeScrollArea),
+      [a, c] = s.useState(),
+      u = s.useRef(null),
+      l = I(t, u, i.onScrollbarXChange);
+    return (
+      s.useEffect(() => {
+        u.current && c(getComputedStyle(u.current));
+      }, [u]),
+      f.jsx(yt, {
+        "data-orientation": "horizontal",
+        ...o,
+        ref: l,
+        sizes: n,
+        style: {
+          bottom: 0,
+          left: i.dir === "rtl" ? "var(--radix-scroll-area-corner-width)" : 0,
+          right: i.dir === "ltr" ? "var(--radix-scroll-area-corner-width)" : 0,
+          "--radix-scroll-area-thumb-width": te(n) + "px",
+          ...e.style,
+        },
+        onThumbPointerDown: (d) => e.onThumbPointerDown(d.x),
+        onDragScroll: (d) => e.onDragScroll(d.x),
+        onWheelScroll: (d, p) => {
+          if (i.viewport) {
+            const m = i.viewport.scrollLeft + d.deltaX;
+            (e.onWheelScroll(m), xt(m, p) && d.preventDefault());
+          }
+        },
+        onResize: () => {
+          u.current &&
+            i.viewport &&
+            a &&
+            r({
+              content: i.viewport.scrollWidth,
+              viewport: i.viewport.offsetWidth,
+              scrollbar: {
+                size: u.current.clientWidth,
+                paddingStart: J(a.paddingLeft),
+                paddingEnd: J(a.paddingRight),
+              },
+            });
+        },
+      })
+    );
+  }),
+  fo = s.forwardRef((e, t) => {
+    const { sizes: n, onSizesChange: r, ...o } = e,
+      i = O(M, e.__scopeScrollArea),
+      [a, c] = s.useState(),
+      u = s.useRef(null),
+      l = I(t, u, i.onScrollbarYChange);
+    return (
+      s.useEffect(() => {
+        u.current && c(getComputedStyle(u.current));
+      }, [u]),
+      f.jsx(yt, {
+        "data-orientation": "vertical",
+        ...o,
+        ref: l,
+        sizes: n,
+        style: {
+          top: 0,
+          right: i.dir === "ltr" ? 0 : void 0,
+          left: i.dir === "rtl" ? 0 : void 0,
+          bottom: "var(--radix-scroll-area-corner-height)",
+          "--radix-scroll-area-thumb-height": te(n) + "px",
+          ...e.style,
+        },
+        onThumbPointerDown: (d) => e.onThumbPointerDown(d.y),
+        onDragScroll: (d) => e.onDragScroll(d.y),
+        onWheelScroll: (d, p) => {
+          if (i.viewport) {
+            const m = i.viewport.scrollTop + d.deltaY;
+            (e.onWheelScroll(m), xt(m, p) && d.preventDefault());
+          }
+        },
+        onResize: () => {
+          u.current &&
+            i.viewport &&
+            a &&
+            r({
+              content: i.viewport.scrollHeight,
+              viewport: i.viewport.offsetHeight,
+              scrollbar: {
+                size: u.current.clientHeight,
+                paddingStart: J(a.paddingTop),
+                paddingEnd: J(a.paddingBottom),
+              },
+            });
+        },
+      })
+    );
+  }),
+  [po, St] = vt(M),
+  yt = s.forwardRef((e, t) => {
+    const {
+        __scopeScrollArea: n,
+        sizes: r,
+        hasThumb: o,
+        onThumbChange: i,
+        onThumbPointerUp: a,
+        onThumbPointerDown: c,
+        onThumbPositionChange: u,
+        onDragScroll: l,
+        onWheelScroll: d,
+        onResize: p,
+        ...m
+      } = e,
+      v = O(M, n),
+      [y, h] = s.useState(null),
+      g = I(t, (P) => h(P)),
+      b = s.useRef(null),
+      R = s.useRef(""),
+      E = v.viewport,
+      S = r.content - r.viewport,
+      D = N(d),
+      _ = N(u),
+      C = ne(p, 10);
+    function x(P) {
+      if (b.current) {
+        const A = P.clientX - b.current.left,
+          L = P.clientY - b.current.top;
+        l({ x: A, y: L });
+      }
+    }
+    return (
+      s.useEffect(() => {
+        const P = (A) => {
+          const L = A.target;
+          y?.contains(L) && D(A, S);
+        };
+        return (
+          document.addEventListener("wheel", P, { passive: !1 }),
+          () => document.removeEventListener("wheel", P, { passive: !1 })
+        );
+      }, [E, y, S, D]),
+      s.useEffect(_, [r, _]),
+      B(y, C),
+      B(v.content, C),
+      f.jsx(po, {
+        scope: n,
+        scrollbar: y,
+        hasThumb: o,
+        onThumbChange: N(i),
+        onThumbPointerUp: N(a),
+        onThumbPositionChange: _,
+        onThumbPointerDown: N(c),
+        children: f.jsx(T.div, {
+          ...m,
+          ref: g,
+          style: { position: "absolute", ...m.style },
+          onPointerDown: w(e.onPointerDown, (P) => {
+            P.button === 0 &&
+              (P.target.setPointerCapture(P.pointerId),
+              (b.current = y.getBoundingClientRect()),
+              (R.current = document.body.style.webkitUserSelect),
+              (document.body.style.webkitUserSelect = "none"),
+              v.viewport && (v.viewport.style.scrollBehavior = "auto"),
+              x(P));
+          }),
+          onPointerMove: w(e.onPointerMove, x),
+          onPointerUp: w(e.onPointerUp, (P) => {
+            const A = P.target;
+            (A.hasPointerCapture(P.pointerId) && A.releasePointerCapture(P.pointerId),
+              (document.body.style.webkitUserSelect = R.current),
+              v.viewport && (v.viewport.style.scrollBehavior = ""),
+              (b.current = null));
+          }),
+        }),
+      })
+    );
+  }),
+  Z = "ScrollAreaThumb",
+  mo = s.forwardRef((e, t) => {
+    const { forceMount: n, ...r } = e,
+      o = St(Z, e.__scopeScrollArea);
+    return f.jsx(j, { present: n || o.hasThumb, children: f.jsx(vo, { ref: t, ...r }) });
+  }),
+  vo = s.forwardRef((e, t) => {
+    const { __scopeScrollArea: n, style: r, ...o } = e,
+      i = O(Z, n),
+      a = St(Z, n),
+      { onThumbPositionChange: c } = a,
+      u = I(t, (p) => a.onThumbChange(p)),
+      l = s.useRef(void 0),
+      d = ne(() => {
+        l.current && (l.current(), (l.current = void 0));
+      }, 100);
+    return (
+      s.useEffect(() => {
+        const p = i.viewport;
+        if (p) {
+          const m = () => {
+            if ((d(), !l.current)) {
+              const v = bo(p, c);
+              ((l.current = v), c());
+            }
+          };
+          return (c(), p.addEventListener("scroll", m), () => p.removeEventListener("scroll", m));
+        }
+      }, [i.viewport, d, c]),
+      f.jsx(T.div, {
+        "data-state": a.hasThumb ? "visible" : "hidden",
+        ...o,
+        ref: u,
+        style: {
+          width: "var(--radix-scroll-area-thumb-width)",
+          height: "var(--radix-scroll-area-thumb-height)",
+          ...r,
+        },
+        onPointerDownCapture: w(e.onPointerDownCapture, (p) => {
+          const v = p.target.getBoundingClientRect(),
+            y = p.clientX - v.left,
+            h = p.clientY - v.top;
+          a.onThumbPointerDown({ x: y, y: h });
+        }),
+        onPointerUp: w(e.onPointerUp, a.onThumbPointerUp),
+      })
+    );
+  });
+mo.displayName = Z;
+var be = "ScrollAreaCorner",
+  Ct = s.forwardRef((e, t) => {
+    const n = O(be, e.__scopeScrollArea),
+      r = !!(n.scrollbarX && n.scrollbarY);
+    return n.type !== "scroll" && r ? f.jsx(ho, { ...e, ref: t }) : null;
+  });
+Ct.displayName = be;
+var ho = s.forwardRef((e, t) => {
+  const { __scopeScrollArea: n, ...r } = e,
+    o = O(be, n),
+    [i, a] = s.useState(0),
+    [c, u] = s.useState(0),
+    l = !!(i && c);
+  return (
+    B(o.scrollbarX, () => {
+      const d = o.scrollbarX?.offsetHeight || 0;
+      (o.onCornerHeightChange(d), u(d));
+    }),
+    B(o.scrollbarY, () => {
+      const d = o.scrollbarY?.offsetWidth || 0;
+      (o.onCornerWidthChange(d), a(d));
+    }),
+    l
+      ? f.jsx(T.div, {
+          ...r,
+          ref: t,
+          style: {
+            width: i,
+            height: c,
+            position: "absolute",
+            right: o.dir === "ltr" ? 0 : void 0,
+            left: o.dir === "rtl" ? 0 : void 0,
+            bottom: 0,
+            ...e.style,
+          },
+        })
+      : null
+  );
+});
+function J(e) {
+  return e ? parseInt(e, 10) : 0;
+}
+function Rt(e, t) {
+  const n = e / t;
+  return isNaN(n) ? 0 : n;
+}
+function te(e) {
+  const t = Rt(e.viewport, e.content),
+    n = e.scrollbar.paddingStart + e.scrollbar.paddingEnd,
+    r = (e.scrollbar.size - n) * t;
+  return Math.max(r, 18);
+}
+function go(e, t, n, r = "ltr") {
+  const o = te(n),
+    i = o / 2,
+    a = t || i,
+    c = o - a,
+    u = n.scrollbar.paddingStart + a,
+    l = n.scrollbar.size - n.scrollbar.paddingEnd - c,
+    d = n.content - n.viewport,
+    p = r === "ltr" ? [0, d] : [d * -1, 0];
+  return wt([u, l], p)(e);
+}
+function De(e, t, n = "ltr") {
+  const r = te(t),
+    o = t.scrollbar.paddingStart + t.scrollbar.paddingEnd,
+    i = t.scrollbar.size - o,
+    a = t.content - t.viewport,
+    c = i - r,
+    u = n === "ltr" ? [0, a] : [a * -1, 0],
+    l = ro(e, u);
+  return wt([0, a], [0, c])(l);
+}
+function wt(e, t) {
+  return (n) => {
+    if (e[0] === e[1] || t[0] === t[1]) return t[0];
+    const r = (t[1] - t[0]) / (e[1] - e[0]);
+    return t[0] + r * (n - e[0]);
+  };
+}
+function xt(e, t) {
+  return e > 0 && e < t;
+}
+var bo = (e, t = () => {}) => {
+  let n = { left: e.scrollLeft, top: e.scrollTop },
+    r = 0;
+  return (
+    (function o() {
+      const i = { left: e.scrollLeft, top: e.scrollTop },
+        a = n.left !== i.left,
+        c = n.top !== i.top;
+      ((a || c) && t(), (n = i), (r = window.requestAnimationFrame(o)));
+    })(),
+    () => window.cancelAnimationFrame(r)
+  );
+};
+function ne(e, t) {
+  const n = N(e),
+    r = s.useRef(0);
+  return (
+    s.useEffect(() => () => window.clearTimeout(r.current), []),
+    s.useCallback(() => {
+      (window.clearTimeout(r.current), (r.current = window.setTimeout(n, t)));
+    }, [n, t])
+  );
+}
+function B(e, t) {
+  const n = N(t);
+  k(() => {
+    let r = 0;
+    if (e) {
+      const o = new ResizeObserver(() => {
+        (cancelAnimationFrame(r), (r = window.requestAnimationFrame(n)));
+      });
+      return (
+        o.observe(e),
+        () => {
+          (window.cancelAnimationFrame(r), o.unobserve(e));
+        }
+      );
+    }
+  }, [e, n]);
+}
+var Mo = ht,
+  jo = bt,
+  Wo = Ct;
+export {
+  Io as C,
+  Do as D,
+  No as L,
+  Po as O,
+  xo as P,
+  Ro as R,
+  co as S,
+  Ao as T,
+  jo as V,
+  To as a,
+  Fo as b,
+  Wo as c,
+  Mo as d,
+  _o as e,
+  mo as f,
+  Lo as g,
+  Oo as h,
+  wo as i,
+};

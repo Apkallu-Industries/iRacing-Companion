@@ -121,32 +121,67 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
               const valData = parsed.channels[name]?.data;
               if (!valData) return;
 
-              type AnomalyShade = "lockup" | "threshold" | "wheelspin" | "bottoming" | "hybrid_deploy" | "hybrid_regen" | null;
+              type AnomalyShade =
+                | "lockup"
+                | "threshold"
+                | "wheelspin"
+                | "bottoming"
+                | "hybrid_deploy"
+                | "hybrid_regen"
+                | null;
               let shadeStart: number | null = null;
               let shadeType: AnomalyShade = null;
 
               const getShadeColorAndLabel = (type: AnomalyShade) => {
                 switch (type) {
                   case "lockup":
-                    return { color: "rgba(255, 77, 77, 0.2)", border: "#FF4D4D", label: "LOCKUP DETECTED" };
+                    return {
+                      color: "rgba(255, 77, 77, 0.2)",
+                      border: "#FF4D4D",
+                      label: "LOCKUP DETECTED",
+                    };
                   case "threshold":
-                    return { color: "rgba(255, 184, 0, 0.12)", border: "#FFB800", label: "THRESHOLD ZONE" };
+                    return {
+                      color: "rgba(255, 184, 0, 0.12)",
+                      border: "#FFB800",
+                      label: "THRESHOLD ZONE",
+                    };
                   case "wheelspin":
-                    return { color: "rgba(245, 158, 11, 0.15)", border: "#F59E0B", label: "WHEELSPIN REGION" };
+                    return {
+                      color: "rgba(245, 158, 11, 0.15)",
+                      border: "#F59E0B",
+                      label: "WHEELSPIN REGION",
+                    };
                   case "bottoming":
-                    return { color: "rgba(139, 92, 246, 0.15)", border: "#8B5CF6", label: "CHASSIS REB COMPRESSION" };
+                    return {
+                      color: "rgba(139, 92, 246, 0.15)",
+                      border: "#8B5CF6",
+                      label: "CHASSIS REB COMPRESSION",
+                    };
                   case "hybrid_deploy":
-                    return { color: "rgba(139, 92, 246, 0.08)", border: "#8B5CF6", label: "MGU-K DEPLOY" };
+                    return {
+                      color: "rgba(139, 92, 246, 0.08)",
+                      border: "#8B5CF6",
+                      label: "MGU-K DEPLOY",
+                    };
                   case "hybrid_regen":
-                    return { color: "rgba(0, 209, 127, 0.08)", border: "#00D17F", label: "MGU-K REGEN" };
+                    return {
+                      color: "rgba(0, 209, 127, 0.08)",
+                      border: "#00D17F",
+                      label: "MGU-K REGEN",
+                    };
                   default:
                     return { color: "rgba(0,0,0,0)", border: "transparent", label: "" };
                 }
               };
 
               const drawZone = (startIdx: number, endIdx: number, type: AnomalyShade) => {
-                const startX = Math.round(u.valToPos(sessionTime[from + startIdx] - sessionTime[from], "x"));
-                const endX = Math.round(u.valToPos(sessionTime[from + endIdx] - sessionTime[from], "x"));
+                const startX = Math.round(
+                  u.valToPos(sessionTime[from + startIdx] - sessionTime[from], "x"),
+                );
+                const endX = Math.round(
+                  u.valToPos(sessionTime[from + endIdx] - sessionTime[from], "x"),
+                );
                 const { color, border, label } = getShadeColorAndLabel(type);
 
                 // Paint background rectangle in the chart plot bounds
@@ -178,17 +213,26 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                   const steering = parsed.channels["SteeringWheelAngle"]?.data[tick] ?? 0;
                   if (brakeVal > 0.82 && Math.abs(steering * 57.3) > 40) {
                     activeShade = "lockup";
-                  } else if (brakeVal > 0.80) {
+                  } else if (brakeVal > 0.8) {
                     activeShade = "threshold";
                   }
-                } else if (name === "Speed" || name.toLowerCase().includes("wheel") || name.toLowerCase().includes("speed")) {
+                } else if (
+                  name === "Speed" ||
+                  name.toLowerCase().includes("wheel") ||
+                  name.toLowerCase().includes("speed")
+                ) {
                   const lfSpeed = parsed.channels["LFspeed"]?.data[tick] ?? 0;
                   const lrSpeed = parsed.channels["LRspeed"]?.data[tick] ?? 0;
                   const throttle = parsed.channels["Throttle"]?.data[tick] ?? 0;
-                  if (throttle > 0.80 && Math.abs(lfSpeed - lrSpeed) > (lfSpeed * 0.12)) {
+                  if (throttle > 0.8 && Math.abs(lfSpeed - lrSpeed) > lfSpeed * 0.12) {
                     activeShade = "wheelspin";
                   }
-                } else if (name.toLowerCase().includes("ers") || name.toLowerCase().includes("mgu") || name === "EnergyStorePct" || name === "EnergyStoreTemp") {
+                } else if (
+                  name.toLowerCase().includes("ers") ||
+                  name.toLowerCase().includes("mgu") ||
+                  name === "EnergyStorePct" ||
+                  name === "EnergyStoreTemp"
+                ) {
                   const deploy = parsed.channels["MgukDeploykW"]?.data[tick] ?? 0;
                   const regen = parsed.channels["MgukRegenkW"]?.data[tick] ?? 0;
                   if (deploy > 105) {
@@ -196,7 +240,12 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                   } else if (regen > 105) {
                     activeShade = "hybrid_regen";
                   }
-                } else if (name.toLowerCase().includes("ride") || name.toLowerCase().includes("damper") || name === "pitch" || name.toLowerCase().includes("accel")) {
+                } else if (
+                  name.toLowerCase().includes("ride") ||
+                  name.toLowerCase().includes("damper") ||
+                  name === "pitch" ||
+                  name.toLowerCase().includes("accel")
+                ) {
                   const pitchVal = parsed.channels["pitch"]?.data[tick] ?? 0;
                   if (pitchVal < -0.018) {
                     activeShade = "bottoming";
@@ -222,7 +271,12 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                 const eventX = Math.round(u.valToPos(ev.timestampSec - sessionTime[from], "x"));
                 if (eventX >= u.bbox.left && eventX <= u.bbox.left + u.bbox.width) {
                   // Paint vertical dotted lines for scanned timeline incidents
-                  ctx.strokeStyle = ev.severity === "critical" ? "#FF4D4D" : ev.severity === "warning" ? "#FFB800" : "#3B82F6";
+                  ctx.strokeStyle =
+                    ev.severity === "critical"
+                      ? "#FF4D4D"
+                      : ev.severity === "warning"
+                        ? "#FFB800"
+                        : "#3B82F6";
                   ctx.lineWidth = 1;
                   ctx.setLineDash([3, 3]);
                   ctx.beginPath();
@@ -232,7 +286,12 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                   ctx.setLineDash([]); // Reset line dash
 
                   // Draw professional triangle bookmark headers
-                  ctx.fillStyle = ev.severity === "critical" ? "#FF4D4D" : ev.severity === "warning" ? "#FFB800" : "#3B82F6";
+                  ctx.fillStyle =
+                    ev.severity === "critical"
+                      ? "#FF4D4D"
+                      : ev.severity === "warning"
+                        ? "#FFB800"
+                        : "#3B82F6";
                   ctx.beginPath();
                   ctx.moveTo(eventX - 4, u.bbox.top);
                   ctx.lineTo(eventX + 4, u.bbox.top);
@@ -280,7 +339,6 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                   ctx.fillText(`T${c.turn} EX`, aX + 2, u.bbox.top + u.bbox.height - 2.5);
                 }
               });
-
             },
           ],
           setCursor: [
@@ -306,8 +364,8 @@ export function StackedTraces({ parsed }: { parsed: IbtParsed }) {
                   toast.success(`Scrubbed playhead to dynamic incident: ${closest.label}`);
                 }
               });
-            }
-          ]
+            },
+          ],
         },
       };
 

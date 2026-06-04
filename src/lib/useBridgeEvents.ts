@@ -22,7 +22,11 @@ export function useBridgeEvents() {
             timestampSec: Date.now() / 1000,
             label: body.primaryTriggerFactor || "PREDICTION_WARNING",
             category: "dynamics" as const,
-            severity: body.isRiskHigh ? "critical" : (body.instabilityProbability > 0.5 ? "warning" : "info"),
+            severity: body.isRiskHigh
+              ? "critical"
+              : body.instabilityProbability > 0.5
+                ? "warning"
+                : "info",
             description: body.recommendedCorrection || "",
             associatedChannels: [],
             metadata: { confidence: body.instabilityProbability || 0 },
@@ -35,7 +39,9 @@ export function useBridgeEvents() {
             label: "STRATEGY_UPDATE",
             category: "inputs" as const,
             severity: "info",
-            description: body.nodeId ? `${body.nodeId}: ${body.conditionMet || ""}` : "Strategy node updated",
+            description: body.nodeId
+              ? `${body.nodeId}: ${body.conditionMet || ""}`
+              : "Strategy node updated",
             associatedChannels: [],
             metadata: { probability: body.probabilityWeightPct || body.probabilityWeightPct || 0 },
           } as const;

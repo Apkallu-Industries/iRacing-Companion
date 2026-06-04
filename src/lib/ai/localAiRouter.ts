@@ -24,16 +24,16 @@ export interface AiRouterState {
 }
 
 const LMSTUDIO_BASE = "http://localhost:1234";
-const OLLAMA_BASE   = "http://localhost:11434";
+const OLLAMA_BASE = "http://localhost:11434";
 const PROBE_INTERVAL_MS = 30_000;
 
 // ─── Singleton state ──────────────────────────────────────────────────────────
 
 let state: AiRouterState = {
-  mode:        "cloud",
-  endpoint:    null,
-  modelName:   null,
-  probing:     false,
+  mode: "cloud",
+  endpoint: null,
+  modelName: null,
+  probing: false,
   lastProbeAt: 0,
 };
 
@@ -64,7 +64,7 @@ async function probeLmStudio(): Promise<{ ok: boolean; model: string | null; isA
     }
 
     if (!res.ok) return { ok: false, model: null };
-    const data = await res.json() as { data?: { id: string }[] };
+    const data = (await res.json()) as { data?: { id: string }[] };
     const model = data?.data?.[0]?.id ?? null;
     return { ok: true, model, isApiV1 };
   } catch {
@@ -78,7 +78,7 @@ async function probeOllama(): Promise<{ ok: boolean; model: string | null }> {
       signal: AbortSignal.timeout(1200),
     });
     if (!res.ok) return { ok: false, model: null };
-    const data = await res.json() as { models?: { name: string }[] };
+    const data = (await res.json()) as { models?: { name: string }[] };
     const model = data?.models?.[0]?.name ?? null;
     return { ok: true, model };
   } catch {
@@ -98,12 +98,12 @@ export async function probeLocalAi(): Promise<AiRouterState> {
     const lmResult = await probeLmStudio();
     if (lmResult.ok) {
       state = {
-        mode:        "lmstudio",
-        endpoint:    lmResult.isApiV1
+        mode: "lmstudio",
+        endpoint: lmResult.isApiV1
           ? `${LMSTUDIO_BASE}/api/v1/chat`
           : `${LMSTUDIO_BASE}/v1/chat/completions`,
-        modelName:   lmResult.model,
-        probing:     false,
+        modelName: lmResult.model,
+        probing: false,
         lastProbeAt: Date.now(),
       };
       notify();
@@ -114,10 +114,10 @@ export async function probeLocalAi(): Promise<AiRouterState> {
     const ollamaResult = await probeOllama();
     if (ollamaResult.ok) {
       state = {
-        mode:        "ollama",
-        endpoint:    `${OLLAMA_BASE}/v1/chat/completions`,
-        modelName:   ollamaResult.model,
-        probing:     false,
+        mode: "ollama",
+        endpoint: `${OLLAMA_BASE}/v1/chat/completions`,
+        modelName: ollamaResult.model,
+        probing: false,
         lastProbeAt: Date.now(),
       };
       notify();
@@ -126,15 +126,14 @@ export async function probeLocalAi(): Promise<AiRouterState> {
 
     // Cloud fallback
     state = {
-      mode:        "cloud",
-      endpoint:    null,
-      modelName:   null,
-      probing:     false,
+      mode: "cloud",
+      endpoint: null,
+      modelName: null,
+      probing: false,
       lastProbeAt: Date.now(),
     };
     notify();
     return { ...state };
-
   } catch {
     state = { ...state, probing: false, lastProbeAt: Date.now() };
     notify();
@@ -158,30 +157,28 @@ export interface CompletionOptions {
  */
 export async function completeLocal(
   prompt: string,
-  options: CompletionOptions = {}
+  options: CompletionOptions = {},
 ): Promise<string | null> {
   const { mode, endpoint } = state;
   if (mode === "cloud" || !endpoint) return null; // caller handles cloud
 
   try {
     const body = {
-      model:       state.modelName ?? "default",
+      model: state.modelName ?? "default",
       messages: [
-        ...(options.systemPrompt
-          ? [{ role: "system", content: options.systemPrompt }]
-          : []),
+        ...(options.systemPrompt ? [{ role: "system", content: options.systemPrompt }] : []),
         { role: "user", content: prompt },
       ],
-      max_tokens:  options.maxTokens  ?? 512,
+      max_tokens: options.maxTokens ?? 512,
       temperature: options.temperature ?? 0.2,
-      stream:      false,
+      stream: false,
     };
 
     const res = await fetch(endpoint, {
-      method:  "POST",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify(body),
-      signal:  AbortSignal.timeout(30_000),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!res.ok) {
@@ -189,11 +186,10 @@ export async function completeLocal(
       return null;
     }
 
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       choices?: { message?: { content?: string } }[];
     };
     return data?.choices?.[0]?.message?.content ?? null;
-
   } catch (err) {
     console.warn(`[localAi] ${mode} request failed:`, err);
     return null;
@@ -238,8 +234,11 @@ export function getAiRouterState(): AiRouterState {
 
 export function getAiModeLabel(mode: AiMode): string {
   switch (mode) {
-    case "lmstudio": return "LM Studio";
-    case "ollama":   return "Ollama";
-    case "cloud":    return "Cloud · Gemini";
+    case "lmstudio":
+      return "LM Studio";
+    case "ollama":
+      return "Ollama";
+    case "cloud":
+      return "Cloud · Gemini";
   }
 }

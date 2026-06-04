@@ -104,7 +104,7 @@ async function bridgeGet<T>(path: string): Promise<T | null> {
       cache: "no-store",
     });
     if (!res.ok) return null;
-    return await res.json() as T;
+    return (await res.json()) as T;
   } catch {
     return null;
   }
@@ -119,7 +119,7 @@ async function bridgePost<T>(path: string, body: any): Promise<T | null> {
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
-    return await res.json() as T;
+    return (await res.json()) as T;
   } catch {
     return null;
   }
@@ -148,7 +148,7 @@ export async function fetchSessions(): Promise<StoredSession[]> {
  */
 export async function fetchLaps(sessionId: string): Promise<StoredLap[]> {
   const result = await bridgeGet<{ laps: StoredLap[] }>(
-    `/api/sessions/laps?sessionId=${encodeURIComponent(sessionId)}`
+    `/api/sessions/laps?sessionId=${encodeURIComponent(sessionId)}`,
   );
   return result?.laps ?? [];
 }
@@ -161,15 +161,15 @@ export async function fetchEvents(params: EventQueryParams = {}): Promise<Stored
   if (params.q) {
     qs.set("q", params.q);
   } else {
-    if (params.track)    qs.set("track",    params.track);
-    if (params.car)      qs.set("car",      params.car);
+    if (params.track) qs.set("track", params.track);
+    if (params.car) qs.set("car", params.car);
     if (params.category) qs.set("category", params.category);
     if (params.severity) qs.set("severity", params.severity);
     if (params.corner !== undefined) qs.set("corner", String(params.corner));
   }
 
   const result = await bridgeGet<{ events: StoredEvent[] }>(
-    `/api/events${qs.toString() ? `?${qs}` : ""}`
+    `/api/events${qs.toString() ? `?${qs}` : ""}`,
   );
   return result?.events ?? [];
 }
@@ -186,7 +186,9 @@ export async function saveEvents(events: Omit<StoredEvent, "_id">[]): Promise<bo
  * Fetch historical setup changes.
  */
 export async function fetchSetupChanges(sessionId?: string): Promise<StoredSetupChange[]> {
-  const path = sessionId ? `/api/setup-changes?sessionId=${encodeURIComponent(sessionId)}` : "/api/setup-changes";
+  const path = sessionId
+    ? `/api/setup-changes?sessionId=${encodeURIComponent(sessionId)}`
+    : "/api/setup-changes";
   const result = await bridgeGet<{ changes: StoredSetupChange[] }>(path);
   return result?.changes ?? [];
 }
@@ -219,7 +221,9 @@ export async function saveTeamProfile(profile: any): Promise<boolean> {
  * Fetch session notes.
  */
 export async function fetchSessionNotes(sessionId?: string): Promise<StoredSessionNote[]> {
-  const path = sessionId ? `/api/session-notes?sessionId=${encodeURIComponent(sessionId)}` : "/api/session-notes";
+  const path = sessionId
+    ? `/api/session-notes?sessionId=${encodeURIComponent(sessionId)}`
+    : "/api/session-notes";
   const result = await bridgeGet<{ notes: StoredSessionNote[] }>(path);
   return result?.notes ?? [];
 }
@@ -286,7 +290,9 @@ export function useSessions(): {
     setLoading(false);
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return { sessions, loading, refresh };
 }
@@ -314,17 +320,21 @@ export function useEventQuery(params: EventQueryParams): {
     setLoading(true);
     setError(null);
 
-    fetchEvents(activeParams).then((data) => {
-      if (!mounted) return;
-      setEvents(data);
-      setLoading(false);
-    }).catch((e: Error) => {
-      if (!mounted) return;
-      setError(e.message);
-      setLoading(false);
-    });
+    fetchEvents(activeParams)
+      .then((data) => {
+        if (!mounted) return;
+        setEvents(data);
+        setLoading(false);
+      })
+      .catch((e: Error) => {
+        if (!mounted) return;
+        setError(e.message);
+        setLoading(false);
+      });
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [activeParams]);
 
   return { events, loading, error, query };

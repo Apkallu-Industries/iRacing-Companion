@@ -296,7 +296,7 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
 
   const clampZoom = (z: number) => Math.min(20, Math.max(1, z));
 
-  const clampPan = useCallback((p: { x: number; y: number}, currentZoom: number) => {
+  const clampPan = useCallback((p: { x: number; y: number }, currentZoom: number) => {
     const currentVbW = W / currentZoom;
     const currentVbH = H / currentZoom;
     const maxX = (W - currentVbW) / 2;
@@ -307,59 +307,62 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     };
   }, []);
 
-  const animateTo = useCallback((nz: number, np: { x: number; y: number }, instant = false) => {
-    const clampedZ = clampZoom(nz);
-    const clampedP = clampPan(np, clampedZ);
+  const animateTo = useCallback(
+    (nz: number, np: { x: number; y: number }, instant = false) => {
+      const clampedZ = clampZoom(nz);
+      const clampedP = clampPan(np, clampedZ);
 
-    targetZoomRef.current = clampedZ;
-    targetPanRef.current = clampedP;
+      targetZoomRef.current = clampedZ;
+      targetPanRef.current = clampedP;
 
-    if (instant) {
-      if (animRef.current !== null) {
-        cancelAnimationFrame(animRef.current);
-        animRef.current = null;
-      }
-      setZoom(clampedZ);
-      setPan(clampedP);
-      return;
-    }
-
-    if (animRef.current !== null) return;
-
-    const tick = () => {
-      let zDone = false;
-      let pDone = false;
-
-      setZoom((currentZ) => {
-        const diffZ = targetZoomRef.current - currentZ;
-        if (Math.abs(diffZ) < 0.001) {
-          zDone = true;
-          return targetZoomRef.current;
+      if (instant) {
+        if (animRef.current !== null) {
+          cancelAnimationFrame(animRef.current);
+          animRef.current = null;
         }
-        return currentZ + diffZ * 0.25; // 25% interpolation per frame
-      });
-
-      setPan((currentP) => {
-        const diffX = targetPanRef.current.x - currentP.x;
-        const diffY = targetPanRef.current.y - currentP.y;
-        if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01) {
-          pDone = true;
-          return targetPanRef.current;
-        }
-        return {
-          x: currentP.x + diffX * 0.25,
-          y: currentP.y + diffY * 0.25,
-        };
-      });
-
-      if (!zDone || !pDone) {
-        animRef.current = requestAnimationFrame(tick);
-      } else {
-        animRef.current = null;
+        setZoom(clampedZ);
+        setPan(clampedP);
+        return;
       }
-    };
-    animRef.current = requestAnimationFrame(tick);
-  }, [clampPan]);
+
+      if (animRef.current !== null) return;
+
+      const tick = () => {
+        let zDone = false;
+        let pDone = false;
+
+        setZoom((currentZ) => {
+          const diffZ = targetZoomRef.current - currentZ;
+          if (Math.abs(diffZ) < 0.001) {
+            zDone = true;
+            return targetZoomRef.current;
+          }
+          return currentZ + diffZ * 0.25; // 25% interpolation per frame
+        });
+
+        setPan((currentP) => {
+          const diffX = targetPanRef.current.x - currentP.x;
+          const diffY = targetPanRef.current.y - currentP.y;
+          if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01) {
+            pDone = true;
+            return targetPanRef.current;
+          }
+          return {
+            x: currentP.x + diffX * 0.25,
+            y: currentP.y + diffY * 0.25,
+          };
+        });
+
+        if (!zDone || !pDone) {
+          animRef.current = requestAnimationFrame(tick);
+        } else {
+          animRef.current = null;
+        }
+      };
+      animRef.current = requestAnimationFrame(tick);
+    },
+    [clampPan],
+  );
 
   const reset = useCallback(() => {
     animateTo(1, { x: 0, y: 0 }, false);
@@ -698,7 +701,7 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    
+
     // Stable zoom center calculations using targets
     const currentTargZ = targetZoomRef.current;
     const currentTargP = targetPanRef.current;
@@ -711,7 +714,7 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     const my = targVbY + ((e.clientY - rect.top) / rect.height) * targVbH;
     const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
     const newZoom = clampZoom(currentTargZ * factor);
-    
+
     if (newZoom === currentTargZ) return;
     setActiveZoom(true);
     if (newZoom === 1) {
@@ -770,7 +773,7 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
     const rect = svg.getBoundingClientRect();
     const dx = ((e.clientX - d.startX) / rect.width) * vbW;
     const dy = ((e.clientY - d.startY) / rect.height) * vbH;
-    
+
     // Drag pan is instant to feel absolutely responsive
     animateTo(zoom, { x: d.panX - dx, y: d.panY - dy }, true);
   };
@@ -1058,7 +1061,9 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
             </div>
             <div className="flex justify-between gap-4 text-[7px] text-[#7a828c]">
               <span>PAN COORDINATES:</span>
-              <span className="font-bold text-white">X: {pan.x.toFixed(1)} | Y: {pan.y.toFixed(1)}</span>
+              <span className="font-bold text-white">
+                X: {pan.x.toFixed(1)} | Y: {pan.y.toFixed(1)}
+              </span>
             </div>
           </div>
         )}
@@ -1068,7 +1073,13 @@ export function TrackMap({ parsed }: { parsed: IbtParsed }) {
           preserveAspectRatio="xMidYMid meet"
           className="block h-full w-full touch-none select-none"
           style={{
-            cursor: activePan ? "grabbing" : activeZoom ? "crosshair" : zoom > 1 ? "grab" : "default"
+            cursor: activePan
+              ? "grabbing"
+              : activeZoom
+                ? "crosshair"
+                : zoom > 1
+                  ? "grab"
+                  : "default",
           }}
           onWheel={onWheel}
           onPointerDown={onPointerDown}

@@ -2,32 +2,54 @@ import { jsx } from "react/jsx-runtime";
 import { toCrossJSONStream, fromJSON, toCrossJSONAsync } from "seroval";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { H3Event, toResponse } from "h3-v2";
-import { rootRouteId, parseRedirect, isRedirect, defaultSerovalPlugins, makeSerovalPlugin, createRawStreamRPCPlugin, invariant, isNotFound, resolveManifestAssetLink, getStylesheetHref, createSerializationAdapter, isResolvedRedirect, executeRewriteInput } from "@tanstack/router-core";
+import {
+  rootRouteId,
+  parseRedirect,
+  isRedirect,
+  defaultSerovalPlugins,
+  makeSerovalPlugin,
+  createRawStreamRPCPlugin,
+  invariant,
+  isNotFound,
+  resolveManifestAssetLink,
+  getStylesheetHref,
+  createSerializationAdapter,
+  isResolvedRedirect,
+  executeRewriteInput,
+} from "@tanstack/router-core";
 import { createMemoryHistory } from "@tanstack/history";
 import { mergeHeaders } from "@tanstack/router-core/ssr/client";
-import { getNormalizedURL, getOrigin, attachRouterServerSsrUtils } from "@tanstack/router-core/ssr/server";
+import {
+  getNormalizedURL,
+  getOrigin,
+  attachRouterServerSsrUtils,
+} from "@tanstack/router-core/ssr/server";
 import * as React from "react";
 import { RouterProvider, useRouter, isRedirect as isRedirect$1 } from "@tanstack/react-router";
 import { defineHandlerCallback, renderRouterToStream } from "@tanstack/react-router/ssr/server";
 function StartServer(props) {
   return /* @__PURE__ */ jsx(RouterProvider, { router: props.router });
 }
-var defaultStreamHandler = defineHandlerCallback(({ request, router, responseHeaders }) => renderRouterToStream({
-  request,
-  router,
-  responseHeaders,
-  children: /* @__PURE__ */ jsx(StartServer, { router })
-}));
+var defaultStreamHandler = defineHandlerCallback(({ request, router, responseHeaders }) =>
+  renderRouterToStream({
+    request,
+    router,
+    responseHeaders,
+    children: /* @__PURE__ */ jsx(StartServer, { router }),
+  }),
+);
 var GLOBAL_EVENT_STORAGE_KEY = /* @__PURE__ */ Symbol.for("tanstack-start:event-storage");
 var globalObj$1 = globalThis;
-if (!globalObj$1[GLOBAL_EVENT_STORAGE_KEY]) globalObj$1[GLOBAL_EVENT_STORAGE_KEY] = new AsyncLocalStorage();
+if (!globalObj$1[GLOBAL_EVENT_STORAGE_KEY])
+  globalObj$1[GLOBAL_EVENT_STORAGE_KEY] = new AsyncLocalStorage();
 var eventStorage = globalObj$1[GLOBAL_EVENT_STORAGE_KEY];
 function isPromiseLike(value) {
   return typeof value.then === "function";
 }
 function getSetCookieValues(headers) {
   const headersWithSetCookie = headers;
-  if (typeof headersWithSetCookie.getSetCookie === "function") return headersWithSetCookie.getSetCookie();
+  if (typeof headersWithSetCookie.getSetCookie === "function")
+    return headersWithSetCookie.getSetCookie();
   const value = headers.get("set-cookie");
   return value ? [value] : [];
 }
@@ -41,10 +63,11 @@ function mergeEventResponseHeaders(response, event) {
   for (const cookie of eventSetCookies) response.headers.append("set-cookie", cookie);
 }
 function attachResponseHeaders(value, event) {
-  if (isPromiseLike(value)) return value.then((resolved) => {
-    if (resolved instanceof Response) mergeEventResponseHeaders(resolved, event);
-    return resolved;
-  });
+  if (isPromiseLike(value))
+    return value.then((resolved) => {
+      if (resolved instanceof Response) mergeEventResponseHeaders(resolved, event);
+      return resolved;
+    });
   if (value instanceof Response) mergeEventResponseHeaders(value, event);
   return value;
 }
@@ -54,18 +77,28 @@ function requestHandler(handler) {
     try {
       h3Event = new H3Event(request);
     } catch (error) {
-      if (error instanceof URIError) return new Response(null, {
-        status: 400,
-        statusText: "Bad Request"
-      });
+      if (error instanceof URIError)
+        return new Response(null, {
+          status: 400,
+          statusText: "Bad Request",
+        });
       throw error;
     }
-    return toResponse(attachResponseHeaders(eventStorage.run({ h3Event }, () => handler(request, requestOpts)), h3Event), h3Event);
+    return toResponse(
+      attachResponseHeaders(
+        eventStorage.run({ h3Event }, () => handler(request, requestOpts)),
+        h3Event,
+      ),
+      h3Event,
+    );
   };
 }
 function getH3Event() {
   const event = eventStorage.getStore();
-  if (!event) throw new Error(`No StartEvent found in AsyncLocalStorage. Make sure you are using the function within the server runtime.`);
+  if (!event)
+    throw new Error(
+      `No StartEvent found in AsyncLocalStorage. Make sure you are using the function within the server runtime.`,
+    );
   return event.h3Event;
 }
 function getResponse() {
@@ -75,215 +108,217 @@ var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 async function getStartManifest(matchedRoutes) {
   const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-BZ_aclEf.js");
   const startManifest = tsrStartManifest();
-  const rootRoute = startManifest.routes[rootRouteId] = startManifest.routes[rootRouteId] || {};
+  const rootRoute = (startManifest.routes[rootRouteId] = startManifest.routes[rootRouteId] || {});
   rootRoute.assets = rootRoute.assets || [];
   let injectedHeadScripts;
   return {
     manifest: {
       inlineCss: startManifest.inlineCss,
-      routes: Object.fromEntries(Object.entries(startManifest.routes).flatMap(([k, v]) => {
-        const result = {};
-        let hasData = false;
-        if (v.preloads && v.preloads.length > 0) {
-          result["preloads"] = v.preloads;
-          hasData = true;
-        }
-        if (v.assets && v.assets.length > 0) {
-          result["assets"] = v.assets;
-          hasData = true;
-        }
-        if (!hasData) return [];
-        return [[k, result]];
-      }))
+      routes: Object.fromEntries(
+        Object.entries(startManifest.routes).flatMap(([k, v]) => {
+          const result = {};
+          let hasData = false;
+          if (v.preloads && v.preloads.length > 0) {
+            result["preloads"] = v.preloads;
+            hasData = true;
+          }
+          if (v.assets && v.assets.length > 0) {
+            result["assets"] = v.assets;
+            hasData = true;
+          }
+          if (!hasData) return [];
+          return [[k, result]];
+        }),
+      ),
     },
     clientEntry: startManifest.clientEntry,
-    injectedHeadScripts
+    injectedHeadScripts,
   };
 }
 const manifest = {
   "036557a56b6495b1b5c08cc4f611f29aa4ea7b2c87e2456f85ff16ecf5121073": {
     functionName: "getSharedLap_createServerFn_handler",
-    importer: () => import("./assets/share.functions-z4IKHqJ8.js")
+    importer: () => import("./assets/share.functions-z4IKHqJ8.js"),
   },
   "048bc3835eab8f97e7ee69a78abd12af09426185466e8d8438b6086be0a3206c": {
     functionName: "getBridgeStatus_createServerFn_handler",
-    importer: () => import("./assets/bridge.functions-DgJCZCV3.js")
+    importer: () => import("./assets/bridge.functions-DgJCZCV3.js"),
   },
   "0bf9149e7d3d3f432048904f8dc8012a28053653a146e63cedd7525167633e7c": {
     functionName: "listSharedThemes_createServerFn_handler",
-    importer: () => import("./assets/themes.functions-BREzw7pO.js")
+    importer: () => import("./assets/themes.functions-BREzw7pO.js"),
   },
   "154da85bc7e5915df5164155bbb68a97441082079312d44aab513dabc82f59c3": {
     functionName: "adminSetRole_createServerFn_handler",
-    importer: () => import("./assets/admin.functions-d9a750-r.js")
+    importer: () => import("./assets/admin.functions-d9a750-r.js"),
   },
   "16e5998c5e349d45bf571ca307d98918f10fe195c5b6005d6285c65d7e7dfa88": {
     functionName: "getMyChannelLayout_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "21b7d4b9cd49310bbcedb32d65588f95c68176ba57a09f7d1beaef4723ebb413": {
     functionName: "listCommunityChannelLayouts_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "27806ff807d7d8480171f4973109eb2bb2f01480e1fd2c4c7d3e9b351a157d43": {
     functionName: "publishMyGearRatios_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "31bb52f01c1ca777a07f8b7d28b2d3eef0780ba57d6cb939fb6db52d68d3d10b": {
     functionName: "upsertMyChannelLayout_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "35cf6cc28f61c798a570ec39672552de8ed250f60706565e25b34a66f0c5b240": {
     functionName: "adminListUsers_createServerFn_handler",
-    importer: () => import("./assets/admin.functions-d9a750-r.js")
+    importer: () => import("./assets/admin.functions-d9a750-r.js"),
   },
   "35d21eb114150000c384e4af7abe715ee60bee975d2a6d5afbd52703f88c378a": {
     functionName: "stopBridge_createServerFn_handler",
-    importer: () => import("./assets/bridge.functions-DgJCZCV3.js")
+    importer: () => import("./assets/bridge.functions-DgJCZCV3.js"),
   },
   "44ccc16895fc9e7ce2624636ebfdb09af87f537ec0f50a6c81242686434b920a": {
     functionName: "startBridge_createServerFn_handler",
-    importer: () => import("./assets/bridge.functions-DgJCZCV3.js")
+    importer: () => import("./assets/bridge.functions-DgJCZCV3.js"),
   },
   "496bb534cc3f11ad626ccae3a00bab7fc06e1efaf76e505a293d9a9366ef0fd3": {
     functionName: "deleteSharedTheme_createServerFn_handler",
-    importer: () => import("./assets/themes.functions-BREzw7pO.js")
+    importer: () => import("./assets/themes.functions-BREzw7pO.js"),
   },
   "4e3fddf18e57875d3935a51a331aca3c3da1d3c7a9c2c29cbb33ce6299dc94cb": {
     functionName: "upsertFingerprint_createServerFn_handler",
-    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js")
+    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js"),
   },
   "5d696f5b7934058bc8738d1f2fd952d83aa4541bcd24aa52a66c843cc6db65e5": {
     functionName: "recordLiveLap_createServerFn_handler",
-    importer: () => import("./assets/liveLaps.functions-Crc2gRy7.js")
+    importer: () => import("./assets/liveLaps.functions-Crc2gRy7.js"),
   },
   "68ae1d118973fcae6b72b9ffb357a8b7cf6c764622416c26643e0fa0ac5e4749": {
     functionName: "listCommunityCarClasses_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "6be988dd8f4ee314ac93db05da28d1eb8f2018797e18c521292bed6c4d850965": {
     functionName: "getDbConfig_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
   "6e51eeb531637ef52eb546fc0b0f2f93bd0941191072fdc7841f63ef520e47b1": {
     functionName: "updateSessionFingerprintDelta_createServerFn_handler",
-    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js")
+    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js"),
   },
   "6fc40750dfd6c278f7c72bfbb36ff3225675daeec7f93fc991cb7f630fa6730c": {
     functionName: "testLocalDbConnection_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
   "75199b150805fb72a14c66751c7500a682a5a04342742f76fe0b1b9c97f6f36d": {
     functionName: "fetchPbSetup_createServerFn_handler",
-    importer: () => import("./assets/setup.functions-DcpWMYI6.js")
+    importer: () => import("./assets/setup.functions-DcpWMYI6.js"),
   },
   "7a7081d7243c130f1807d297517e861177ea1df81e921aee7d538e61ccc05ea0": {
     functionName: "voteCommunityItem_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "84a6f6d08f7994fe77af22dcb19c019c2ed58ade8761ccfd8c8af0f6dd7a5a5f": {
     functionName: "getPersonalBest_createServerFn_handler",
-    importer: () => import("./assets/liveLaps.functions-Crc2gRy7.js")
+    importer: () => import("./assets/liveLaps.functions-Crc2gRy7.js"),
   },
   "86e46adc000ddd68d04e26f71b110afe4b4522c393e8871abd429fcbd9f4e008": {
     functionName: "upsertMyCarClass_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
   "8807bcd1e24885bea42a273b01c13bf580f36251214035049bde39937b793996": {
     functionName: "recordTelemetrySessionMeta_createServerFn_handler",
-    importer: () => import("./assets/history.functions-muAGFwq7.js")
+    importer: () => import("./assets/history.functions-muAGFwq7.js"),
   },
   "992e611799973d8db599cacccf15200b19b5669290f9410c9c9e16579f533001": {
     functionName: "saveDbConfig_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
   "9dccd720940020ddddd8d414e06f3d1dc3b00382f43d5d490c8e31bca82ddd8d": {
     functionName: "speakText_createServerFn_handler",
-    importer: () => import("./assets/tts.functions-ChlBR6_S.js")
+    importer: () => import("./assets/tts.functions-ChlBR6_S.js"),
   },
   "9e832443bf68dc1afd0906f77686b1ea8872ad09afcaa177d4f399a63b42e66a": {
     functionName: "getMyGearRatios_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
-  "a0267f99ea641dee7a11ee872b71ff1a19869f78cae83bc19cef292565f399f7": {
+  a0267f99ea641dee7a11ee872b71ff1a19869f78cae83bc19cef292565f399f7: {
     functionName: "publishMyChannelLayout_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
-  "a1b0f3efc363c9d2100e82f3978763c576b3995969d90cf9b2d2dbf0d4e1fa81": {
+  a1b0f3efc363c9d2100e82f3978763c576b3995969d90cf9b2d2dbf0d4e1fa81: {
     functionName: "fetchLocalTelemetryFile_createServerFn_handler",
-    importer: () => import("./assets/history.functions-muAGFwq7.js")
+    importer: () => import("./assets/history.functions-muAGFwq7.js"),
   },
-  "a89391221bf6d4f3c3355bf0dfc3e706c4f9b13cc230e42657eaa76688007322": {
+  a89391221bf6d4f3c3355bf0dfc3e706c4f9b13cc230e42657eaa76688007322: {
     functionName: "getLocalSessions_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
-  "a933f1c90db2b411b6f804ed4c984c6e101ca06daaf62450a1ddebca103ad19a": {
+  a933f1c90db2b411b6f804ed4c984c6e101ca06daaf62450a1ddebca103ad19a: {
     functionName: "listCommunityGearRatios_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
-  "a9e884129245c896049675548db8c3263324534e7707c6a14a71b0ac924c5ec7": {
+  a9e884129245c896049675548db8c3263324534e7707c6a14a71b0ac924c5ec7: {
     functionName: "upsertMyGearRatios_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
-  "abbba3ff862cf55481069f2003803c513de3794ce64b16ed9b1201afed0c3569": {
+  abbba3ff862cf55481069f2003803c513de3794ce64b16ed9b1201afed0c3569: {
     functionName: "syncDesktopLaps_createServerFn_handler",
-    importer: () => import("./assets/community.functions-YG0Yhi_s.js")
+    importer: () => import("./assets/community.functions-YG0Yhi_s.js"),
   },
-  "b5484388ab4b2cd6a53164ac8e150abae7cadd0ff4b5adcf4687ef27a6f2dd7d": {
+  b5484388ab4b2cd6a53164ac8e150abae7cadd0ff4b5adcf4687ef27a6f2dd7d: {
     functionName: "hasAnyFingerprint_createServerFn_handler",
-    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js")
+    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js"),
   },
-  "b95e7b07455f66f56ce92478f1717625e1dccf570298bb4b01e5b9406af0ffbe": {
+  b95e7b07455f66f56ce92478f1717625e1dccf570298bb4b01e5b9406af0ffbe: {
     functionName: "refreshSharedSignedUrl_createServerFn_handler",
-    importer: () => import("./assets/share.functions-z4IKHqJ8.js")
+    importer: () => import("./assets/share.functions-z4IKHqJ8.js"),
   },
-  "be9659ec40533955d232ff49315c9aa649bd7db83b1fcfc216a660325004c844": {
+  be9659ec40533955d232ff49315c9aa649bd7db83b1fcfc216a660325004c844: {
     functionName: "deleteLocalSession_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
-  "ceb1da2412339a010c86cf3ecf77c3f4a412f494e3df16514997aba5cd89ec0c": {
+  ceb1da2412339a010c86cf3ecf77c3f4a412f494e3df16514997aba5cd89ec0c: {
     functionName: "fetchTrackCarHistory_createServerFn_handler",
-    importer: () => import("./assets/history.functions-muAGFwq7.js")
+    importer: () => import("./assets/history.functions-muAGFwq7.js"),
   },
-  "e2507865c01468809aa67f84f243facd748d53ebf53d1a04baa0f86f26aed510": {
+  e2507865c01468809aa67f84f243facd748d53ebf53d1a04baa0f86f26aed510: {
     functionName: "getMyRole_createServerFn_handler",
-    importer: () => import("./assets/admin.functions-d9a750-r.js")
+    importer: () => import("./assets/admin.functions-d9a750-r.js"),
   },
-  "e29d9c58ccb381c467fd97ec72f1e31b8c84c96077dc15cb2d778a800c642838": {
+  e29d9c58ccb381c467fd97ec72f1e31b8c84c96077dc15cb2d778a800c642838: {
     functionName: "insertLocalSession_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
-  "e75b3ebf429fee7020c779a2e9b76dc2affe3f854abd5837eb27ecf4d803f71c": {
+  e75b3ebf429fee7020c779a2e9b76dc2affe3f854abd5837eb27ecf4d803f71c: {
     functionName: "getLastSessionForPair_createServerFn_handler",
-    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js")
+    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js"),
   },
-  "eca09a9ce4600909cbdd71ef659e9b741d36bab6ad45478e094416d1db662d95": {
+  eca09a9ce4600909cbdd71ef659e9b741d36bab6ad45478e094416d1db662d95: {
     functionName: "getFingerprintForPair_createServerFn_handler",
-    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js")
+    importer: () => import("./assets/fingerprint.functions-Dwtb18NZ.js"),
   },
-  "f631e086e864b55a802d3846676e9c76d6b0d78df3ae21524dfa509bbf1a00b3": {
+  f631e086e864b55a802d3846676e9c76d6b0d78df3ae21524dfa509bbf1a00b3: {
     functionName: "createShareLink_createServerFn_handler",
-    importer: () => import("./assets/share.functions-z4IKHqJ8.js")
+    importer: () => import("./assets/share.functions-z4IKHqJ8.js"),
   },
-  "fd2f68fb3471015b1d9ab8f139421cbbbc0df798ebba6872f1a3a0d195a1ca68": {
+  fd2f68fb3471015b1d9ab8f139421cbbbc0df798ebba6872f1a3a0d195a1ca68: {
     functionName: "revokeShareLink_createServerFn_handler",
-    importer: () => import("./assets/share.functions-z4IKHqJ8.js")
+    importer: () => import("./assets/share.functions-z4IKHqJ8.js"),
   },
-  "fe521dc5b8ea6cac3c068abd8536973e9e6b2e73ee00f80cc9617f99f0e4e5b4": {
+  fe521dc5b8ea6cac3c068abd8536973e9e6b2e73ee00f80cc9617f99f0e4e5b4: {
     functionName: "getLocalSessionById_createServerFn_handler",
-    importer: () => import("./assets/localDb.functions-B2FAXs-8.js")
+    importer: () => import("./assets/localDb.functions-B2FAXs-8.js"),
   },
-  "fe7b7e8995170e4c9364af2abb9483c2bbf388aa4d14f84d0b0bd4726603076d": {
+  fe7b7e8995170e4c9364af2abb9483c2bbf388aa4d14f84d0b0bd4726603076d: {
     functionName: "publishTheme_createServerFn_handler",
-    importer: () => import("./assets/themes.functions-BREzw7pO.js")
-  }
+    importer: () => import("./assets/themes.functions-BREzw7pO.js"),
+  },
 };
 async function getServerFnById(id, access) {
   const serverFnInfo = manifest[id];
   if (!serverFnInfo) {
     throw new Error("Server function info not found for " + id);
   }
-  const fnModule = serverFnInfo.module ?? await serverFnInfo.importer();
+  const fnModule = serverFnInfo.module ?? (await serverFnInfo.importer());
   if (!fnModule) {
     throw new Error("Server function module not resolved for " + id);
   }
@@ -303,7 +338,7 @@ var FrameType = {
   JSON: 0,
   CHUNK: 1,
   END: 2,
-  ERROR: 3
+  ERROR: 3,
 };
 var FRAME_HEADER_SIZE = 9;
 var TSS_CONTENT_TYPE_FRAMED_VERSIONED = `${TSS_CONTENT_TYPE_FRAMED}; v=1`;
@@ -335,7 +370,10 @@ async function runWithStartContext(context, fn) {
 }
 function getStartContext(opts) {
   const context = startStorage.getStore();
-  if (!context && opts?.throwIfNotFound !== false) throw new Error(`No Start context found in AsyncLocalStorage. Make sure you are using the function within the server runtime.`);
+  if (!context && opts?.throwIfNotFound !== false)
+    throw new Error(
+      `No Start context found in AsyncLocalStorage. Make sure you are using the function within the server runtime.`,
+    );
   return context;
 }
 var getStartOptions = () => getStartContext().startOptions;
@@ -346,7 +384,7 @@ var createServerFn = (options, __opts) => {
   const res = {
     options: resolvedOptions,
     middleware: (middleware) => {
-      const newMiddleware = [...resolvedOptions.middleware || []];
+      const newMiddleware = [...(resolvedOptions.middleware || [])];
       middleware.map((m) => {
         if (TSS_SERVER_FUNCTION_FACTORY in m) {
           if (m.options.middleware) newMiddleware.push(...m.options.middleware);
@@ -354,7 +392,7 @@ var createServerFn = (options, __opts) => {
       });
       const res2 = createServerFn(void 0, {
         ...resolvedOptions,
-        middleware: newMiddleware
+        middleware: newMiddleware,
       });
       res2[TSS_SERVER_FUNCTION_FACTORY] = true;
       return res2;
@@ -362,7 +400,7 @@ var createServerFn = (options, __opts) => {
     inputValidator: (inputValidator) => {
       return createServerFn(void 0, {
         ...resolvedOptions,
-        inputValidator
+        inputValidator,
       });
     },
     handler: (...args) => {
@@ -370,64 +408,81 @@ var createServerFn = (options, __opts) => {
       const newOptions = {
         ...resolvedOptions,
         extractedFn,
-        serverFn
+        serverFn,
       };
-      const resolvedMiddleware = [...newOptions.middleware || [], serverFnBaseToMiddleware(newOptions)];
+      const resolvedMiddleware = [
+        ...(newOptions.middleware || []),
+        serverFnBaseToMiddleware(newOptions),
+      ];
       extractedFn.method = resolvedOptions.method;
-      return Object.assign(async (opts) => {
-        const result = await executeMiddleware$1(resolvedMiddleware, "client", {
-          ...extractedFn,
-          ...newOptions,
-          data: opts?.data,
-          headers: opts?.headers,
-          signal: opts?.signal,
-          fetch: opts?.fetch,
-          context: createNullProtoObject()
-        });
-        const redirect = parseRedirect(result.error);
-        if (redirect) throw redirect;
-        if (result.error) throw result.error;
-        return result.result;
-      }, {
-        ...extractedFn,
-        method: resolvedOptions.method,
-        __executeServer: async (opts) => {
-          const startContext = getStartContextServerOnly();
-          const serverContextAfterGlobalMiddlewares = startContext.contextAfterGlobalMiddlewares;
-          return await executeMiddleware$1(resolvedMiddleware, "server", {
+      return Object.assign(
+        async (opts) => {
+          const result = await executeMiddleware$1(resolvedMiddleware, "client", {
             ...extractedFn,
-            ...opts,
-            serverFnMeta: extractedFn.serverFnMeta,
-            context: safeObjectMerge(opts.context, serverContextAfterGlobalMiddlewares),
-            request: startContext.request
-          }).then((d) => ({
-            result: d.result,
-            error: d.error,
-            context: d.sendContext
-          }));
-        }
-      });
-    }
+            ...newOptions,
+            data: opts?.data,
+            headers: opts?.headers,
+            signal: opts?.signal,
+            fetch: opts?.fetch,
+            context: createNullProtoObject(),
+          });
+          const redirect = parseRedirect(result.error);
+          if (redirect) throw redirect;
+          if (result.error) throw result.error;
+          return result.result;
+        },
+        {
+          ...extractedFn,
+          method: resolvedOptions.method,
+          __executeServer: async (opts) => {
+            const startContext = getStartContextServerOnly();
+            const serverContextAfterGlobalMiddlewares = startContext.contextAfterGlobalMiddlewares;
+            return await executeMiddleware$1(resolvedMiddleware, "server", {
+              ...extractedFn,
+              ...opts,
+              serverFnMeta: extractedFn.serverFnMeta,
+              context: safeObjectMerge(opts.context, serverContextAfterGlobalMiddlewares),
+              request: startContext.request,
+            }).then((d) => ({
+              result: d.result,
+              error: d.error,
+              context: d.sendContext,
+            }));
+          },
+        },
+      );
+    },
   };
   const fun = (options2) => {
     return createServerFn(void 0, {
       ...resolvedOptions,
-      ...options2
+      ...options2,
     });
   };
   return Object.assign(fun, res);
 };
 async function executeMiddleware$1(middlewares, env, opts) {
-  let flattenedMiddlewares = flattenMiddlewares([...getStartOptions()?.functionMiddleware || [], ...middlewares]);
+  let flattenedMiddlewares = flattenMiddlewares([
+    ...(getStartOptions()?.functionMiddleware || []),
+    ...middlewares,
+  ]);
   if (env === "server") {
     const startContext = getStartContextServerOnly({ throwIfNotFound: false });
-    if (startContext?.executedRequestMiddlewares) flattenedMiddlewares = flattenedMiddlewares.filter((m) => !startContext.executedRequestMiddlewares.has(m));
+    if (startContext?.executedRequestMiddlewares)
+      flattenedMiddlewares = flattenedMiddlewares.filter(
+        (m) => !startContext.executedRequestMiddlewares.has(m),
+      );
   }
   const callNextMiddleware = async (ctx) => {
     const nextMiddleware = flattenedMiddlewares.shift();
     if (!nextMiddleware) return ctx;
     try {
-      if ("inputValidator" in nextMiddleware.options && nextMiddleware.options.inputValidator && env === "server") ctx.data = await execValidator(nextMiddleware.options.inputValidator, ctx.data);
+      if (
+        "inputValidator" in nextMiddleware.options &&
+        nextMiddleware.options.inputValidator &&
+        env === "server"
+      )
+        ctx.data = await execValidator(nextMiddleware.options.inputValidator, ctx.data);
       let middlewareFn = void 0;
       if (env === "client") {
         if ("client" in nextMiddleware.options) middlewareFn = nextMiddleware.options.client;
@@ -442,32 +497,42 @@ async function executeMiddleware$1(middlewares, env, opts) {
             headers: mergeHeaders(ctx.headers, userCtx.headers),
             _callSiteFetch: ctx._callSiteFetch,
             fetch: ctx._callSiteFetch ?? userCtx.fetch ?? ctx.fetch,
-            result: userCtx.result !== void 0 ? userCtx.result : userCtx instanceof Response ? userCtx : ctx.result,
-            error: userCtx.error ?? ctx.error
+            result:
+              userCtx.result !== void 0
+                ? userCtx.result
+                : userCtx instanceof Response
+                  ? userCtx
+                  : ctx.result,
+            error: userCtx.error ?? ctx.error,
           });
           if (result2.error) throw result2.error;
           return result2;
         };
         const result = await middlewareFn({
           ...ctx,
-          next: userNext
+          next: userNext,
         });
-        if (isRedirect(result)) return {
-          ...ctx,
-          error: result
-        };
-        if (result instanceof Response) return {
-          ...ctx,
-          result
-        };
-        if (!result) throw new Error("User middleware returned undefined. You must call next() or return a result in your middlewares.");
+        if (isRedirect(result))
+          return {
+            ...ctx,
+            error: result,
+          };
+        if (result instanceof Response)
+          return {
+            ...ctx,
+            result,
+          };
+        if (!result)
+          throw new Error(
+            "User middleware returned undefined. You must call next() or return a result in your middlewares.",
+          );
         return result;
       }
       return callNextMiddleware(ctx);
     } catch (error) {
       return {
         ...ctx,
-        error
+        error,
       };
     }
   };
@@ -476,14 +541,17 @@ async function executeMiddleware$1(middlewares, env, opts) {
     headers: opts.headers || {},
     sendContext: opts.sendContext || {},
     context: opts.context || createNullProtoObject(),
-    _callSiteFetch: opts.fetch
+    _callSiteFetch: opts.fetch,
   });
 }
 function flattenMiddlewares(middlewares, maxDepth = 100) {
   const seen = /* @__PURE__ */ new Set();
   const flattened = [];
   const recurse = (middleware, depth) => {
-    if (depth > maxDepth) throw new Error(`Middleware nesting depth exceeded maximum of ${maxDepth}. Check for circular references.`);
+    if (depth > maxDepth)
+      throw new Error(
+        `Middleware nesting depth exceeded maximum of ${maxDepth}. Check for circular references.`,
+      );
     middleware.forEach((m) => {
       if (m.options.middleware) recurse(m.options.middleware, depth + 1);
       if (!seen.has(m)) {
@@ -515,7 +583,7 @@ function serverFnBaseToMiddleware(options) {
         const payload = {
           ...ctx,
           context: sendContext,
-          fetch: fetch2
+          fetch: fetch2,
         };
         return next(await options.extractedFn?.(payload));
       },
@@ -523,16 +591,16 @@ function serverFnBaseToMiddleware(options) {
         const result = await options.serverFn?.(ctx);
         return next({
           ...ctx,
-          result
+          result,
         });
-      }
-    }
+      },
+    },
   };
 }
 var createMiddleware = (options, __opts) => {
   const resolvedOptions = {
     type: "request",
-    ...__opts || options
+    ...(__opts || options),
   };
   return {
     options: resolvedOptions,
@@ -547,13 +615,13 @@ var createMiddleware = (options, __opts) => {
     },
     server: (server2) => {
       return createMiddleware({}, Object.assign(resolvedOptions, { server: server2 }));
-    }
+    },
   };
 };
 var innerCreateCsrfMiddleware = (opts = {}) => {
   const middleware = createMiddleware().server(async (ctx) => {
     const csrfCtx = ctx;
-    if (opts.filter && !await opts.filter(csrfCtx)) return ctx.next();
+    if (opts.filter && !(await opts.filter(csrfCtx))) return ctx.next();
     if (await isCsrfRequestAllowed(opts, csrfCtx)) return ctx.next();
     return getFailureResponse(opts, csrfCtx);
   });
@@ -562,7 +630,7 @@ var innerCreateCsrfMiddleware = (opts = {}) => {
 var createCsrfMiddleware = innerCreateCsrfMiddleware;
 async function isCsrfRequestAllowed(opts, ctx) {
   const result = await getCsrfRequestValidationResult(opts, ctx);
-  return result === true || result === void 0 && opts.allowRequestsWithoutOriginCheck === true;
+  return result === true || (result === void 0 && opts.allowRequestsWithoutOriginCheck === true);
 }
 async function getCsrfRequestValidationResult(opts, ctx) {
   const fetchSite = ctx.request.headers.get("Sec-Fetch-Site");
@@ -602,9 +670,12 @@ function isRefererSameOrigin(referer, requestOrigin) {
 }
 async function getFailureResponse(opts, ctx) {
   if (typeof opts.failureResponse === "function") return opts.failureResponse(ctx);
-  return opts.failureResponse?.clone() ?? new Response("Forbidden", {
-    status: 403
-  });
+  return (
+    opts.failureResponse?.clone() ??
+    new Response("Forbidden", {
+      status: 403,
+    })
+  );
 }
 function dedupeSerializationAdapters(deduped, serializationAdapters) {
   for (let i = 0, len = serializationAdapters.length; i < len; i++) {
@@ -626,24 +697,27 @@ var createStart = (getOptions) => {
       }
       return options;
     },
-    createMiddleware
+    createMiddleware,
   };
 };
 function getDefaultSerovalPlugins() {
-  return [...getStartOptions()?.serializationAdapters?.map(makeSerovalPlugin) ?? [], ...defaultSerovalPlugins];
+  return [
+    ...(getStartOptions()?.serializationAdapters?.map(makeSerovalPlugin) ?? []),
+    ...defaultSerovalPlugins,
+  ];
 }
 var textEncoder = new TextEncoder();
 var EMPTY_PAYLOAD = new Uint8Array(0);
 function encodeFrame(type, streamId, payload) {
   const frame = new Uint8Array(FRAME_HEADER_SIZE + payload.length);
   frame[0] = type;
-  frame[1] = streamId >>> 24 & 255;
-  frame[2] = streamId >>> 16 & 255;
-  frame[3] = streamId >>> 8 & 255;
+  frame[1] = (streamId >>> 24) & 255;
+  frame[2] = (streamId >>> 16) & 255;
+  frame[3] = (streamId >>> 8) & 255;
   frame[4] = streamId & 255;
-  frame[5] = payload.length >>> 24 & 255;
-  frame[6] = payload.length >>> 16 & 255;
-  frame[7] = payload.length >>> 8 & 255;
+  frame[5] = (payload.length >>> 24) & 255;
+  frame[6] = (payload.length >>> 16) & 255;
+  frame[7] = (payload.length >>> 8) & 255;
   frame[8] = payload.length & 255;
   frame.set(payload, FRAME_HEADER_SIZE);
   return frame;
@@ -679,10 +753,8 @@ function createMultiplexedStream(jsonStream, rawStreams, lateStreamSource) {
     cancelled = true;
     try {
       controller.error(error);
-    } catch {
-    }
-    for (const reader of readers) reader.cancel().catch(() => {
-    });
+    } catch {}
+    for (const reader of readers) reader.cancel().catch(() => {});
   };
   async function pumpRawStream(streamId, stream) {
     const reader = stream.getReader();
@@ -743,19 +815,17 @@ function createMultiplexedStream(jsonStream, rawStreams, lateStreamSource) {
       try {
         const latePumps = (await Promise.all(pumps)).find(Array.isArray);
         if (latePumps && latePumps.length > 0) await Promise.all(latePumps);
-        if (!cancelled) try {
-          controller.close();
-        } catch {
-        }
-      } catch {
-      }
+        if (!cancelled)
+          try {
+            controller.close();
+          } catch {}
+      } catch {}
     },
     cancel() {
       cancelled = true;
-      for (const reader of readers) reader.cancel().catch(() => {
-      });
+      for (const reader of readers) reader.cancel().catch(() => {});
       readers.length = 0;
-    }
+    },
   });
 }
 var serovalPlugins = void 0;
@@ -765,10 +835,11 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
   const methodUpper = request.method.toUpperCase();
   const url = new URL(request.url);
   const action = await getServerFnById(serverFnId);
-  if (action.method && methodUpper !== action.method) return new Response(`expected ${action.method} method. Got ${methodUpper}`, {
-    status: 405,
-    headers: { Allow: action.method }
-  });
+  if (action.method && methodUpper !== action.method)
+    return new Response(`expected ${action.method} method. Got ${methodUpper}`, {
+      status: 405,
+      headers: { Allow: action.method },
+    });
   const isServerFn = request.headers.get("x-tsr-serverFn") === "true";
   if (!serovalPlugins) serovalPlugins = getDefaultSerovalPlugins();
   const contentType = request.headers.get("Content-Type");
@@ -777,7 +848,7 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
   }
   return await (async () => {
     try {
-      let serializeResult = function(res2) {
+      let serializeResult = function (res2) {
         let nonStreamingBody = void 0;
         const alsResponse = getResponse();
         if (res2 !== void 0) {
@@ -786,24 +857,28 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
           let lateStreamWriter;
           let lateStreamReadable = void 0;
           const pendingLateStreams = [];
-          const plugins = [createRawStreamRPCPlugin((id, stream) => {
-            if (initialPhase) {
-              rawStreams.set(id, stream);
-              return;
-            }
-            if (lateStreamWriter) {
-              lateStreamWriter.write({
+          const plugins = [
+            createRawStreamRPCPlugin((id, stream) => {
+              if (initialPhase) {
+                rawStreams.set(id, stream);
+                return;
+              }
+              if (lateStreamWriter) {
+                lateStreamWriter
+                  .write({
+                    id,
+                    stream,
+                  })
+                  .catch(() => {});
+                return;
+              }
+              pendingLateStreams.push({
                 id,
-                stream
-              }).catch(() => {
+                stream,
               });
-              return;
-            }
-            pendingLateStreams.push({
-              id,
-              stream
-            });
-          }), ...serovalPlugins || []];
+            }),
+            ...(serovalPlugins || []),
+          ];
           let done = false;
           const callbacks = {
             onParse: (value) => {
@@ -814,7 +889,7 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
             },
             onError: (error) => {
               throw error;
-            }
+            },
           };
           toCrossJSONStream(res2, {
             refs: /* @__PURE__ */ new Map(),
@@ -827,72 +902,79 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
             },
             onError: (error) => {
               callbacks.onError(error);
-            }
+            },
           });
           initialPhase = false;
-          if (done && rawStreams.size === 0) return new Response(nonStreamingBody ? JSON.stringify(nonStreamingBody) : void 0, {
-            status: alsResponse.status,
-            statusText: alsResponse.statusText,
-            headers: {
-              "Content-Type": "application/json",
-              [X_TSS_SERIALIZED]: "true"
-            }
-          });
+          if (done && rawStreams.size === 0)
+            return new Response(nonStreamingBody ? JSON.stringify(nonStreamingBody) : void 0, {
+              status: alsResponse.status,
+              statusText: alsResponse.statusText,
+              headers: {
+                "Content-Type": "application/json",
+                [X_TSS_SERIALIZED]: "true",
+              },
+            });
           const { readable, writable } = new TransformStream();
           lateStreamReadable = readable;
           lateStreamWriter = writable.getWriter();
-          for (const registration of pendingLateStreams) lateStreamWriter.write(registration).catch(() => {
-          });
+          for (const registration of pendingLateStreams)
+            lateStreamWriter.write(registration).catch(() => {});
           pendingLateStreams.length = 0;
-          const multiplexedStream = createMultiplexedStream(new ReadableStream({
-            start(controller) {
-              callbacks.onParse = (value) => {
-                controller.enqueue(JSON.stringify(value) + "\n");
-              };
-              callbacks.onDone = () => {
-                try {
-                  controller.close();
-                } catch {
-                }
-                lateStreamWriter?.close().catch(() => {
-                }).finally(() => {
-                  lateStreamWriter = void 0;
-                });
-              };
-              callbacks.onError = (error) => {
-                controller.error(error);
-                lateStreamWriter?.abort(error).catch(() => {
-                }).finally(() => {
-                  lateStreamWriter = void 0;
-                });
-              };
-              if (nonStreamingBody !== void 0) callbacks.onParse(nonStreamingBody);
-              if (done) callbacks.onDone();
-            },
-            cancel() {
-              lateStreamWriter?.abort().catch(() => {
-              });
-              lateStreamWriter = void 0;
-            }
-          }), rawStreams, lateStreamReadable);
+          const multiplexedStream = createMultiplexedStream(
+            new ReadableStream({
+              start(controller) {
+                callbacks.onParse = (value) => {
+                  controller.enqueue(JSON.stringify(value) + "\n");
+                };
+                callbacks.onDone = () => {
+                  try {
+                    controller.close();
+                  } catch {}
+                  lateStreamWriter
+                    ?.close()
+                    .catch(() => {})
+                    .finally(() => {
+                      lateStreamWriter = void 0;
+                    });
+                };
+                callbacks.onError = (error) => {
+                  controller.error(error);
+                  lateStreamWriter
+                    ?.abort(error)
+                    .catch(() => {})
+                    .finally(() => {
+                      lateStreamWriter = void 0;
+                    });
+                };
+                if (nonStreamingBody !== void 0) callbacks.onParse(nonStreamingBody);
+                if (done) callbacks.onDone();
+              },
+              cancel() {
+                lateStreamWriter?.abort().catch(() => {});
+                lateStreamWriter = void 0;
+              },
+            }),
+            rawStreams,
+            lateStreamReadable,
+          );
           return new Response(multiplexedStream, {
             status: alsResponse.status,
             statusText: alsResponse.statusText,
             headers: {
               "Content-Type": TSS_CONTENT_TYPE_FRAMED_VERSIONED,
-              [X_TSS_SERIALIZED]: "true"
-            }
+              [X_TSS_SERIALIZED]: "true",
+            },
           });
         }
         return new Response(void 0, {
           status: alsResponse.status,
-          statusText: alsResponse.statusText
+          statusText: alsResponse.statusText,
         });
       };
       let res = await (async () => {
         if (FORM_DATA_CONTENT_TYPES.some((type) => contentType && contentType.includes(type))) {
           if (methodUpper === "GET") {
-            if (false) ;
+            if (false);
             invariant();
           }
           const formData = await request.formData();
@@ -901,19 +983,24 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
           const params = {
             context,
             data: formData,
-            method: methodUpper
+            method: methodUpper,
           };
-          if (typeof serializedContext === "string") try {
-            const deserializedContext = fromJSON(JSON.parse(serializedContext), { plugins: serovalPlugins });
-            if (typeof deserializedContext === "object" && deserializedContext) params.context = safeObjectMerge(deserializedContext, context);
-          } catch (e) {
-            if (false) ;
-          }
+          if (typeof serializedContext === "string")
+            try {
+              const deserializedContext = fromJSON(JSON.parse(serializedContext), {
+                plugins: serovalPlugins,
+              });
+              if (typeof deserializedContext === "object" && deserializedContext)
+                params.context = safeObjectMerge(deserializedContext, context);
+            } catch (e) {
+              if (false);
+            }
           return await action(params);
         }
         if (methodUpper === "GET") {
           const payloadParam = url.searchParams.get("payload");
-          if (payloadParam && payloadParam.length > MAX_PAYLOAD_SIZE) throw new Error("Payload too large");
+          if (payloadParam && payloadParam.length > MAX_PAYLOAD_SIZE)
+            throw new Error("Payload too large");
           const payload2 = payloadParam ? parsePayload(JSON.parse(payloadParam)) : {};
           payload2.context = safeObjectMerge(payload2.context, context);
           payload2.method = methodUpper;
@@ -943,18 +1030,22 @@ var handleServerAction = async ({ request, context, serverFnId }) => {
       console.info();
       console.error(error);
       console.info();
-      const serializedError = JSON.stringify(await Promise.resolve(toCrossJSONAsync(error, {
-        refs: /* @__PURE__ */ new Map(),
-        plugins: serovalPlugins
-      })));
+      const serializedError = JSON.stringify(
+        await Promise.resolve(
+          toCrossJSONAsync(error, {
+            refs: /* @__PURE__ */ new Map(),
+            plugins: serovalPlugins,
+          }),
+        ),
+      );
       const response = getResponse();
       return new Response(serializedError, {
         status: response.status ?? 500,
         statusText: response.statusText,
         headers: {
           "Content-Type": "application/json",
-          [X_TSS_SERIALIZED]: "true"
-        }
+          [X_TSS_SERIALIZED]: "true",
+        },
       });
     }
   })();
@@ -965,8 +1056,8 @@ function isNotFoundResponse(error) {
     status: 404,
     headers: {
       "Content-Type": "application/json",
-      ...headers || {}
-    }
+      ...(headers || {}),
+    },
   });
 }
 var LINK_PARAM_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
@@ -976,7 +1067,7 @@ var PRELOAD_AS_VALUES = /* @__PURE__ */ new Set([
   "image",
   "script",
   "style",
-  "track"
+  "track",
 ]);
 function buildLinkParam(name, value) {
   if (value === void 0) return name;
@@ -986,7 +1077,8 @@ function buildLinkParam(name, value) {
 function serializeEarlyHint(hint) {
   const parts = [`<${hint.href}>`, buildLinkParam("rel", hint.rel)];
   if (hint.as) parts.push(buildLinkParam("as", hint.as));
-  if (hint.crossOrigin !== void 0) parts.push(buildLinkParam("crossorigin", hint.crossOrigin || void 0));
+  if (hint.crossOrigin !== void 0)
+    parts.push(buildLinkParam("crossorigin", hint.crossOrigin || void 0));
   if (hint.type) parts.push(buildLinkParam("type", hint.type));
   if (hint.integrity) parts.push(buildLinkParam("integrity", hint.integrity));
   if (hint.referrerPolicy) parts.push(buildLinkParam("referrerpolicy", hint.referrerPolicy));
@@ -1040,7 +1132,7 @@ function linkAttrsToEarlyHint(attrs) {
   if (!hintRel) return void 0;
   const hint = {
     href,
-    rel: hintRel
+    rel: hintRel,
   };
   if (hintAs) hint.as = hintAs;
   addEarlyHintFetchAttrs(hint, attrs);
@@ -1056,7 +1148,7 @@ function collectStaticHintsFromManifest(manifest2, matchedRoutes) {
       const hint = {
         href,
         rel: "modulepreload",
-        as: "script"
+        as: "script",
       };
       if (crossOrigin !== void 0) hint.crossOrigin = crossOrigin;
       hints.push(hint);
@@ -1069,7 +1161,7 @@ function collectStaticHintsFromManifest(manifest2, matchedRoutes) {
         const hint2 = {
           href: stylesheetHref,
           rel: "preload",
-          as: "style"
+          as: "style",
         };
         addEarlyHintFetchAttrs(hint2, asset.attrs);
         hints.push(hint2);
@@ -1110,7 +1202,7 @@ function createEarlyHintsEvent(opts) {
     hints: nextHints,
     links: nextLinks,
     allHints: opts.sentHints.slice(),
-    allLinks: Array.from(opts.sentLinks)
+    allLinks: Array.from(opts.sentLinks),
   };
 }
 function createResponseLinkHeaderEntries(opts) {
@@ -1121,7 +1213,7 @@ function createResponseLinkHeaderEntries(opts) {
     opts.entries.push({
       phase: opts.phase,
       hint,
-      link
+      link,
     });
   }
 }
@@ -1139,9 +1231,10 @@ function getResponseLinkHeaderEntries(opts) {
 function notifyEarlyHints(phase, event, onEarlyHints) {
   try {
     const result = onEarlyHints(event);
-    if (result) Promise.resolve(result).catch((err) => {
-      console.error(`Error sending ${phase} early hints:`, err);
-    });
+    if (result)
+      Promise.resolve(result).catch((err) => {
+        console.error(`Error sending ${phase} early hints:`, err);
+      });
   } catch (err) {
     console.error(`Error sending ${phase} early hints:`, err);
   }
@@ -1154,26 +1247,29 @@ function appendResponseLinkHeaders(opts) {
   for (const link of getResponseLinkHeaderEntries(opts)) opts.responseHeaders.append("Link", link);
 }
 function collectResponseLinkHeaderEntries(opts) {
-  for (let index = 0; index < opts.event.hints.length; index++) opts.entries.push({
-    phase: opts.phase,
-    hint: opts.event.hints[index],
-    link: opts.event.links[index]
-  });
+  for (let index = 0; index < opts.event.hints.length; index++)
+    opts.entries.push({
+      phase: opts.phase,
+      hint: opts.event.hints[index],
+      link: opts.event.links[index],
+    });
 }
 function collectEarlyHintsPhase(opts) {
-  const event = opts.onEarlyHints ? createEarlyHintsEvent({
-    phase: opts.phase,
-    hints: opts.hints,
-    sentLinks: opts.sentLinks,
-    sentHints: opts.sentHints
-  }) : void 0;
+  const event = opts.onEarlyHints
+    ? createEarlyHintsEvent({
+        phase: opts.phase,
+        hints: opts.hints,
+        sentLinks: opts.sentLinks,
+        sentHints: opts.sentHints,
+      })
+    : void 0;
   if (event) notifyEarlyHints(opts.phase, event, opts.onEarlyHints);
   if (!opts.responseLinkHeaderEntries) return;
   if (event) {
     collectResponseLinkHeaderEntries({
       phase: opts.phase,
       event,
-      entries: opts.responseLinkHeaderEntries
+      entries: opts.responseLinkHeaderEntries,
     });
     return;
   }
@@ -1181,7 +1277,7 @@ function collectEarlyHintsPhase(opts) {
     phase: opts.phase,
     hints: opts.hints,
     sentLinks: opts.sentLinks,
-    entries: opts.responseLinkHeaderEntries
+    entries: opts.responseLinkHeaderEntries,
   });
 }
 function createEarlyHintsCollector(opts) {
@@ -1199,7 +1295,7 @@ function createEarlyHintsCollector(opts) {
         sentLinks,
         sentHints,
         onEarlyHints: opts.onEarlyHints,
-        responseLinkHeaderEntries
+        responseLinkHeaderEntries,
       });
     },
     collectDynamic: (matches) => {
@@ -1209,7 +1305,7 @@ function createEarlyHintsCollector(opts) {
         sentLinks,
         sentHints,
         onEarlyHints: opts.onEarlyHints,
-        responseLinkHeaderEntries
+        responseLinkHeaderEntries,
       });
     },
     appendResponseHeaders: (headers) => {
@@ -1217,9 +1313,9 @@ function createEarlyHintsCollector(opts) {
       appendResponseLinkHeaders({
         responseHeaders: headers,
         entries: responseLinkHeaderEntries,
-        filter: responseLinkHeaderFilter
+        filter: responseLinkHeaderFilter,
       });
-    }
+    },
   };
 }
 function normalizeTransformAssetResult(result) {
@@ -1227,36 +1323,51 @@ function normalizeTransformAssetResult(result) {
   return result;
 }
 function escapeCssString(value) {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\a ").replace(/\r/g, "\\d ").replace(/\f/g, "\\c ");
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\a ")
+    .replace(/\r/g, "\\d ")
+    .replace(/\f/g, "\\c ");
 }
 async function transformInlineCssTemplate(options) {
   const { strings, urls } = options.template;
-  if (strings.length !== urls.length + 1) throw new Error(`TanStack Start inlineCss template for ${options.stylesheetHref} is invalid`);
+  if (strings.length !== urls.length + 1)
+    throw new Error(`TanStack Start inlineCss template for ${options.stylesheetHref} is invalid`);
   let css = strings[0];
   for (let index = 0; index < urls.length; index++) {
-    const transformed = normalizeTransformAssetResult(await options.transformFn({
-      kind: "css-url",
-      url: urls[index],
-      stylesheetHref: options.stylesheetHref
-    }));
+    const transformed = normalizeTransformAssetResult(
+      await options.transformFn({
+        kind: "css-url",
+        url: urls[index],
+        stylesheetHref: options.stylesheetHref,
+      }),
+    );
     css += escapeCssString(transformed.href) + strings[index + 1];
   }
   return css;
 }
 async function transformInlineCssStyles(inlineCss, transformFn) {
   const transformedStyles = {};
-  const transformedEntries = await Promise.all(Object.entries(inlineCss.styles).map(async ([stylesheetHref, css]) => {
-    const template = inlineCss.templates?.[stylesheetHref];
-    return [stylesheetHref, template ? await transformInlineCssTemplate({
-      stylesheetHref,
-      template,
-      transformFn
-    }) : css];
-  }));
+  const transformedEntries = await Promise.all(
+    Object.entries(inlineCss.styles).map(async ([stylesheetHref, css]) => {
+      const template = inlineCss.templates?.[stylesheetHref];
+      return [
+        stylesheetHref,
+        template
+          ? await transformInlineCssTemplate({
+              stylesheetHref,
+              template,
+              transformFn,
+            })
+          : css,
+      ];
+    }),
+  );
   for (const [stylesheetHref, css] of transformedEntries) transformedStyles[stylesheetHref] = css;
   return {
     styles: transformedStyles,
-    ...inlineCss.templates ? { templates: inlineCss.templates } : {}
+    ...(inlineCss.templates ? { templates: inlineCss.templates } : {}),
   };
 }
 function resolveTransformAssetsCrossOrigin(config, kind) {
@@ -1273,14 +1384,15 @@ function resolveTransformAssetsConfig(transform) {
     return {
       type: "transform",
       transformFn: ({ url }) => ({ href: `${prefix}${url}` }),
-      cache: true
+      cache: true,
     };
   }
-  if (typeof transform === "function") return {
-    type: "transform",
-    transformFn: transform,
-    cache: true
-  };
+  if (typeof transform === "function")
+    return {
+      type: "transform",
+      transformFn: transform,
+      cache: true,
+    };
   if (isObjectShorthand(transform)) {
     const { prefix, crossOrigin } = transform;
     return {
@@ -1289,23 +1401,29 @@ function resolveTransformAssetsConfig(transform) {
         const href = `${prefix}${url}`;
         if (kind === "clientEntry" || kind === "css-url") return { href };
         const co = resolveTransformAssetsCrossOrigin(crossOrigin, kind);
-        return co ? {
-          href,
-          crossOrigin: co
-        } : { href };
+        return co
+          ? {
+              href,
+              crossOrigin: co,
+            }
+          : { href };
       },
-      cache: true
+      cache: true,
     };
   }
-  if ("createTransform" in transform && transform.createTransform) return {
-    type: "createTransform",
-    createTransform: transform.createTransform,
-    cache: transform.cache !== false
-  };
+  if ("createTransform" in transform && transform.createTransform)
+    return {
+      type: "createTransform",
+      createTransform: transform.createTransform,
+      cache: transform.cache !== false,
+    };
   return {
     type: "transform",
-    transformFn: typeof transform.transform === "string" ? (({ url }) => ({ href: `${transform.transform}${url}` })) : transform.transform,
-    cache: transform.cache !== false
+    transformFn:
+      typeof transform.transform === "string"
+        ? ({ url }) => ({ href: `${transform.transform}${url}` })
+        : transform.transform,
+    cache: transform.cache !== false,
   };
 }
 function buildClientEntryScriptTag(clientEntry, injectedHeadScripts) {
@@ -1315,9 +1433,9 @@ function buildClientEntryScriptTag(clientEntry, injectedHeadScripts) {
     tag: "script",
     attrs: {
       type: "module",
-      async: true
+      async: true,
     },
-    children: script
+    children: script,
   };
 }
 function assignManifestAssetLink(link, next) {
@@ -1327,39 +1445,52 @@ function assignManifestAssetLink(link, next) {
 async function transformManifestAssets(source, transformFn, _opts) {
   const manifest2 = structuredClone(source.manifest);
   if (!(_opts?.inlineCss !== false)) delete manifest2.inlineCss;
-  else if (manifest2.inlineCss) manifest2.inlineCss = await transformInlineCssStyles(manifest2.inlineCss, transformFn);
+  else if (manifest2.inlineCss)
+    manifest2.inlineCss = await transformInlineCssStyles(manifest2.inlineCss, transformFn);
   for (const route of Object.values(manifest2.routes)) {
-    if (route.preloads) route.preloads = await Promise.all(route.preloads.map(async (link) => {
-      const result = normalizeTransformAssetResult(await transformFn({
-        url: resolveManifestAssetLink(link).href,
-        kind: "modulepreload"
-      }));
-      return assignManifestAssetLink(link, {
-        href: result.href,
-        crossOrigin: result.crossOrigin
-      });
-    }));
+    if (route.preloads)
+      route.preloads = await Promise.all(
+        route.preloads.map(async (link) => {
+          const result = normalizeTransformAssetResult(
+            await transformFn({
+              url: resolveManifestAssetLink(link).href,
+              kind: "modulepreload",
+            }),
+          );
+          return assignManifestAssetLink(link, {
+            href: result.href,
+            crossOrigin: result.crossOrigin,
+          });
+        }),
+      );
     if (route.assets && !manifest2.inlineCss) {
-      for (const asset of route.assets) if (asset.tag === "link" && asset.attrs?.href) {
-        const rel = asset.attrs.rel;
-        if (!(typeof rel === "string" ? rel.split(/\s+/) : []).includes("stylesheet")) continue;
-        const result = normalizeTransformAssetResult(await transformFn({
-          url: asset.attrs.href,
-          kind: "stylesheet"
-        }));
-        asset.attrs.href = result.href;
-        if (result.crossOrigin) asset.attrs.crossOrigin = result.crossOrigin;
-        else delete asset.attrs.crossOrigin;
-      }
+      for (const asset of route.assets)
+        if (asset.tag === "link" && asset.attrs?.href) {
+          const rel = asset.attrs.rel;
+          if (!(typeof rel === "string" ? rel.split(/\s+/) : []).includes("stylesheet")) continue;
+          const result = normalizeTransformAssetResult(
+            await transformFn({
+              url: asset.attrs.href,
+              kind: "stylesheet",
+            }),
+          );
+          asset.attrs.href = result.href;
+          if (result.crossOrigin) asset.attrs.crossOrigin = result.crossOrigin;
+          else delete asset.attrs.crossOrigin;
+        }
     }
   }
-  const transformedClientEntry = normalizeTransformAssetResult(await transformFn({
-    url: source.clientEntry,
-    kind: "clientEntry"
-  }));
-  const rootRoute = manifest2.routes[rootRouteId] = manifest2.routes[rootRouteId] || {};
+  const transformedClientEntry = normalizeTransformAssetResult(
+    await transformFn({
+      url: source.clientEntry,
+      kind: "clientEntry",
+    }),
+  );
+  const rootRoute = (manifest2.routes[rootRouteId] = manifest2.routes[rootRouteId] || {});
   rootRoute.assets = rootRoute.assets || [];
-  rootRoute.assets.push(buildClientEntryScriptTag(transformedClientEntry.href, source.injectedHeadScripts));
+  rootRoute.assets.push(
+    buildClientEntryScriptTag(transformedClientEntry.href, source.injectedHeadScripts),
+  );
   return manifest2;
 }
 function buildManifestWithClientEntry(source, opts) {
@@ -1369,12 +1500,12 @@ function buildManifestWithClientEntry(source, opts) {
     ...source.manifest.routes,
     [rootRouteId]: {
       ...baseRootRoute,
-      assets: [...baseRootRoute?.assets || [], scriptTag]
-    }
+      assets: [...(baseRootRoute?.assets || []), scriptTag],
+    },
   };
   return {
-    ...opts?.inlineCss === false ? {} : { inlineCss: structuredClone(source.manifest.inlineCss) },
-    routes
+    ...(opts?.inlineCss === false ? {} : { inlineCss: structuredClone(source.manifest.inlineCss) }),
+    routes,
   };
 }
 function getStaticHandlerInlineCssDefault(handlerInlineCss) {
@@ -1383,23 +1514,30 @@ function getStaticHandlerInlineCssDefault(handlerInlineCss) {
 }
 async function resolveInlineCssForRequest(opts) {
   if (opts.requestInlineCss !== void 0) return opts.requestInlineCss;
-  if (typeof opts.handlerInlineCss === "function") return await opts.handlerInlineCss({ request: opts.request });
+  if (typeof opts.handlerInlineCss === "function")
+    return await opts.handlerInlineCss({ request: opts.request });
   return opts.handlerInlineCss ?? true;
 }
 function createCachedBaseManifestLoader(loadBaseManifest) {
   let baseManifestPromise;
   return () => {
-    if (!baseManifestPromise) baseManifestPromise = loadBaseManifest().catch((error) => {
-      baseManifestPromise = void 0;
-      throw error;
-    });
+    if (!baseManifestPromise)
+      baseManifestPromise = loadBaseManifest().catch((error) => {
+        baseManifestPromise = void 0;
+        throw error;
+      });
     return baseManifestPromise;
   };
 }
 function createFinalManifestTransformResolver(transformAssets, opts) {
-  const transformConfig = transformAssets !== void 0 ? resolveTransformAssetsConfig(transformAssets) : void 0;
+  const transformConfig =
+    transformAssets !== void 0 ? resolveTransformAssetsConfig(transformAssets) : void 0;
   const cache = transformConfig ? transformConfig.cache : true;
-  const warmup = !!transformAssets && typeof transformAssets === "object" && "warmup" in transformAssets && transformAssets.warmup === true;
+  const warmup =
+    !!transformAssets &&
+    typeof transformAssets === "object" &&
+    "warmup" in transformAssets &&
+    transformAssets.warmup === true;
   let cachedCreateTransformPromise;
   const clearCachedCreateTransform = () => {
     cachedCreateTransformPromise = void 0;
@@ -1412,12 +1550,15 @@ function createFinalManifestTransformResolver(transformAssets, opts) {
       if (!transformConfig) return void 0;
       if (transformConfig.type !== "createTransform") return transformConfig.transformFn;
       if (!cache || false) return transformConfig.createTransform(ctx);
-      if (!cachedCreateTransformPromise) cachedCreateTransformPromise = Promise.resolve(transformConfig.createTransform(ctx)).catch((error) => {
-        clearCachedCreateTransform();
-        throw error;
-      });
+      if (!cachedCreateTransformPromise)
+        cachedCreateTransformPromise = Promise.resolve(transformConfig.createTransform(ctx)).catch(
+          (error) => {
+            clearCachedCreateTransform();
+            throw error;
+          },
+        );
       return cachedCreateTransformPromise;
-    }
+    },
   };
 }
 function createFinalManifestResolver(opts) {
@@ -1427,38 +1568,39 @@ function createFinalManifestResolver(opts) {
   const getRequestManifestOptions = async (requestOpts) => {
     const transformFn = await transformResolver.getTransformFn({
       warmup: false,
-      request: requestOpts.request
+      request: requestOpts.request,
     });
     const inlineCss = await resolveInlineCssForRequest({
       request: requestOpts.request,
       handlerInlineCss: opts.inlineCss,
-      requestInlineCss: requestOpts.requestInlineCss
+      requestInlineCss: requestOpts.requestInlineCss,
     });
     return {
       getBaseManifest: requestOpts.getBaseManifest,
       transformFn,
       cache: transformResolver.cache,
-      inlineCss
+      inlineCss,
     };
   };
   const resolveRequest = async (requestOpts, cache) => {
     return resolveFinalManifest({
-      ...await getRequestManifestOptions(requestOpts),
-      finalManifestCache: cache
+      ...(await getRequestManifestOptions(requestOpts)),
+      finalManifestCache: cache,
     });
   };
   return {
-    warmup: ({ getBaseManifest: getBaseManifest2 }) => warmupFinalManifest({
-      enabled: transformResolver.warmup,
-      handlerDefaultInlineCss,
-      cache: transformResolver.cache,
-      finalManifestCache,
-      getBaseManifest: getBaseManifest2,
-      getTransformFn: () => transformResolver.getTransformFn({ warmup: true }),
-      onError: transformResolver.clearCachedCreateTransform
-    }),
+    warmup: ({ getBaseManifest: getBaseManifest2 }) =>
+      warmupFinalManifest({
+        enabled: transformResolver.warmup,
+        handlerDefaultInlineCss,
+        cache: transformResolver.cache,
+        finalManifestCache,
+        getBaseManifest: getBaseManifest2,
+        getTransformFn: () => transformResolver.getTransformFn({ warmup: true }),
+        onError: transformResolver.clearCachedCreateTransform,
+      }),
     resolveCached: (requestOpts) => resolveRequest(requestOpts, finalManifestCache),
-    resolveUncached: (requestOpts) => resolveRequest(requestOpts, void 0)
+    resolveUncached: (requestOpts) => resolveRequest(requestOpts, void 0),
   };
 }
 function getFinalManifestCacheKey(inlineCss) {
@@ -1466,42 +1608,65 @@ function getFinalManifestCacheKey(inlineCss) {
 }
 function cacheFinalManifestPromise(cachedFinalManifestPromises, cacheKey, promise) {
   const cachedFinalManifestPromise = promise.catch((error) => {
-    if (cachedFinalManifestPromises.get(cacheKey) === cachedFinalManifestPromise) cachedFinalManifestPromises.delete(cacheKey);
+    if (cachedFinalManifestPromises.get(cacheKey) === cachedFinalManifestPromise)
+      cachedFinalManifestPromises.delete(cacheKey);
     throw error;
   });
   cachedFinalManifestPromises.set(cacheKey, cachedFinalManifestPromise);
   return cachedFinalManifestPromise;
 }
-function getOrCreateCachedFinalManifestPromise(cachedFinalManifestPromises, cacheKey, computeFinalManifest) {
+function getOrCreateCachedFinalManifestPromise(
+  cachedFinalManifestPromises,
+  cacheKey,
+  computeFinalManifest,
+) {
   const cachedFinalManifestPromise = cachedFinalManifestPromises.get(cacheKey);
   if (cachedFinalManifestPromise) return cachedFinalManifestPromise;
-  return cacheFinalManifestPromise(cachedFinalManifestPromises, cacheKey, Promise.resolve().then(computeFinalManifest));
+  return cacheFinalManifestPromise(
+    cachedFinalManifestPromises,
+    cacheKey,
+    Promise.resolve().then(computeFinalManifest),
+  );
 }
 async function buildFinalManifest(opts) {
-  return opts.transformFn ? await transformManifestAssets(opts.base, opts.transformFn, { inlineCss: opts.inlineCss }) : buildManifestWithClientEntry(opts.base, { inlineCss: opts.inlineCss });
+  return opts.transformFn
+    ? await transformManifestAssets(opts.base, opts.transformFn, { inlineCss: opts.inlineCss })
+    : buildManifestWithClientEntry(opts.base, { inlineCss: opts.inlineCss });
 }
 async function resolveFinalManifest(opts) {
   const computeFinalManifest = async () => {
     return buildFinalManifest({
       base: await opts.getBaseManifest(),
       transformFn: opts.transformFn,
-      inlineCss: opts.inlineCss
+      inlineCss: opts.inlineCss,
     });
   };
-  if (opts.finalManifestCache && (!opts.transformFn || opts.cache)) return getOrCreateCachedFinalManifestPromise(opts.finalManifestCache, getFinalManifestCacheKey(opts.inlineCss), computeFinalManifest);
+  if (opts.finalManifestCache && (!opts.transformFn || opts.cache))
+    return getOrCreateCachedFinalManifestPromise(
+      opts.finalManifestCache,
+      getFinalManifestCacheKey(opts.inlineCss),
+      computeFinalManifest,
+    );
   return computeFinalManifest();
 }
 function warmupFinalManifest(opts) {
   if (!opts.enabled || opts.handlerDefaultInlineCss === void 0 || !opts.cache) return;
   const inlineCss = opts.handlerDefaultInlineCss;
-  const warmupPromise = getOrCreateCachedFinalManifestPromise(opts.finalManifestCache, getFinalManifestCacheKey(inlineCss), async () => {
-    const [base, transformFn] = await Promise.all([opts.getBaseManifest(), opts.getTransformFn()]);
-    return buildFinalManifest({
-      base,
-      transformFn,
-      inlineCss
-    });
-  });
+  const warmupPromise = getOrCreateCachedFinalManifestPromise(
+    opts.finalManifestCache,
+    getFinalManifestCacheKey(inlineCss),
+    async () => {
+      const [base, transformFn] = await Promise.all([
+        opts.getBaseManifest(),
+        opts.getTransformFn(),
+      ]);
+      return buildFinalManifest({
+        base,
+        transformFn,
+        inlineCss,
+      });
+    },
+  );
   if (opts.onError) warmupPromise.catch(opts.onError);
   return warmupPromise;
 }
@@ -1518,16 +1683,21 @@ var ServerFunctionSerializationAdapter = createSerializationAdapter({
       return (await (await getServerFnById(functionId))(opts ?? {}, signal)).result;
     };
     return fn;
-  }
+  },
 });
 function getStartResponseHeaders(opts) {
-  return mergeHeaders({ "Content-Type": "text/html; charset=utf-8" }, ...opts.router.stores.matches.get().map((match) => {
-    return match.headers;
-  }));
+  return mergeHeaders(
+    { "Content-Type": "text/html; charset=utf-8" },
+    ...opts.router.stores.matches.get().map((match) => {
+      return match.headers;
+    }),
+  );
 }
 var entriesPromise;
 var hasWarnedMissingCsrfMiddleware = false;
-var defaultCsrfMiddleware = createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" });
+var defaultCsrfMiddleware = createCsrfMiddleware({
+  filter: (ctx) => ctx.handlerType === "serverFn",
+});
 var getCachedBaseManifest = createCachedBaseManifestLoader(() => getStartManifest());
 var getProdBaseManifest = () => getCachedBaseManifest();
 var getBaseManifest = getProdBaseManifest;
@@ -1536,12 +1706,12 @@ async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
     import("./assets/router-D8VllJ-f.js").then((n) => n.y),
     import("./assets/start-D7IIw-Gb.js"),
-    import("./assets/__23tanstack-start-plugin-adapters-Cwee5PKy.js")
+    import("./assets/__23tanstack-start-plugin-adapters-Cwee5PKy.js"),
   ]);
   return {
     routerEntry,
     startEntry,
-    pluginAdapters
+    pluginAdapters,
   };
 }
 function getEntries() {
@@ -1606,7 +1776,7 @@ function executeMiddleware(middlewares, ctx) {
     try {
       result = await middleware({
         ...ctx,
-        next
+        next,
       });
     } catch (err) {
       if (isSpecialResponse(err)) {
@@ -1629,7 +1799,7 @@ function handlerToMiddleware(handler, mayDefer = false) {
   return async (ctx) => {
     const response = await handler({
       ...ctx,
-      next: throwIfMayNotDefer
+      next: throwIfMayNotDefer,
     });
     if (!response) throwRouteHandlerError();
     return response;
@@ -1639,7 +1809,7 @@ function createStartHandler(cbOrOptions) {
   const handlerOptions = typeof cbOrOptions === "function" ? {} : cbOrOptions;
   const cb = typeof cbOrOptions === "function" ? cbOrOptions : cbOrOptions.handler;
   const finalManifestResolver = createFinalManifestResolver({
-    ...handlerOptions
+    ...handlerOptions,
   });
   const resolveManifestForRequest = finalManifestResolver.resolveCached;
   finalManifestResolver.warmup({ getBaseManifest: () => getBaseManifest() });
@@ -1653,25 +1823,30 @@ function createStartHandler(cbOrOptions) {
       if (handledProtocolRelativeURL) return Response.redirect(url, 308);
       const entries = await getEntries();
       const hasStartInstance = !!entries.startEntry.startInstance;
-      const startOptions = await entries.startEntry.startInstance?.getOptions() || {};
+      const startOptions = (await entries.startEntry.startInstance?.getOptions()) || {};
       const { hasPluginAdapters, pluginSerializationAdapters } = entries.pluginAdapters;
       const serializationAdapters = [
-        ...startOptions.serializationAdapters || [],
-        ...hasPluginAdapters ? pluginSerializationAdapters : [],
-        ServerFunctionSerializationAdapter
+        ...(startOptions.serializationAdapters || []),
+        ...(hasPluginAdapters ? pluginSerializationAdapters : []),
+        ServerFunctionSerializationAdapter,
       ];
       const requestStartOptions = {
         ...startOptions,
-        requestMiddleware: hasStartInstance ? startOptions.requestMiddleware : [defaultCsrfMiddleware],
-        serializationAdapters
+        requestMiddleware: hasStartInstance
+          ? startOptions.requestMiddleware
+          : [defaultCsrfMiddleware],
+        serializationAdapters,
       };
-      const flattenedRequestMiddlewares = requestStartOptions.requestMiddleware ? flattenMiddlewares(requestStartOptions.requestMiddleware) : [];
+      const flattenedRequestMiddlewares = requestStartOptions.requestMiddleware
+        ? flattenMiddlewares(requestStartOptions.requestMiddleware)
+        : [];
       const executedRequestMiddlewares = new Set(flattenedRequestMiddlewares);
       const getRouter = async () => {
         if (router) return router;
         router = await entries.routerEntry.getRouter();
         let isShell = IS_SHELL_ENV;
-        if (IS_PRERENDERING && !isShell) isShell = request.headers.get(HEADERS.TSS_SHELL) === "true";
+        if (IS_PRERENDERING && !isShell)
+          isShell = request.headers.get(HEADERS.TSS_SHELL) === "true";
         const history = createMemoryHistory({ initialEntries: [href] });
         router.update({
           history,
@@ -1679,58 +1854,79 @@ function createStartHandler(cbOrOptions) {
           isPrerendering: IS_PRERENDERING,
           origin: router.options.origin ?? origin,
           defaultSsr: requestStartOptions.defaultSsr,
-          serializationAdapters: [...requestStartOptions.serializationAdapters, ...router.options.serializationAdapters || []],
-          basepath: ROUTER_BASEPATH
+          serializationAdapters: [
+            ...requestStartOptions.serializationAdapters,
+            ...(router.options.serializationAdapters || []),
+          ],
+          basepath: ROUTER_BASEPATH,
         });
         return router;
       };
       if (SERVER_FN_BASE && url.pathname.startsWith(SERVER_FN_BASE)) {
-        if (false) ;
+        if (false);
         const serverFnId = url.pathname.slice(SERVER_FN_BASE.length).split("/")[0];
         if (!serverFnId) throw new Error("Invalid server action param for serverFnId");
         const serverFnHandler = async ({ context }) => {
-          return runWithStartContext({
-            getRouter,
-            startOptions: requestStartOptions,
-            contextAfterGlobalMiddlewares: context,
-            request,
-            executedRequestMiddlewares,
-            handlerType: "serverFn"
-          }, () => handleServerAction({
-            request,
-            context: requestOpts?.context,
-            serverFnId
-          }));
+          return runWithStartContext(
+            {
+              getRouter,
+              startOptions: requestStartOptions,
+              contextAfterGlobalMiddlewares: context,
+              request,
+              executedRequestMiddlewares,
+              handlerType: "serverFn",
+            },
+            () =>
+              handleServerAction({
+                request,
+                context: requestOpts?.context,
+                serverFnId,
+              }),
+          );
         };
-        return handleRedirectResponse((await executeMiddleware([...flattenedRequestMiddlewares.map((d) => d.options.server), serverFnHandler], {
+        return handleRedirectResponse(
+          (
+            await executeMiddleware(
+              [...flattenedRequestMiddlewares.map((d) => d.options.server), serverFnHandler],
+              {
+                request,
+                pathname: url.pathname,
+                handlerType: "serverFn",
+                context: createNullProtoObject(requestOpts?.context),
+              },
+            )
+          ).response,
           request,
-          pathname: url.pathname,
-          handlerType: "serverFn",
-          context: createNullProtoObject(requestOpts?.context)
-        })).response, request, getRouter);
+          getRouter,
+        );
       }
       const executeRouter = async (serverContext, matchedRoutes) => {
         const acceptParts = (request.headers.get("Accept") || "*/*").split(",");
-        if (!["*/*", "text/html"].some((mimeType) => acceptParts.some((part) => part.trim().startsWith(mimeType)))) return Response.json({ error: "Only HTML requests are supported here" }, { status: 500 });
+        if (
+          !["*/*", "text/html"].some((mimeType) =>
+            acceptParts.some((part) => part.trim().startsWith(mimeType)),
+          )
+        )
+          return Response.json({ error: "Only HTML requests are supported here" }, { status: 500 });
         const manifest2 = await resolveManifestForRequest({
           request,
           requestInlineCss: requestOpts?.inlineCss,
-          getBaseManifest: () => getBaseManifest(matchedRoutes)
+          getBaseManifest: () => getBaseManifest(matchedRoutes),
         });
         const earlyHints = createEarlyHintsForRequest({
           onEarlyHints: requestOpts?.onEarlyHints,
-          responseLinkHeader: requestOpts?.responseLinkHeader
+          responseLinkHeader: requestOpts?.responseLinkHeader,
         });
         earlyHints?.collectStatic({
           manifest: manifest2,
-          matchedRoutes
+          matchedRoutes,
         });
         const routerInstance = await getRouter();
         attachRouterServerSsrUtils({
           router: routerInstance,
           manifest: manifest2,
           getRequestAssets: () => getStartContext({ throwIfNotFound: false })?.requestAssets,
-          includeUnmatchedRouteAssets: false
+          includeUnmatchedRouteAssets: false,
         });
         routerInstance.update({ additionalContext: { serverContext } });
         await routerInstance.load();
@@ -1744,39 +1940,51 @@ function createStartHandler(cbOrOptions) {
         return cb({
           request,
           router: routerInstance,
-          responseHeaders
+          responseHeaders,
         });
       };
       const requestHandlerMiddleware = async ({ context }) => {
-        return runWithStartContext({
-          getRouter,
-          startOptions: requestStartOptions,
-          contextAfterGlobalMiddlewares: context,
-          request,
-          executedRequestMiddlewares,
-          handlerType: "router"
-        }, async () => {
-          try {
-            return await handleServerRoutes({
-              getRouter,
-              request,
-              url,
-              executeRouter,
-              context,
-              executedRequestMiddlewares
-            });
-          } catch (err) {
-            if (err instanceof Response) return err;
-            throw err;
-          }
-        });
+        return runWithStartContext(
+          {
+            getRouter,
+            startOptions: requestStartOptions,
+            contextAfterGlobalMiddlewares: context,
+            request,
+            executedRequestMiddlewares,
+            handlerType: "router",
+          },
+          async () => {
+            try {
+              return await handleServerRoutes({
+                getRouter,
+                request,
+                url,
+                executeRouter,
+                context,
+                executedRequestMiddlewares,
+              });
+            } catch (err) {
+              if (err instanceof Response) return err;
+              throw err;
+            }
+          },
+        );
       };
-      return handleRedirectResponse((await executeMiddleware([...flattenedRequestMiddlewares.map((d) => d.options.server), requestHandlerMiddleware], {
+      return handleRedirectResponse(
+        (
+          await executeMiddleware(
+            [...flattenedRequestMiddlewares.map((d) => d.options.server), requestHandlerMiddleware],
+            {
+              request,
+              pathname: url.pathname,
+              handlerType: "router",
+              context: createNullProtoObject(requestOpts?.context),
+            },
+          )
+        ).response,
         request,
-        pathname: url.pathname,
-        handlerType: "router",
-        context: createNullProtoObject(requestOpts?.context)
-      })).response, request, getRouter);
+        getRouter,
+      );
     } finally {
       if (router && !cbWillCleanup) router.serverSsr?.cleanup();
       router = null;
@@ -1787,27 +1995,49 @@ function createStartHandler(cbOrOptions) {
 async function handleRedirectResponse(response, request, getRouter) {
   if (!isRedirect(response)) return response;
   if (isResolvedRedirect(response)) {
-    if (request.headers.get("x-tsr-serverFn") === "true") return Response.json({
-      ...response.options,
-      isSerializedRedirect: true
-    }, { headers: response.headers });
+    if (request.headers.get("x-tsr-serverFn") === "true")
+      return Response.json(
+        {
+          ...response.options,
+          isSerializedRedirect: true,
+        },
+        { headers: response.headers },
+      );
     return response;
   }
   const opts = response.options;
-  if (opts.to && typeof opts.to === "string" && !opts.to.startsWith("/")) throw new Error(`Server side redirects must use absolute paths via the 'href' or 'to' options. The redirect() method's "to" property accepts an internal path only. Use the "href" property to provide an external URL. Received: ${JSON.stringify(opts)}`);
-  if ([
-    "params",
-    "search",
-    "hash"
-  ].some((d) => typeof opts[d] === "function")) throw new Error(`Server side redirects must use static search, params, and hash values and do not support functional values. Received functional values for: ${Object.keys(opts).filter((d) => typeof opts[d] === "function").map((d) => `"${d}"`).join(", ")}`);
+  if (opts.to && typeof opts.to === "string" && !opts.to.startsWith("/"))
+    throw new Error(
+      `Server side redirects must use absolute paths via the 'href' or 'to' options. The redirect() method's "to" property accepts an internal path only. Use the "href" property to provide an external URL. Received: ${JSON.stringify(opts)}`,
+    );
+  if (["params", "search", "hash"].some((d) => typeof opts[d] === "function"))
+    throw new Error(
+      `Server side redirects must use static search, params, and hash values and do not support functional values. Received functional values for: ${Object.keys(
+        opts,
+      )
+        .filter((d) => typeof opts[d] === "function")
+        .map((d) => `"${d}"`)
+        .join(", ")}`,
+    );
   const redirect = (await getRouter()).resolveRedirect(response);
-  if (request.headers.get("x-tsr-serverFn") === "true") return Response.json({
-    ...response.options,
-    isSerializedRedirect: true
-  }, { headers: response.headers });
+  if (request.headers.get("x-tsr-serverFn") === "true")
+    return Response.json(
+      {
+        ...response.options,
+        isSerializedRedirect: true,
+      },
+      { headers: response.headers },
+    );
   return redirect;
 }
-async function handleServerRoutes({ getRouter, request, url, executeRouter, context, executedRequestMiddlewares }) {
+async function handleServerRoutes({
+  getRouter,
+  request,
+  url,
+  executeRouter,
+  context,
+  executedRequestMiddlewares,
+}) {
   const router = await getRouter();
   const pathname = executeRewriteInput(router.rewrite, url).pathname;
   const { matchedRoutes, foundRoute, routeParams } = router.getMatchedRoutes(pathname);
@@ -1817,19 +2047,27 @@ async function handleServerRoutes({ getRouter, request, url, executeRouter, cont
     const serverMiddleware = route.options.server?.middleware;
     if (serverMiddleware) {
       const flattened = flattenMiddlewares(serverMiddleware);
-      for (const m of flattened) if (!executedRequestMiddlewares.has(m)) routeMiddlewares.push(m.options.server);
+      for (const m of flattened)
+        if (!executedRequestMiddlewares.has(m)) routeMiddlewares.push(m.options.server);
     }
   }
   const server2 = foundRoute?.options.server;
   let isHeadFallback = false;
   if (server2?.handlers && isExactMatch) {
-    const handlers = typeof server2.handlers === "function" ? server2.handlers({ createHandlers: (d) => d }) : server2.handlers;
+    const handlers =
+      typeof server2.handlers === "function"
+        ? server2.handlers({ createHandlers: (d) => d })
+        : server2.handlers;
     const requestMethod = request.method.toUpperCase();
-    const handler = requestMethod === "HEAD" ? handlers["HEAD"] ?? handlers["GET"] ?? handlers["ANY"] : handlers[requestMethod] ?? handlers["ANY"];
+    const handler =
+      requestMethod === "HEAD"
+        ? (handlers["HEAD"] ?? handlers["GET"] ?? handlers["ANY"])
+        : (handlers[requestMethod] ?? handlers["ANY"]);
     isHeadFallback = requestMethod === "HEAD" && handler !== void 0 && !handlers["HEAD"];
     if (handler) {
       const mayDefer = !!foundRoute.options.component;
-      if (typeof handler === "function") routeMiddlewares.push(handlerToMiddleware(handler, mayDefer));
+      if (typeof handler === "function")
+        routeMiddlewares.push(handlerToMiddleware(handler, mayDefer));
       else {
         if (handler.middleware?.length) {
           const handlerMiddlewares = flattenMiddlewares(handler.middleware);
@@ -1845,7 +2083,7 @@ async function handleServerRoutes({ getRouter, request, url, executeRouter, cont
     context,
     params: routeParams,
     pathname,
-    handlerType: "router"
+    handlerType: "router",
   });
   if (isHeadFallback) {
     if (!ctx.response) throwRouteHandlerError();
@@ -1859,7 +2097,7 @@ function createServerEntry(entry) {
   return {
     async fetch(...args) {
       return await entry.fetch(...args);
-    }
+    },
   };
 }
 const server = createServerEntry({ fetch });
@@ -1868,24 +2106,27 @@ var createServerRpc = (serverFnMeta, splitImportFn) => {
   return Object.assign(splitImportFn, {
     url,
     serverFnMeta,
-    [TSS_SERVER_FUNCTION]: true
+    [TSS_SERVER_FUNCTION]: true,
   });
 };
 function useServerFn(serverFn) {
   const router = useRouter();
-  return React.useCallback(async (...args) => {
-    try {
-      const res = await serverFn(...args);
-      if (isRedirect$1(res)) throw res;
-      return res;
-    } catch (err) {
-      if (isRedirect$1(err)) {
-        err.options._fromLocation = router.stores.location.get();
-        return router.navigate(router.resolveRedirect(err).options);
+  return React.useCallback(
+    async (...args) => {
+      try {
+        const res = await serverFn(...args);
+        if (isRedirect$1(res)) throw res;
+        return res;
+      } catch (err) {
+        if (isRedirect$1(err)) {
+          err.options._fromLocation = router.stores.location.get();
+          return router.navigate(router.resolveRedirect(err).options);
+        }
+        throw err;
       }
-      throw err;
-    }
-  }, [router, serverFn]);
+    },
+    [router, serverFn],
+  );
 }
 var createSsrRpc = (functionId) => {
   const url = "/_serverFn/" + functionId;
@@ -1896,7 +2137,7 @@ var createSsrRpc = (functionId) => {
   return Object.assign(fn, {
     url,
     serverFnMeta,
-    [TSS_SERVER_FUNCTION]: true
+    [TSS_SERVER_FUNCTION]: true,
   });
 };
 export {
@@ -1908,5 +2149,5 @@ export {
   server as default,
   createSsrRpc as e,
   createStart as f,
-  useServerFn as u
+  useServerFn as u,
 };

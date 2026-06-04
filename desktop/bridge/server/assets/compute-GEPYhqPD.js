@@ -97,7 +97,7 @@ const TRACKS = [
   { match: /phoenix.*raceway/, m: 1609 },
   { match: /new ?hampshire|newhampshire/, m: 1721 },
   { match: /homestead/, m: 2414 },
-  { match: /chicago.*street/, m: 3540 }
+  { match: /chicago.*street/, m: 3540 },
 ];
 function knownTrackLength(folder, trackName) {
   const key = `${folder} ${trackName ?? ""}`.toLowerCase().replace(/\\/g, "/");
@@ -173,7 +173,11 @@ function buildFingerprint(parsed) {
     const bestEver = Math.min(...bestLaps);
     const bestEverFile = g.files.find((f) => f.summary.bestLapS === bestEver);
     const validSectorFiles = g.files.filter(
-      (f) => isValidLap(f.summary.bestLapS) && f.summary.bestLapS <= Math.max(bestEver * 1.3, bestEver + 20) && f.summary.sectorTimesS.length > 0 && f.summary.sectorTimesS.every(isValidSector)
+      (f) =>
+        isValidLap(f.summary.bestLapS) &&
+        f.summary.bestLapS <= Math.max(bestEver * 1.3, bestEver + 20) &&
+        f.summary.sectorTimesS.length > 0 &&
+        f.summary.sectorTimesS.every(isValidSector),
     );
     const numSec = Math.max(0, ...validSectorFiles.map((f) => f.summary.sectorTimesS.length));
     const bestPerSector = [];
@@ -184,16 +188,25 @@ function buildFingerprint(parsed) {
       else sectorsComplete = false;
     }
     const optimalSum = bestPerSector.reduce((a, b) => a + b, 0);
-    const optimalEver = sectorsComplete && optimalSum > 0 && optimalSum <= bestEver + 1e-3 && optimalSum >= bestEver * 0.5 ? bestPerSector.reduce((a, b) => a + b, 0) : null;
+    const optimalEver =
+      sectorsComplete &&
+      optimalSum > 0 &&
+      optimalSum <= bestEver + 1e-3 &&
+      optimalSum >= bestEver * 0.5
+        ? bestPerSector.reduce((a, b) => a + b, 0)
+        : null;
     const bestSectors = bestEverFile.summary.sectorTimesS;
     const allSectorsValid = bestSectors.length > 0 && bestSectors.every(isValidSector);
     const sectorSum = bestSectors.reduce((a, b) => a + b, 0);
     const sectorsCloseToLap = allSectorsValid && Math.abs(sectorSum - bestEver) / bestEver < 0.05;
-    const sectorBalancePct = sectorsCloseToLap ? bestSectors.map((s) => s / bestEver * 100) : [];
-    const dated = g.files.map((f) => ({
-      d: f.header.buildDates[0] ?? null,
-      b: f.summary.bestLapS
-    })).filter((x) => x.d && isValidLap(x.b)).sort((a, b) => a.d < b.d ? -1 : 1);
+    const sectorBalancePct = sectorsCloseToLap ? bestSectors.map((s) => (s / bestEver) * 100) : [];
+    const dated = g.files
+      .map((f) => ({
+        d: f.header.buildDates[0] ?? null,
+        b: f.summary.bestLapS,
+      }))
+      .filter((x) => x.d && isValidLap(x.b))
+      .sort((a, b) => (a.d < b.d ? -1 : 1));
     let trend = null;
     if (dated.length >= 4) {
       const half = Math.floor(dated.length / 2);
@@ -216,15 +229,17 @@ function buildFingerprint(parsed) {
       sectorBalancePct: sectorBalancePct.map((s) => +s.toFixed(2)),
       ...(() => {
         const known = knownTrackLength(g.folder, g.track);
-        return known ? { trackLengthM: known.m, trackLengthKnown: true } : {
-          trackLengthM: +bestEverFile.summary.trackLengthM.toFixed(1),
-          trackLengthKnown: false
-        };
+        return known
+          ? { trackLengthM: known.m, trackLengthKnown: true }
+          : {
+              trackLengthM: +bestEverFile.summary.trackLengthM.toFixed(1),
+              trackLengthKnown: false,
+            };
       })(),
       latestBuildDate: dated.length ? dated[dated.length - 1].d : null,
       earliestBuildDate: dated.length ? dated[0].d : null,
       trend,
-      custIds: Array.from(new Set(g.files.map((f) => f.header.custId)))
+      custIds: Array.from(new Set(g.files.map((f) => f.header.custId))),
     });
   }
   pairs.sort((a, b) => a.track.localeCompare(b.track) || a.car.localeCompare(b.car));
@@ -233,9 +248,16 @@ function buildFingerprint(parsed) {
   const selfImpRatios = multiFile.map((p) => p.bestEverS / p.medianBestS);
   const stdevs = multiFile.map((p) => p.bestStdevS);
   const trends = pairs.map((p) => p.trend).filter(Boolean);
-  const trajectoryScore = trends.length ? +((trends.filter((t) => t === "improving").length - trends.filter((t) => t === "regressing").length) / trends.length * 100).toFixed(1) : null;
+  const trajectoryScore = trends.length
+    ? +(
+        ((trends.filter((t) => t === "improving").length -
+          trends.filter((t) => t === "regressing").length) /
+          trends.length) *
+        100
+      ).toFixed(1)
+    : null;
   return {
-    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    generatedAt: /* @__PURE__ */ new Date().toISOString(),
     totalFiles: parsed.length,
     totalTracks: tracks.size,
     totalCars: new Set(pairs.map((p) => p.car)).size,
@@ -244,17 +266,16 @@ function buildFingerprint(parsed) {
       selfImprovementIndex: selfImpRatios.length ? +median(selfImpRatios).toFixed(4) : null,
       consistencyIndexS: stdevs.length ? +median(stdevs).toFixed(3) : null,
       versatility: tracks.size,
-      trajectoryScore
+      trajectoryScore,
     },
-    emptyTracks: []
+    emptyTracks: [],
   };
 }
 const STORAGE_KEY = "apextrace.fingerprint.v1";
 function saveFingerprint(fp) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(fp));
-  } catch {
-  }
+  } catch {}
 }
 function loadFingerprint() {
   try {
@@ -273,5 +294,5 @@ export {
   clearFingerprint as c,
   loadFingerprint as l,
   parseRaw as p,
-  saveFingerprint as s
+  saveFingerprint as s,
 };

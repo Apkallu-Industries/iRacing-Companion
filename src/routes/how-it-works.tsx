@@ -53,7 +53,10 @@ function HowItWorksPage() {
             <Link to="/live" className="rounded-sm px-3 py-1.5 hover:bg-accent transition-colors">
               Live
             </Link>
-            <Link to="/sessions" className="rounded-sm px-3 py-1.5 hover:bg-accent transition-colors">
+            <Link
+              to="/sessions"
+              className="rounded-sm px-3 py-1.5 hover:bg-accent transition-colors"
+            >
               Sessions
             </Link>
           </nav>

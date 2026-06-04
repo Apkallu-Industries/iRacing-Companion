@@ -64,11 +64,7 @@
     },
     "stintLifecycleForecast": {
       "type": "object",
-      "required": [
-        "fuelDecayImpact",
-        "thermalLifecycleTrend",
-        "gripBalanceShift"
-      ],
+      "required": ["fuelDecayImpact", "thermalLifecycleTrend", "gripBalanceShift"],
       "properties": {
         "fuelDecayImpact": {
           "type": "string",

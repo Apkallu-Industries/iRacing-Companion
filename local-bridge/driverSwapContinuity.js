@@ -31,10 +31,12 @@ class DriverSwapContinuity {
 
     // 1. Detect active driver swap event
     if (this.activeDriverName && this.activeDriverName !== incomingDriver) {
-      console.log(`[swap-continuity] Driver Swap detected! ${this.activeDriverName} → ${incomingDriver}`);
+      console.log(
+        `[swap-continuity] Driver Swap detected! ${this.activeDriverName} → ${incomingDriver}`,
+      );
       this.adaptationActive = true;
       this.adaptationStartLap = lapNumber;
-      
+
       // Seed initial mismatch benchmarks
       this.avgBrakeBite = t.brake || 0;
       this.avgSteerJitter = Math.abs(t.steeringDeg || 0);
@@ -46,7 +48,7 @@ class DriverSwapContinuity {
         adaptationStartLap: lapNumber,
         brakeBiteMismatchPct: 0,
         steeringJitterMismatchPct: 0,
-        tireThermalGradientDelta: 0
+        tireThermalGradientDelta: 0,
       };
     }
 
@@ -62,7 +64,7 @@ class DriverSwapContinuity {
         return {
           event: "DRIVER_ADAPTATION_COMPLETED",
           driver: incomingDriver,
-          ...this.adaptationReport
+          ...this.adaptationReport,
         };
       }
 
@@ -70,8 +72,14 @@ class DriverSwapContinuity {
       const currentBrake = t.brake || 0;
       const currentSteer = Math.abs(t.steeringDeg || 0);
 
-      const brakeMismatch = Math.max(0, Math.round(Math.abs(currentBrake - this.avgBrakeBite) * 100));
-      const steerJitter = Math.max(0, Math.round(Math.abs(currentSteer - this.avgSteerJitter) * 12));
+      const brakeMismatch = Math.max(
+        0,
+        Math.round(Math.abs(currentBrake - this.avgBrakeBite) * 100),
+      );
+      const steerJitter = Math.max(
+        0,
+        Math.round(Math.abs(currentSteer - this.avgSteerJitter) * 12),
+      );
 
       this.adaptationReport = {
         event: "DRIVER_ADAPTATION_ACTIVE",
@@ -79,7 +87,7 @@ class DriverSwapContinuity {
         currentLapInWindow: elapsedLaps + 1,
         brakeBiteMismatchPct: Math.min(100, brakeMismatch),
         steeringJitterMismatchPct: Math.min(100, steerJitter),
-        tireThermalGradientDelta: t.tires?.rl?.tempC > 95 ? 12 : 2
+        tireThermalGradientDelta: t.tires?.rl?.tempC > 95 ? 12 : 2,
       };
 
       return this.adaptationReport;

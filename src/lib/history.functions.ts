@@ -183,7 +183,9 @@ export const recordTelemetrySessionMeta = createServerFn({ method: "POST" })
           doc: fullDoc,
           recorded_at: metaOnly.recorded_at || new Date().toISOString(),
         });
-        console.log(`[LocalDB] Telemetry session data successfully written to MongoDB for session ${localId}`);
+        console.log(
+          `[LocalDB] Telemetry session data successfully written to MongoDB for session ${localId}`,
+        );
       }
     } catch (e) {
       console.warn("[LocalDB] Session meta record failed:", e);

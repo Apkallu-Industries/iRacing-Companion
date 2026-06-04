@@ -7,7 +7,11 @@ export function MiniTrace({ values, color }: { values: number[]; color: string }
   if (values.length < 2) {
     // Render a premium, responsive flat dotted baseline trace all the way across the space
     return (
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-5 block opacity-20">
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        preserveAspectRatio="none"
+        className="w-full h-5 block opacity-20"
+      >
         <line
           x1="0"
           y1={h / 2}

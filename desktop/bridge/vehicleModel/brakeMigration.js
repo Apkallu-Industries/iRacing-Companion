@@ -14,13 +14,7 @@
  * @param {number} speedMps vehicle velocity (m/s)
  * @returns {object} { brakingForceN, lockupProbability, padTempC }
  */
-function calculateBrakingDynamics(
-  brake,
-  frontBrakeBias,
-  verticalLoadN,
-  brakeTempC,
-  speedMps
-) {
+function calculateBrakingDynamics(brake, frontBrakeBias, verticalLoadN, brakeTempC, speedMps) {
   if (brake < 0.05 || speedMps < 1.0) {
     return { brakingForceN: 0, lockupProbability: 0, padTempC: Math.max(30, brakeTempC - 2.5) };
   }
@@ -33,7 +27,7 @@ function calculateBrakingDynamics(
     frictionFadeFactor = Math.max(0.45, 1.0 - (brakeTempC - 800) * 0.0022);
   } else if (brakeTempC < 150) {
     // Friction pads too cold
-    frictionFadeFactor = Math.max(0.70, 0.7 + (brakeTempC / 150) * 0.3);
+    frictionFadeFactor = Math.max(0.7, 0.7 + (brakeTempC / 150) * 0.3);
   }
 
   // 2. Front and Rear pressure balance calculations
@@ -61,15 +55,15 @@ function calculateBrakingDynamics(
 
   // 5. Disc temperature buildup (conversion of kinetic speed deceleration to heat)
   const kineticHeatBuildup = brake * speedMps * 4.8;
-  const nextPadTempC = brakeTempC + kineticHeatBuildup - (speedMps * 0.12); // cooling from rotation
+  const nextPadTempC = brakeTempC + kineticHeatBuildup - speedMps * 0.12; // cooling from rotation
 
   return {
     brakingForceN: Math.round(totalBrakingForceN),
     lockupProbability: Number(lockupProbability.toFixed(3)),
-    padTempC: Math.max(35.0, Math.min(1150.0, Number(nextPadTempC.toFixed(1))))
+    padTempC: Math.max(35.0, Math.min(1150.0, Number(nextPadTempC.toFixed(1)))),
   };
 }
 
 module.exports = {
-  calculateBrakingDynamics
+  calculateBrakingDynamics,
 };

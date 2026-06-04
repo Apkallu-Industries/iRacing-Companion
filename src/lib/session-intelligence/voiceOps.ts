@@ -18,11 +18,15 @@ export interface RadioBriefCallout {
  * @param triggerAudio if true, triggers browser speechSynthesis
  */
 export function generateVoiceBrief(
-  eventType: "THERMAL_RUNAWAY" | "TRAFFIC_CATCH" | "CROSSOVER_REACHED" | "FUEL_CRITICAL" | "STABILITY_BREAK",
+  eventType:
+    | "THERMAL_RUNAWAY"
+    | "TRAFFIC_CATCH"
+    | "CROSSOVER_REACHED"
+    | "FUEL_CRITICAL"
+    | "STABILITY_BREAK",
   value: number | string,
-  triggerAudio = false
+  triggerAudio = false,
 ): RadioBriefCallout {
-  
   let briefText = "Standby. Checking telemetry.";
   const attributableEngineer = "Systems Engineer";
 
@@ -51,11 +55,11 @@ export function generateVoiceBrief(
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(briefText);
-    
+
     // Configure voice properties to sound clinical, neutral, and slightly robotic
-    utterance.rate = 1.05;  // fast, concise timing
+    utterance.rate = 1.05; // fast, concise timing
     utterance.pitch = 0.92; // deep, operational authority
-    utterance.volume = 0.90;
+    utterance.volume = 0.9;
 
     // Use default system english voice
     window.speechSynthesis.speak(utterance);

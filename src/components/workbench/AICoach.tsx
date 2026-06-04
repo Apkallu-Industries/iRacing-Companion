@@ -6,7 +6,10 @@ import { dispatchAnalyzeTelemetry } from "@/lib/llm";
 import { compileSessionReport } from "@/lib/session-intelligence";
 import { computeCausalGraph } from "@/lib/session-intelligence/causalGraph";
 import { TEAM_PROFILES, type TeamKnowledgeProfile } from "@/lib/session-intelligence/profiles";
-import { simulateSetupAdjustment, type SetupAdjustment } from "@/lib/session-intelligence/simulation";
+import {
+  simulateSetupAdjustment,
+  type SetupAdjustment,
+} from "@/lib/session-intelligence/simulation";
 import { compileStintPrognosis } from "@/lib/session-intelligence/forecasting";
 import { useLocalAiRouter, getAiModeLabel } from "@/lib/ai/localAiRouter";
 import {
@@ -25,7 +28,7 @@ import {
   SlidersHorizontal,
   RefreshCw,
   Layers,
-  Check
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,7 +68,8 @@ export function AICoach({
   car?: string | null;
   sessionId?: string;
 }) {
-  const { refLap, cmpLap, elevenLabsApiKey, elevenLabsVoiceId, activeWorkspace, mathExpressions } = useWorkbench();
+  const { refLap, cmpLap, elevenLabsApiKey, elevenLabsVoiceId, activeWorkspace, mathExpressions } =
+    useWorkbench();
   const [mode, setMode] = useState<"copilot" | "llm">("copilot");
   const [llmMode, setLlmMode] = useState<"single" | "compare" | "session">("single");
   const [detailed, setDetailed] = useState(false);
@@ -93,18 +97,30 @@ export function AICoach({
   });
 
   // Compute session report and causal graph governed by the active profile (Phase 6 Priority 4)
-  const stintReport = useMemo(() => compileSessionReport(parsed, activeProfile), [parsed, activeProfile]);
+  const stintReport = useMemo(
+    () => compileSessionReport(parsed, activeProfile),
+    [parsed, activeProfile],
+  );
   const causalGraph = useMemo(() => computeCausalGraph(stintReport), [stintReport]);
 
   // Compute live setup adjustments consequence simulation (Phase 6 Priority 3)
-  const simResult = useMemo(() => simulateSetupAdjustment(adjustments, stintReport), [adjustments, stintReport]);
+  const simResult = useMemo(
+    () => simulateSetupAdjustment(adjustments, stintReport),
+    [adjustments, stintReport],
+  );
 
   // Compute stint degradation forecasting prognosis (Phase 6 Priority 5)
   const lfTemp = parsed.channels["LFtempCL"]?.data ?? [];
   const soc = parsed.channels["EnergyStorePct"]?.data ?? [];
   const stintPrognosis = useMemo(
-    () => compileStintPrognosis(lfTemp, soc, stintReport.lapCount, TEAM_PROFILES[activeProfile].maxOptimalTempC),
-    [lfTemp, soc, stintReport.lapCount, activeProfile]
+    () =>
+      compileStintPrognosis(
+        lfTemp,
+        soc,
+        stintReport.lapCount,
+        TEAM_PROFILES[activeProfile].maxOptimalTempC,
+      ),
+    [lfTemp, soc, stintReport.lapCount, activeProfile],
   );
 
   // Probe history Matches
@@ -142,7 +158,7 @@ export function AICoach({
           causalGraph,
           activeWorkspace,
         },
-        detailed
+        detailed,
       });
       const r = resp as { error?: string; result?: unknown; detailed?: boolean; fallback?: string };
       if (r.error) {
@@ -196,14 +212,19 @@ export function AICoach({
         >
           <Brain className="h-3.5 w-3.5 text-[#8B5CF6]" />
           <span>RACE ENGINEERING COPILOT CONSOLE</span>
-          {collapsed ? <ChevronUp className="h-3 w-3 text-[#7A828C]" /> : <ChevronDown className="h-3 w-3 text-[#7A828C]" />}
+          {collapsed ? (
+            <ChevronUp className="h-3 w-3 text-[#7A828C]" />
+          ) : (
+            <ChevronDown className="h-3 w-3 text-[#7A828C]" />
+          )}
         </button>
 
         {/* AI Inference Mode indicator */}
         <div
           className="flex items-center gap-1 rounded-xs px-1.5 py-0.5 shrink-0"
           style={{
-            backgroundColor: aiRouter.mode !== "cloud" ? "rgba(0,209,127,0.08)" : "rgba(59,130,246,0.08)",
+            backgroundColor:
+              aiRouter.mode !== "cloud" ? "rgba(0,209,127,0.08)" : "rgba(59,130,246,0.08)",
             border: `1px solid ${aiRouter.mode !== "cloud" ? "rgba(0,209,127,0.2)" : "rgba(59,130,246,0.2)"}`,
           }}
           title={aiRouter.modelName ? `Model: ${aiRouter.modelName}` : undefined}
@@ -232,9 +253,7 @@ export function AICoach({
                   key={m}
                   onClick={() => setMode(m)}
                   className={`px-3 py-0.5 text-[8.5px] uppercase font-bold cursor-pointer transition-colors ${
-                    mode === m
-                      ? "bg-[#8B5CF6] text-white"
-                      : "text-[#7A828C] hover:text-[#E2E4E8]"
+                    mode === m ? "bg-[#8B5CF6] text-white" : "text-[#7A828C] hover:text-[#E2E4E8]"
                   }`}
                 >
                   {m === m ? (m === "copilot" ? "Embedded Copilot" : "Cloud LLM") : ""}
@@ -244,7 +263,13 @@ export function AICoach({
 
             {mode === "copilot" && (
               <button
-                onClick={() => speakCopilot(causalGraph.rootCauseNarrative + " Recommended parameters: " + stintReport.setupAdvice)}
+                onClick={() =>
+                  speakCopilot(
+                    causalGraph.rootCauseNarrative +
+                      " Recommended parameters: " +
+                      stintReport.setupAdvice,
+                  )
+                }
                 disabled={speaking}
                 className="ml-auto flex items-center gap-1 bg-[#05070A] border border-[#1C2430] rounded-xs px-2 py-0.5 text-[8px] uppercase tracking-wider text-white hover:bg-accent disabled:opacity-40"
               >
@@ -282,7 +307,6 @@ export function AICoach({
         <div className="max-h-96 overflow-y-auto px-2 py-2 bg-[#05070A]">
           {mode === "copilot" ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-[9px] leading-relaxed">
-              
               {/* Box 1: Stint Metrics Matrix & Profile Select */}
               <div className="border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between">
                 <div>
@@ -292,23 +316,36 @@ export function AICoach({
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-[#7A828C]">
                       <span>THEORETICAL DELTA IMPROVEMENT</span>
-                      <span className="text-[#00D17F] font-black text-xs tabular-nums">+{stintReport.theoreticalImprovementDelta.toFixed(3)}s</span>
+                      <span className="text-[#00D17F] font-black text-xs tabular-nums">
+                        +{stintReport.theoreticalImprovementDelta.toFixed(3)}s
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[#7A828C]">
                       <span>PRIMARY PLATFORM LIMIT</span>
-                      <span className="text-white font-bold uppercase truncate max-w-[130px]" title={stintReport.primaryLimitation}>{stintReport.primaryLimitation}</span>
+                      <span
+                        className="text-white font-bold uppercase truncate max-w-[130px]"
+                        title={stintReport.primaryLimitation}
+                      >
+                        {stintReport.primaryLimitation}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[#7A828C]">
                       <span>TIRE OPERATING TEMP WINDOW</span>
-                      <span className="text-white font-bold tabular-nums">{stintReport.tires.optimalFrictionWindowPct}% Optimal</span>
+                      <span className="text-white font-bold tabular-nums">
+                        {stintReport.tires.optimalFrictionWindowPct}% Optimal
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[#7A828C]">
                       <span>ERS DEPLOYMENT FLUX LOSS</span>
-                      <span className="text-[#FFB800] font-bold tabular-nums">{stintReport.energyLossPct.toFixed(1)}% Waste</span>
+                      <span className="text-[#FFB800] font-bold tabular-nums">
+                        {stintReport.energyLossPct.toFixed(1)}% Waste
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[#7A828C]">
                       <span>DIFFUSER STALL APEX LIMITS</span>
-                      <span className="text-[#FF4D4D] font-bold tabular-nums">{stintReport.aero.bottomingCount} Occurrences</span>
+                      <span className="text-[#FF4D4D] font-bold tabular-nums">
+                        {stintReport.aero.bottomingCount} Occurrences
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-[#7A828C] border-t border-[#1C2430]/30 pt-1">
                       <span>VALIDATION CERTAINTY WEIGHT</span>
@@ -328,7 +365,9 @@ export function AICoach({
                         key={prof}
                         onClick={() => {
                           setActiveProfile(prof);
-                          toast.success(`Active Team Profile switched to: ${TEAM_PROFILES[prof].label}`);
+                          toast.success(
+                            `Active Team Profile switched to: ${TEAM_PROFILES[prof].label}`,
+                          );
                         }}
                         className={`py-0.5 text-[7.5px] uppercase font-black cursor-pointer transition-colors ${
                           activeProfile === prof
@@ -347,7 +386,8 @@ export function AICoach({
               <div className="border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between">
                 <div>
                   <span className="text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2 block tracking-wider flex items-center gap-1.5">
-                    <ShieldAlert className="h-3.5 w-3.5 text-[#FFB800]" /> CAUSAL PERFORMANCE TIMELINE
+                    <ShieldAlert className="h-3.5 w-3.5 text-[#FFB800]" /> CAUSAL PERFORMANCE
+                    TIMELINE
                   </span>
 
                   {/* Proactive Stint Predictions Alerts (Phase 7 Priority 4) */}
@@ -355,31 +395,42 @@ export function AICoach({
                     <div className="mb-2 bg-[#FF4D4D]/10 border border-[#FF4D4D]/30 p-1.5 rounded-sm flex items-start gap-1.5 text-[#FF4D4D] animate-pulse">
                       <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold uppercase tracking-wider block text-[7.5px]">PROACTIVE STRATEGY ALERT: THERMAL THREAT ACTIVE</span>
+                        <span className="font-bold uppercase tracking-wider block text-[7.5px]">
+                          PROACTIVE STRATEGY ALERT: THERMAL THREAT ACTIVE
+                        </span>
                         <p className="text-[7.2px] leading-tight mt-0.5">
-                          Front-right tyre core temperature growth curve projects friction saturation (+{TEAM_PROFILES[activeProfile].maxOptimalTempC}°C limit) on Lap {stintPrognosis.projectedBlowoutLap}. Estimated pace loss: +0.280s. Slide initial bias forward +0.5%.
+                          Front-right tyre core temperature growth curve projects friction
+                          saturation (+{TEAM_PROFILES[activeProfile].maxOptimalTempC}°C limit) on
+                          Lap {stintPrognosis.projectedBlowoutLap}. Estimated pace loss: +0.280s.
+                          Slide initial bias forward +0.5%.
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {!stintPrognosis.isThreatActive && activeProfile === "gtp" && stintPrognosis.exhaustionLapERS < 25 && (
-                    <div className="mb-2 bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 p-1.5 rounded-sm flex items-start gap-1.5 text-[#8B5CF6] animate-pulse">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold uppercase tracking-wider block text-[7.5px]">PROACTIVE STRATEGY ALERT: MGU-K DEPLETION WARNING</span>
-                        <p className="text-[7.2px] leading-tight mt-0.5">
-                          MGU-K straightaway torque deploy decay projects battery state-of-charge exhaustion on Lap {stintPrognosis.exhaustionLapERS}. Soften rear rebound clicks to secure vertical exit downforce.
-                        </p>
+                  {!stintPrognosis.isThreatActive &&
+                    activeProfile === "gtp" &&
+                    stintPrognosis.exhaustionLapERS < 25 && (
+                      <div className="mb-2 bg-[#8B5CF6]/10 border border-[#8B5CF6]/30 p-1.5 rounded-sm flex items-start gap-1.5 text-[#8B5CF6] animate-pulse">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold uppercase tracking-wider block text-[7.5px]">
+                            PROACTIVE STRATEGY ALERT: MGU-K DEPLETION WARNING
+                          </span>
+                          <p className="text-[7.2px] leading-tight mt-0.5">
+                            MGU-K straightaway torque deploy decay projects battery state-of-charge
+                            exhaustion on Lap {stintPrognosis.exhaustionLapERS}. Soften rear rebound
+                            clicks to secure vertical exit downforce.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   <p className="text-white whitespace-pre-wrap select-text text-[8.2px] leading-relaxed">
                     {causalGraph.rootCauseNarrative}
                   </p>
                 </div>
-                
+
                 {/* Stint Degradation Projections Panel (Phase 6 Priority 5) */}
                 <div className="mt-2.5 pt-2.5 border-t border-[#1C2430]">
                   <span className="text-[7.5px] font-bold text-[#7A828C] uppercase mb-1.5 block tracking-wider flex items-center gap-1">
@@ -387,15 +438,25 @@ export function AICoach({
                   </span>
                   <div className="grid grid-cols-2 gap-2 text-[#7A828C] text-[8.2px]">
                     <div className="bg-[#05070A] p-1.5 border border-[#1C2430]/60 rounded-xs">
-                      <span className="block text-[7px] text-[#7A828C] uppercase font-bold">THERMAL BLOWOUT PROJECTION</span>
-                      <span className={`font-black text-[9px] tabular-nums block ${stintPrognosis.isThreatActive ? "text-[#FF4D4D]" : "text-[#00D17F]"}`}>
-                        {stintPrognosis.projectedBlowoutLap === 99 ? "THERMALS STABLE" : `LAP ${stintPrognosis.projectedBlowoutLap}`}
+                      <span className="block text-[7px] text-[#7A828C] uppercase font-bold">
+                        THERMAL BLOWOUT PROJECTION
+                      </span>
+                      <span
+                        className={`font-black text-[9px] tabular-nums block ${stintPrognosis.isThreatActive ? "text-[#FF4D4D]" : "text-[#00D17F]"}`}
+                      >
+                        {stintPrognosis.projectedBlowoutLap === 99
+                          ? "THERMALS STABLE"
+                          : `LAP ${stintPrognosis.projectedBlowoutLap}`}
                       </span>
                     </div>
                     <div className="bg-[#05070A] p-1.5 border border-[#1C2430]/60 rounded-xs">
-                      <span className="block text-[7px] text-[#7A828C] uppercase font-bold">ERS DEPLOY DECAY LIMIT</span>
+                      <span className="block text-[7px] text-[#7A828C] uppercase font-bold">
+                        ERS DEPLOY DECAY LIMIT
+                      </span>
                       <span className="text-white font-black text-[9px] tabular-nums block">
-                        {stintPrognosis.exhaustionLapERS === 40 ? "ERS DEC SAFE" : `LAP ${stintPrognosis.exhaustionLapERS}`}
+                        {stintPrognosis.exhaustionLapERS === 40
+                          ? "ERS DEC SAFE"
+                          : `LAP ${stintPrognosis.exhaustionLapERS}`}
                       </span>
                     </div>
                   </div>
@@ -404,7 +465,9 @@ export function AICoach({
                 {/* Setup Recommendation Bar */}
                 <div className="mt-2 pt-2 border-t border-[#1C2430] flex items-center justify-between text-[#7A828C]">
                   <span>HEURISTIC SETUP ADVICE:</span>
-                  <span className="text-[#00D17F] font-black uppercase text-[8px] tracking-wider select-text">{stintReport.setupAdvice}</span>
+                  <span className="text-[#00D17F] font-black uppercase text-[8px] tracking-wider select-text">
+                    {stintReport.setupAdvice}
+                  </span>
                 </div>
               </div>
 
@@ -412,12 +475,18 @@ export function AICoach({
               <div className="border border-[#1C2430] bg-[#0B0F14] p-3 rounded-sm flex flex-col justify-between">
                 <div>
                   <span className="text-[10px] text-white font-bold border-b border-[#1C2430] pb-1.5 uppercase mb-2 block tracking-wider flex items-center gap-1.5 justify-between">
-                    <span className="flex items-center gap-1.5"><SlidersHorizontal className="h-3.5 w-3.5 text-[#00D17F]" /> SETUP SIMULATOR</span>
-                    <button onClick={resetAdjustments} className="text-[#7A828C] hover:text-white shrink-0 p-0.5" title="Reset to Baseline">
+                    <span className="flex items-center gap-1.5">
+                      <SlidersHorizontal className="h-3.5 w-3.5 text-[#00D17F]" /> SETUP SIMULATOR
+                    </span>
+                    <button
+                      onClick={resetAdjustments}
+                      className="text-[#7A828C] hover:text-white shrink-0 p-0.5"
+                      title="Reset to Baseline"
+                    >
                       <RefreshCw className="h-3 w-3" />
                     </button>
                   </span>
-                  
+
                   {/* Interactive Adjuster Buttons */}
                   <div className="space-y-2 mb-2 pt-1">
                     {/* Rear Rebound */}
@@ -425,14 +494,29 @@ export function AICoach({
                       <span>REAR REBOUND DAMPING</span>
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, rearReboundClicks: Math.max(-5, a.rearReboundClicks - 1) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              rearReboundClicks: Math.max(-5, a.rearReboundClicks - 1),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           -
                         </button>
-                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.rearReboundClicks > 0 ? `+${adjustments.rearReboundClicks}` : adjustments.rearReboundClicks} click</span>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">
+                          {adjustments.rearReboundClicks > 0
+                            ? `+${adjustments.rearReboundClicks}`
+                            : adjustments.rearReboundClicks}{" "}
+                          click
+                        </span>
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, rearReboundClicks: Math.min(5, a.rearReboundClicks + 1) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              rearReboundClicks: Math.min(5, a.rearReboundClicks + 1),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           +
@@ -445,14 +529,29 @@ export function AICoach({
                       <span>REAR ANTI-ROLL BAR</span>
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, rearAntiRollBar: Math.max(-3, a.rearAntiRollBar - 1) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              rearAntiRollBar: Math.max(-3, a.rearAntiRollBar - 1),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           -
                         </button>
-                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.rearAntiRollBar > 0 ? `+${adjustments.rearAntiRollBar}` : adjustments.rearAntiRollBar} step</span>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">
+                          {adjustments.rearAntiRollBar > 0
+                            ? `+${adjustments.rearAntiRollBar}`
+                            : adjustments.rearAntiRollBar}{" "}
+                          step
+                        </span>
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, rearAntiRollBar: Math.min(3, a.rearAntiRollBar + 1) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              rearAntiRollBar: Math.min(3, a.rearAntiRollBar + 1),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           +
@@ -465,14 +564,29 @@ export function AICoach({
                       <span>FRONT PACKER MECHANICAL</span>
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, frontPackerClicks: Math.max(-5, a.frontPackerClicks - 1) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              frontPackerClicks: Math.max(-5, a.frontPackerClicks - 1),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           -
                         </button>
-                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.frontPackerClicks > 0 ? `+${adjustments.frontPackerClicks}` : adjustments.frontPackerClicks} click</span>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">
+                          {adjustments.frontPackerClicks > 0
+                            ? `+${adjustments.frontPackerClicks}`
+                            : adjustments.frontPackerClicks}{" "}
+                          click
+                        </span>
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, frontPackerClicks: Math.min(5, a.frontPackerClicks + 1) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              frontPackerClicks: Math.min(5, a.frontPackerClicks + 1),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           +
@@ -485,21 +599,34 @@ export function AICoach({
                       <span>FRONT BRAKE BIAS SHIFT</span>
                       <div className="flex items-center gap-1.5">
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, frontBrakeBias: Number((a.frontBrakeBias - 0.2).toFixed(1)) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              frontBrakeBias: Number((a.frontBrakeBias - 0.2).toFixed(1)),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           -
                         </button>
-                        <span className="text-white font-bold w-12 text-center tabular-nums">{adjustments.frontBrakeBias > 0 ? `+${adjustments.frontBrakeBias.toFixed(1)}%` : `${adjustments.frontBrakeBias.toFixed(1)}%`}</span>
+                        <span className="text-white font-bold w-12 text-center tabular-nums">
+                          {adjustments.frontBrakeBias > 0
+                            ? `+${adjustments.frontBrakeBias.toFixed(1)}%`
+                            : `${adjustments.frontBrakeBias.toFixed(1)}%`}
+                        </span>
                         <button
-                          onClick={() => setAdjustments((a) => ({ ...a, frontBrakeBias: Number((a.frontBrakeBias + 0.2).toFixed(1)) }))}
+                          onClick={() =>
+                            setAdjustments((a) => ({
+                              ...a,
+                              frontBrakeBias: Number((a.frontBrakeBias + 0.2).toFixed(1)),
+                            }))
+                          }
                           className="size-4 flex items-center justify-center bg-[#05070A] hover:bg-[#1C2430] rounded-xs border border-[#1C2430] font-black text-white"
                         >
                           +
                         </button>
                       </div>
                     </div>
-
                   </div>
                 </div>
 
@@ -508,32 +635,43 @@ export function AICoach({
                   <div className="grid grid-cols-4 gap-1 text-[8px] text-[#7A828C] mb-1 text-center font-bold">
                     <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
                       <span>SIM DELTA</span>
-                      <span className={`block font-black text-[9px] ${simResult.theoreticalDeltaDelta < 0 ? "text-[#00D17F]" : simResult.theoreticalDeltaDelta > 0 ? "text-[#FF4D4D]" : "text-[#7A828C]"}`}>
-                        {simResult.theoreticalDeltaDelta === 0 ? "0.000s" : `${simResult.theoreticalDeltaDelta > 0 ? "+" : ""}${simResult.theoreticalDeltaDelta.toFixed(3)}s`}
+                      <span
+                        className={`block font-black text-[9px] ${simResult.theoreticalDeltaDelta < 0 ? "text-[#00D17F]" : simResult.theoreticalDeltaDelta > 0 ? "text-[#FF4D4D]" : "text-[#7A828C]"}`}
+                      >
+                        {simResult.theoreticalDeltaDelta === 0
+                          ? "0.000s"
+                          : `${simResult.theoreticalDeltaDelta > 0 ? "+" : ""}${simResult.theoreticalDeltaDelta.toFixed(3)}s`}
                       </span>
                     </div>
                     <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
                       <span>AERO STAB</span>
-                      <span className="block font-black text-[9px] text-white">{simResult.predictedRakeStability}%</span>
+                      <span className="block font-black text-[9px] text-white">
+                        {simResult.predictedRakeStability}%
+                      </span>
                     </div>
                     <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
                       <span>TRAC GRIP</span>
-                      <span className="block font-black text-[9px] text-white">{simResult.predictedRearTraction}%</span>
+                      <span className="block font-black text-[9px] text-white">
+                        {simResult.predictedRearTraction}%
+                      </span>
                     </div>
                     <div className="bg-[#05070A] p-1 border border-[#1C2430] rounded-xs">
                       <span>THERM MARG</span>
-                      <span className="block font-black text-[9px] text-white">{simResult.predictedThermalSaturation}%</span>
+                      <span className="block font-black text-[9px] text-white">
+                        {simResult.predictedThermalSaturation}%
+                      </span>
                     </div>
                   </div>
-                  
+
                   {/* Detailed simulator feedback logs */}
-                  <div className="text-[7.2px] text-[#7A828C] leading-snug truncate h-4 border-t border-[#1C2430]/30 pt-1" title={simResult.feedbackLog[simResult.feedbackLog.length - 1]}>
+                  <div
+                    className="text-[7.2px] text-[#7A828C] leading-snug truncate h-4 border-t border-[#1C2430]/30 pt-1"
+                    title={simResult.feedbackLog[simResult.feedbackLog.length - 1]}
+                  >
                     {simResult.feedbackLog[simResult.feedbackLog.length - 1]}
                   </div>
                 </div>
-
               </div>
-
             </div>
           ) : (
             // LLM Mode
@@ -558,7 +696,8 @@ export function AICoach({
               )}
               {!result && !loading && (
                 <div className="text-[#7A828C] font-mono text-[9px] uppercase">
-                  Telemetry parameters parsed. Click Analyze to process setup consequences via cloud model.
+                  Telemetry parameters parsed. Click Analyze to process setup consequences via cloud
+                  model.
                 </div>
               )}
             </div>
@@ -575,7 +714,10 @@ function ConciseView({ data }: { data: ConciseResult }) {
       <div className="text-xs font-bold text-white uppercase tracking-wider">{data.headline}</div>
       <ul className="space-y-1.5">
         {data.tips.map((t, i) => (
-          <li key={i} className="border border-[#1C2430] bg-[#0B0F14] p-2 text-[9px] rounded-sm leading-relaxed">
+          <li
+            key={i}
+            className="border border-[#1C2430] bg-[#0B0F14] p-2 text-[9px] rounded-sm leading-relaxed"
+          >
             <div className="flex items-center gap-2 mb-1">
               <span
                 className={`text-[7.5px] font-black uppercase tracking-widest px-1.5 py-0.5 border rounded-xs ${
@@ -589,7 +731,9 @@ function ConciseView({ data }: { data: ConciseResult }) {
                 {t.priority}
               </span>
               <span className="font-bold text-white uppercase">{t.location}</span>
-              {t.estGainS > 0 && <span className="ml-auto text-[#00D17F] font-bold">-{t.estGainS.toFixed(3)}s</span>}
+              {t.estGainS > 0 && (
+                <span className="ml-auto text-[#00D17F] font-bold">-{t.estGainS.toFixed(3)}s</span>
+              )}
             </div>
             <div className="text-white font-bold">{t.tip}</div>
             <div className="text-[#7A828C] mt-0.5">{t.reason}</div>
@@ -607,16 +751,30 @@ function DetailedView({ data }: { data: DetailedResult }) {
       <div className="text-[9px] text-[#7A828C] leading-relaxed uppercase">{data.overview}</div>
       <div className="grid gap-2 md:grid-cols-2">
         {data.corners.map((c, i) => (
-          <div key={i} className="border border-[#1C2430] bg-[#0B0F14] p-2 text-[9px] rounded-sm leading-relaxed">
+          <div
+            key={i}
+            className="border border-[#1C2430] bg-[#0B0F14] p-2 text-[9px] rounded-sm leading-relaxed"
+          >
             <div className="flex items-center gap-2 mb-1 border-b border-[#1C2430]/40 pb-1">
               <span className="font-black text-[#8B5CF6] uppercase">{c.label}</span>
               <span className="text-[#7A828C] text-[8px]">~{c.locationPct.toFixed(0)}% LAP</span>
-              {c.estGainS > 0 && <span className="ml-auto text-[#00D17F] font-bold">-{c.estGainS.toFixed(3)}s</span>}
+              {c.estGainS > 0 && (
+                <span className="ml-auto text-[#00D17F] font-bold">-{c.estGainS.toFixed(3)}s</span>
+              )}
             </div>
             <div className="space-y-0.5 text-[8.5px]">
-              <div><span className="text-[#7A828C] uppercase">ENTRY:</span> <span className="text-white">{c.entry}</span></div>
-              <div><span className="text-[#7A828C] uppercase">MID:</span> <span className="text-white">{c.mid}</span></div>
-              <div><span className="text-[#7A828C] uppercase">EXIT:</span> <span className="text-white">{c.exit}</span></div>
+              <div>
+                <span className="text-[#7A828C] uppercase">ENTRY:</span>{" "}
+                <span className="text-white">{c.entry}</span>
+              </div>
+              <div>
+                <span className="text-[#7A828C] uppercase">MID:</span>{" "}
+                <span className="text-white">{c.mid}</span>
+              </div>
+              <div>
+                <span className="text-[#7A828C] uppercase">EXIT:</span>{" "}
+                <span className="text-white">{c.exit}</span>
+              </div>
             </div>
           </div>
         ))}

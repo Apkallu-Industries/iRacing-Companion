@@ -8,16 +8,16 @@ Where the project goes next. Ordered by impact ÷ effort within each horizon.
 
 ## ✅ Recently Shipped
 
-| Feature | Notes |
-|---|---|
-| 60Hz telemetry (up from 30Hz) | Bridge polls and broadcasts at 60Hz |
-| Bridge extras block | Yaw, shock deflection, brake line pressure, wheel speed, pitch/roll forwarded to AI |
-| AI workspace context | Active workspace tier + math channel names injected into all AI prompts |
-| Output device selector | ElevenLabs audio routed via `setSinkId` to user-chosen speaker |
-| Microphone selector | Device picker + live VU meter for push-to-talk |
-| Electron desktop v1.2 | Auto-bridge-sync, system tray, crash recovery, single-instance lock |
-| Licensing system | HWID-bound keys, Admin Dashboard for key generation |
-| Pit wall team hero image | On landing page + OG image for social sharing |
+| Feature                       | Notes                                                                               |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| 60Hz telemetry (up from 30Hz) | Bridge polls and broadcasts at 60Hz                                                 |
+| Bridge extras block           | Yaw, shock deflection, brake line pressure, wheel speed, pitch/roll forwarded to AI |
+| AI workspace context          | Active workspace tier + math channel names injected into all AI prompts             |
+| Output device selector        | ElevenLabs audio routed via `setSinkId` to user-chosen speaker                      |
+| Microphone selector           | Device picker + live VU meter for push-to-talk                                      |
+| Electron desktop v1.2         | Auto-bridge-sync, system tray, crash recovery, single-instance lock                 |
+| Licensing system              | HWID-bound keys, Admin Dashboard for key generation                                 |
+| Pit wall team hero image      | On landing page + OG image for social sharing                                       |
 
 ---
 
@@ -26,6 +26,7 @@ Where the project goes next. Ordered by impact ÷ effort within each horizon.
 ### 1. Push-to-talk voice commands
 
 The microphone device is now selectable. Wire it up:
+
 - `Space` hold on `/live` → starts recording from selected mic
 - Send audio to ElevenLabs Speech-to-Text (or Whisper local)
 - Parsed intent routed to the Live Coach as a direct question
@@ -58,6 +59,7 @@ The microphone device is now selectable. Wire it up:
 ### 5. Multi-lap stint analysis
 
 Today's workbench is lap-centric. Add a **stint view**:
+
 - Tyre deg curves across a fuel run with regression fit
 - Pace decay vs fuel burn — separate tyre fade from fuel-weight effects
 - Driver consistency band (std dev of sector times)
@@ -66,6 +68,7 @@ Today's workbench is lap-centric. Add a **stint view**:
 ### 6. Workspace tier enforcement
 
 Workspaces (`lite`, `plus`, `realtime`) are defined but not yet gated by licence tier:
+
 - Unlock `plus` at Tier 1, `realtime` at Tier 2
 - Show upgrade prompt when a user attempts to switch to a locked workspace
 - Admin Dashboard: assign workspace tier per licence key
@@ -130,25 +133,28 @@ Workspaces (`lite`, `plus`, `realtime`) are defined but not yet gated by licence
 ## Speculative / research
 
 ### Computer-vision overlay
+
 Parse iRacing replay video to extract racing line vs ideal line, overlay on TrackMap. Hard: requires reliable car detection across camera angles.
 
 ### Real-time multi-driver telemetry
+
 Spectator mode ingesting telemetry from multiple drivers (with consent) for league broadcasts.
 
 ### Full-duplex voice AI engineer
+
 Sub-500ms round-trip voice conversation during stints. Likely needs on-device model for wake-word + intent layer.
 
 ---
 
 ## Cross-cutting investments
 
-| Investment | Why it matters |
-|---|---|
-| **Test harness for `.ibt` parser** | Fixture files + golden snapshots — parser regressions currently only caught by users |
-| **Server-function observability** | Structured logs + traces for AI functions — failures are currently silent |
-| **Token-cost dashboard** | Per-user AI usage to spot abuse and tune model selection |
-| **`live_coach_events` schema** | Required for "did the coach actually help?" analysis |
-| **Rate limiting on community submissions** | Per-user daily caps via RPC to prevent spam |
+| Investment                                 | Why it matters                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| **Test harness for `.ibt` parser**         | Fixture files + golden snapshots — parser regressions currently only caught by users |
+| **Server-function observability**          | Structured logs + traces for AI functions — failures are currently silent            |
+| **Token-cost dashboard**                   | Per-user AI usage to spot abuse and tune model selection                             |
+| **`live_coach_events` schema**             | Required for "did the coach actually help?" analysis                                 |
+| **Rate limiting on community submissions** | Per-user daily caps via RPC to prevent spam                                          |
 
 ---
 
