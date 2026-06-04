@@ -50,19 +50,19 @@ function buildWorkspaceContext(): string {
  */
 export function resolveLLMUrl(baseUrl: string): string {
   let url = baseUrl.trim().replace(/\/$/, "");
-  if (!url) return "http://localhost:1234/api/v1/chat";
+  if (!url) return "http://localhost:1234/api/v1/chat/completions";
 
   // If the user already pasted a full endpoint, just use it
   if (url.endsWith("/chat/completions") || url.endsWith("/chat") || url.endsWith("/v1/chat")) {
     return url;
   }
 
-  // Handle LM Studio v0.4+ /api/v1/chat completions endpoint
+  // Handle LM Studio v0.4+ /api/v1/chat/completions endpoint
   if (url.includes("/api")) {
     if (!url.includes("/v1")) {
       url = `${url}/v1`;
     }
-    return `${url}/chat`;
+    return `${url}/chat/completions`;
   }
 
   // Handle Ollama and standard /v1/chat/completions endpoints
@@ -71,6 +71,19 @@ export function resolveLLMUrl(baseUrl: string): string {
   }
 
   return `${url}/chat/completions`;
+}
+
+function isLmStudioApiV1ChatEndpoint(url: string): boolean {
+  return /(^|\/)api\/v1\/chat($|[/?#])/.test(url);
+}
+
+function buildLocalLlmPayload(url: string, payload: Record<string, any>): Record<string, any> {
+  if (isLmStudioApiV1ChatEndpoint(url)) {
+    const { messages, ...rest } = payload;
+    return { ...rest, input: messages ?? [] };
+  }
+
+  return payload;
 }
 
 async function callLocalOpenAI(system: string, user: string, schema: any): Promise<any> {
@@ -93,10 +106,11 @@ async function callLocalOpenAI(system: string, user: string, schema: any): Promi
     tool_choice: { type: "function", function: { name: schema.name } },
   };
 
+  const body = buildLocalLlmPayload(url, payload);
   const resp = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok) {
@@ -234,10 +248,11 @@ export async function testLLMConnection(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
+    const body = buildLocalLlmPayload(url, payload);
     const resp = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
 

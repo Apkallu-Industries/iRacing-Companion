@@ -221,7 +221,7 @@ async function probeLocalAI() {
     if (reachable) {
       aiMode = "lmstudio";
       aiEndpoint = isApiV1
-        ? `http://localhost:${LMSTUDIO_PORT}/api/v1/chat`
+        ? `http://localhost:${LMSTUDIO_PORT}/api/v1/chat/completions`
         : `http://localhost:${LMSTUDIO_PORT}/v1/chat/completions`;
       console.log("[supervisor] Local AI → LM Studio detected at port", LMSTUDIO_PORT);
       return;

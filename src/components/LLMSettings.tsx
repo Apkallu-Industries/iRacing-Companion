@@ -251,7 +251,7 @@ export function LLMSettings({ inline }: { inline?: boolean }) {
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-95 sm:w-[440px] flex flex-col p-0 bg-background text-foreground border-l border-border/60"
+        className="w-95 sm:w-110 flex flex-col p-0 bg-background text-foreground border-l border-border/60"
       >
         <SheetHeader className="px-4 pt-4">
           <SheetTitle className="font-mono text-sm tracking-wider">

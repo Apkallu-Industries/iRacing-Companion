@@ -2,7 +2,7 @@
  * Local AI Router — Pit Wall Workstation
  *
  * Routes AI inference requests to the best available backend:
- *   1. LM Studio   → http://localhost:1234/v1/chat/completions
+ *   1. LM Studio   → http://localhost:1234/api/v1/chat/completions or /v1/chat/completions
  *   2. Ollama      → http://localhost:11434/v1/chat/completions
  *   3. Cloud Gemini → existing cloud endpoint (fallback)
  *
@@ -100,7 +100,7 @@ export async function probeLocalAi(): Promise<AiRouterState> {
       state = {
         mode: "lmstudio",
         endpoint: lmResult.isApiV1
-          ? `${LMSTUDIO_BASE}/api/v1/chat`
+          ? `${LMSTUDIO_BASE}/api/v1/chat/completions`
           : `${LMSTUDIO_BASE}/v1/chat/completions`,
         modelName: lmResult.model,
         probing: false,
