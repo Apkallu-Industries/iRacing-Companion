@@ -9,7 +9,7 @@ interface TireInstrumentProps {
 }
 
 export function TireInstrument({ telemetry: propTelemetry, mode = "live" }: TireInstrumentProps) {
-  const liveTelemetry = useTelemetry();
+  const liveTelemetry = useTelemetry(mode === "live" && !propTelemetry);
   const t = propTelemetry || liveTelemetry;
 
   const flTemp = t.tires?.fl?.tempC ?? 82;

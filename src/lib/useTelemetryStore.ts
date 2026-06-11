@@ -17,12 +17,18 @@ export interface Sample {
 
 interface TelemetryState {
   telemetry: Telemetry;
+  throttledTelemetry: Telemetry;
+  throttled10HzTelemetry: Telemetry;
+  samplesTick: number;
   setTelemetry: (t: Telemetry) => void;
 }
 
 // Fast Zustand state store for telemetry frames
 export const useTelemetryStore = create<TelemetryState>((set) => ({
   telemetry: DEFAULT_TELEMETRY,
+  throttledTelemetry: DEFAULT_TELEMETRY,
+  throttled10HzTelemetry: DEFAULT_TELEMETRY,
+  samplesTick: 0,
   setTelemetry: (t) => set({ telemetry: t }),
 }));
 
@@ -41,32 +47,47 @@ export function getSamples(): Sample[] {
 import { useState, useEffect } from "react";
 
 export function useThrottledSamples(throttleMs = 50): Sample[] {
+  const isDefault50 = throttleMs === 50;
+
+  // Use global tick from store to avoid creating component-level setIntervals
+  useTelemetryStore((s) => isDefault50 ? s.samplesTick : 0);
+
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
+    if (isDefault50) return;
     const interval = setInterval(() => {
       forceUpdate((n) => (n + 1) & 0xffff);
     }, throttleMs);
 
     return () => clearInterval(interval);
-  }, [throttleMs]);
+  }, [throttleMs, isDefault50]);
 
   return samplesBuffer;
 }
 
 // Throttled hook to subscribe to the telemetry frame at a lower update frequency (e.g. 10Hz / 100ms)
 export function useTelemetryThrottled(throttleMs = 100): Telemetry {
-  const [t, setT] = useState<Telemetry>(useTelemetryStore.getState().telemetry);
+  const isDefault100 = throttleMs === 100;
+  const isDefault50 = throttleMs === 50;
+
+  // Selective subscription if using standard defaults, otherwise fallback
+  const storeTelemetry = useTelemetryStore((s) =>
+    isDefault100 ? s.throttled10HzTelemetry : isDefault50 ? s.throttledTelemetry : s.telemetry
+  );
+
+  const [fallbackT, setFallbackT] = useState<Telemetry>(useTelemetryStore.getState().telemetry);
 
   useEffect(() => {
+    if (isDefault100 || isDefault50) return;
     const interval = setInterval(() => {
-      setT(useTelemetryStore.getState().telemetry);
+      setFallbackT(useTelemetryStore.getState().telemetry);
     }, throttleMs);
 
     return () => clearInterval(interval);
-  }, [throttleMs]);
+  }, [throttleMs, isDefault100, isDefault50]);
 
-  return t;
+  return isDefault100 || isDefault50 ? storeTelemetry : fallbackT;
 }
 
 let isLive = false;
@@ -219,6 +240,20 @@ if (typeof window !== "undefined") {
       saveBridgePerformanceSnapshot(latestFps);
     } catch {}
   }, 2000);
+
+  // Centralized throttlers to update UI states in Zustand once, sharing among all observers
+  setInterval(() => {
+    const raw = useTelemetryStore.getState().telemetry;
+    useTelemetryStore.setState((state) => ({
+      throttledTelemetry: raw,
+      samplesTick: (state.samplesTick + 1) & 0xffff,
+    }));
+  }, 50);
+
+  setInterval(() => {
+    const raw = useTelemetryStore.getState().telemetry;
+    useTelemetryStore.setState({ throttled10HzTelemetry: raw });
+  }, 100);
 }
 
 function clamp01(v: number) {

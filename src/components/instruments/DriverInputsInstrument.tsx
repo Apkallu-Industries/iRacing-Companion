@@ -12,7 +12,7 @@ export function DriverInputsInstrument({
   telemetry: propTelemetry,
   mode = "live",
 }: DriverInputsInstrumentProps) {
-  const liveTelemetry = useTelemetry();
+  const liveTelemetry = useTelemetry(mode === "live" && !propTelemetry);
   const t = propTelemetry || liveTelemetry;
 
   const throttle = t.throttle ?? 0;

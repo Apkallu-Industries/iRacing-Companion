@@ -6,7 +6,8 @@ import type { Telemetry } from "@/lib/telemetry-types";
  * Red arc, large central speed readout, KM/H label.
  */
 export function F1SpeedGauge({ t }: { t?: Telemetry }) {
-  const telemetry = t ?? useTelemetry();
+  const liveTelemetry = useTelemetry(t === undefined);
+  const telemetry = t ?? liveTelemetry;
   const speed = Math.round(telemetry.speedKph);
   const maxSpeed = 340; // F1-class ceiling
   const pct = Math.min(1, speed / maxSpeed);

@@ -114,7 +114,7 @@ export function ChassisInstrument({
   telemetry: propTelemetry,
   mode = "live",
 }: ChassisInstrumentProps) {
-  const liveTelemetry = useTelemetry();
+  const liveTelemetry = useTelemetry(mode === "live" && !propTelemetry);
   const t = propTelemetry || liveTelemetry;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

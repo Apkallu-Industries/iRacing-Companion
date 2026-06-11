@@ -1,11 +1,11 @@
 import { createFileRoute, useSearch, Link } from "@tanstack/react-router";
 import { Settings, Palette } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { BackButton } from "@/components/BackButton";
 import { useWorkbench } from "@/lib/store";
 import { WORKSPACES, type WorkspaceKey } from "@/lib/workspaces";
 import { useTelemetry } from "@/lib/useTelemetry";
-import { useTelemetryThrottled, useThrottledSamples } from "@/lib/useTelemetryStore";
+import { useTelemetryThrottled, useThrottledSamples, useTelemetryStore } from "@/lib/useTelemetryStore";
 import { allowSimulator } from "@/lib/runtimeConfig";
 import { type Sample } from "@/lib/useTelemetryBuffer";
 import { useBridgeDiagnostics } from "@/lib/bridgeDiagnostics";
@@ -171,7 +171,7 @@ function Dashboard() {
 
               {/* Speed gauge + Gear */}
               <div className="flex-1 flex flex-col items-center justify-center border-b border-border px-3 py-2">
-                <F1SpeedGauge />
+                <F1SpeedGauge t={t} />
                 <div className="mt-1 text-center">
                   <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
                     Gear
@@ -583,24 +583,70 @@ function RpmBar({
   red?: number;
   max?: number;
 } = {}) {
-  const t = useTelemetry();
-  const rpm = propRpm ?? t.rpm;
-  const warn = propWarn ?? t.rpmShiftWarn;
-  const red = propRed ?? t.rpmShiftRedline;
-  const max = propMax ?? t.rpmMax;
+  const barRef = useRef<HTMLDivElement>(null);
+  const warnLineRef = useRef<HTMLDivElement>(null);
+  const redLineRef = useRef<HTMLDivElement>(null);
+
+  const isLive = propRpm === undefined;
+
+  useEffect(() => {
+    if (!isLive) return;
+
+    let lastWarnFrac = -1;
+    let lastRedFrac = -1;
+
+    return useTelemetryStore.subscribe((state) => {
+      const { rpm, rpmShiftWarn, rpmShiftRedline, rpmMax } = state.telemetry;
+      const pct = Math.max(0, Math.min(1, rpm / rpmMax));
+      
+      const warnFrac = rpmShiftWarn / rpmMax;
+      const redFrac = rpmShiftRedline / rpmMax;
+
+      const color = rpm > rpmShiftRedline ? "bg-rose-500" : rpm > rpmShiftWarn ? "bg-amber-400" : "bg-emerald-500";
+      
+      if (barRef.current) {
+        barRef.current.style.width = `${pct * 100}%`;
+        barRef.current.className = `h-full ${color}`;
+      }
+
+      if (warnFrac !== lastWarnFrac && warnLineRef.current) {
+        lastWarnFrac = warnFrac;
+        warnLineRef.current.style.left = `${warnFrac * 100}%`;
+      }
+
+      if (redFrac !== lastRedFrac && redLineRef.current) {
+        lastRedFrac = redFrac;
+        redLineRef.current.style.left = `${redFrac * 100}%`;
+      }
+    });
+  }, [isLive]);
+
+  // Initial / static values
+  const initial = useTelemetryStore.getState().telemetry;
+  const rpm = propRpm ?? initial.rpm;
+  const warn = propWarn ?? initial.rpmShiftWarn;
+  const red = propRed ?? initial.rpmShiftRedline;
+  const max = propMax ?? initial.rpmMax;
 
   const pct = Math.max(0, Math.min(1, rpm / max));
   const warnFrac = warn / max;
   const redFrac = red / max;
   const color = rpm > red ? "bg-rose-500" : rpm > warn ? "bg-amber-400" : "bg-emerald-500";
+
   return (
     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-sm bg-muted relative">
-      <div className={`h-full ${color}`} style={{ width: `${pct * 100}%` }} />
       <div
+        ref={barRef}
+        className={`h-full ${color}`}
+        style={{ width: `${pct * 100}%` }}
+      />
+      <div
+        ref={warnLineRef}
         className="absolute inset-y-0 w-px bg-amber-500/50"
         style={{ left: `${warnFrac * 100}%` }}
       />
       <div
+        ref={redLineRef}
         className="absolute inset-y-0 w-px bg-rose-500/70"
         style={{ left: `${redFrac * 100}%` }}
       />

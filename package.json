@@ -20,6 +20,9 @@
     "format": "prettier --write .",
     "desktop": "npm --prefix desktop run start",
     "desktop:dev": "npm --prefix desktop run dev",
+    "tauri": "npx tauri",
+    "tauri:dev": "npx tauri dev",
+    "tauri:build": "npx tauri build",
     "changelog:update": "node ./desktop/scripts/update-changelog.js",
     "validate:determinism": "node scripts/validate-determinism.js"
   },
@@ -60,6 +63,7 @@
     "@tanstack/react-router": "^1.170.10",
     "@tanstack/react-start": "^1.168.18",
     "@tanstack/router-plugin": "^1.168.13",
+    "@tauri-apps/api": "^2.11.0",
     "@types/three": "^0.184.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -101,10 +105,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "nodemon": "^3.1.0",
     "prettier": "^3.7.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.0",
     "vite": "^8.0.16",
-    "nodemon": "^3.1.0"
+    "@tauri-apps/cli": "^2.11.2"
   }
 }

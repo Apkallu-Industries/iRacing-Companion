@@ -9,7 +9,7 @@ interface ERSInstrumentProps {
 }
 
 export function ERSInstrument({ telemetry: propTelemetry, mode = "live" }: ERSInstrumentProps) {
-  const liveTelemetry = useTelemetry();
+  const liveTelemetry = useTelemetry(mode === "live" && !propTelemetry);
   const t = propTelemetry || liveTelemetry;
 
   // Retrieve state or emulate realistic GTP Hybrid parameters

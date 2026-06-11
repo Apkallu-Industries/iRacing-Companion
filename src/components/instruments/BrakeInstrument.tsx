@@ -9,7 +9,7 @@ interface BrakeInstrumentProps {
 }
 
 export function BrakeInstrument({ telemetry: propTelemetry, mode = "live" }: BrakeInstrumentProps) {
-  const liveTelemetry = useTelemetry();
+  const liveTelemetry = useTelemetry(mode === "live" && !propTelemetry);
   const t = propTelemetry || liveTelemetry;
 
   const flBrakeTemp = t.tires?.fl?.brakeTempC ?? 320;
