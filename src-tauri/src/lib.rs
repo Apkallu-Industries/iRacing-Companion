@@ -1,3 +1,4 @@
+mod ac_reader;
 use serde_json::Value;
 
 #[tauri::command]
@@ -110,6 +111,10 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // Start the native background Assetto Corsa memory mapping loop
+      ac_reader::start_ac_reader_thread();
+
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![

@@ -12,7 +12,6 @@
   "HandbrakeRaw",
   "BrakeABSactive",
   "dcBrakeBias",
-  "dcBrakeMisc",
   "dpLFTireColdPress",
   "dpRFTireColdPress",
   "dpLRTireColdPress",
@@ -33,11 +32,6 @@
   "LFwearL",
   "LFwearM",
   "LFwearR",
-  "WaterTemp",
-  "FuelPress",
-  "OilTemp",
-  "OilPress",
-  "ManifoldPress",
   "RRbrakeLinePress",
   "RRcoldPressure",
   "RRtempCL",
@@ -53,5 +47,10 @@
   "LRtempCR",
   "LRwearL",
   "LRwearM",
-  "LRwearR"
+  "LRwearR",
+  "WaterTemp",
+  "FuelPress",
+  "OilTemp",
+  "OilPress",
+  "ManifoldPress"
 ]

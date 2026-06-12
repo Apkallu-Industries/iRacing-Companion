@@ -3,7 +3,6 @@
   "description": "Pit Wall — iRacing telemetry dashboard and lap analysis workbench.",
   "private": true,
   "workspaces": [
-    "desktop",
     "local-bridge"
   ],
   "engines": {
@@ -18,12 +17,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "desktop": "npm --prefix desktop run start",
-    "desktop:dev": "npm --prefix desktop run dev",
     "tauri": "npx tauri",
     "tauri:dev": "npx tauri dev",
     "tauri:build": "npx tauri build",
-    "changelog:update": "node ./desktop/scripts/update-changelog.js",
     "validate:determinism": "node scripts/validate-determinism.js"
   },
   "dependencies": {

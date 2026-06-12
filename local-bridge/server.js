@@ -1382,6 +1382,7 @@ let currentLap = 0;
 
 let currentAssettoConnected = false;
 let assettoProcess = null;
+let assettoTcpServer = null;
 let telemetryInterval = null;
 let wasConnected = false;
 
@@ -1549,185 +1550,172 @@ function startIRacingBridge() {
 }
 
 function startAssettoCorsaBridge() {
-  if (assettoProcess) return;
+  if (assettoTcpServer) return;
 
-  const exePath = path.join(__dirname, "ac-reader.exe");
-  const csPath = path.join(__dirname, "ac-reader.cs");
+  const net = require("net");
+  console.log("[bridge] Listening for native Tauri Assetto Corsa telemetry on TCP port 4712...");
+  
+  assettoTcpServer = net.createServer((socket) => {
+    console.log("[bridge] Native Tauri AC reader connected via TCP");
+    currentAssettoConnected = true;
 
-  if (!fs.existsSync(exePath)) {
-    console.log("[bridge] ac-reader.exe not found. Compiling from ac-reader.cs...");
-    const cscPath = "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe";
-    if (fs.existsSync(cscPath)) {
+    const readline = require("readline");
+    const rl = readline.createInterface({
+      input: socket,
+      terminal: false,
+    });
+
+    rl.on("line", (line) => {
       try {
-        const { execSync } = require("child_process");
-        execSync(`"${cscPath}" /out:"${exePath}" "${csPath}"`);
-        console.log("[bridge] ✅ Successfully compiled ac-reader.exe using csc.exe");
-      } catch (err) {
-        console.error("[bridge] ❌ Failed to compile ac-reader.exe:", err.message);
-        return;
-      }
-    } else {
-      console.error("[bridge] ❌ csc.exe not found at standard path. Cannot compile ac-reader.cs.");
-      return;
-    }
-  }
+        const data = JSON.parse(line);
+        if (data.connected) {
+          currentAssettoConnected = true;
 
-  console.log(`[bridge] Starting Assetto Corsa shared memory reader: ${exePath}`);
-  const { spawn } = require("child_process");
-  assettoProcess = spawn(exePath, [String(TICK_HZ)]);
+          if (!wasConnected) {
+            console.log("[bridge] Assetto Corsa connected");
+            wasConnected = true;
 
-  const readline = require("readline");
-  const rl = readline.createInterface({
-    input: assettoProcess.stdout,
-    terminal: false,
-  });
+            startRecordingSession({
+              track: data.static?.track ? `ac-${data.static.track}` : "ac-unknown",
+              car: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
+              driver: data.static?.playerName || "unknown",
+              sessionInfoYaml: "",
+            });
+            vehicleIdentityRuntime.initializeSession({
+              carId: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
+              carNumber: "0",
+              carName: data.static?.carModel ? `ac-${data.static.carModel}` : "Unknown Car",
+              teamId: process.env.TEAM_CODE || "local",
+              driverId: data.static?.playerName || "unknown",
+              env: {
+                trackTempC: data.physics?.tyreCoreTemperature
+                  ? data.physics.tyreCoreTemperature.reduce((a, b) => a + b, 0) / 4
+                  : 0,
+                airTempC: data.physics?.tyreCoreTemperature
+                  ? data.physics.tyreCoreTemperature.reduce((a, b) => a + b, 0) / 4
+                  : 0,
+              },
+            });
+          }
 
-  rl.on("line", (line) => {
-    try {
-      const data = JSON.parse(line);
-      if (data.connected) {
-        currentAssettoConnected = true;
+          packetCount++;
+          latest = mapAssettoCorsaTelemetry(data);
+          currentLap = latest.lap;
 
-        if (!wasConnected) {
-          console.log("[bridge] Assetto Corsa connected");
-          wasConnected = true;
+          carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
+          const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
 
-          startRecordingSession({
-            track: data.static?.track ? `ac-${data.static.track}` : "ac-unknown",
-            car: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
-            driver: data.static?.playerName || "unknown",
-            sessionInfoYaml: "",
-          });
-          vehicleIdentityRuntime.initializeSession({
-            carId: data.static?.carModel ? `ac-${data.static.carModel}` : "ac-unknown",
-            carNumber: "0",
-            carName: data.static?.carModel ? `ac-${data.static.carModel}` : "Unknown Car",
-            teamId: process.env.TEAM_CODE || "local",
-            driverId: data.static?.playerName || "unknown",
-            env: {
-              trackTempC: data.physics?.tyreCoreTemperature
-                ? data.physics.tyreCoreTemperature.reduce((a, b) => a + b, 0) / 4
-                : 0,
-              airTempC: data.physics?.tyreCoreTemperature
-                ? data.physics.tyreCoreTemperature.reduce((a, b) => a + b, 0) / 4
-                : 0,
-            },
-          });
-        }
+          const enduranceState = carStateRuntime.getCurrentState();
+          const nextState = vehicleIdentityRuntime.ingestFrame(
+            latest,
+            enduranceState,
+            swapReport,
+            currentLap,
+          );
 
-        packetCount++;
-        latest = mapAssettoCorsaTelemetry(data);
-        currentLap = latest.lap;
+          latest.carOperationalState = nextState;
+          latest.enduranceState = enduranceState;
+          if (swapReport) {
+            latest.adaptationState = swapReport;
+          }
 
-        carStateRuntime.updateCarState(latest, 1 / TICK_HZ);
-        const swapReport = driverSwapContinuity.detectSwapAndTrackAdaptation(latest, currentLap);
+          if (recorder && recorderConnected && packetCount % (TICK_HZ * 10) === 0) {
+            vehicleIdentityRuntime.persistSnapshot(recorder.db, recorderSessionId);
+            vehicleIdentityRuntime.flushDeltasToMongo(recorder.db, recorderSessionId);
+          }
 
-        const enduranceState = carStateRuntime.getCurrentState();
-        const nextState = vehicleIdentityRuntime.ingestFrame(
-          latest,
-          enduranceState,
-          swapReport,
-          currentLap,
-        );
+          runtimeBus.publish("FRAME_RECEIVED", latest);
 
-        latest.carOperationalState = nextState;
-        latest.enduranceState = enduranceState;
-        if (swapReport) {
-          latest.adaptationState = swapReport;
-        }
+          if (analyticalWorker) {
+            const currentTick = {
+              tick: packetCount,
+              speedMps: latest.speedKph / 3.6,
+              brake: latest.brake,
+              throttle: latest.throttle,
+              steeringWheelAngle: (latest.steeringDeg * Math.PI) / 180,
+              yawRate: latest.yawRate || 0,
+              pitch: latest.pitch || 0,
+              roll: latest.roll || 0,
+              mgukDeploykW: 0,
+              frontLeftDeflection: data.physics?.suspensionTravel?.[0] || 0,
+              rearRightSpeedMps: latest.speedKph / 3.6,
+              rearLeftSpeedMps: latest.speedKph / 3.6,
+            };
 
-        if (recorder && recorderConnected && packetCount % (TICK_HZ * 10) === 0) {
-          vehicleIdentityRuntime.persistSnapshot(recorder.db, recorderSessionId);
-          vehicleIdentityRuntime.flushDeltasToMongo(recorder.db, recorderSessionId);
-        }
+            analyticalWorker.postMessage({
+              type: "PROCESS_TICK",
+              payload: {
+                current: currentTick,
+                previous: previousFrame || currentTick,
+                hz: TICK_HZ,
+              },
+            });
 
-        runtimeBus.publish("FRAME_RECEIVED", latest);
+            previousFrame = currentTick;
+          }
 
-        if (analyticalWorker) {
-          const currentTick = {
-            tick: packetCount,
-            speedMps: latest.speedKph / 3.6,
-            brake: latest.brake,
-            throttle: latest.throttle,
-            steeringWheelAngle: (latest.steeringDeg * Math.PI) / 180,
-            yawRate: latest.yawRate || 0,
-            pitch: latest.pitch || 0,
-            roll: latest.roll || 0,
-            mgukDeploykW: 0,
-            frontLeftDeflection: data.physics?.suspensionTravel?.[0] || 0,
-            rearRightSpeedMps: latest.speedKph / 3.6,
-            rearLeftSpeedMps: latest.speedKph / 3.6,
-          };
+          if (recorder && recorderConnected) {
+            recorder.recordSample(latest.all, currentLap);
+            recorderSampleCount++;
 
-          analyticalWorker.postMessage({
-            type: "PROCESS_TICK",
-            payload: {
-              current: currentTick,
-              previous: previousFrame || currentTick,
-              hz: TICK_HZ,
-            },
-          });
+            if (currentLap > lastRecordedLap && latest.lapLastLapTimeSec > 0 && currentLap > 0) {
+              lastRecordedLap = currentLap;
+              recorder.recordLap(
+                currentLap,
+                latest.lapLastLapTimeSec,
+                latest.fuelRemainingL,
+                latest.trackTempC,
+                latest.airTempC,
+              );
+            }
+          }
 
-          previousFrame = currentTick;
-        }
-
-        if (recorder && recorderConnected) {
-          recorder.recordSample(latest.all, currentLap);
-          recorderSampleCount++;
-
-          if (currentLap > lastRecordedLap && latest.lapLastLapTimeSec > 0 && currentLap > 0) {
-            lastRecordedLap = currentLap;
-            recorder.recordLap(
-              currentLap,
-              latest.lapLastLapTimeSec,
-              latest.fuelRemainingL,
-              latest.trackTempC,
-              latest.airTempC,
+          if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
+            console.log(
+              `[bridge] AC packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
+                latest.rpm,
+              )} gear=${latest.gear} clients=${wss.clients.size}`,
             );
           }
+        } else {
+          if (currentAssettoConnected) {
+            console.log("[bridge] Assetto Corsa disconnected");
+            currentAssettoConnected = false;
+            wasConnected = false;
+            stopRecordingSession();
+          }
         }
-
-        if (packetCount === 1 || packetCount % (TICK_HZ * 5) === 0) {
-          console.log(
-            `[bridge] AC packets=${packetCount} speed=${Math.round(latest.speedKph)}kph rpm=${Math.round(
-              latest.rpm,
-            )} gear=${latest.gear} clients=${wss.clients.size}`,
-          );
-        }
-      } else {
-        if (currentAssettoConnected) {
-          console.log("[bridge] Assetto Corsa disconnected");
-          currentAssettoConnected = false;
-          wasConnected = false;
-          stopRecordingSession();
-        }
+      } catch (err) {
+        console.error("[bridge] Error processing Assetto Corsa tick:", err.message);
       }
-    } catch (err) {
-      console.error("[bridge] Error processing Assetto Corsa tick:", err.message);
-    }
+    });
+
+    socket.on("error", (err) => {
+      console.warn("[bridge] Assetto Corsa reader TCP socket error:", err.message);
+    });
+
+    socket.on("close", () => {
+      console.log("[bridge] Native Tauri AC reader TCP socket closed");
+      currentAssettoConnected = false;
+      wasConnected = false;
+      stopRecordingSession();
+    });
   });
 
-  assettoProcess.stderr.on("data", (data) => {
-    console.error(`[ac-reader stderr] ${data.toString().trim()}`);
+  assettoTcpServer.listen(4712, "127.0.0.1", () => {
+    console.log("[bridge] Assetto Corsa TCP server successfully bound to port 4712");
   });
 
-  assettoProcess.on("close", (code) => {
-    console.log(`[bridge] Assetto Corsa reader process exited with code ${code}`);
-    assettoProcess = null;
-    currentAssettoConnected = false;
-    wasConnected = false;
-    stopRecordingSession();
-    if (activeGame === "assettocorsa") {
-      setTimeout(startAssettoCorsaBridge, 2000);
-    }
+  assettoTcpServer.on("error", (err) => {
+    console.error("[bridge] Assetto Corsa TCP server error:", err.message);
   });
 }
 
 function stopAssettoCorsaBridge() {
-  if (assettoProcess) {
-    console.log("[bridge] Stopping Assetto Corsa reader process...");
-    assettoProcess.kill();
-    assettoProcess = null;
+  if (assettoTcpServer) {
+    console.log("[bridge] Stopping Assetto Corsa TCP server listener...");
+    assettoTcpServer.close();
+    assettoTcpServer = null;
     currentAssettoConnected = false;
     wasConnected = false;
     stopRecordingSession();
